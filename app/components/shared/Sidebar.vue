@@ -13,6 +13,10 @@ const items = computed<NavigationMenuItem[][]>(() => [
   [
     { label: 'Catálogos', type: 'label' },
     { label: 'Compañías', to: '/admin/catalogs/companies', icon: 'i-lucide-building' },
+    { label: 'Categorías', to: '/admin/catalogs/categories', icon: 'i-lucide-folder-tree' },
+    { label: 'Clientes', to: '/admin/catalogs/clients', icon: 'i-lucide-users' },
+    { label: 'Contratos', to: '/admin/catalogs/contracts', icon: 'i-lucide-file-text' },
+    { label: 'Servicios', to: '/admin/catalogs/services', icon: 'i-lucide-wrench' },
   ],
   [
     { label: 'Configuración', type: 'label' },
