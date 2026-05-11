@@ -20,10 +20,22 @@ const inner = computed({
   get: () => props.modelValue ?? undefined,
   set: (v: number | undefined) => emit('update:modelValue', v),
 });
+
+const selectKey = computed(() => String(inner.value ?? 'empty'));
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (value == null) {
+      searchTerm.value = '';
+    }
+  },
+);
 </script>
 
 <template>
   <USelectMenu
+    :key="selectKey"
     v-model="inner"
     v-model:search-term="searchTerm"
     ignore-filter

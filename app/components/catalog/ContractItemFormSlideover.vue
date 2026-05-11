@@ -33,6 +33,7 @@ const isEdit = computed(() => editingItemId.value != null);
 
 function emptyState(): ContractItemFormState {
   return {
+    service: undefined,
     price: '',
     price_multiplier: '',
     percentaje: '',
@@ -54,7 +55,7 @@ function prepareCreate() {
 
 function openEdit(item: ContractItem) {
   editingItemId.value = item.id;
-  Object.assign(state, {
+  Object.assign(state, emptyState(), {
     service: item.service_id,
     price: item.price,
     price_multiplier: item.price_multiplier,
@@ -160,6 +161,7 @@ async function requestSubmit() {
       >
         <UFormField label="Servicio" name="service">
           <CatalogDropdownSelect
+            :key="editingItemId ?? 'create'"
             v-model="state.service"
             placeholder="Buscar servicio"
             :fetcher="fetchServiceDropdown"
