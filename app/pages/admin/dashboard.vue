@@ -1,11 +1,7 @@
 <template>
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar title="Dashboard">
-        <template #leading>
-          <UDashboardSidebarCollapse />
-        </template>
-      </UDashboardNavbar>
+      <SharedNavbar title="Dashboard" />
     </template>
   </UDashboardPanel>
 </template>
