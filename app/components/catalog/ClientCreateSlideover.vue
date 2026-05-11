@@ -172,87 +172,121 @@ async function requestSubmit() {
         ref="formRef"
         :schema="clientCreateSchema"
         :state="state"
-        class="space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        class="space-y-8 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
         @submit="onSubmit"
         @error="onFormError"
       >
-        <UFormField label="Compañía" name="company">
-          <CatalogDropdownSelect
-            v-model="state.company"
-            placeholder="Buscar compañía"
-            :fetcher="fetchCompanyDropdown"
-          />
-        </UFormField>
-        <UFormField label="Nombre" name="name">
-          <UInput v-model="state.name" class="w-full" />
-        </UFormField>
-        <UFormField label="Razón social" name="business_name">
-          <UInput v-model="state.business_name" class="w-full" />
-        </UFormField>
-        <UFormField label="RFC" name="rfc">
-          <UInput v-model="state.rfc" class="w-full" />
-        </UFormField>
-        <UFormField label="Teléfono" name="phone">
-          <UInput v-model="state.phone" class="w-full" />
-        </UFormField>
-        <UFormField label="Correo" name="email">
-          <UInput v-model="state.email" type="email" class="w-full" />
-        </UFormField>
-        <UFormField label="Dirección" name="address">
-          <UInput v-model="state.address" class="w-full" />
-        </UFormField>
-        <UFormField label="Vendedor (ID)" name="seller">
-          <UInput
-            :model-value="state.seller != null ? String(state.seller) : ''"
-            type="number"
-            class="w-full"
-            placeholder="ID del vendedor"
-            @update:model-value="setSellerFromInput"
-          />
-        </UFormField>
-        <UFormField label="Tipo de cliente" name="client_type">
-          <USelectMenu
-            v-model="state.client_type"
-            :items="[...CLIENT_TYPE_OPTIONS]"
-            value-key="value"
-            class="w-full"
-            variant="subtle"
-          />
-        </UFormField>
-        <UFormField label="Facturación" name="billing_type">
-          <USelectMenu
-            v-model="state.billing_type"
-            :items="[...BILLING_TYPE_OPTIONS]"
-            value-key="value"
-            class="w-full"
-            variant="subtle"
-          />
-        </UFormField>
-        <UFormField label="Tipo de comisión" name="commission_type">
-          <USelectMenu
-            v-model="state.commission_type"
-            :items="[...COMMISSION_TYPE_OPTIONS]"
-            value-key="value"
-            class="w-full"
-            variant="subtle"
-          />
-        </UFormField>
-        <UFormField label="Valor comisión" name="commission_value">
-          <UInput v-model="state.commission_value" class="w-full" />
-        </UFormField>
-        <UFormField label="Comisión fija" name="commission_fixed">
-          <UInput v-model="state.commission_fixed" class="w-full" />
-        </UFormField>
-        <UFormField label="Multiplicador de precio" name="price_multiplier">
-          <UInput v-model="state.price_multiplier" class="w-full" />
-        </UFormField>
-        <UFormField label="Notas" name="notes">
-          <textarea
-            v-model="state.notes"
-            class="w-full min-h-24 rounded-lg border border-default px-3 py-2 text-sm bg-default"
-            rows="4"
-          />
-        </UFormField>
+        <section class="space-y-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-primary">
+            Datos generales
+          </h3>
+          <UFormField label="Compañía" name="company">
+            <CatalogDropdownSelect
+              v-model="state.company"
+              placeholder="Buscar compañía"
+              :fetcher="fetchCompanyDropdown"
+            />
+          </UFormField>
+          <UFormField label="Nombre" name="name">
+            <UInput v-model="state.name" class="w-full" />
+          </UFormField>
+          <UFormField label="Razón social" name="business_name">
+            <UInput v-model="state.business_name" class="w-full" />
+          </UFormField>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <UFormField label="RFC" name="rfc">
+              <UInput v-model="state.rfc" class="w-full" />
+            </UFormField>
+            <UFormField label="Teléfono" name="phone">
+              <UInput v-model="state.phone" class="w-full" />
+            </UFormField>
+          </div>
+          <UFormField label="Email" name="email">
+            <UInput v-model="state.email" type="email" class="w-full" />
+          </UFormField>
+          <UFormField label="Dirección" name="address">
+            <UInput v-model="state.address" class="w-full" />
+          </UFormField>
+        </section>
+
+        <section class="space-y-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-primary">
+            Configuración comercial
+          </h3>
+          <UFormField label="Tipo de cliente" name="client_type">
+            <USelectMenu
+              v-model="state.client_type"
+              :items="[...CLIENT_TYPE_OPTIONS]"
+              value-key="value"
+              class="w-full"
+              variant="subtle"
+            />
+          </UFormField>
+          <UFormField label="Modo de facturación" name="billing_type">
+            <USelectMenu
+              v-model="state.billing_type"
+              :items="[...BILLING_TYPE_OPTIONS]"
+              value-key="value"
+              class="w-full"
+              variant="subtle"
+            />
+          </UFormField>
+          <UFormField label="Vendedor asignado" name="seller">
+            <UInput
+              :model-value="state.seller != null ? String(state.seller) : ''"
+              type="number"
+              class="w-full"
+              placeholder="ID del vendedor"
+              @update:model-value="setSellerFromInput"
+            />
+          </UFormField>
+          <div class="space-y-2">
+            <span class="block text-xs uppercase tracking-wider text-muted">
+              Comisión del vendedor (sobre utilidad)
+            </span>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <UFormField name="commission_type">
+                <USelectMenu
+                  v-model="state.commission_type"
+                  :items="[...COMMISSION_TYPE_OPTIONS]"
+                  value-key="value"
+                  class="w-full"
+                  variant="subtle"
+                />
+              </UFormField>
+              <UFormField name="commission_value">
+                <UInput v-model="state.commission_value" class="w-full" />
+              </UFormField>
+            </div>
+          </div>
+          <UFormField
+            label="Comisión fija de vendedor por cotización"
+            name="commission_fixed"
+            help="Se prorratea entre las partidas de la cotización al asignar el vendedor."
+          >
+            <UInput v-model="state.commission_fixed" class="w-full" />
+          </UFormField>
+          <UFormField label="Multiplicador de precios" name="price_multiplier">
+            <UInput v-model="state.price_multiplier" class="w-full" />
+            <template #help>
+              <span>Precio final = precio base del servicio × multiplicador.</span>
+              <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>
+            </template>
+          </UFormField>
+        </section>
+
+        <section class="space-y-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-primary">
+            Notas
+          </h3>
+          <UFormField label="Observaciones internas" name="notes">
+            <textarea
+              v-model="state.notes"
+              class="w-full min-h-24 rounded-lg border border-default px-3 py-2 text-sm bg-default"
+              rows="4"
+            />
+          </UFormField>
+        </section>
       </UForm>
     </template>
 
