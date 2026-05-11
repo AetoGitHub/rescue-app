@@ -1,0 +1,21 @@
+---
+description: Use Conventional Commits for commit messages
+alwaysApply: true
+---
+
+# Conventional Commits
+
+When generating commit messages, follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+
+- Use an appropriate type prefix: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, or `revert`.
+- Write a clear, specific description in the imperative mood.
+- Keep the subject line concise; add a body only when extra context is needed.
+- Use a scope when it helps identify the affected area.
+
+```text
+feat(catalog): add sectioned layout to client create slideover
+fix(auth): handle expired refresh token on login
+test(clients): cover client create validation schema
+```
+
+Avoid vague subjects such as `update files`, `fix bug`, or `changes`.
