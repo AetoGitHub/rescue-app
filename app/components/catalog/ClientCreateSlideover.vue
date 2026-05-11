@@ -10,6 +10,13 @@ import {
 } from '~/constants/catalog-select-options';
 import { clientCreateSchema } from '~/schemas/catalog-create';
 import { mapClientDetail } from '~/utils/catalog-detail-map';
+import {
+  catalogDecimalInputProps,
+  catalogIntegerInputProps,
+  formatCatalogNameInput,
+  useOptionalIntegerModel,
+  useStringNumberModel,
+} from '~/utils/catalog-form';
 import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
@@ -46,6 +53,10 @@ function emptyState(): ClientFormState {
 }
 
 const state = reactive(emptyState());
+const sellerModel = useOptionalIntegerModel(toRef(state, 'seller'));
+const commissionValueModel = useStringNumberModel(toRef(state, 'commission_value'));
+const commissionFixedModel = useStringNumberModel(toRef(state, 'commission_fixed'));
+const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier'));
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -96,14 +107,6 @@ function fetchCompanyDropdown(name: string) {
     '/api/catalogue/company/dropdown/',
     { query: { name } },
   );
-}
-
-function setSellerFromInput(v: string | number | undefined) {
-  if (v === '' || v === undefined) {
-    state.seller = undefined;
-  } else {
-    state.seller = Number(v);
-  }
 }
 
 const queryCache = useQueryCache();
@@ -188,7 +191,11 @@ async function requestSubmit() {
             />
           </UFormField>
           <UFormField label="Nombre" name="name">
-            <UInput v-model="state.name" class="w-full" />
+            <UInput
+              :model-value="state.name"
+              class="w-full uppercase"
+              @update:model-value="(value) => (state.name = formatCatalogNameInput(value))"
+            />
           </UFormField>
           <UFormField label="Razón social" name="business_name">
             <UInput v-model="state.business_name" class="w-full" />
@@ -232,12 +239,10 @@ async function requestSubmit() {
             />
           </UFormField>
           <UFormField label="Vendedor asignado" name="seller">
-            <UInput
-              :model-value="state.seller != null ? String(state.seller) : ''"
-              type="number"
-              class="w-full"
+            <UInputNumber
+              v-model="sellerModel"
+              v-bind="catalogIntegerInputProps"
               placeholder="ID del vendedor"
-              @update:model-value="setSellerFromInput"
             />
           </UFormField>
           <div class="space-y-2">
@@ -255,7 +260,10 @@ async function requestSubmit() {
                 />
               </UFormField>
               <UFormField name="commission_value">
-                <UInput v-model="state.commission_value" class="w-full" />
+                <UInputNumber
+                  v-model="commissionValueModel"
+                  v-bind="catalogDecimalInputProps"
+                />
               </UFormField>
             </div>
           </div>
@@ -264,10 +272,10 @@ async function requestSubmit() {
             name="commission_fixed"
             help="Se prorratea entre las partidas de la cotización al asignar el vendedor."
           >
-            <UInput v-model="state.commission_fixed" class="w-full" />
+            <UInputNumber v-model="commissionFixedModel" v-bind="catalogDecimalInputProps" />
           </UFormField>
           <UFormField label="Multiplicador de precios" name="price_multiplier">
-            <UInput v-model="state.price_multiplier" class="w-full" />
+            <UInputNumber v-model="priceMultiplierModel" v-bind="catalogDecimalInputProps" />
             <template #help>
               <span>Precio final = precio base del servicio × multiplicador.</span>
               <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>

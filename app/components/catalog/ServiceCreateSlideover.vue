@@ -5,6 +5,7 @@ import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.in
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { serviceCreateSchema } from '~/schemas/catalog-create';
 import { mapServiceDetail } from '~/utils/catalog-detail-map';
+import { formatCatalogNameInput } from '~/utils/catalog-form';
 import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
@@ -153,7 +154,11 @@ async function requestSubmit() {
         @error="onFormError"
       >
         <UFormField label="Nombre" name="name">
-          <UInput v-model="state.name" class="w-full" />
+          <UInput
+            :model-value="state.name"
+            class="w-full uppercase"
+            @update:model-value="(value) => (state.name = formatCatalogNameInput(value))"
+          />
         </UFormField>
         <UFormField label="Descripción" name="description">
           <textarea

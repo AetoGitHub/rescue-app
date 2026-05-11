@@ -5,12 +5,16 @@ import type {
   ContractItemUpdateBody,
   ContractUpdateBody,
 } from '~/interfaces/catalogs/contract';
+import { normalizeCatalogName } from '~/utils/catalog-form';
 
 const requiredStr = (label: string) =>
   z.string().transform((s) => s.trim()).pipe(z.string().min(1, `${label} es obligatorio`));
 
+const catalogNameField = (label: string) =>
+  requiredStr(label).transform((value) => normalizeCatalogName(value));
+
 export const companyCreateSchema = z.object({
-  name: requiredStr('El nombre'),
+  name: catalogNameField('El nombre'),
   business_name: requiredStr('La razón social'),
   rfc: requiredStr('El RFC'),
   phone: requiredStr('El teléfono'),
@@ -40,7 +44,7 @@ export const clientCreateSchema = companyCreateSchema.extend({
 });
 
 export const serviceCreateSchema = z.object({
-  name: requiredStr('El nombre'),
+  name: catalogNameField('El nombre'),
   description: requiredStr('La descripción'),
   category: z.number().int().positive({ error: 'Selecciona una categoría' }),
   unit: requiredStr('La unidad'),
@@ -48,11 +52,11 @@ export const serviceCreateSchema = z.object({
 });
 
 export const categoryCreateSchema = z.object({
-  name: requiredStr('El nombre'),
+  name: catalogNameField('El nombre'),
 });
 
 export const supplierCreateSchema = z.object({
-  name: requiredStr('El nombre'),
+  name: catalogNameField('El nombre'),
   description: z.string(),
   phone: requiredStr('El teléfono'),
   email: z

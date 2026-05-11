@@ -5,10 +5,11 @@ import type {
   SupplierCreateBody,
   SupplierServiceType,
 } from '~/interfaces/catalogs/supplier';
+import { normalizeCatalogName } from '~/utils/catalog-form';
 
 export function mapCompanyDetail(raw: Record<string, unknown>): CompanyCreateBody {
   return {
-    name: String(raw.name ?? ''),
+    name: normalizeCatalogName(String(raw.name ?? '')),
     business_name: String(raw.business_name ?? ''),
     rfc: String(raw.rfc ?? ''),
     phone: String(raw.phone ?? ''),
@@ -35,7 +36,7 @@ export function mapClientDetail(raw: Record<string, unknown>): Omit<
   const seller = raw.seller ?? raw.seller_id;
   const credit = raw.credit_balance ?? raw.credit ?? raw.credit_limit;
   return {
-    name: String(raw.name ?? ''),
+    name: normalizeCatalogName(String(raw.name ?? '')),
     business_name: String(raw.business_name ?? ''),
     rfc: String(raw.rfc ?? ''),
     phone: String(raw.phone ?? ''),
@@ -71,7 +72,7 @@ export function mapServiceDetail(raw: Record<string, unknown>): ServiceCreateBod
 } {
   const cat = raw.category ?? raw.category_id;
   return {
-    name: String(raw.name ?? ''),
+    name: normalizeCatalogName(String(raw.name ?? '')),
     description: String(raw.description ?? ''),
     category: cat != null && cat !== '' ? Number(cat) : undefined,
     unit: String(raw.unit ?? 'service'),
@@ -81,7 +82,7 @@ export function mapServiceDetail(raw: Record<string, unknown>): ServiceCreateBod
 
 export function mapCategoryDetail(raw: Record<string, unknown>): { name: string } {
   return {
-    name: String(raw.name ?? ''),
+    name: normalizeCatalogName(String(raw.name ?? '')),
   };
 }
 
@@ -106,7 +107,7 @@ export function mapSupplierDetail(
   raw: Record<string, unknown>,
 ): SupplierCreateBody {
   return {
-    name: String(raw.name ?? ''),
+    name: normalizeCatalogName(String(raw.name ?? '')),
     description: String(raw.description ?? ''),
     phone: String(raw.phone ?? ''),
     email: String(raw.email ?? ''),

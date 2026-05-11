@@ -3,6 +3,7 @@ import { useMutation, useQueryCache } from '@pinia/colada';
 import type { CategoryCreateBody } from '~/interfaces/catalogs/category';
 import { categoryCreateSchema } from '~/schemas/catalog-create';
 import { mapCategoryDetail } from '~/utils/catalog-detail-map';
+import { formatCatalogNameInput } from '~/utils/catalog-form';
 import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
@@ -137,7 +138,12 @@ async function requestSubmit() {
         @error="onFormError"
       >
         <UFormField label="Nombre" name="name">
-          <UInput v-model="state.name" class="w-full" placeholder="Ej. Grúas" />
+          <UInput
+            :model-value="state.name"
+            class="w-full uppercase"
+            placeholder="Ej. Grúas"
+            @update:model-value="(value) => (state.name = formatCatalogNameInput(value))"
+          />
         </UFormField>
       </UForm>
     </template>

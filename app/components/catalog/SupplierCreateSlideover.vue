@@ -4,6 +4,11 @@ import type { SupplierCreateBody } from '~/interfaces/catalogs/supplier';
 import { SUPPLIER_SERVICE_TYPE_OPTIONS } from '~/constants/catalog-select-options';
 import { supplierCreateSchema } from '~/schemas/catalog-create';
 import { mapSupplierDetail } from '~/utils/catalog-detail-map';
+import {
+  catalogCoordinateInputProps,
+  formatCatalogNameInput,
+  useStringNumberModel,
+} from '~/utils/catalog-form';
 import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
@@ -29,6 +34,8 @@ function emptyState(): SupplierCreateBody {
 }
 
 const state = reactive(emptyState());
+const latitudeModel = useStringNumberModel(toRef(state, 'latitude'), { decimals: 6 });
+const longitudeModel = useStringNumberModel(toRef(state, 'longitude'), { decimals: 6 });
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -150,7 +157,11 @@ async function requestSubmit() {
         @error="onFormError"
       >
         <UFormField label="Nombre" name="name">
-          <UInput v-model="state.name" class="w-full" />
+          <UInput
+            :model-value="state.name"
+            class="w-full uppercase"
+            @update:model-value="(value) => (state.name = formatCatalogNameInput(value))"
+          />
         </UFormField>
         <UFormField label="Descripción" name="description">
           <textarea
@@ -193,10 +204,18 @@ async function requestSubmit() {
         </UFormField>
         <div class="grid grid-cols-2 gap-3">
           <UFormField label="Latitud" name="latitude">
-            <UInput v-model="state.latitude" class="w-full" placeholder="19.432608" />
+            <UInputNumber
+              v-model="latitudeModel"
+              v-bind="catalogCoordinateInputProps"
+              placeholder="19.432608"
+            />
           </UFormField>
           <UFormField label="Longitud" name="longitude">
-            <UInput v-model="state.longitude" class="w-full" placeholder="-99.133209" />
+            <UInputNumber
+              v-model="longitudeModel"
+              v-bind="catalogCoordinateInputProps"
+              placeholder="-99.133209"
+            />
           </UFormField>
         </div>
       </UForm>

@@ -9,6 +9,10 @@ import {
   contractItemFormToCreateBody,
   contractItemFormToUpdateBody,
 } from '~/schemas/catalog-create';
+import {
+  catalogDecimalInputProps,
+  useStringNumberModel,
+} from '~/utils/catalog-form';
 import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const props = defineProps<{
@@ -42,6 +46,9 @@ function emptyState(): ContractItemFormState {
 }
 
 const state = reactive(emptyState());
+const priceModel = useStringNumberModel(toRef(state, 'price'));
+const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier'));
+const percentajeModel = useStringNumberModel(toRef(state, 'percentaje'));
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -168,13 +175,25 @@ async function requestSubmit() {
           />
         </UFormField>
         <UFormField label="Precio" name="price">
-          <UInput v-model="state.price" class="w-full" placeholder="500.00" />
+          <UInputNumber
+            v-model="priceModel"
+            v-bind="catalogDecimalInputProps"
+            placeholder="500.00"
+          />
         </UFormField>
         <UFormField label="Multiplicador de precio" name="price_multiplier">
-          <UInput v-model="state.price_multiplier" class="w-full" placeholder="1.00" />
+          <UInputNumber
+            v-model="priceMultiplierModel"
+            v-bind="catalogDecimalInputProps"
+            placeholder="1.00"
+          />
         </UFormField>
         <UFormField label="Porcentaje" name="percentaje">
-          <UInput v-model="state.percentaje" class="w-full" placeholder="0.00" />
+          <UInputNumber
+            v-model="percentajeModel"
+            v-bind="catalogDecimalInputProps"
+            placeholder="0.00"
+          />
         </UFormField>
         <UFormField label="Notas" name="notes">
           <textarea

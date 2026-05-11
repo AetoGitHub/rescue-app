@@ -8,6 +8,11 @@ import {
 } from '~/constants/catalog-select-options';
 import { companyCreateSchema } from '~/schemas/catalog-create';
 import { mapCompanyDetail } from '~/utils/catalog-detail-map';
+import {
+  catalogDecimalInputProps,
+  formatCatalogNameInput,
+  useStringNumberModel,
+} from '~/utils/catalog-form';
 import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
@@ -36,6 +41,9 @@ function emptyState(): CompanyCreateBody {
 }
 
 const state = reactive(emptyState());
+const commissionValueModel = useStringNumberModel(toRef(state, 'commission_value'));
+const commissionFixedModel = useStringNumberModel(toRef(state, 'commission_fixed'));
+const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier'));
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -157,7 +165,11 @@ async function requestSubmit() {
         @error="onFormError"
       >
         <UFormField label="Nombre" name="name">
-          <UInput v-model="state.name" class="w-full" />
+          <UInput
+            :model-value="state.name"
+            class="w-full uppercase"
+            @update:model-value="(value) => (state.name = formatCatalogNameInput(value))"
+          />
         </UFormField>
         <UFormField label="Razón social" name="business_name">
           <UInput v-model="state.business_name" class="w-full" />
@@ -202,13 +214,13 @@ async function requestSubmit() {
           />
         </UFormField>
         <UFormField label="Valor comisión" name="commission_value">
-          <UInput v-model="state.commission_value" class="w-full" />
+          <UInputNumber v-model="commissionValueModel" v-bind="catalogDecimalInputProps" />
         </UFormField>
         <UFormField label="Comisión fija" name="commission_fixed">
-          <UInput v-model="state.commission_fixed" class="w-full" />
+          <UInputNumber v-model="commissionFixedModel" v-bind="catalogDecimalInputProps" />
         </UFormField>
         <UFormField label="Multiplicador de precio" name="price_multiplier">
-          <UInput v-model="state.price_multiplier" class="w-full" />
+          <UInputNumber v-model="priceMultiplierModel" v-bind="catalogDecimalInputProps" />
         </UFormField>
       </UForm>
     </template>
