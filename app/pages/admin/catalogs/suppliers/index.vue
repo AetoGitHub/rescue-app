@@ -8,7 +8,9 @@ useHead({
   title: 'Proveedores',
 });
 
-const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
+const slideoverRef = ref<{
+  openEdit: (id: number) => void | Promise<void>;
+} | null>(null);
 
 function onRowSelect(_e: Event, row: TableRow<Supplier>) {
   const id = row.original.id;
@@ -19,8 +21,7 @@ function onRowSelect(_e: Event, row: TableRow<Supplier>) {
 
 const { data, isPending } = useQuery({
   key: () => ['suppliers'],
-  query: () =>
-    $fetch<PaginatedResponse<Supplier>>(`/api/supplier/list/`),
+  query: () => $fetch<PaginatedResponse<Supplier>>(`/api/supplier/list/`),
 });
 
 const serviceTypeLabel: Record<string, string> = Object.fromEntries(
@@ -76,11 +77,24 @@ const columns: TableColumn<Supplier>[] = [
             placeholder="Buscar proveedor"
             class="flex-1"
             variant="subtle"
+            :ui="{
+              base: 'bg-default',
+            }"
           />
 
-          <UButton label="Todos" variant="subtle" color="primary" />
-          <UButton label="Activos" variant="subtle" color="neutral" />
-          <UButton label="Inactivos" variant="subtle" color="neutral" />
+          <UButton
+            label="Solo confianza"
+            leading-icon="i-lucide-star"
+            variant="subtle"
+            color="neutral"
+          />
+
+          <USelect
+            :items="['all', 'auxilio_vial', 'crane', 'mechanic']"
+            default-value="all"
+            placeholder="Tipo de servicio"
+            class="min-w-48"
+          />
         </div>
 
         <UTable

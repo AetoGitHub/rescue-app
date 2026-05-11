@@ -60,6 +60,9 @@ const columns: TableColumn<Contract>[] = [
             placeholder="Buscar contrato"
             class="flex-1"
             variant="subtle"
+            :ui="{
+              base: 'bg-default',
+            }"
           />
 
           <UButton label="Todos" variant="subtle" color="primary" />

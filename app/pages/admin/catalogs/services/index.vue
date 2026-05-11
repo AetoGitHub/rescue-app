@@ -68,6 +68,9 @@ const columns: TableColumn<Service>[] = [
             placeholder="Buscar servicio"
             class="flex-1"
             variant="subtle"
+            :ui="{
+              base: 'bg-default',
+            }"
           />
 
           <UButton label="Todos" variant="subtle" color="primary" />
