@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Company } from '~/interfaces/catalogs/company';
-import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
 useHead({
   title: 'Compañías',
 });
 
 const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
+const tableRef = useTemplateRef('table');
 
 function onRowSelect(_e: Event, row: TableRow<Company>) {
   const id = row.original.id;
@@ -16,12 +16,22 @@ function onRowSelect(_e: Event, row: TableRow<Company>) {
   }
 }
 
-const apiFetch = useApiFetch();
-
-const { data, isPending } = useQuery({
+const {
+  rows,
+  asyncStatus,
+  hasNextPage,
+  loadNextPage,
+  isInitialLoading,
+} = useCatalogInfiniteList<Company>({
   key: () => ['companies'],
-  query: () =>
-    apiFetch<PaginatedResponse<Company>>(`/api/catalogue/company/list/`),
+  path: '/api/catalogue/company/list/',
+});
+
+usePaginatedTableInfiniteScroll({
+  tableRef,
+  hasNextPage,
+  loadNextPage,
+  asyncStatus,
 });
 
 const columns: TableColumn<Company>[] = [
@@ -77,9 +87,12 @@ const columns: TableColumn<Company>[] = [
         </div>
 
         <UTable
+          ref="table"
+          sticky
+          class="h-80"
           :columns="columns"
-          :data="data?.results"
-          :loading="isPending"
+          :data="rows"
+          :loading="isInitialLoading"
           :get-row-id="(row: Company) => String(row.id)"
           @select="onRowSelect"
         />

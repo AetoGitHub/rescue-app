@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Category } from '~/interfaces/catalogs/category';
-import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
 useHead({
   title: 'Categorías',
 });
 
 const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
+const tableRef = useTemplateRef('table');
 
 function onRowSelect(_e: Event, row: TableRow<Category>) {
   const id = row.original.id;
@@ -16,14 +16,23 @@ function onRowSelect(_e: Event, row: TableRow<Category>) {
   }
 }
 
-const apiFetch = useApiFetch();
-
-const { data, isPending } = useQuery({
+const {
+  rows,
+  asyncStatus,
+  hasNextPage,
+  loadNextPage,
+  isInitialLoading,
+} = useCatalogInfiniteList<Category>({
   key: () => ['catalog-categories', 'service_category'],
-  query: () =>
-    apiFetch<PaginatedResponse<Category>>(`/api/catalogue/multipurpose/list/`, {
-      query: { catalogue_type: 'service_category' },
-    }),
+  path: '/api/catalogue/multipurpose/list/',
+  query: { catalogue_type: 'service_category' },
+});
+
+usePaginatedTableInfiniteScroll({
+  tableRef,
+  hasNextPage,
+  loadNextPage,
+  asyncStatus,
 });
 
 const columns: TableColumn<Category>[] = [
@@ -75,9 +84,12 @@ const columns: TableColumn<Category>[] = [
         </div>
 
         <UTable
+          ref="table"
+          sticky
+          class="h-80"
           :columns="columns"
-          :data="data?.results"
-          :loading="isPending"
+          :data="rows"
+          :loading="isInitialLoading"
           :get-row-id="(row: Category) => String(row.id)"
           @select="onRowSelect"
         />

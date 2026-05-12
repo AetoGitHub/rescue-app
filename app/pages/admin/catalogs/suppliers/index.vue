@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Supplier } from '~/interfaces/catalogs/supplier';
-import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { SUPPLIER_SERVICE_TYPE_OPTIONS } from '~/constants/catalog-select-options';
 
 useHead({
@@ -11,6 +10,7 @@ useHead({
 const modalRef = ref<{
   openEdit: (id: number) => void | Promise<void>;
 } | null>(null);
+const tableRef = useTemplateRef('table');
 
 function onRowSelect(_e: Event, row: TableRow<Supplier>) {
   const id = row.original.id;
@@ -19,11 +19,22 @@ function onRowSelect(_e: Event, row: TableRow<Supplier>) {
   }
 }
 
-const apiFetch = useApiFetch();
-
-const { data, isPending } = useQuery({
+const {
+  rows,
+  asyncStatus,
+  hasNextPage,
+  loadNextPage,
+  isInitialLoading,
+} = useCatalogInfiniteList<Supplier>({
   key: () => ['suppliers'],
-  query: () => apiFetch<PaginatedResponse<Supplier>>(`/api/supplier/list/`),
+  path: '/api/supplier/list/',
+});
+
+usePaginatedTableInfiniteScroll({
+  tableRef,
+  hasNextPage,
+  loadNextPage,
+  asyncStatus,
 });
 
 const serviceTypeLabel: Record<string, string> = Object.fromEntries(
@@ -100,9 +111,12 @@ const columns: TableColumn<Supplier>[] = [
         </div>
 
         <UTable
+          ref="table"
+          sticky
+          class="h-80"
           :columns="columns"
-          :data="data?.results"
-          :loading="isPending"
+          :data="rows"
+          :loading="isInitialLoading"
           :get-row-id="(row: Supplier) => String(row.id)"
           @select="onRowSelect"
         />

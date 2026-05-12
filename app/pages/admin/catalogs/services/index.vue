@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Service } from '~/interfaces/catalogs/service';
-import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
 useHead({
   title: 'Servicios',
 });
 
 const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
+const tableRef = useTemplateRef('table');
 
 function onRowSelect(_e: Event, row: TableRow<Service>) {
   const id = row.original.id;
@@ -16,12 +16,22 @@ function onRowSelect(_e: Event, row: TableRow<Service>) {
   }
 }
 
-const apiFetch = useApiFetch();
-
-const { data, isPending } = useQuery({
+const {
+  rows,
+  asyncStatus,
+  hasNextPage,
+  loadNextPage,
+  isInitialLoading,
+} = useCatalogInfiniteList<Service>({
   key: () => ['services'],
-  query: () =>
-    apiFetch<PaginatedResponse<Service>>(`/api/catalogue/service/list/`),
+  path: '/api/catalogue/service/list/',
+});
+
+usePaginatedTableInfiniteScroll({
+  tableRef,
+  hasNextPage,
+  loadNextPage,
+  asyncStatus,
 });
 
 const columns: TableColumn<Service>[] = [
@@ -81,9 +91,12 @@ const columns: TableColumn<Service>[] = [
         </div>
 
         <UTable
+          ref="table"
+          sticky
+          class="h-80"
           :columns="columns"
-          :data="data?.results"
-          :loading="isPending"
+          :data="rows"
+          :loading="isInitialLoading"
           :get-row-id="(row: Service) => String(row.id)"
           @select="onRowSelect"
         />

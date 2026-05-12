@@ -2,7 +2,6 @@
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { TableColumn } from '@nuxt/ui';
 import type { ContractItem } from '~/interfaces/catalogs/contract';
-import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type { infer as ZodInfer } from 'zod';
 import {
   contractHeaderFormToUpdateBody,
@@ -98,12 +97,24 @@ const contractTitle = computed(
     clientDetail.value?.business_name || clientDetail.value?.name || 'Contrato',
 );
 
-const { data: itemsData, isPending: itemsPending } = useQuery({
+const itemsTableRef = useTemplateRef('itemsTable');
+
+const {
+  rows: itemRows,
+  asyncStatus: itemsAsyncStatus,
+  hasNextPage: itemsHasNextPage,
+  loadNextPage: loadNextItemsPage,
+  isInitialLoading: itemsInitialLoading,
+} = useCatalogInfiniteList<ContractItem>({
   key: () => ['contract-items', contractId.value],
-  query: () =>
-    apiFetch<PaginatedResponse<ContractItem>>(
-      `/api/catalogue/contract/${contractId.value}/items/`,
-    ),
+  path: `/api/catalogue/contract/${contractId.value}/items/`,
+});
+
+usePaginatedTableInfiniteScroll({
+  tableRef: itemsTableRef,
+  hasNextPage: itemsHasNextPage,
+  loadNextPage: loadNextItemsPage,
+  asyncStatus: itemsAsyncStatus,
 });
 
 const { mutate: saveHeader, asyncStatus: headerSaveStatus } = useMutation({
@@ -287,9 +298,12 @@ useHead({
               Convenios
             </h2>
             <UTable
+              ref="itemsTable"
+              sticky
+              class="h-80"
               :columns="columns"
-              :data="itemsData?.results"
-              :loading="itemsPending"
+              :data="itemRows"
+              :loading="itemsInitialLoading"
               :get-row-id="(row: ContractItem) => String(row.id)"
             />
             <div class="flex justify-end">

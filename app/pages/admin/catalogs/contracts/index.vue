@@ -3,7 +3,6 @@ import { useMutation, useQueryCache } from '@pinia/colada';
 import type { TableColumn } from '@nuxt/ui';
 import type { ClientContractRow, Contract } from '~/interfaces/catalogs/contract';
 import type { Client } from '~/interfaces/catalogs/client';
-import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { contractCreateBody } from '~/schemas/catalog-create';
 
 useHead({
@@ -13,39 +12,69 @@ useHead({
 const toast = useToast();
 const queryCache = useQueryCache();
 const creatingClientId = ref<number | null>(null);
+const tableRef = useTemplateRef('table');
 const UButton = resolveComponent('UButton');
 
-const apiFetch = useApiFetch();
-
-const { data: clientsData, isPending: clientsPending } = useQuery({
+const {
+  rows: clientRows,
+  asyncStatus: clientsAsyncStatus,
+  hasNextPage: clientsHasNextPage,
+  loadNextPage: loadNextClientsPage,
+  isInitialLoading: clientsInitialLoading,
+} = useCatalogInfiniteList<Client>({
   key: () => ['clients'],
-  query: () =>
-    apiFetch<PaginatedResponse<Client>>(`/api/catalogue/client/list/`),
+  path: '/api/catalogue/client/list/',
 });
 
-const { data: contractsData, isPending: contractsPending } = useQuery({
+const {
+  rows: contractRows,
+  asyncStatus: contractsAsyncStatus,
+  hasNextPage: contractsHasNextPage,
+  loadNextPage: loadNextContractsPage,
+} = useCatalogInfiniteList<Contract>({
   key: () => ['contracts'],
-  query: () =>
-    apiFetch<PaginatedResponse<Contract>>(`/api/catalogue/contract/list/`),
+  path: '/api/catalogue/contract/list/',
+});
+
+const hasNextPage = computed(
+  () => clientsHasNextPage.value || contractsHasNextPage.value,
+);
+
+const asyncStatus = computed(() =>
+  clientsAsyncStatus.value === 'loading'
+  || contractsAsyncStatus.value === 'loading'
+    ? 'loading'
+    : 'idle',
+);
+
+function loadNextPage() {
+  if (clientsHasNextPage.value) {
+    void loadNextClientsPage();
+  }
+  if (contractsHasNextPage.value) {
+    void loadNextContractsPage();
+  }
+}
+
+usePaginatedTableInfiniteScroll({
+  tableRef,
+  hasNextPage,
+  loadNextPage,
+  asyncStatus,
 });
 
 const rows = computed<ClientContractRow[]>(() => {
   const contractsByClientId = new Map(
-    (contractsData.value?.results ?? []).map((contract) => [
-      contract.client_id,
-      contract,
-    ]),
+    contractRows.value.map((contract) => [contract.client_id, contract]),
   );
 
-  return (clientsData.value?.results ?? []).map((client) => ({
+  return clientRows.value.map((client) => ({
     client,
     contract: contractsByClientId.get(client.id),
   }));
 });
 
-const isPending = computed(
-  () => clientsPending.value || contractsPending.value,
-);
+const isInitialLoading = computed(() => clientsInitialLoading.value);
 
 function resolveContractId(payload: unknown): number | null {
   if (payload == null || typeof payload !== 'object') return null;
@@ -177,9 +206,12 @@ const columns: TableColumn<ClientContractRow>[] = [
         </div>
 
         <UTable
+          ref="table"
+          sticky
+          class="h-80"
           :columns="columns"
           :data="rows"
-          :loading="isPending"
+          :loading="isInitialLoading"
           :get-row-id="(row: ClientContractRow) => String(row.client.id)"
         />
       </UContainer>
