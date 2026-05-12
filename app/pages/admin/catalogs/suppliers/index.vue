@@ -8,14 +8,14 @@ useHead({
   title: 'Proveedores',
 });
 
-const slideoverRef = ref<{
+const modalRef = ref<{
   openEdit: (id: number) => void | Promise<void>;
 } | null>(null);
 
 function onRowSelect(_e: Event, row: TableRow<Supplier>) {
   const id = row.original.id;
   if (id != null) {
-    void slideoverRef.value?.openEdit(id);
+    void modalRef.value?.openEdit(id);
   }
 }
 
@@ -66,7 +66,7 @@ const columns: TableColumn<Supplier>[] = [
             </p>
           </div>
 
-          <CatalogSupplierCreateSlideover ref="slideoverRef" />
+          <CatalogSupplierCreateModal ref="modalRef" />
         </div>
 
         <USeparator />

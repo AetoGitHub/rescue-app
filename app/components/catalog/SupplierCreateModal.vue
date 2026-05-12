@@ -4,11 +4,7 @@ import type { SupplierCreateBody } from '~/interfaces/catalogs/supplier';
 import { SUPPLIER_SERVICE_TYPE_OPTIONS } from '~/constants/catalog-select-options';
 import { supplierCreateSchema } from '~/schemas/catalog-create';
 import { mapSupplierDetail } from '~/utils/catalog-detail-map';
-import {
-  catalogCoordinateInputProps,
-  formatCatalogNameInput,
-  useStringNumberModel,
-} from '~/utils/catalog-form';
+import { formatCatalogNameInput } from '~/utils/catalog-form';
 import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
@@ -18,6 +14,7 @@ const editingId = ref<number | null>(null);
 const detailPending = ref(false);
 
 const isEdit = computed(() => editingId.value != null);
+const requestInitialLocation = computed(() => open.value && !isEdit.value);
 
 function emptyState(): SupplierCreateBody {
   return {
@@ -34,8 +31,6 @@ function emptyState(): SupplierCreateBody {
 }
 
 const state = reactive(emptyState());
-const latitudeModel = useStringNumberModel(toRef(state, 'latitude'), { decimals: 6 });
-const longitudeModel = useStringNumberModel(toRef(state, 'longitude'), { decimals: 6 });
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -132,9 +127,11 @@ async function requestSubmit() {
 </script>
 
 <template>
-  <USlideover
+  <UModal
     v-model:open="open"
+    scrollable
     :title="isEdit ? 'Editar proveedor' : 'Nuevo proveedor'"
+    :ui="{ content: 'max-w-2xl' }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -145,14 +142,17 @@ async function requestSubmit() {
 
     <template #body>
       <div v-if="detailPending && isEdit" class="flex justify-center py-8">
-        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-muted" />
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-8 animate-spin text-muted"
+        />
       </div>
       <UForm
         v-show="!detailPending || !isEdit"
         ref="formRef"
         :schema="supplierCreateSchema"
         :state="state"
-        class="space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        class="space-y-4"
         @submit="onSubmit"
         @error="onFormError"
       >
@@ -160,7 +160,9 @@ async function requestSubmit() {
           <UInput
             :model-value="state.name"
             class="w-full uppercase"
-            @update:model-value="(value) => (state.name = formatCatalogNameInput(value))"
+            @update:model-value="
+              (value) => (state.name = formatCatalogNameInput(value))
+            "
           />
         </UFormField>
         <UFormField label="Descripción" name="description">
@@ -187,7 +189,7 @@ async function requestSubmit() {
         </UFormField>
         <UFormField label="Confiable" name="is_trusted">
           <label class="flex items-center gap-2 text-sm">
-            <input
+            <UCheckbox
               v-model="state.is_trusted"
               type="checkbox"
               class="size-4 rounded border border-default"
@@ -202,28 +204,33 @@ async function requestSubmit() {
             rows="3"
           />
         </UFormField>
-        <div class="grid grid-cols-2 gap-3">
-          <UFormField label="Latitud" name="latitude">
-            <UInputNumber
-              v-model="latitudeModel"
-              v-bind="catalogCoordinateInputProps"
-              placeholder="19.432608"
-            />
-          </UFormField>
-          <UFormField label="Longitud" name="longitude">
-            <UInputNumber
-              v-model="longitudeModel"
-              v-bind="catalogCoordinateInputProps"
-              placeholder="-99.133209"
-            />
-          </UFormField>
-        </div>
+        <UFormField label="Ubicación" name="latitude">
+          <SharedMapPinPicker
+            v-model:latitude="state.latitude"
+            v-model:longitude="state.longitude"
+            :request-initial-location="requestInitialLocation"
+          />
+        </UFormField>
+        <UFormField name="longitude" class="sr-only">
+          <input
+            v-model="state.longitude"
+            type="hidden"
+            tabindex="-1"
+            aria-hidden="true"
+          />
+        </UFormField>
       </UForm>
     </template>
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton type="button" color="neutral" variant="subtle" label="Cancelar" @click="cancel" />
+        <UButton
+          type="button"
+          color="neutral"
+          variant="subtle"
+          label="Cancelar"
+          @click="cancel"
+        />
         <UButton
           type="button"
           label="Guardar"
@@ -233,5 +240,5 @@ async function requestSubmit() {
         />
       </div>
     </template>
-  </USlideover>
+  </UModal>
 </template>
