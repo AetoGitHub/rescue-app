@@ -6,7 +6,7 @@ type LatLng = {
   lng: number;
 };
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     center?: LatLng;
     zoom?: number;

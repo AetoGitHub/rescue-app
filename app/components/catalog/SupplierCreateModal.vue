@@ -214,7 +214,7 @@ async function requestSubmit() {
             type="hidden"
             tabindex="-1"
             aria-hidden="true"
-          />
+          >
         </UFormField>
       </UForm>
     </template>

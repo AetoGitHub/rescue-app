@@ -180,7 +180,7 @@ async function requestSubmit() {
               v-model="state.warranty"
               type="checkbox"
               class="size-4 rounded border border-default"
-            />
+            >
             <span>Incluye garantía</span>
           </label>
         </UFormField>
