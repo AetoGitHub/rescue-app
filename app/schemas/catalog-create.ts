@@ -5,6 +5,7 @@ import type {
   ContractItemUpdateBody,
   ContractUpdateBody,
 } from '~/interfaces/catalogs/contract';
+import type { CreditCreateBody } from '~/interfaces/catalogs/credit';
 
 const requiredStr = (label: string) =>
   z.string().transform((s) => s.trim()).pipe(z.string().min(1, `${label} es obligatorio`));
@@ -41,6 +42,40 @@ export const clientCreateSchema = companyCreateSchema.extend({
   seller: z.number().int().positive({ error: 'Indica el ID del vendedor' }),
   notes: z.string(),
 });
+
+const creditLimitField = requiredStr('El límite de crédito').refine(
+  (value) => {
+    const parsed = Number(value.replace(/,/g, ''));
+    return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100_000_000;
+  },
+  { error: 'El límite debe estar entre 0.00 y 100,000,000.00' },
+);
+
+export const creditFormSchema = z.object({
+  limit: creditLimitField,
+  days: z.number().int().positive({ error: 'Indica los días de crédito' }),
+  extension: z.number().int().positive({ error: 'Indica la prórroga en días' }),
+  remision_tolerance: z.number().int({
+    error: 'Indica la tolerancia de remisión en días',
+  }),
+  requires_purchase_order: z.boolean(),
+  is_blocked: z.boolean(),
+});
+
+export function creditFormToCreateBody(
+  clientId: number,
+  input: z.output<typeof creditFormSchema>,
+): CreditCreateBody {
+  return {
+    client: clientId,
+    limit: input.limit,
+    days: input.days,
+    extension: input.extension,
+    remision_tolerance: input.remision_tolerance,
+    requires_purchase_order: input.requires_purchase_order,
+    is_blocked: input.is_blocked,
+  };
+}
 
 export const serviceCreateSchema = z.object({
   name: catalogNameField('El nombre'),

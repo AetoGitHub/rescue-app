@@ -107,6 +107,16 @@ export function useOptionalIntegerModel(source: Ref<number | undefined>) {
   });
 }
 
+export function useRequiredIntegerModel(source: Ref<number>) {
+  return computed({
+    get: () => source.value,
+    set: (value: number | undefined) => {
+      source.value =
+        value == null || Number.isNaN(value) ? 0 : Math.trunc(value);
+    },
+  });
+}
+
 const catalogInputNumberBase = {
   variant: 'subtle' as const,
   class: 'w-full',

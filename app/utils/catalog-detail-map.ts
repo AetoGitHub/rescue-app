@@ -1,5 +1,6 @@
 import type { CompanyCreateBody } from '~/interfaces/catalogs/company';
 import type { ClientCreateBody } from '~/interfaces/catalogs/client';
+import type { CreditFormState } from '~/interfaces/catalogs/credit';
 import type { ServiceCreateBody } from '~/interfaces/catalogs/service';
 import type {
   SupplierCreateBody,
@@ -53,6 +54,54 @@ export function mapClientDetail(raw: Record<string, unknown>): Omit<
     credit_balance:
       credit != null && credit !== '' ? String(credit) : undefined,
   };
+}
+
+export function mapClientCreditForm(
+  raw: Record<string, unknown>,
+): Partial<CreditFormState> {
+  const nested =
+    typeof raw.credit === 'object' && raw.credit != null
+      ? (raw.credit as Record<string, unknown>)
+      : null;
+  const source = nested ?? raw;
+
+  const limit = source.limit ?? source.credit_limit ?? raw.credit_limit;
+  const days = source.days ?? source.credit_days;
+  const extension = source.extension ?? source.credit_extension;
+  const remisionTolerance =
+    source.remision_tolerance ?? source.remission_tolerance;
+  const requiresPurchaseOrder = source.requires_purchase_order;
+  const isBlocked = source.is_blocked;
+
+  const mapped: Partial<CreditFormState> = {};
+
+  if (limit != null && limit !== '') {
+    mapped.limit = String(limit);
+  }
+  if (days != null && days !== '') {
+    const parsedDays = Number(days);
+    if (Number.isFinite(parsedDays)) mapped.days = Math.trunc(parsedDays);
+  }
+  if (extension != null && extension !== '') {
+    const parsedExtension = Number(extension);
+    if (Number.isFinite(parsedExtension)) {
+      mapped.extension = Math.trunc(parsedExtension);
+    }
+  }
+  if (remisionTolerance != null && remisionTolerance !== '') {
+    const parsedTolerance = Number(remisionTolerance);
+    if (Number.isFinite(parsedTolerance)) {
+      mapped.remision_tolerance = Math.trunc(parsedTolerance);
+    }
+  }
+  if (requiresPurchaseOrder != null) {
+    mapped.requires_purchase_order = Boolean(requiresPurchaseOrder);
+  }
+  if (isBlocked != null) {
+    mapped.is_blocked = Boolean(isBlocked);
+  }
+
+  return mapped;
 }
 
 export function mapClientDetailToCreateBody(

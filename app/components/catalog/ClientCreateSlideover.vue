@@ -9,7 +9,8 @@ import {
   CLIENT_TYPE_OPTIONS,
   COMMISSION_TYPE_OPTIONS,
 } from '~/constants/catalog-select-options';
-import { clientCreateSchema } from '~/schemas/catalog-create';
+import type { CreditFormState } from '~/interfaces/catalogs/credit';
+import { clientCreateSchema, creditFormSchema, creditFormToCreateBody } from '~/schemas/catalog-create';
 
 const toast = useToast();
 
@@ -26,6 +27,17 @@ const editingId = ref<number | null>(null);
 const detailPending = ref(false);
 
 const isEdit = computed(() => editingId.value != null);
+
+function emptyCreditState(): CreditFormState {
+  return {
+    limit: '50000.00',
+    days: 30,
+    extension: 15,
+    remision_tolerance: 3,
+    requires_purchase_order: false,
+    is_blocked: false,
+  };
+}
 
 function emptyState(): ClientFormState {
   return {
@@ -48,6 +60,7 @@ function emptyState(): ClientFormState {
 }
 
 const state = reactive(emptyState());
+const creditState = reactive(emptyCreditState());
 const sellerModel = useOptionalIntegerModel(toRef(state, 'seller'));
 const commissionValueModel = useCommissionValueModel(
   toRef(state, 'commission_value'),
@@ -59,9 +72,18 @@ const commissionFixedModel = useStringNumberModel(
 const priceMultiplierModel = useStringNumberModel(
   toRef(state, 'price_multiplier'),
 );
+const creditLimitModel = useStringNumberModel(toRef(creditState, 'limit'));
+const creditDaysModel = useRequiredIntegerModel(toRef(creditState, 'days'));
+const creditExtensionModel = useRequiredIntegerModel(
+  toRef(creditState, 'extension'),
+);
+const creditRemisionToleranceModel = useRequiredIntegerModel(
+  toRef(creditState, 'remision_tolerance'),
+);
 
 function resetForm() {
   Object.assign(state, emptyState());
+  Object.assign(creditState, emptyCreditState());
 }
 
 function prepareCreate() {
@@ -76,6 +98,7 @@ async function loadDetail(id: number) {
       `/api/catalogue/client/detail/${id}/`,
     );
     Object.assign(state, emptyState(), mapClientDetail(raw));
+    Object.assign(creditState, emptyCreditState(), mapClientCreditForm(raw));
   } catch (e) {
     console.error(e);
     toast.add({
@@ -114,13 +137,43 @@ function fetchCompanyDropdown(name: string) {
 const queryCache = useQueryCache();
 
 const { mutate, asyncStatus } = useMutation({
-  mutation: ({ body, id }: { body: ClientCreateBody; id: number | null }) =>
-    id != null
-      ? $fetch(`/api/catalogue/client/update/${id}/`, {
-          method: 'PATCH',
-          body,
-        })
-      : $fetch('/api/catalogue/client/create/', { method: 'POST', body }),
+  mutation: async ({
+    body,
+    id,
+    credit,
+  }: {
+    body: ClientCreateBody;
+    id: number | null;
+    credit?: ZodInfer<typeof creditFormSchema>;
+  }) => {
+    if (id != null) {
+      return $fetch(`/api/catalogue/client/update/${id}/`, {
+        method: 'PATCH',
+        body,
+      });
+    }
+
+    const created = await $fetch<{ id: number }>('/api/catalogue/client/create/', {
+      method: 'POST',
+      body,
+    });
+
+    if (body.client_type === 'CREDIT' && credit) {
+      try {
+        await $fetch('/api/credit/create/', {
+          method: 'POST',
+          body: creditFormToCreateBody(created.id, credit),
+        });
+      } catch (error) {
+        await queryCache.invalidateQueries({ key: ['clients'] });
+        throw new Error(
+          `Cliente creado, pero no se pudo registrar el crédito. ${getFetchErrorMessage(error)}`,
+        );
+      }
+    }
+
+    return created;
+  },
   async onSuccess() {
     const wasEdit = editingId.value != null;
     toast.add({
@@ -145,6 +198,25 @@ const { mutate, asyncStatus } = useMutation({
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function onSubmit(payload: { data: ClientCreateBody }) {
+  if (!isEdit.value && payload.data.client_type === 'CREDIT') {
+    const creditResult = creditFormSchema.safeParse(creditState);
+    if (!creditResult.success) {
+      const issue = creditResult.error.issues[0];
+      toast.add({
+        title: 'Revisa los datos de crédito',
+        description: issue?.message ?? 'Completa los campos de crédito.',
+        color: 'error',
+      });
+      return;
+    }
+    mutate({
+      body: payload.data,
+      id: editingId.value,
+      credit: creditResult.data,
+    });
+    return;
+  }
+
   mutate({ body: payload.data, id: editingId.value });
 }
 
@@ -307,6 +379,52 @@ async function requestSubmit() {
               >
               <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>
             </template>
+          </UFormField>
+        </section>
+
+        <section v-if="state.client_type === 'CREDIT'" class="space-y-4">
+          <h3
+            class="text-xs font-semibold uppercase tracking-wider text-primary"
+          >
+            Crédito
+          </h3>
+          <UFormField label="Límite de crédito">
+            <UInputNumber
+              v-model="creditLimitModel"
+              v-bind="catalogCurrencyInputProps"
+            />
+          </UFormField>
+          <div class="grid grid-cols-1 gap-2">
+            <UFormField label="Días de crédito">
+              <UInputNumber
+                v-model="creditDaysModel"
+                v-bind="catalogIntegerInputProps"
+              />
+            </UFormField>
+            <UFormField label="Prórroga (días)">
+              <UInputNumber
+                v-model="creditExtensionModel"
+                v-bind="catalogIntegerInputProps"
+              />
+            </UFormField>
+            <UFormField label="Tolerancia remisión (días)">
+              <UInputNumber
+                v-model="creditRemisionToleranceModel"
+                v-bind="catalogIntegerInputProps"
+              />
+            </UFormField>
+          </div>
+          <UFormField name="requires_purchase_order">
+            <UCheckbox
+              v-model="creditState.requires_purchase_order"
+              label="El cliente requiere orden de compra"
+            />
+          </UFormField>
+          <UFormField name="is_blocked">
+            <UCheckbox
+              v-model="creditState.is_blocked"
+              label="Bloquear crédito del cliente"
+            />
           </UFormField>
         </section>
 
