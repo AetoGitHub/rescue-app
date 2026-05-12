@@ -180,15 +180,8 @@ async function requestSubmit() {
             variant="subtle"
           />
         </UFormField>
-        <UFormField label="Confiable" name="is_trusted">
-          <label class="flex items-center gap-2 text-sm">
-            <UCheckbox
-              v-model="state.is_trusted"
-              type="checkbox"
-              class="size-4 rounded border border-default"
-            />
-            <span>Proveedor confiable</span>
-          </label>
+        <UFormField name="is_trusted">
+          <UCheckbox v-model="state.is_trusted" label="Proveedor confiable" />
         </UFormField>
         <UFormField label="Notas" name="notes">
           <UTextarea v-model="state.notes" class="w-full" :rows="3" />
@@ -199,14 +192,6 @@ async function requestSubmit() {
             v-model:longitude="state.longitude"
             :request-initial-location="requestInitialLocation"
           />
-        </UFormField>
-        <UFormField name="longitude" class="sr-only">
-          <input
-            v-model="state.longitude"
-            type="hidden"
-            tabindex="-1"
-            aria-hidden="true"
-          >
         </UFormField>
       </UForm>
     </template>
