@@ -9,11 +9,6 @@ import {
   contractItemFormToCreateBody,
   contractItemFormToUpdateBody,
 } from '~/schemas/catalog-create';
-import {
-  catalogDecimalInputProps,
-  useStringNumberModel,
-} from '~/utils/catalog-form';
-import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const props = defineProps<{
   contractId: number;
@@ -47,8 +42,10 @@ function emptyState(): ContractItemFormState {
 
 const state = reactive(emptyState());
 const priceModel = useStringNumberModel(toRef(state, 'price'));
-const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier'));
-const percentajeModel = useStringNumberModel(toRef(state, 'percentaje'));
+const priceMultiplierModel = useStringNumberModel(
+  toRef(state, 'price_multiplier'),
+);
+const percentajeModel = usePercentStringNumberModel(toRef(state, 'percentaje'));
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -177,21 +174,21 @@ async function requestSubmit() {
         <UFormField label="Precio" name="price">
           <UInputNumber
             v-model="priceModel"
-            v-bind="catalogDecimalInputProps"
+            v-bind="catalogCurrencyInputProps"
             placeholder="500.00"
           />
         </UFormField>
         <UFormField label="Multiplicador de precio" name="price_multiplier">
           <UInputNumber
             v-model="priceMultiplierModel"
-            v-bind="catalogDecimalInputProps"
+            v-bind="catalogNumberInputProps"
             placeholder="1.00"
           />
         </UFormField>
         <UFormField label="Porcentaje" name="percentaje">
           <UInputNumber
             v-model="percentajeModel"
-            v-bind="catalogDecimalInputProps"
+            v-bind="catalogPercentInputProps"
             placeholder="0.00"
           />
         </UFormField>
@@ -207,7 +204,13 @@ async function requestSubmit() {
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton type="button" color="neutral" variant="subtle" label="Cancelar" @click="cancel" />
+        <UButton
+          type="button"
+          color="neutral"
+          variant="subtle"
+          label="Cancelar"
+          @click="cancel"
+        />
         <UButton
           type="button"
           label="Guardar"

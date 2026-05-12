@@ -5,7 +5,6 @@ import type {
   SupplierCreateBody,
   SupplierServiceType,
 } from '~/interfaces/catalogs/supplier';
-import { normalizeCatalogName } from '~/utils/catalog-form';
 
 export function mapCompanyDetail(raw: Record<string, unknown>): CompanyCreateBody {
   return {

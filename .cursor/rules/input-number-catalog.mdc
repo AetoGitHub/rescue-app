@@ -1,0 +1,42 @@
+---
+description: UInputNumber presets, formatting, and increment/decrement defaults
+globs: app/**/*.{vue,ts}
+alwaysApply: false
+---
+
+# UInputNumber in catalog forms
+
+Use shared presets and models from `app/utils/catalog-form.ts` (auto-imported). Do not duplicate `formatOptions` in components unless you first add or extend a preset there.
+
+## Increment / decrement
+
+`UInputNumber` shows increment and decrement controls by default. In this project, presets set `increment: false` and `decrement: false`.
+
+- Keep those flags off unless the user explicitly asks for increment/decrement controls on that field.
+- When they do ask, set `increment: true` and `decrement: true` only on that input (or on a dedicated preset), not globally.
+
+## Format by field meaning
+
+Bind the preset that matches the field semantics with `v-bind`:
+
+| Meaning | Preset | Model helper |
+| --- | --- | --- |
+| Money (MXN) | `catalogCurrencyInputProps` | `useStringNumberModel` |
+| Percentage | `catalogPercentInputProps` | `usePercentStringNumberModel` |
+| Decimal factor / generic decimal | `catalogNumberInputProps` | `useStringNumberModel` |
+| Integer ID / count | `catalogIntegerInputProps` | `useOptionalIntegerModel` or `useStringNumberModel` as needed |
+| Coordinates | `catalogCoordinateInputProps` | `useStringNumberModel` with 6 decimals |
+| Commission value by type | `catalogCommissionValueInputProps(commissionType)` | `useCommissionValueModel` |
+
+For `commission_value`, remount or rebind when `commission_type` changes so currency vs percent formatting does not stick.
+
+## API contract
+
+Keep catalog payloads as strings unless the API type says otherwise. Formatting and percent scaling stay in the model helpers; do not change Zod schemas or detail mappers only to satisfy display.
+
+```vue
+<UInputNumber
+  v-model="priceModel"
+  v-bind="catalogCurrencyInputProps"
+/>
+```

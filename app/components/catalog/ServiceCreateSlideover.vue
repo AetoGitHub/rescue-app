@@ -4,9 +4,6 @@ import type { ServiceCreateBody } from '~/interfaces/catalogs/service';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { serviceCreateSchema } from '~/schemas/catalog-create';
-import { mapServiceDetail } from '~/utils/catalog-detail-map';
-import { formatCatalogNameInput } from '~/utils/catalog-form';
-import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
 

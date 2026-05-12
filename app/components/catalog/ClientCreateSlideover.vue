@@ -3,25 +3,20 @@ import { useMutation, useQueryCache } from '@pinia/colada';
 import type { ClientCreateBody } from '~/interfaces/catalogs/client';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
+import type { infer as ZodInfer } from 'zod';
 import {
   BILLING_TYPE_OPTIONS,
   CLIENT_TYPE_OPTIONS,
   COMMISSION_TYPE_OPTIONS,
 } from '~/constants/catalog-select-options';
 import { clientCreateSchema } from '~/schemas/catalog-create';
-import { mapClientDetail } from '~/utils/catalog-detail-map';
-import {
-  catalogDecimalInputProps,
-  catalogIntegerInputProps,
-  formatCatalogNameInput,
-  useOptionalIntegerModel,
-  useStringNumberModel,
-} from '~/utils/catalog-form';
-import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
 
-type ClientFormState = Omit<ClientCreateBody, 'company' | 'seller'> & {
+type ClientFormState = Omit<
+  ZodInfer<typeof clientCreateSchema>,
+  'company' | 'seller'
+> & {
   company?: number;
   seller?: number;
 };
@@ -54,9 +49,16 @@ function emptyState(): ClientFormState {
 
 const state = reactive(emptyState());
 const sellerModel = useOptionalIntegerModel(toRef(state, 'seller'));
-const commissionValueModel = useStringNumberModel(toRef(state, 'commission_value'));
-const commissionFixedModel = useStringNumberModel(toRef(state, 'commission_fixed'));
-const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier'));
+const commissionValueModel = useCommissionValueModel(
+  toRef(state, 'commission_value'),
+  toRef(state, 'commission_type'),
+);
+const commissionFixedModel = useStringNumberModel(
+  toRef(state, 'commission_fixed'),
+);
+const priceMultiplierModel = useStringNumberModel(
+  toRef(state, 'price_multiplier'),
+);
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -164,11 +166,19 @@ async function requestSubmit() {
     v-model:open="open"
     :title="isEdit ? 'Editar cliente' : 'Nuevo cliente'"
   >
-    <UButton icon="i-lucide-plus" label="Nuevo cliente" size="lg" @click="prepareCreate" />
+    <UButton
+      icon="i-lucide-plus"
+      label="Nuevo cliente"
+      size="lg"
+      @click="prepareCreate"
+    />
 
     <template #body>
       <div v-if="detailPending && isEdit" class="flex justify-center py-8">
-        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-muted" />
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-8 animate-spin text-muted"
+        />
       </div>
       <UForm
         v-show="!detailPending || !isEdit"
@@ -180,7 +190,9 @@ async function requestSubmit() {
         @error="onFormError"
       >
         <section class="space-y-4">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-primary">
+          <h3
+            class="text-xs font-semibold uppercase tracking-wider text-primary"
+          >
             Datos generales
           </h3>
           <UFormField label="Compañía" name="company">
@@ -194,7 +206,9 @@ async function requestSubmit() {
             <UInput
               :model-value="state.name"
               class="w-full uppercase"
-              @update:model-value="(value) => (state.name = formatCatalogNameInput(value))"
+              @update:model-value="
+                (value) => (state.name = formatCatalogNameInput(value))
+              "
             />
           </UFormField>
           <UFormField label="Razón social" name="business_name">
@@ -217,7 +231,9 @@ async function requestSubmit() {
         </section>
 
         <section class="space-y-4">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-primary">
+          <h3
+            class="text-xs font-semibold uppercase tracking-wider text-primary"
+          >
             Configuración comercial
           </h3>
           <UFormField label="Tipo de cliente" name="client_type">
@@ -261,8 +277,11 @@ async function requestSubmit() {
               </UFormField>
               <UFormField name="commission_value">
                 <UInputNumber
+                  :key="state.commission_type"
                   v-model="commissionValueModel"
-                  v-bind="catalogDecimalInputProps"
+                  v-bind="
+                    catalogCommissionValueInputProps(state.commission_type)
+                  "
                 />
               </UFormField>
             </div>
@@ -272,19 +291,29 @@ async function requestSubmit() {
             name="commission_fixed"
             help="Se prorratea entre las partidas de la cotización al asignar el vendedor."
           >
-            <UInputNumber v-model="commissionFixedModel" v-bind="catalogDecimalInputProps" />
+            <UInputNumber
+              v-model="commissionFixedModel"
+              v-bind="catalogCurrencyInputProps"
+            />
           </UFormField>
           <UFormField label="Multiplicador de precios" name="price_multiplier">
-            <UInputNumber v-model="priceMultiplierModel" v-bind="catalogDecimalInputProps" />
+            <UInputNumber
+              v-model="priceMultiplierModel"
+              v-bind="catalogNumberInputProps"
+            />
             <template #help>
-              <span>Precio final = precio base del servicio × multiplicador.</span>
+              <span
+                >Precio final = precio base del servicio × multiplicador.</span
+              >
               <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>
             </template>
           </UFormField>
         </section>
 
         <section class="space-y-4">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-primary">
+          <h3
+            class="text-xs font-semibold uppercase tracking-wider text-primary"
+          >
             Notas
           </h3>
           <UFormField label="Observaciones internas" name="notes">
@@ -300,7 +329,13 @@ async function requestSubmit() {
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton type="button" color="neutral" variant="subtle" label="Cancelar" @click="cancel" />
+        <UButton
+          type="button"
+          color="neutral"
+          variant="subtle"
+          label="Cancelar"
+          @click="cancel"
+        />
         <UButton
           type="button"
           label="Guardar"

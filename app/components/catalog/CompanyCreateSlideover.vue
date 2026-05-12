@@ -7,13 +7,6 @@ import {
   COMMISSION_TYPE_OPTIONS,
 } from '~/constants/catalog-select-options';
 import { companyCreateSchema } from '~/schemas/catalog-create';
-import { mapCompanyDetail } from '~/utils/catalog-detail-map';
-import {
-  catalogDecimalInputProps,
-  formatCatalogNameInput,
-  useStringNumberModel,
-} from '~/utils/catalog-form';
-import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
 
@@ -41,7 +34,10 @@ function emptyState(): CompanyCreateBody {
 }
 
 const state = reactive(emptyState());
-const commissionValueModel = useStringNumberModel(toRef(state, 'commission_value'));
+const commissionValueModel = useCommissionValueModel(
+  toRef(state, 'commission_value'),
+  toRef(state, 'commission_type'),
+);
 const commissionFixedModel = useStringNumberModel(toRef(state, 'commission_fixed'));
 const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier'));
 
@@ -214,13 +210,23 @@ async function requestSubmit() {
           />
         </UFormField>
         <UFormField label="Valor comisión" name="commission_value">
-          <UInputNumber v-model="commissionValueModel" v-bind="catalogDecimalInputProps" />
+          <UInputNumber
+            :key="state.commission_type"
+            v-model="commissionValueModel"
+            v-bind="catalogCommissionValueInputProps(state.commission_type)"
+          />
         </UFormField>
         <UFormField label="Comisión fija" name="commission_fixed">
-          <UInputNumber v-model="commissionFixedModel" v-bind="catalogDecimalInputProps" />
+          <UInputNumber
+            v-model="commissionFixedModel"
+            v-bind="catalogCurrencyInputProps"
+          />
         </UFormField>
         <UFormField label="Multiplicador de precio" name="price_multiplier">
-          <UInputNumber v-model="priceMultiplierModel" v-bind="catalogDecimalInputProps" />
+          <UInputNumber
+            v-model="priceMultiplierModel"
+            v-bind="catalogNumberInputProps"
+          />
         </UFormField>
       </UForm>
     </template>

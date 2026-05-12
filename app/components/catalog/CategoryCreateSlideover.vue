@@ -2,9 +2,6 @@
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { CategoryCreateBody } from '~/interfaces/catalogs/category';
 import { categoryCreateSchema } from '~/schemas/catalog-create';
-import { mapCategoryDetail } from '~/utils/catalog-detail-map';
-import { formatCatalogNameInput } from '~/utils/catalog-form';
-import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
 

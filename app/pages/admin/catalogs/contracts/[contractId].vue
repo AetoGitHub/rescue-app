@@ -9,11 +9,6 @@ import {
   contractHeaderUpdateSchema,
 } from '~/schemas/catalog-create';
 import { CLIENT_TYPE_OPTIONS } from '~/constants/catalog-select-options';
-import {
-  mapClientDetail,
-  mapContractHeaderDetail,
-} from '~/utils/catalog-detail-map';
-import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const route = useRoute();
 const toast = useToast();

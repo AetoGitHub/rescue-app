@@ -3,9 +3,6 @@ import { useMutation, useQueryCache } from '@pinia/colada';
 import type { SupplierCreateBody } from '~/interfaces/catalogs/supplier';
 import { SUPPLIER_SERVICE_TYPE_OPTIONS } from '~/constants/catalog-select-options';
 import { supplierCreateSchema } from '~/schemas/catalog-create';
-import { mapSupplierDetail } from '~/utils/catalog-detail-map';
-import { formatCatalogNameInput } from '~/utils/catalog-form';
-import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 const toast = useToast();
 

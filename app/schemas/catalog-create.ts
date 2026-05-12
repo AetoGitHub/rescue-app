@@ -5,7 +5,6 @@ import type {
   ContractItemUpdateBody,
   ContractUpdateBody,
 } from '~/interfaces/catalogs/contract';
-import { normalizeCatalogName } from '~/utils/catalog-form';
 
 const requiredStr = (label: string) =>
   z.string().transform((s) => s.trim()).pipe(z.string().min(1, `${label} es obligatorio`));

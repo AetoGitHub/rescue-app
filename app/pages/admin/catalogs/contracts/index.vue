@@ -5,7 +5,6 @@ import type { ClientContractRow, Contract } from '~/interfaces/catalogs/contract
 import type { Client } from '~/interfaces/catalogs/client';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { contractCreateBody } from '~/schemas/catalog-create';
-import { getFetchErrorMessage } from '~/utils/fetch-error-message';
 
 useHead({
   title: 'Contratos',
