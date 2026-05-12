@@ -50,4 +50,10 @@ export default defineNuxtConfig({
       googleMapsApiKey: '',
     },
   },
+
+  vite: {
+    optimizeDeps: {
+      include: ['zod', 'vue3-google-map'],
+    },
+  },
 });
