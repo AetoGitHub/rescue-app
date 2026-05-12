@@ -31,6 +31,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@iconify-json/lucide": "^1.2.105"
+    "@iconify-json/lucide": "^1.2.105",
+    "@types/google.maps": "^3.64.0"
   }
 }

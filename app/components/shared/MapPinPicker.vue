@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Marker } from 'vue3-google-map';
+import { AdvancedMarker } from 'vue3-google-map';
 
 const latitude = defineModel<string>('latitude', { default: '' });
 const longitude = defineModel<string>('longitude', { default: '' });
@@ -29,8 +29,8 @@ function parseCoordinate(value: string | undefined): number | undefined {
 
 const hasCoordinates = computed(() => {
   return (
-    parseCoordinate(latitude.value) != null
-    && parseCoordinate(longitude.value) != null
+    parseCoordinate(latitude.value) != null &&
+    parseCoordinate(longitude.value) != null
   );
 });
 
@@ -80,19 +80,22 @@ async function requestCurrentLocation() {
 
   geolocationPending.value = true;
   try {
-    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      });
-    });
+    const position = await new Promise<GeolocationPosition>(
+      (resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      },
+    );
     setCoordinates(position.coords.latitude, position.coords.longitude);
   } catch (error) {
     console.error(error);
     toast.add({
       title: 'No se pudo obtener tu ubicación',
-      description: 'Coloca el pin manualmente en el mapa o vuelve a intentarlo.',
+      description:
+        'Coloca el pin manualmente en el mapa o vuelve a intentarlo.',
       color: 'warning',
     });
   } finally {
@@ -124,7 +127,8 @@ watch(
       v-if="!config.public.googleMapsApiKey"
       class="rounded-lg border border-dashed border-default px-4 py-6 text-sm text-muted"
     >
-      Configura `NUXT_PUBLIC_GOOGLE_MAPS_API_KEY` para seleccionar la ubicación en el mapa.
+      Configura `NUXT_PUBLIC_GOOGLE_MAPS_API_KEY` para seleccionar la ubicación
+      en el mapa.
     </div>
     <template v-else>
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -149,10 +153,9 @@ watch(
           map-class="h-72 w-full"
           @click="onMapClick"
         >
-          <Marker
+          <AdvancedMarker
             :options="{
               position: markerPosition,
-              draggable: true,
             }"
             @dragend="onMarkerDragEnd"
           />

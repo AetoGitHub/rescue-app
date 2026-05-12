@@ -27,12 +27,15 @@ const emit = defineEmits<{
 }>();
 
 const config = useRuntimeConfig();
+
+const mapId = '21013da77446513d35236d00';
 </script>
 
 <template>
   <ClientOnly>
     <GoogleMap
       v-if="config.public.googleMapsApiKey"
+      :map-id="mapId"
       :api-key="config.public.googleMapsApiKey"
       :center="center"
       :zoom="zoom"
