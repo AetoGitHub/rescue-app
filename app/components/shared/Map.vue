@@ -15,7 +15,7 @@ withDefaults(
   }>(),
   {
     center: () => ({ lat: 19.432608, lng: -99.133209 }),
-    zoom: 14,
+    zoom: 10,
     gestureHandling: 'greedy',
     mapClass: 'h-full w-full',
   },
@@ -41,6 +41,8 @@ const mapId = '21013da77446513d35236d00';
       :zoom="zoom"
       :gesture-handling="gestureHandling"
       :class="mapClass"
+      :map-type-control="false"
+      :street-view-control="false"
       @click="emit('click', $event)"
       @idle="emit('idle')"
     >

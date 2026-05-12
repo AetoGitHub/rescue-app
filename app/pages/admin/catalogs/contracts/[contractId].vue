@@ -327,11 +327,7 @@ useHead({
               @error="onHeaderFormError"
             >
               <UFormField label="Notas" name="notes">
-                <textarea
-                  v-model="headerState.notes"
-                  class="w-full min-h-24 rounded-lg border border-default px-3 py-2 text-sm bg-default"
-                  rows="4"
-                />
+                <UTextarea v-model="headerState.notes" class="w-full" :rows="4" />
               </UFormField>
             </UForm>
           </UPageCard>

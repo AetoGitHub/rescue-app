@@ -193,11 +193,7 @@ async function requestSubmit() {
           />
         </UFormField>
         <UFormField label="Notas" name="notes">
-          <textarea
-            v-model="state.notes"
-            class="w-full min-h-20 rounded-lg border border-default px-3 py-2 text-sm bg-default"
-            rows="3"
-          />
+          <UTextarea v-model="state.notes" class="w-full" :rows="3" />
         </UFormField>
       </UForm>
     </template>

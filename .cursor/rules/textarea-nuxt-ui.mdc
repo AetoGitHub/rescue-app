@@ -1,0 +1,32 @@
+---
+description: Use UTextarea instead of native textarea in app forms
+globs: app/**/*.vue
+alwaysApply: false
+---
+
+# UTextarea in app forms
+
+Use Nuxt UI `UTextarea` for multi-line text inside forms. Do not use native `<textarea>`.
+
+## Pattern
+
+- Keep `UFormField` + `v-model` on the field model.
+- Add `class="w-full"` like other catalog inputs.
+- Set `:rows` when the field should not use the default height of `3`.
+- Do not add manual border, background, or padding classes that duplicate Nuxt UI styling.
+
+```vue
+<!-- BAD -->
+<UFormField label="Notas" name="notes">
+  <textarea
+    v-model="state.notes"
+    class="w-full min-h-24 rounded-lg border border-default px-3 py-2 text-sm bg-default"
+    rows="4"
+  />
+</UFormField>
+
+<!-- GOOD -->
+<UFormField label="Notas" name="notes">
+  <UTextarea v-model="state.notes" class="w-full" :rows="4" />
+</UFormField>
+```

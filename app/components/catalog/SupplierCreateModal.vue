@@ -163,11 +163,7 @@ async function requestSubmit() {
           />
         </UFormField>
         <UFormField label="Descripción" name="description">
-          <textarea
-            v-model="state.description"
-            class="w-full min-h-24 rounded-lg border border-default px-3 py-2 text-sm bg-default"
-            rows="4"
-          />
+          <UTextarea v-model="state.description" class="w-full" :rows="4" />
         </UFormField>
         <UFormField label="Teléfono" name="phone">
           <UInput v-model="state.phone" class="w-full" />
@@ -195,11 +191,7 @@ async function requestSubmit() {
           </label>
         </UFormField>
         <UFormField label="Notas" name="notes">
-          <textarea
-            v-model="state.notes"
-            class="w-full min-h-24 rounded-lg border border-default px-3 py-2 text-sm bg-default"
-            rows="3"
-          />
+          <UTextarea v-model="state.notes" class="w-full" :rows="3" />
         </UFormField>
         <UFormField label="Ubicación" name="latitude">
           <SharedMapPinPicker
