@@ -61,7 +61,6 @@ function emptyState(): ClientFormState {
 
 const state = reactive(emptyState());
 const creditState = reactive(emptyCreditState());
-const sellerModel = useOptionalIntegerModel(toRef(state, 'seller'));
 const commissionValueModel = useCommissionValueModel(
   toRef(state, 'commission_value'),
   toRef(state, 'commission_type'),
@@ -131,6 +130,13 @@ function fetchCompanyDropdown(name: string) {
   return $fetch<PaginatedResponse<CatalogDropdownRow>>(
     '/api/catalogue/company/dropdown/',
     { query: { name } },
+  );
+}
+
+function fetchSellerDropdown(name: string) {
+  return $fetch<PaginatedResponse<CatalogDropdownRow>>(
+    '/api/auth/user/dropdown/',
+    { query: { role: 'seller', name } },
   );
 }
 
@@ -344,10 +350,10 @@ async function requestSubmit() {
             />
           </UFormField>
           <UFormField label="Vendedor asignado" name="seller">
-            <UInputNumber
-              v-model="sellerModel"
-              v-bind="catalogIntegerInputProps"
-              placeholder="ID del vendedor"
+            <CatalogDropdownSelect
+              v-model="state.seller"
+              placeholder="Buscar vendedor"
+              :fetcher="fetchSellerDropdown"
             />
           </UFormField>
           <div class="space-y-2">

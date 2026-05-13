@@ -43,7 +43,7 @@ export const companyCreateSchema = z.object({
 
 export const clientCreateSchema = companyCreateSchema.extend({
   company: z.number().int().positive({ error: 'Selecciona una compañía' }),
-  seller: z.number().int().positive({ error: 'Indica el ID del vendedor' }),
+  seller: z.number().int().positive({ error: 'Selecciona un vendedor' }),
   notes: z.string(),
 });
 
