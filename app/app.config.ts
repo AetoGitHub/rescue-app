@@ -6,7 +6,7 @@ export default defineAppConfig({
     },
     button: {
       slots: {
-        label: 'tracking-wider uppercase',
+        label: 'tracking-wider font-semibold uppercase',
       },
     },
     dashboardPanel: {
