@@ -8,7 +8,11 @@ import {
   type UserFormOutputCreate,
   type UserFormOutputUpdate,
 } from '~/schemas/user-create';
-import { mapUserDetail, type UserFormState } from '~/utils/user-detail-map';
+import {
+  formatUsernameInput,
+  mapUserDetail,
+  type UserFormState,
+} from '~/utils/user-detail-map';
 import { formatMexicoPhoneInput, MEXICO_PHONE_MASK } from '~/utils/catalog-form';
 
 const toast = useToast();
@@ -200,9 +204,10 @@ async function requestSubmit() {
       >
         <UFormField label="Usuario" name="username">
           <UInput
-            v-model="state.username"
-            class="w-full"
+            :model-value="state.username"
+            class="w-full uppercase"
             autocomplete="username"
+            @update:model-value="(v) => (state.username = formatUsernameInput(v))"
           />
         </UFormField>
         <UFormField label="Nombre" name="first_name">

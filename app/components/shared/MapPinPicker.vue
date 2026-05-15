@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { AdvancedMarker } from 'vue3-google-map';
 
-const latitude = defineModel<string>('latitude', { default: '' });
-const longitude = defineModel<string>('longitude', { default: '' });
+const latitude = defineModel<string | null>('latitude', { default: null });
+const longitude = defineModel<string | null>('longitude', { default: null });
 
 const props = withDefaults(
   defineProps<{
@@ -20,8 +20,9 @@ const DEFAULT_CENTER = { lat: 19.432608, lng: -99.133209 };
 const mapCenter = ref({ ...DEFAULT_CENTER });
 const geolocationPending = ref(false);
 
-function parseCoordinate(value: string | undefined): number | undefined {
-  const trimmed = (value ?? '').trim();
+function parseCoordinate(value: string | null | undefined): number | undefined {
+  if (value == null) return undefined;
+  const trimmed = String(value).trim();
   if (trimmed === '') return undefined;
   const parsed = Number(trimmed.replace(/,/g, ''));
   return Number.isFinite(parsed) ? parsed : undefined;
@@ -34,13 +35,13 @@ const hasCoordinates = computed(() => {
   );
 });
 
-const markerPosition = computed(() => {
+const markerLatLng = computed(() => {
   const lat = parseCoordinate(latitude.value);
   const lng = parseCoordinate(longitude.value);
   if (lat != null && lng != null) {
     return { lat, lng };
   }
-  return mapCenter.value;
+  return null;
 });
 
 function setCoordinates(lat: number, lng: number) {
@@ -65,6 +66,8 @@ function syncMapCenterFromModel() {
   const lng = parseCoordinate(longitude.value);
   if (lat != null && lng != null) {
     mapCenter.value = { lat, lng };
+  } else {
+    mapCenter.value = { ...DEFAULT_CENTER };
   }
 }
 
@@ -95,7 +98,7 @@ async function requestCurrentLocation() {
     toast.add({
       title: 'No se pudo obtener tu ubicación',
       description:
-        'Coloca el pin manualmente en el mapa o vuelve a intentarlo.',
+        'Marca el punto haciendo clic en el mapa o vuelve a intentarlo.',
       color: 'warning',
     });
   } finally {
@@ -133,7 +136,7 @@ watch(
     <template v-else>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <p class="text-sm text-muted">
-          Haz clic en el mapa o arrastra el pin para definir la ubicación.
+          Haz clic en el mapa para marcar la ubicación.
         </p>
         <UButton
           type="button"
@@ -154,8 +157,9 @@ watch(
           @click="onMapClick"
         >
           <AdvancedMarker
+            v-if="markerLatLng"
             :options="{
-              position: markerPosition,
+              position: markerLatLng,
             }"
             @dragend="onMarkerDragEnd"
           />

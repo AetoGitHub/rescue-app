@@ -37,6 +37,12 @@ const optionalCoordString = (label: string, min: number, max: number) =>
       }
     });
 
+const coordFromNullable = (label: string, min: number, max: number) =>
+  z.preprocess(
+    (v) => (v == null ? '' : String(v)),
+    optionalCoordString(label, min, max),
+  );
+
 export const rescueCreateFormSchema = z
   .object({
     service_type: z.enum(RESCUE_SERVICE_TYPES, {
@@ -44,8 +50,8 @@ export const rescueCreateFormSchema = z
     }),
     client: z.number().int().positive({ error: 'Selecciona un cliente' }),
     general_public: z.boolean(),
-    location_latitude: optionalCoordString('La latitud', -90, 90),
-    location_longitude: optionalCoordString('La longitud', -180, 180),
+    location_latitude: coordFromNullable('La latitud', -90, 90),
+    location_longitude: coordFromNullable('La longitud', -180, 180),
     location_description: z.string().transform((s) => s.trim()),
     internal_notes: z.string().transform((s) => s.trim()),
   })
@@ -73,8 +79,8 @@ export function rescueFormToCreateBody(
     client: data.client,
     general_public: data.general_public,
     supplier: null,
-    location_latitude: data.location_latitude.trim(),
-    location_longitude: data.location_longitude.trim(),
+    location_latitude: String(data.location_latitude ?? '').trim(),
+    location_longitude: String(data.location_longitude ?? '').trim(),
     location_description: data.location_description,
     internal_notes: data.internal_notes,
   };

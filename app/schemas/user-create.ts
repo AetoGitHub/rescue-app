@@ -4,13 +4,17 @@ const userRoleEnum = z.enum(['admin', 'operator', 'seller', 'client'], {
   error: 'Selecciona un rol',
 });
 
-const requiredStr = (label: string) =>
-  z.string().transform((s) => s.trim()).pipe(z.string().min(1, `${label} es obligatorio`));
-
-const usernameField = requiredStr('El usuario').refine(
-  (s) => /^[\w.@+-]+$/.test(s),
-  { error: 'Solo letras, números y . @ + - _' },
-);
+const usernameField = z
+  .string()
+  .transform((s) => s.trim().replace(/\s/g, '').toUpperCase())
+  .pipe(
+    z
+      .string()
+      .min(1, 'El usuario es obligatorio')
+      .regex(/^[A-Z0-9._@+-]+$/, {
+        error: 'Solo mayúsculas, números y . _ @ + - (sin espacios)',
+      }),
+  );
 
 const phoneField = z
   .string()

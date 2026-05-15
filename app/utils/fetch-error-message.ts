@@ -33,6 +33,72 @@ function stringifyFieldErrors(data: Record<string, unknown>): string | null {
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
+function readErrorDataAsString(data: Record<string, unknown>): string | null {
+  const fromDetail = stringifyDetail(data.detail);
+  if (fromDetail) return fromDetail;
+
+  const msg = data.message;
+  if (typeof msg === 'string' && msg.trim()) return msg.trim();
+
+  const nfe = stringifyDetail(data.non_field_errors);
+  if (nfe) return nfe;
+
+  return stringifyFieldErrors(data);
+}
+
+function containsLikelyUrl(text: string): boolean {
+  return /https?:\/\//i.test(text);
+}
+
+function getFetchStatusCode(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const e = error as Record<string, unknown>;
+  const c = e.statusCode ?? e.status;
+  if (typeof c === 'number' && Number.isFinite(c)) return c;
+  return undefined;
+}
+
+/**
+ * Mensaje para pantalla de login: sin URLs ni `err.message` de ofetch/Nitro.
+ * Prioriza códigos HTTP; solo usa texto del cuerpo JSON si no parece URL.
+ */
+export function getSafeLoginErrorMessage(error: unknown): string {
+  const code = getFetchStatusCode(error);
+
+  if (code === 401 || code === 403 || code === 400) {
+    return 'Usuario o contraseña incorrectos.';
+  }
+
+  if (code != null && code >= 500) {
+    return 'El servicio no está disponible. Intenta más tarde.';
+  }
+
+  if (!error || typeof error !== 'object') {
+    return 'No se pudo iniciar sesión. Intenta de nuevo.';
+  }
+
+  const err = error as Record<string, unknown>;
+  const data = err.data;
+
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    const fromApi = readErrorDataAsString(data as Record<string, unknown>);
+    if (fromApi && !containsLikelyUrl(fromApi)) {
+      return fromApi;
+    }
+  }
+
+  const msg = typeof err.message === 'string' ? err.message : '';
+  if (
+    /fetch failed|failed to fetch|network|load failed|ECONNREFUSED|ETIMEDOUT/i.test(
+      msg,
+    )
+  ) {
+    return 'No se pudo conectar con el servidor. Comprueba tu conexión.';
+  }
+
+  return 'No se pudo iniciar sesión. Intenta de nuevo.';
+}
+
 export function getFetchErrorMessage(error: unknown): string {
   if (!error || typeof error !== 'object') {
     return 'No se pudo completar la operación.';
@@ -42,19 +108,8 @@ export function getFetchErrorMessage(error: unknown): string {
   const data = err.data;
 
   if (data && typeof data === 'object' && !Array.isArray(data)) {
-    const d = data as Record<string, unknown>;
-
-    const fromDetail = stringifyDetail(d.detail);
-    if (fromDetail) return fromDetail;
-
-    const msg = d.message;
-    if (typeof msg === 'string' && msg.trim()) return msg.trim();
-
-    const nfe = stringifyDetail(d.non_field_errors);
-    if (nfe) return nfe;
-
-    const fields = stringifyFieldErrors(d);
-    if (fields) return fields;
+    const fromData = readErrorDataAsString(data as Record<string, unknown>);
+    if (fromData) return fromData;
   }
 
   if (typeof err.statusMessage === 'string' && err.statusMessage.trim()) {

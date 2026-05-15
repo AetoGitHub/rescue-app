@@ -28,6 +28,8 @@ const schema = z.object({
 
 type Schema = z.output<typeof schema>;
 
+const loginErrorMessage = ref<string | null>(null);
+
 const { mutate, asyncStatus } = useMutation({
   mutation: ({ username, password }: { username: string; password: string }) =>
     $fetch('/api/auth/login', {
@@ -38,11 +40,17 @@ const { mutate, asyncStatus } = useMutation({
       },
     }),
   onSuccess: () => {
+    loginErrorMessage.value = null;
     navigateTo('/admin/dashboard');
+  },
+  onError: (e) => {
+    console.error(e);
+    loginErrorMessage.value = getSafeLoginErrorMessage(e);
   },
 });
 
 function onSubmit(payload: FormSubmitEvent<Schema>) {
+  loginErrorMessage.value = null;
   mutate({
     ...payload.data,
   });
@@ -68,6 +76,14 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
         }"
         :loading="asyncStatus === 'loading'"
         @submit="onSubmit"
+      />
+      <UAlert
+        v-if="loginErrorMessage"
+        class="mb-4"
+        color="error"
+        variant="subtle"
+        title="No se pudo iniciar sesión"
+        :description="loginErrorMessage"
       />
     </UPageCard>
   </div>

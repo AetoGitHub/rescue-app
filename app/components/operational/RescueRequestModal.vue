@@ -23,8 +23,8 @@ function emptyState() {
     service_type: 'rescue' as const,
     client: undefined as number | undefined,
     general_public: false,
-    location_latitude: '',
-    location_longitude: '',
+    location_latitude: null as string | null,
+    location_longitude: null as string | null,
     location_description: '',
     internal_notes: '',
   };
