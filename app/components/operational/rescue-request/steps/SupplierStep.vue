@@ -191,7 +191,7 @@ function formatRanking(value: number) {
 </script>
 
 <template>
-  <div class="grid min-h-[28rem] grid-cols-1 gap-4 lg:grid-cols-2">
+  <div class="grid min-h-112 grid-cols-1 gap-4 lg:grid-cols-2">
     <div class="flex min-h-0 flex-col gap-3">
       <UInput
         v-model="search"
