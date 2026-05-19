@@ -2,8 +2,13 @@
 import type { RescueRequestFormState } from '~/schemas/rescue-create';
 import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
 import { parseRescueCoord } from '~/schemas/rescue-create';
+import { computeQuoteSummary, formatQuoteMoney } from '~/utils/quote-pricing';
 
 const state = defineModel<RescueRequestFormState>({ required: true });
+
+const quoteSummary = computed(() =>
+  computeQuoteSummary(state.value.quote_lines),
+);
 
 const serviceTypeOption = computed(() =>
   RESCUE_SERVICE_TYPE_OPTIONS.find((o) => o.value === state.value.service_type),
@@ -84,6 +89,39 @@ const locationCoordsLabel = computed(() => {
           </dd>
         </div>
       </dl>
+    </UCard>
+
+    <UCard
+      v-if="quoteSummary.lines.length > 0"
+      variant="subtle"
+      :ui="{ body: 'space-y-3 text-sm' }"
+    >
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-primary">
+        Cotización
+      </h3>
+      <ul class="divide-y divide-default">
+        <li
+          v-for="row in quoteSummary.lines"
+          :key="row.line.id"
+          class="flex flex-wrap items-baseline justify-between gap-2 py-2 first:pt-0 last:pb-0"
+        >
+          <span class="font-medium">
+            {{ row.line.service_label || `Servicio #${row.line.service_id}` }}
+            <span class="font-normal text-muted">
+              × {{ row.line.quantity }}
+            </span>
+          </span>
+          <span class="tabular-nums">
+            {{ formatQuoteMoney(row.lineTotal) }}
+          </span>
+        </li>
+      </ul>
+      <div class="flex justify-between gap-4 border-t border-default pt-2 font-medium">
+        <span>Total cotizado</span>
+        <span class="tabular-nums text-primary">
+          {{ formatQuoteMoney(quoteSummary.totalCharged) }}
+        </span>
+      </div>
     </UCard>
 
     <UFormField label="Nota interna" name="internal_notes">

@@ -16,7 +16,9 @@ import {
 import {
   getRescueStepCount,
   getRescueStepItems,
+  getWizardStepKind,
 } from '~/utils/rescue-request';
+import { emptyQuoteLines } from '~/utils/rescue-quote-lines';
 import { mapUserDropdownRow } from '~/utils/user-dropdown';
 
 const toast = useToast();
@@ -30,12 +32,21 @@ const state = reactive<RescueRequestFormState>(emptyRescueRequestState());
 const stepItems = computed(() => getRescueStepItems(state.service_type));
 const lastStepIndex = computed(() => getRescueStepCount(state.service_type) - 1);
 const isLastStep = computed(() => currentStep.value >= lastStepIndex.value);
+
+const currentStepKind = computed(() =>
+  getWizardStepKind(currentStep.value, state.service_type),
+);
+
 const isSupplierStep = computed(
-  () => state.service_type === 'rescue' && currentStep.value === 2,
+  () => currentStepKind.value === 'supplier',
+);
+
+const isWideStep = computed(
+  () => currentStepKind.value === 'supplier' || currentStepKind.value === 'quote',
 );
 
 const modalContentClass = computed(() =>
-  isSupplierStep.value ? 'max-w-6xl' : 'max-w-2xl',
+  isWideStep.value ? 'max-w-6xl' : 'max-w-2xl',
 );
 
 function clearFormState() {
@@ -75,6 +86,7 @@ watch(
   () => {
     currentStep.value = 0;
     stepError.value = null;
+    state.quote_lines = emptyQuoteLines();
     if (state.service_type !== 'rescue') {
       state.supplier = null;
       state.supplierLabel = '';
@@ -131,6 +143,16 @@ async function fetchClientDropdown(
   }
 }
 
+function fetchServiceDropdown(
+  name: string,
+  options?: { signal?: AbortSignal },
+) {
+  return $fetch<PaginatedResponse<CatalogDropdownRow>>(
+    '/api/catalogue/service/dropdown/',
+    { query: { name }, signal: options?.signal },
+  );
+}
+
 function fetchManagerDropdown(
   name: string,
   options?: { signal?: AbortSignal },
@@ -172,45 +194,33 @@ const { mutate, asyncStatus } = useMutation({
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function pickStepPayload(stepIndex: number) {
-  if (state.service_type === 'rescue') {
-    switch (stepIndex) {
-      case 0:
-        return {
-          service_type: state.service_type,
-          client: state.client,
-          general_public: state.general_public,
-          serialNumber: state.serialNumber,
-          manager: state.manager,
-        };
-      case 1:
-        return {
-          location_latitude: state.location_latitude,
-          location_longitude: state.location_longitude,
-          location_description: state.location_description,
-          service_description: state.service_description,
-        };
-      case 2:
-        return { supplier: state.supplier };
-      case 3:
-        return {
-          internal_notes: state.internal_notes,
-        };
-      default:
-        return {};
-    }
+  const kind = getWizardStepKind(stepIndex, state.service_type);
+
+  switch (kind) {
+    case 'basics':
+      return {
+        service_type: state.service_type,
+        client: state.client,
+        general_public: state.general_public,
+        serialNumber: state.serialNumber,
+        manager: state.manager,
+      };
+    case 'quote':
+      return { quote_lines: state.quote_lines };
+    case 'location':
+      return {
+        location_latitude: state.location_latitude,
+        location_longitude: state.location_longitude,
+        location_description: state.location_description,
+        service_description: state.service_description,
+      };
+    case 'supplier':
+      return { supplier: state.supplier };
+    case 'summary':
+      return { internal_notes: state.internal_notes };
+    default:
+      return {};
   }
-  if (stepIndex === 0) {
-    return {
-      service_type: state.service_type,
-      client: state.client,
-      general_public: state.general_public,
-      serialNumber: state.serialNumber,
-      manager: state.manager,
-    };
-  }
-  return {
-    internal_notes: state.internal_notes,
-  };
 }
 
 function validateCurrentStep(): boolean {
@@ -294,27 +304,30 @@ function onPrimaryAction() {
           @error="onFormError"
         >
           <OperationalRescueRequestStepsBasicsStep
-            v-if="currentStep === 0"
+            v-if="currentStepKind === 'basics'"
             v-model="state"
             :fetch-client-dropdown="fetchClientDropdown"
             :fetch-manager-dropdown="fetchManagerDropdown"
           />
 
-        <OperationalRescueRequestStepsLocationStep
-          v-else-if="state.service_type === 'rescue' && currentStep === 1"
-          v-model="state"
-        />
+          <OperationalRescueRequestStepsQuoteStep
+            v-else-if="currentStepKind === 'quote'"
+            v-model="state"
+            :fetch-service-dropdown="fetchServiceDropdown"
+          />
+
+          <OperationalRescueRequestStepsLocationStep
+            v-else-if="currentStepKind === 'location'"
+            v-model="state"
+          />
 
           <OperationalRescueRequestStepsSupplierStep
-            v-else-if="state.service_type === 'rescue' && currentStep === 2"
+            v-else-if="currentStepKind === 'supplier'"
             v-model="state"
           />
 
           <OperationalRescueRequestStepsSummaryStep
-            v-else-if="
-              (state.service_type === 'rescue' && currentStep === 3)
-                || (state.service_type !== 'rescue' && currentStep === 1)
-            "
+            v-else-if="currentStepKind === 'summary'"
             v-model="state"
           />
 

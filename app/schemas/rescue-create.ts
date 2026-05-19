@@ -1,5 +1,11 @@
 import * as z from 'zod';
-import type { RescueCreateBody, RescueServiceType } from '~/interfaces/rescue';
+import type {
+  RescueCreateBody,
+  RescueQuoteLine,
+  RescueServiceType,
+} from '~/interfaces/rescue';
+import { computeQuoteLineTotals } from '~/utils/quote-pricing';
+import { emptyQuoteLines } from '~/utils/rescue-quote-lines';
 const RESCUE_SERVICE_TYPES = [
   'rescue',
   'loan',
@@ -124,6 +130,52 @@ export const rescueStepSupplierSchema = z.object({
   supplier: z.number().int().positive().nullable().optional(),
 });
 
+const rescueQuoteLineSchema = z.object({
+  id: z.string(),
+  service_id: z.number().int().positive().nullable(),
+  service_label: z.string(),
+  quantity: z.number(),
+  unit_cost: z.number(),
+});
+
+export const rescueStepQuoteSchema = z
+  .object({
+    quote_lines: z.array(rescueQuoteLineSchema),
+  })
+  .superRefine((data, ctx) => {
+    if (data.quote_lines.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Agrega al menos un servicio',
+        path: ['quote_lines'],
+      });
+      return;
+    }
+    data.quote_lines.forEach((line, index) => {
+      if (line.service_id == null) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Selecciona un servicio',
+          path: ['quote_lines', index, 'service_id'],
+        });
+      }
+      if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'La cantidad debe ser mayor a 0',
+          path: ['quote_lines', index, 'quantity'],
+        });
+      }
+      if (!Number.isFinite(line.unit_cost) || line.unit_cost < 0) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'El pago unitario no puede ser negativo',
+          path: ['quote_lines', index, 'unit_cost'],
+        });
+      }
+    });
+  });
+
 export const rescueStepSummarySchema = z.object({
   internal_notes: z.string().transform((s) => s.trim()),
 });
@@ -141,6 +193,7 @@ export const rescueCreateFormSchema = z
     service_description: z.string().transform((s) => s.trim()),
     supplier: z.number().int().positive().nullable().optional(),
     internal_notes: z.string().transform((s) => s.trim()),
+    quote_lines: z.array(rescueQuoteLineSchema),
   })
   .superRefine((data, ctx) => {
     if (data.manager == null) {
@@ -150,6 +203,39 @@ export const rescueCreateFormSchema = z
         path: ['manager'],
       });
     }
+
+    if (data.quote_lines.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Agrega al menos un servicio en la cotización',
+        path: ['quote_lines'],
+      });
+    } else {
+      data.quote_lines.forEach((line, index) => {
+        if (line.service_id == null) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Selecciona un servicio',
+            path: ['quote_lines', index, 'service_id'],
+          });
+        }
+        if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'La cantidad debe ser mayor a 0',
+            path: ['quote_lines', index, 'quantity'],
+          });
+        }
+        if (!Number.isFinite(line.unit_cost) || line.unit_cost < 0) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'El pago unitario no puede ser negativo',
+            path: ['quote_lines', index, 'unit_cost'],
+          });
+        }
+      });
+    }
+
     if (data.service_type !== 'rescue') {
       return;
     }
@@ -199,6 +285,7 @@ export type RescueRequestFormState = {
   managerLabel: string;
   internal_notes: string;
   clientLabel: string;
+  quote_lines: RescueQuoteLine[];
 };
 
 export function emptyRescueRequestState(): RescueRequestFormState {
@@ -217,6 +304,7 @@ export function emptyRescueRequestState(): RescueRequestFormState {
     managerLabel: '',
     internal_notes: '',
     clientLabel: '',
+    quote_lines: emptyQuoteLines(),
   };
 }
 
@@ -229,16 +317,19 @@ export function getStepSchemaForIndex(
       case 0:
         return rescueStepBasicsSchema;
       case 1:
-        return rescueStepLocationSchema;
+        return rescueStepQuoteSchema;
       case 2:
-        return rescueStepSupplierSchema;
+        return rescueStepLocationSchema;
       case 3:
+        return rescueStepSupplierSchema;
+      case 4:
         return rescueStepSummarySchema;
       default:
         return rescueStepBasicsSchema;
     }
   }
   if (stepIndex === 0) return rescueStepBasicsSchema;
+  if (stepIndex === 1) return rescueStepQuoteSchema;
   return rescueStepSummarySchema;
 }
 
@@ -246,6 +337,8 @@ export function rescueFormToCreateBody(
   data: RescueCreateFormOutput,
 ): RescueCreateBody {
   const serial = String(data.serialNumber ?? '').trim();
+  const quoteLines = (data.quote_lines ?? []) as RescueQuoteLine[];
+
   return {
     service_type: data.service_type,
     client: data.client,
@@ -258,5 +351,18 @@ export function rescueFormToCreateBody(
     location_longitude: String(data.location_longitude ?? '').trim(),
     location_description: data.location_description,
     internal_notes: data.internal_notes,
+    quote_lines: quoteLines
+      .filter((line) => line.service_id != null)
+      .map((line) => {
+        const totals = computeQuoteLineTotals(line);
+        return {
+          service_id: line.service_id as number,
+          service_label: line.service_label,
+          quantity: line.quantity,
+          unit_cost: line.unit_cost,
+          cost_subtotal: totals.costSubtotal,
+          line_total: totals.lineTotal,
+        };
+      }),
   };
 }
