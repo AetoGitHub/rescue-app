@@ -2,12 +2,6 @@
 import type { CatalogDropdownFetcher } from '~/composables/useCatalogDropdown';
 import type { RescueRequestFormState } from '~/schemas/rescue-create';
 import { DEFAULT_QUOTE_MARGIN_RATE } from '~/constants/quote-pricing';
-import {
-  computeQuoteLineTotals,
-  computeQuoteSummary,
-  formatQuoteMoney,
-} from '~/utils/quote-pricing';
-import { createEmptyQuoteLine } from '~/utils/rescue-quote-lines';
 
 const state = defineModel<RescueRequestFormState>({ required: true });
 

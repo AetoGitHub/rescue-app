@@ -1,6 +1,5 @@
 import { USER_ROLE_OPTIONS } from '~/constants/user-select-options';
 import type { UserRole } from '~/interfaces/auth/user';
-import { formatMexicoPhoneInput } from '~/utils/catalog-form';
 
 const USER_ROLE_VALUES = new Set<UserRole>(
   USER_ROLE_OPTIONS.map((o) => o.value),

@@ -13,13 +13,6 @@ import {
   type RescueCreateFormOutput,
   type RescueRequestFormState,
 } from '~/schemas/rescue-create';
-import {
-  getRescueStepCount,
-  getRescueStepItems,
-  getWizardStepKind,
-} from '~/utils/rescue-request';
-import { emptyQuoteLines } from '~/utils/rescue-quote-lines';
-import { mapUserDropdownRow } from '~/utils/user-dropdown';
 
 const toast = useToast();
 

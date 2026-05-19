@@ -2,7 +2,6 @@
 import type { RescueRequestFormState } from '~/schemas/rescue-create';
 import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
 import { parseRescueCoord } from '~/schemas/rescue-create';
-import { computeQuoteSummary, formatQuoteMoney } from '~/utils/quote-pricing';
 
 const state = defineModel<RescueRequestFormState>({ required: true });
 

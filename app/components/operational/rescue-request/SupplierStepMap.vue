@@ -2,7 +2,6 @@
 import { GoogleMap, AdvancedMarker } from 'vue3-google-map';
 import type { SupplierMapPin } from '~/interfaces/rescue';
 import { parseRescueCoord } from '~/schemas/rescue-create';
-import { fitMapToPoints } from '~/utils/map-bounds';
 
 const props = defineProps<{
   unitLatitude: string | null;

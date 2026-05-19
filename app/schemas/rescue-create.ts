@@ -4,8 +4,6 @@ import type {
   RescueQuoteLine,
   RescueServiceType,
 } from '~/interfaces/rescue';
-import { computeQuoteLineTotals } from '~/utils/quote-pricing';
-import { emptyQuoteLines } from '~/utils/rescue-quote-lines';
 const RESCUE_SERVICE_TYPES = [
   'rescue',
   'loan',

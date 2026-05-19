@@ -4,10 +4,6 @@ import type { SupplierListResponse } from '~/interfaces/catalogs/supplier';
 import type { RescueSupplierSort } from '~/interfaces/rescue';
 import { SUPPLIER_LIST_PATH } from '~/constants/rescue-api';
 import { parseRescueCoord } from '~/schemas/rescue-create';
-import {
-  groupTrustedFirst,
-  mapSupplierListItem,
-} from '~/utils/supplier-list';
 
 export function useRescueSupplierSearch(options: {
   latitude: Ref<string | null>;

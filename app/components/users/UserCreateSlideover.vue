@@ -8,12 +8,6 @@ import {
   type UserFormOutputCreate,
   type UserFormOutputUpdate,
 } from '~/schemas/user-create';
-import {
-  formatUsernameInput,
-  mapUserDetail,
-  type UserFormState,
-} from '~/utils/user-detail-map';
-import { formatMexicoPhoneInput, MEXICO_PHONE_MASK } from '~/utils/catalog-form';
 
 const toast = useToast();
 
