@@ -186,21 +186,17 @@ watch(
               <UFormField :name="`quote_lines.${index}.quantity`">
                 <UInputNumber
                   v-model="line.quantity"
-                  class="w-full"
-                  :increment="false"
-                  :decrement="false"
+                  v-bind="catalogIntegerInputProps"
                   :min="1"
                 />
               </UFormField>
             </td>
             <td class="px-3 py-2 align-top">
               <UFormField :name="`quote_lines.${index}.unit_cost`">
-                <UInput
-                  v-model.number="line.unit_cost"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  class="w-full"
+                <UInputNumber
+                  v-model="line.unit_cost"
+                  v-bind="catalogCurrencyInputProps"
+                  :min="0"
                   :disabled="isContractLine(line)"
                 />
               </UFormField>

@@ -1,12 +1,17 @@
 ---
-description: UInputNumber presets, formatting, and increment/decrement defaults
-globs: app/**/*.{vue,ts}
+description: UInputNumber presets, formatting, phone inputs, and increment/decrement defaults
+globs: app/**/*.vue
 alwaysApply: false
 ---
 
-# UInputNumber in catalog forms
+# Numeric and phone inputs
 
-Use shared presets and models from `app/utils/catalog-form.ts` (auto-imported). Do not duplicate `formatOptions` in components unless you first add or extend a preset there.
+Use shared presets and helpers from `app/utils/catalog-form.ts` (auto-imported). Applies to catalog, operational (rescue), users, and any other app forms. Do not duplicate `formatOptions` in components unless you first add or extend a preset there.
+
+## Do not use UInput for numbers
+
+- **Never** use `<UInput type="number">` or `v-model.number` for numeric fields.
+- Use `UInputNumber` with the preset that matches field semantics (`v-bind="catalog…InputProps"`).
 
 ## Increment / decrement
 
@@ -21,14 +26,32 @@ Bind the preset that matches the field semantics with `v-bind`:
 
 | Meaning | Preset | Model helper |
 | --- | --- | --- |
-| Money (MXN) | `catalogCurrencyInputProps` | `useStringNumberModel` |
+| Money (MXN) | `catalogCurrencyInputProps` | `useStringNumberModel` (catalog strings) or direct `v-model` when the form state is `number` |
 | Percentage | `catalogPercentInputProps` | `usePercentStringNumberModel` |
 | Decimal factor / generic decimal | `catalogNumberInputProps` | `useStringNumberModel` |
-| Integer ID / count | `catalogIntegerInputProps` | `useOptionalIntegerModel` or `useStringNumberModel` as needed |
+| Integer ID / count / quantity | `catalogIntegerInputProps` | `useOptionalIntegerModel` or direct `v-model` when the form state is `number` |
 | Coordinates | `catalogCoordinateInputProps` | `useStringNumberModel` with 6 decimals |
 | Commission value by type | `catalogCommissionValueInputProps(commissionType)` | `useCommissionValueModel` |
 
 For `commission_value`, remount or rebind when `commission_type` changes so currency vs percent formatting does not stick.
+
+## Phone fields
+
+Use plain `UInput` (not `UInputNumber`) with digit-only formatting:
+
+```vue
+<UInput
+  :model-value="state.phone"
+  class="w-full"
+  type="tel"
+  inputmode="tel"
+  autocomplete="tel"
+  :placeholder="MEXICO_PHONE_MASK.replaceAll('#', '0')"
+  @update:model-value="(value) => (state.phone = formatMexicoPhoneInput(value))"
+/>
+```
+
+`formatMexicoPhoneInput` strips non-digits, caps at 10, and formats as `## #### ####`.
 
 ## API contract
 
