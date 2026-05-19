@@ -6,6 +6,7 @@ import type {
 } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import { getContractItemById } from '~/utils/rescue-company-settings';
+import { isQuoteOptionalForServiceType } from '~/utils/rescue-request';
 const RESCUE_SERVICE_TYPES = [
   'rescue',
   'loan',
@@ -139,20 +140,22 @@ const rescueQuoteLineSchema = z.object({
   contract_item_id: z.number().int().positive().nullable(),
 });
 
-function validateQuoteLinesWithSettings(
-  quoteLines: z.infer<typeof rescueQuoteLineSchema>[],
+type RescueQuoteLineInput = z.infer<typeof rescueQuoteLineSchema>;
+
+function validateQuoteLineAtIndex(
+  line: RescueQuoteLineInput,
+  index: number,
   settings: RescueCompanySettings | null | undefined,
   ctx: z.RefinementCtx,
 ) {
-  quoteLines.forEach((line, index) => {
-    if (line.service_id == null) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Selecciona un servicio',
-        path: ['quote_lines', index, 'service_id'],
-      });
-    }
-    if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
+  if (line.service_id == null) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Selecciona un servicio',
+      path: ['quote_lines', index, 'service_id'],
+    });
+  }
+  if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
       ctx.addIssue({
         code: 'custom',
         message: 'La cantidad debe ser mayor a 0',
@@ -182,45 +185,76 @@ function validateQuoteLinesWithSettings(
         });
       }
     }
+}
+
+function refineQuoteLines(
+  quoteLines: RescueQuoteLineInput[],
+  settings: RescueCompanySettings | null | undefined,
+  ctx: z.RefinementCtx,
+  options: { required: boolean },
+) {
+  const hasFilledLine = quoteLines.some((line) => line.service_id != null);
+  if (!hasFilledLine) {
+    if (options.required) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Agrega al menos un servicio',
+        path: ['quote_lines'],
+      });
+    }
+    return;
+  }
+
+  quoteLines.forEach((line, index) => {
+    if (line.service_id == null) return;
+    validateQuoteLineAtIndex(line, index, settings, ctx);
   });
 }
 
-export const rescueStepQuoteSchema = z
-  .object({
-    quote_lines: z.array(rescueQuoteLineSchema),
-  })
-  .superRefine((data, ctx) => {
-    if (data.quote_lines.length === 0) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Agrega al menos un servicio',
-        path: ['quote_lines'],
-      });
-      return;
-    }
-    validateQuoteLinesWithSettings(data.quote_lines, undefined, ctx);
-  });
+function createRescueStepQuoteSchema(required: boolean) {
+  return z
+    .object({
+      quote_lines: z.array(rescueQuoteLineSchema),
+    })
+    .superRefine((data, ctx) => {
+      refineQuoteLines(data.quote_lines, undefined, ctx, { required });
+    });
+}
 
-export const rescueStepQuoteWithSettingsSchema = z
-  .object({
-    quote_lines: z.array(rescueQuoteLineSchema),
-    company_settings: z.custom<RescueCompanySettings | null>(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.quote_lines.length === 0) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Agrega al menos un servicio',
-        path: ['quote_lines'],
-      });
-      return;
-    }
-    validateQuoteLinesWithSettings(
-      data.quote_lines,
-      data.company_settings,
-      ctx,
-    );
-  });
+function createRescueStepQuoteWithSettingsSchema(required: boolean) {
+  return z
+    .object({
+      quote_lines: z.array(rescueQuoteLineSchema),
+      company_settings: z.custom<RescueCompanySettings | null>(),
+    })
+    .superRefine((data, ctx) => {
+      refineQuoteLines(
+        data.quote_lines,
+        data.company_settings,
+        ctx,
+        { required },
+      );
+    });
+}
+
+/** @deprecated Use getRescueStepQuoteSchema(serviceType) */
+export const rescueStepQuoteSchema = createRescueStepQuoteSchema(true);
+
+/** @deprecated Use getRescueStepQuoteWithSettingsSchema(serviceType) */
+export const rescueStepQuoteWithSettingsSchema =
+  createRescueStepQuoteWithSettingsSchema(true);
+
+export function getRescueStepQuoteSchema(serviceType: RescueServiceType) {
+  return createRescueStepQuoteSchema(!isQuoteOptionalForServiceType(serviceType));
+}
+
+export function getRescueStepQuoteWithSettingsSchema(
+  serviceType: RescueServiceType,
+) {
+  return createRescueStepQuoteWithSettingsSchema(
+    !isQuoteOptionalForServiceType(serviceType),
+  );
+}
 
 export const rescueStepSummarySchema = z.object({
   internal_notes: z.string().transform((s) => s.trim()),
@@ -250,15 +284,9 @@ export const rescueCreateFormSchema = z
       });
     }
 
-    if (data.quote_lines.length === 0) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Agrega al menos un servicio en la cotización',
-        path: ['quote_lines'],
-      });
-    } else {
-      validateQuoteLinesWithSettings(data.quote_lines, undefined, ctx);
-    }
+    refineQuoteLines(data.quote_lines, undefined, ctx, {
+      required: !isQuoteOptionalForServiceType(data.service_type),
+    });
 
     if (data.service_type !== 'rescue') {
       return;
@@ -329,7 +357,7 @@ export function emptyRescueRequestState(): RescueRequestFormState {
     managerLabel: '',
     internal_notes: '',
     clientLabel: '',
-    quote_lines: emptyQuoteLines(),
+    quote_lines: initialQuoteLinesForServiceType('rescue'),
     company_settings: null,
   };
 }
@@ -343,7 +371,7 @@ export function getStepSchemaForIndex(
       case 0:
         return rescueStepBasicsSchema;
       case 1:
-        return rescueStepQuoteSchema;
+        return getRescueStepQuoteSchema(serviceType);
       case 2:
         return rescueStepLocationSchema;
       case 3:
@@ -355,7 +383,7 @@ export function getStepSchemaForIndex(
     }
   }
   if (stepIndex === 0) return rescueStepBasicsSchema;
-  if (stepIndex === 1) return rescueStepQuoteSchema;
+  if (stepIndex === 1) return getRescueStepQuoteSchema(serviceType);
   return rescueStepSummarySchema;
 }
 
@@ -374,6 +402,19 @@ export function rescueFormToCreateBody(
       : null);
 
   const pricing = computeQuotePricing(quoteLines, settings);
+  const quoteLinePayload = quoteLines
+    .filter((line) => line.service_id != null)
+    .map((line) => {
+      const row = pricing.lines.find((r) => r.line.id === line.id);
+      return {
+        service_id: line.service_id as number,
+        service_label: line.service_label,
+        quantity: line.quantity,
+        unit_cost: line.unit_cost,
+        cost_subtotal: row?.costSubtotal ?? 0,
+        line_total: row?.lineTotal ?? 0,
+      };
+    });
 
   return {
     service_type: data.service_type,
@@ -387,18 +428,6 @@ export function rescueFormToCreateBody(
     location_longitude: String(data.location_longitude ?? '').trim(),
     location_description: data.location_description,
     internal_notes: data.internal_notes,
-    quote_lines: quoteLines
-      .filter((line) => line.service_id != null)
-      .map((line) => {
-        const row = pricing.lines.find((r) => r.line.id === line.id);
-        return {
-          service_id: line.service_id as number,
-          service_label: line.service_label,
-          quantity: line.quantity,
-          unit_cost: line.unit_cost,
-          cost_subtotal: row?.costSubtotal ?? 0,
-          line_total: row?.lineTotal ?? 0,
-        };
-      }),
+    ...(quoteLinePayload.length > 0 ? { quote_lines: quoteLinePayload } : {}),
   };
 }

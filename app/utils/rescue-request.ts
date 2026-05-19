@@ -8,12 +8,22 @@ export type RescueWizardStepKind =
   | 'supplier'
   | 'summary';
 
-const quoteStepItem: StepperItem = {
-  title: 'Cotización',
-  description: 'Servicios y precios',
-  icon: 'i-lucide-calculator',
-  value: 1,
-};
+export function isQuoteOptionalForServiceType(
+  serviceType: RescueServiceType,
+): boolean {
+  return serviceType === 'rescue' || serviceType === 'proyect';
+}
+
+function quoteStepItemFor(serviceType: RescueServiceType): StepperItem {
+  return {
+    title: 'Cotización',
+    description: isQuoteOptionalForServiceType(serviceType)
+      ? 'Opcional'
+      : 'Servicios y precios',
+    icon: 'i-lucide-calculator',
+    value: 1,
+  };
+}
 
 export function getWizardStepKind(
   stepIndex: number,
@@ -42,7 +52,7 @@ export function getRescueStepItems(
         icon: 'i-lucide-clipboard-list',
         value: 0,
       },
-      { ...quoteStepItem },
+      { ...quoteStepItemFor('rescue') },
       {
         title: 'Ubicación',
         description: 'Unidad en mapa',
@@ -71,7 +81,7 @@ export function getRescueStepItems(
       icon: 'i-lucide-clipboard-list',
       value: 0,
     },
-    { ...quoteStepItem },
+    { ...quoteStepItemFor(serviceType) },
     {
       title: 'Resumen',
       description: 'Confirmar',

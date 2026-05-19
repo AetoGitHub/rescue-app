@@ -1,4 +1,5 @@
-import type { RescueQuoteLine } from '~/interfaces/rescue';
+import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
+import { isQuoteOptionalForServiceType } from '~/utils/rescue-request';
 
 export function createEmptyQuoteLine(): RescueQuoteLine {
   return {
@@ -13,4 +14,10 @@ export function createEmptyQuoteLine(): RescueQuoteLine {
 
 export function emptyQuoteLines(): RescueQuoteLine[] {
   return [createEmptyQuoteLine()];
+}
+
+export function initialQuoteLinesForServiceType(
+  serviceType: RescueServiceType,
+): RescueQuoteLine[] {
+  return isQuoteOptionalForServiceType(serviceType) ? [] : emptyQuoteLines();
 }

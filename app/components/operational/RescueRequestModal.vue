@@ -10,7 +10,7 @@ import {
   getStepSchemaForIndex,
   rescueCreateFormSchema,
   rescueFormToCreateBody,
-  rescueStepQuoteWithSettingsSchema,
+  getRescueStepQuoteWithSettingsSchema,
   type RescueCreateFormOutput,
   type RescueRequestFormState,
 } from '~/schemas/rescue-create';
@@ -80,7 +80,7 @@ watch(
   () => {
     currentStep.value = 0;
     stepError.value = null;
-    state.quote_lines = emptyQuoteLines();
+    state.quote_lines = initialQuoteLinesForServiceType(state.service_type);
     if (state.service_type !== 'rescue') {
       state.supplier = null;
       state.supplierLabel = '';
@@ -225,7 +225,7 @@ function validateCurrentStep(): boolean {
   const kind = getWizardStepKind(currentStep.value, state.service_type);
   const schema =
     kind === 'quote'
-      ? rescueStepQuoteWithSettingsSchema
+      ? getRescueStepQuoteWithSettingsSchema(state.service_type)
       : getStepSchemaForIndex(currentStep.value, state.service_type);
   const result = schema.safeParse(pickStepPayload(currentStep.value));
   if (!result.success) {

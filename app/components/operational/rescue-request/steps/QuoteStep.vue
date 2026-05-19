@@ -22,6 +22,12 @@ const { settings, pending, error } = useRescueCompanySettings(clientId);
 
 const ivaPercentLabel = computed(() => formatIvaPercent(DEFAULT_IVA_RATE));
 
+const quoteOptional = computed(() =>
+  isQuoteOptionalForServiceType(state.value.service_type),
+);
+
+const hasQuoteLines = computed(() => state.value.quote_lines.length > 0);
+
 watch(
   settings,
   (value) => {
@@ -80,8 +86,12 @@ function addLine() {
 }
 
 function removeLine(id: string) {
-  if (state.value.quote_lines.length <= 1) return;
+  if (!quoteOptional.value && state.value.quote_lines.length <= 1) return;
   state.value.quote_lines = state.value.quote_lines.filter((row) => row.id !== id);
+}
+
+function canRemoveLine(): boolean {
+  return quoteOptional.value || state.value.quote_lines.length > 1;
 }
 
 watch(
@@ -138,13 +148,37 @@ watch(
 
   <div v-else class="space-y-4">
     <p class="text-sm text-muted">
-      Agrega los servicios de la cotización. Por ítem se aplican multiplicador y
-      comisión fija; la comisión del vendedor se calcula sobre la ganancia. Las
-      líneas con convenio usan precio fijo. IVA provisional
-      {{ ivaPercentLabel }} sobre el total antes de impuestos.
+      <template v-if="quoteOptional">
+        La cotización es opcional: puedes continuar sin partidas o agregar
+        servicios si ya conoces precios.
+      </template>
+      <template v-else>
+        Agrega al menos un servicio en la cotización.
+      </template>
+      Por ítem se aplican multiplicador y comisión fija; la comisión del vendedor
+      se calcula sobre la ganancia. Las líneas con convenio usan precio fijo. IVA
+      provisional {{ ivaPercentLabel }} sobre el total antes de impuestos.
     </p>
 
-    <div class="overflow-x-auto rounded-lg border border-default">
+    <div
+      v-if="!hasQuoteLines"
+      class="flex flex-col items-center gap-3 rounded-lg border border-dashed border-default px-4 py-10 text-center text-sm text-muted"
+    >
+      <p>Sin partidas de cotización.</p>
+      <UButton
+        type="button"
+        color="primary"
+        variant="soft"
+        icon="i-lucide-plus"
+        label="Agregar servicio"
+        @click="addLine"
+      />
+    </div>
+
+    <div
+      v-else
+      class="overflow-x-auto rounded-lg border border-default"
+    >
       <table class="w-full min-w-[900px] text-sm">
         <thead>
           <tr class="border-b border-default bg-elevated/50 text-left text-xs text-muted">
@@ -217,7 +251,7 @@ watch(
                 variant="ghost"
                 icon="i-lucide-trash-2"
                 size="xs"
-                :disabled="state.quote_lines.length <= 1"
+                :disabled="!canRemoveLine()"
                 aria-label="Eliminar fila"
                 @click="removeLine(line.id)"
               />
@@ -228,6 +262,7 @@ watch(
     </div>
 
     <UButton
+      v-if="hasQuoteLines"
       type="button"
       color="neutral"
       variant="outline"
@@ -236,7 +271,11 @@ watch(
       @click="addLine"
     />
 
-    <UCard variant="subtle" :ui="{ body: 'space-y-2 text-sm' }">
+    <UCard
+      v-if="hasQuoteLines"
+      variant="subtle"
+      :ui="{ body: 'space-y-2 text-sm' }"
+    >
       <div class="flex justify-between gap-4">
         <span class="text-muted">Subtotal costo (empresa)</span>
         <span class="font-medium tabular-nums">
