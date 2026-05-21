@@ -23,11 +23,6 @@ const items = computed<NavigationMenuItem[][]>(() => [
       icon: 'i-lucide-building',
     },
     {
-      label: 'Categorías',
-      to: '/admin/catalogs/categories',
-      icon: 'i-lucide-folder-tree',
-    },
-    {
       label: 'Clientes',
       to: '/admin/catalogs/clients',
       icon: 'i-lucide-users',

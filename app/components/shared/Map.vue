@@ -29,12 +29,28 @@ const emit = defineEmits<{
 const config = useRuntimeConfig();
 
 const mapId = '21013da77446513d35236d00';
+const mapRef = ref<{ map: google.maps.Map } | null>(null);
+
+function onIdle() {
+  const map = mapRef.value?.map;
+  if (map) {
+    google.maps.event.trigger(map, 'resize');
+  }
+  emit('idle');
+}
+
+function getMap(): google.maps.Map | null {
+  return mapRef.value?.map ?? null;
+}
+
+defineExpose({ getMap });
 </script>
 
 <template>
   <ClientOnly>
     <GoogleMap
       v-if="config.public.googleMapsApiKey"
+      ref="mapRef"
       :map-id="mapId"
       :api-key="config.public.googleMapsApiKey"
       :center="center"
@@ -44,9 +60,16 @@ const mapId = '21013da77446513d35236d00';
       :map-type-control="false"
       :street-view-control="false"
       @click="emit('click', $event)"
-      @idle="emit('idle')"
+      @idle="onIdle"
     >
       <slot />
     </GoogleMap>
+    <template #fallback>
+      <div
+        class="flex h-full min-h-48 items-center justify-center rounded-lg border border-dashed border-default px-4 text-sm text-muted"
+      >
+        Cargando mapa…
+      </div>
+    </template>
   </ClientOnly>
 </template>

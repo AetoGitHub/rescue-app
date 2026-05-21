@@ -34,6 +34,7 @@ function resetForm() {
 function prepareCreate() {
   editingId.value = null;
   resetForm();
+  open.value = true;
 }
 
 async function loadDetail(id: number) {
@@ -103,6 +104,15 @@ const { mutate, asyncStatus } = useMutation({
 });
 
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
+const mapLayoutKey = ref(0);
+
+watch(open, (isOpen) => {
+  if (isOpen) {
+    nextTick(() => {
+      mapLayoutKey.value += 1;
+    });
+  }
+});
 
 function onSubmit(payload: { data: SupplierCreateBody }) {
   mutate({ body: payload.data, id: editingId.value });
@@ -126,7 +136,12 @@ async function requestSubmit() {
     v-model:open="open"
     scrollable
     :title="isEdit ? 'Editar proveedor' : 'Nuevo proveedor'"
-    :ui="{ content: 'max-w-2xl' }"
+    :description="
+      isEdit
+        ? 'Actualiza los datos del operador o grúa.'
+        : 'Registra un nuevo operador o grúa.'
+    "
+    :ui="{ content: 'max-w-3xl' }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -151,7 +166,10 @@ async function requestSubmit() {
         @submit="onSubmit"
         @error="onFormError"
       >
-        <CatalogSupplierFormFields :state="state" />
+        <CatalogSupplierFormFields
+          v-model:state="state"
+          :map-layout-key="mapLayoutKey"
+        />
       </UForm>
     </template>
 
@@ -166,7 +184,8 @@ async function requestSubmit() {
         />
         <UButton
           type="button"
-          label="Guardar"
+          :label="isEdit ? 'Guardar' : 'Crear proveedor'"
+          icon="i-lucide-check"
           :loading="asyncStatus === 'loading' || (detailPending && isEdit)"
           :disabled="asyncStatus === 'loading' || (detailPending && isEdit)"
           @click="requestSubmit"

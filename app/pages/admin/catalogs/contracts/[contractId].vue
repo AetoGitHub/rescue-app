@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
-import type { TableColumn } from '@nuxt/ui';
 import type { ContractItem } from '~/interfaces/catalogs/contract';
 import type { infer as ZodInfer } from 'zod';
 import {
@@ -12,8 +11,6 @@ import { CLIENT_TYPE_OPTIONS } from '~/constants/catalog-select-options';
 const route = useRoute();
 const toast = useToast();
 const queryCache = useQueryCache();
-const UButton = resolveComponent('UButton');
-
 const contractId = computed(() => Number(route.params.contractId));
 
 const itemSlideoverRef = ref<{
@@ -97,24 +94,12 @@ const contractTitle = computed(
     clientDetail.value?.business_name || clientDetail.value?.name || 'Contrato',
 );
 
-const itemsTableRef = useTemplateRef('itemsTable');
-
 const {
   rows: itemRows,
-  asyncStatus: itemsAsyncStatus,
-  hasNextPage: itemsHasNextPage,
-  loadNextPage: loadNextItemsPage,
   isInitialLoading: itemsInitialLoading,
 } = useCatalogInfiniteList<ContractItem>({
   key: () => ['contract-items', contractId.value],
   path: `/api/catalogue/contract/${contractId.value}/items/`,
-});
-
-usePaginatedTableInfiniteScroll({
-  tableRef: itemsTableRef,
-  hasNextPage: itemsHasNextPage,
-  loadNextPage: loadNextItemsPage,
-  asyncStatus: itemsAsyncStatus,
 });
 
 const { mutate: saveHeader, asyncStatus: headerSaveStatus } = useMutation({
@@ -162,49 +147,6 @@ async function requestHeaderSave() {
 function openCreateItem() {
   itemSlideoverRef.value?.prepareCreate();
 }
-
-function openEditItem(item: ContractItem) {
-  itemSlideoverRef.value?.openEdit(item);
-}
-
-const columns: TableColumn<ContractItem>[] = [
-  {
-    accessorKey: 'service_name',
-    header: 'Servicio',
-  },
-  {
-    accessorKey: 'price',
-    header: 'Precio',
-  },
-  {
-    accessorKey: 'price_multiplier',
-    header: 'Multiplicador',
-  },
-  {
-    accessorKey: 'percentaje',
-    header: 'Porcentaje',
-  },
-  {
-    accessorKey: 'notes',
-    header: 'Notas',
-  },
-  {
-    accessorKey: 'is_active',
-    header: 'Estado',
-    cell: ({ row }) => (row.original.is_active ? 'Activo' : 'Inactivo'),
-  },
-  {
-    id: 'actions',
-    header: 'Acciones',
-    cell: ({ row }) =>
-      h(UButton, {
-        label: 'Editar',
-        size: 'sm',
-        variant: 'subtle',
-        onClick: () => openEditItem(row.original),
-      }),
-  },
-];
 
 useHead({
   title: computed(() =>
@@ -291,31 +233,12 @@ useHead({
         <USeparator />
 
         <div v-if="!pagePending" class="space-y-8 py-4">
-          <section class="space-y-4">
-            <h2
-              class="text-xs font-semibold uppercase tracking-wider text-primary"
-            >
-              Convenios
-            </h2>
-            <UTable
-              ref="itemsTable"
-              sticky
-              class="h-80"
-              :columns="columns"
-              :data="itemRows"
-              :loading="itemsInitialLoading"
-              :get-row-id="(row: ContractItem) => String(row.id)"
-            />
-            <div class="flex justify-end">
-              <UButton
-                icon="i-lucide-plus"
-                label="Agregar convenio"
-                variant="subtle"
-                :disabled="pagePending"
-                @click="openCreateItem"
-              />
-            </div>
-          </section>
+          <CatalogContractNegotiatedPricesSection
+            :contract-id="contractId"
+            :items="itemRows"
+            :loading="itemsInitialLoading"
+            @add="openCreateItem"
+          />
 
           <UPageCard class="space-y-4">
             <UForm

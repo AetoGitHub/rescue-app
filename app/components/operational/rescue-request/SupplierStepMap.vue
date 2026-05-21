@@ -13,6 +13,8 @@ const config = useRuntimeConfig();
 const mapId = '21013da77446513d35236d00';
 
 const DEFAULT_CENTER = { lat: 19.432608, lng: -99.133209 };
+const initialCenter = DEFAULT_CENTER;
+const initialZoom = 11;
 
 const mapRef = ref<{ map: google.maps.Map } | null>(null);
 
@@ -31,16 +33,6 @@ const supplierPosition = computed(() => {
   };
 });
 
-const mapCenter = computed(() => {
-  return unitPosition.value ?? supplierPosition.value ?? DEFAULT_CENTER;
-});
-
-const mapZoom = computed(() => {
-  if (unitPosition.value && supplierPosition.value) return 12;
-  if (unitPosition.value || supplierPosition.value) return 14;
-  return 11;
-});
-
 function collectVisiblePoints(): { lat: number; lng: number }[] {
   const points: { lat: number; lng: number }[] = [];
   if (unitPosition.value) points.push(unitPosition.value);
@@ -48,7 +40,7 @@ function collectVisiblePoints(): { lat: number; lng: number }[] {
   return points;
 }
 
-function animateToMarkers() {
+function fitToMarkers() {
   const map = mapRef.value?.map;
   if (!map) return;
   const points = collectVisiblePoints();
@@ -60,17 +52,20 @@ function animateToMarkers() {
   fitMapToPoints(map, points);
 }
 
-function onMapIdle() {
-  animateToMarkers();
-}
-
 watch(
   () => [unitPosition.value, supplierPosition.value] as const,
   () => {
-    nextTick(() => animateToMarkers());
+    nextTick(() => fitToMarkers());
   },
   { deep: true },
 );
+
+function onMapIdle() {
+  const map = mapRef.value?.map;
+  if (map) {
+    google.maps.event.trigger(map, 'resize');
+  }
+}
 </script>
 
 <template>
@@ -86,8 +81,8 @@ watch(
         ref="mapRef"
         :map-id="mapId"
         :api-key="config.public.googleMapsApiKey"
-        :center="mapCenter"
-        :zoom="mapZoom"
+        :center="initialCenter"
+        :zoom="initialZoom"
         gesture-handling="greedy"
         class="h-full min-h-72 w-full"
         :map-type-control="false"

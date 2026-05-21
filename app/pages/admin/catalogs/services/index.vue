@@ -7,6 +7,7 @@ useHead({
 });
 
 const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
+const categoriesOpen = ref(false);
 const tableRef = useTemplateRef('table');
 
 function onRowSelect(_e: Event, row: TableRow<Service>) {
@@ -69,7 +70,16 @@ const columns: TableColumn<Service>[] = [
             </p>
           </div>
 
-          <CatalogServiceCreateSlideover ref="slideoverRef" />
+          <div class="flex flex-wrap items-center gap-2">
+            <UButton
+              icon="i-lucide-folder-tree"
+              label="Categorías"
+              color="neutral"
+              variant="subtle"
+              @click="categoriesOpen = true"
+            />
+            <CatalogServiceCreateSlideover ref="slideoverRef" />
+          </div>
         </div>
 
         <USeparator />
@@ -100,6 +110,7 @@ const columns: TableColumn<Service>[] = [
           :get-row-id="(row: Service) => String(row.id)"
           @select="onRowSelect"
         />
+        <CatalogCategoryManageSlideover v-model:open="categoriesOpen" />
       </UContainer>
     </template>
   </UDashboardPanel>

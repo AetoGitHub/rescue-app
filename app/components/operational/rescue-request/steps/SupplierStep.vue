@@ -28,6 +28,15 @@ const {
 });
 
 const showInlineForm = ref(false);
+const inlineMapLayoutKey = ref(0);
+
+watch(showInlineForm, (visible) => {
+  if (visible) {
+    nextTick(() => {
+      inlineMapLayoutKey.value += 1;
+    });
+  }
+});
 const warnedSupplierIds = ref(new Set<number>());
 
 const selectedRow = computed(() =>
@@ -339,8 +348,8 @@ function formatRanking(value: number) {
           @submit="onInlineSubmit"
         >
           <CatalogSupplierFormFields
-            :state="inlineSupplierState"
-            :show-map="true"
+            v-model:state="inlineSupplierState"
+            :map-layout-key="inlineMapLayoutKey"
           />
           <UButton
             type="button"

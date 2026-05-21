@@ -8,8 +8,9 @@ const config = useRuntimeConfig();
 const toast = useToast();
 
 const DEFAULT_CENTER = { lat: 19.432608, lng: -99.133209 };
-const mapCenter = ref({ ...DEFAULT_CENTER });
+const initialCenter = ref({ ...DEFAULT_CENTER });
 const geolocationPending = ref(false);
+const sharedMapRef = ref<{ getMap: () => google.maps.Map | null } | null>(null);
 
 function parseCoordinate(value: string | null | undefined): number | undefined {
   if (value == null) return undefined;
@@ -35,10 +36,19 @@ const markerLatLng = computed(() => {
   return null;
 });
 
+function panToOnce(lat: number, lng: number, zoom = 14) {
+  nextTick(() => {
+    const map = sharedMapRef.value?.getMap();
+    if (!map) return;
+    map.panTo({ lat, lng });
+    map.setZoom(zoom);
+  });
+}
+
 function setCoordinates(lat: number, lng: number) {
   latitude.value = lat.toFixed(6);
   longitude.value = lng.toFixed(6);
-  mapCenter.value = { lat, lng };
+  panToOnce(lat, lng);
 }
 
 function onMapClick(event: google.maps.MapMouseEvent) {
@@ -52,13 +62,12 @@ function onMarkerDragEnd(event: google.maps.MapMouseEvent) {
   onMapClick(event);
 }
 
-function syncMapCenterFromModel() {
+function recenterFromModel() {
   const lat = parseCoordinate(latitude.value);
   const lng = parseCoordinate(longitude.value);
   if (lat != null && lng != null) {
-    mapCenter.value = { lat, lng };
-  } else {
-    mapCenter.value = { ...DEFAULT_CENTER };
+    initialCenter.value = { lat, lng };
+    panToOnce(lat, lng);
   }
 }
 
@@ -97,14 +106,11 @@ async function requestCurrentLocation() {
   }
 }
 
-watch(
-  () => [latitude.value, longitude.value],
-  () => {
-    syncMapCenterFromModel();
-  },
-  { immediate: true },
-);
+onMounted(() => {
+  recenterFromModel();
+});
 
+defineExpose({ recenterFromModel });
 </script>
 
 <template>
@@ -134,7 +140,8 @@ watch(
       </div>
       <div class="h-72 overflow-hidden rounded-lg border border-default">
         <SharedMap
-          :center="mapCenter"
+          ref="sharedMapRef"
+          :center="initialCenter"
           :zoom="14"
           map-class="h-72 w-full"
           @click="onMapClick"

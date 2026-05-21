@@ -14,6 +14,9 @@ export interface Supplier {
   phone: string;
   is_trusted: boolean;
   is_active: boolean;
+  score?: number;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
 }
 
 export interface SupplierListItem {

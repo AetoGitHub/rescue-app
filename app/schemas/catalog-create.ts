@@ -95,23 +95,61 @@ export const categoryCreateSchema = z.object({
   name: catalogNameField('El nombre'),
 });
 
-export const supplierCreateSchema = z.object({
-  name: catalogNameField('El nombre'),
-  description: z.string(),
-  phone: requiredStr('El teléfono'),
-  email: z
-    .string()
-    .transform((s) => s.trim())
-    .pipe(z.email({ error: 'Introduce un correo válido' })),
-  service_type: z.enum(
-    ['cranes', 'mechanics', 'road_assist', 'forklifts', 'flatbed', 'transport', 'other'],
-    { error: 'Selecciona un tipo de servicio' },
-  ),
-  is_trusted: z.boolean(),
-  notes: z.string(),
-  latitude: requiredStr('La latitud'),
-  longitude: requiredStr('La longitud'),
-});
+export const supplierCreateSchema = z
+  .object({
+    name: catalogNameField('El nombre'),
+    description: z.string(),
+    phone: requiredStr('El teléfono'),
+    email: z
+      .string()
+      .transform((s) => s.trim())
+      .pipe(z.email({ error: 'Introduce un correo válido' })),
+    service_type: z.enum(
+      [
+        'cranes',
+        'mechanics',
+        'road_assist',
+        'forklifts',
+        'flatbed',
+        'transport',
+        'other',
+      ],
+      { error: 'Selecciona un tipo de servicio' },
+    ),
+    is_trusted: z.boolean(),
+    notes: z.string(),
+    latitude: z.string(),
+    longitude: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    const lat = data.latitude.trim();
+    const lng = data.longitude.trim();
+    if (lat === '' && lng === '') return;
+    if (lat === '' || lng === '') {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Indica latitud y longitud, o deja ambos vacíos',
+        path: lat === '' ? ['latitude'] : ['longitude'],
+      });
+      return;
+    }
+    const latNum = Number(lat.replace(/,/g, ''));
+    const lngNum = Number(lng.replace(/,/g, ''));
+    if (!Number.isFinite(latNum) || latNum < -90 || latNum > 90) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Latitud inválida',
+        path: ['latitude'],
+      });
+    }
+    if (!Number.isFinite(lngNum) || lngNum < -180 || lngNum > 180) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Longitud inválida',
+        path: ['longitude'],
+      });
+    }
+  });
 
 export const contractItemFormSchema = z.object({
   service: z.number().int().positive({ error: 'Selecciona un servicio' }),

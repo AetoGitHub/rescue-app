@@ -6,6 +6,13 @@ import type {
 } from '~/interfaces/catalogs/category';
 import { categoryCreateSchema } from '~/schemas/catalog-create';
 
+withDefaults(
+  defineProps<{
+    showTrigger?: boolean;
+  }>(),
+  { showTrigger: true },
+);
+
 const toast = useToast();
 
 const open = ref(false);
@@ -26,6 +33,7 @@ function resetForm() {
 function prepareCreate() {
   editingId.value = null;
   resetForm();
+  open.value = true;
 }
 
 function openEdit(id: number, name: string) {
@@ -35,7 +43,7 @@ function openEdit(id: number, name: string) {
   open.value = true;
 }
 
-defineExpose({ openEdit });
+defineExpose({ prepareCreate, openEdit });
 
 watch(open, (v) => {
   if (!v) {
@@ -120,7 +128,13 @@ async function requestSubmit() {
     v-model:open="open"
     :title="isEdit ? 'Editar categoría' : 'Nueva categoría'"
   >
-    <UButton icon="i-lucide-plus" label="Nueva categoría" size="lg" @click="prepareCreate" />
+    <UButton
+      v-if="showTrigger"
+      icon="i-lucide-plus"
+      label="Nueva categoría"
+      size="lg"
+      @click="prepareCreate"
+    />
 
     <template #body>
       <UForm
