@@ -168,7 +168,8 @@ watch(
         Agrega al menos un servicio en la cotización.
       </template>
       Por ítem se aplican multiplicador y comisión fija; la comisión del vendedor
-      se calcula sobre la ganancia. Las líneas con convenio usan precio fijo. IVA
+      se calcula sobre la ganancia. Las líneas con convenio parten del precio del
+      convenio y puedes ajustarlo. IVA
       provisional {{ ivaPercentLabel }} sobre el total antes de impuestos.
     </p>
 
@@ -244,7 +245,6 @@ watch(
                   v-model="line.unit_cost"
                   v-bind="catalogCurrencyInputProps"
                   :min="0"
-                  :disabled="isContractLine(line)"
                 />
               </UFormField>
               <span class="mt-1 block text-xs text-muted tabular-nums">

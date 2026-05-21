@@ -1,9 +1,35 @@
 import { describe, expect, it } from 'vitest';
+import type { RescueQuoteLine } from '~/interfaces/rescue';
 import {
+  applyContractToLine,
   dedupeContractItemsByService,
   findContractItemForService,
   mapRescueCompanySettings,
 } from '~/utils/rescue-company-settings';
+
+const contractItem = {
+  id: 10,
+  service_id: 3,
+  service_name: 'Servicio convenio',
+  price: 500,
+  price_multiplier: 1,
+  percentaje: 0,
+  notes: '',
+};
+
+function quoteLine(
+  partial: Partial<RescueQuoteLine> = {},
+): RescueQuoteLine {
+  return {
+    id: 'line-1',
+    service_id: null,
+    service_label: '',
+    quantity: 1,
+    unit_cost: 0,
+    contract_item_id: null,
+    ...partial,
+  };
+}
 
 describe('dedupeContractItemsByService', () => {
   it('keeps the first item per service_id', () => {
@@ -82,6 +108,19 @@ describe('mapRescueCompanySettings', () => {
     expect(settings.contract?.items).toHaveLength(1);
     expect(settings.contract?.items[0]!.id).toBe(1);
     expect(settings.contract?.items[0]!.price).toBe(100);
+  });
+});
+
+describe('applyContractToLine', () => {
+  it('prefills convenio price when newly linked but keeps user edits when already linked', () => {
+    const line = quoteLine();
+    applyContractToLine(line, contractItem);
+    expect(line.unit_cost).toBe(500);
+    expect(line.contract_item_id).toBe(10);
+
+    line.unit_cost = 620;
+    applyContractToLine(line, contractItem);
+    expect(line.unit_cost).toBe(620);
   });
 });
 

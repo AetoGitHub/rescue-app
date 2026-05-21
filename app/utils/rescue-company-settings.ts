@@ -94,10 +94,13 @@ export function applyContractToLine(
   line: RescueQuoteLine,
   contractItem: RescueContractItem,
 ): void {
+  const alreadyLinked = line.contract_item_id === contractItem.id;
   line.contract_item_id = contractItem.id;
   line.service_id = contractItem.service_id;
   line.service_label = contractItem.service_name;
-  line.unit_cost = contractItem.price;
+  if (!alreadyLinked) {
+    line.unit_cost = contractItem.price;
+  }
 }
 
 export function clearContractFromLine(line: RescueQuoteLine): void {
