@@ -39,10 +39,15 @@ const locationTabItems = [
   },
 ];
 
+const mapPinPickerRef = ref<{ recenterFromModel: () => void } | null>(null);
+
 watch(
   () => props.mapLayoutKey,
   () => {
     mapRemountKey.value += 1;
+    nextTick(() => {
+      window.setTimeout(() => mapPinPickerRef.value?.recenterFromModel(), 150);
+    });
   },
 );
 
@@ -50,11 +55,10 @@ watch(locationTab, (tab) => {
   if (tab === 'map') {
     nextTick(() => {
       mapRemountKey.value += 1;
+      window.setTimeout(() => mapPinPickerRef.value?.recenterFromModel(), 150);
     });
   }
 });
-
-const mapPinPickerRef = ref<{ recenterFromModel: () => void } | null>(null);
 
 const hasCoordinates = computed(() => {
   const lat = state.value.latitude.trim();

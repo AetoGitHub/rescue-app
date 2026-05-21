@@ -53,6 +53,8 @@ async function loadDetail(id: number) {
     });
   } finally {
     detailPending.value = false;
+    await nextTick();
+    mapLayoutKey.value += 1;
   }
 }
 
@@ -103,11 +105,14 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
+const isSaving = computed(() => asyncStatus.value === 'loading');
+const isDetailLoading = computed(() => detailPending.value && isEdit.value);
+
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 const mapLayoutKey = ref(0);
 
 watch(open, (isOpen) => {
-  if (isOpen) {
+  if (isOpen && editingId.value == null) {
     nextTick(() => {
       mapLayoutKey.value += 1;
     });
@@ -185,9 +190,9 @@ async function requestSubmit() {
         <UButton
           type="button"
           :label="isEdit ? 'Guardar' : 'Crear proveedor'"
-          icon="i-lucide-check"
-          :loading="asyncStatus === 'loading' || (detailPending && isEdit)"
-          :disabled="asyncStatus === 'loading' || (detailPending && isEdit)"
+          :icon="isSaving ? undefined : 'i-lucide-check'"
+          :loading="isSaving"
+          :disabled="isSaving || isDetailLoading"
           @click="requestSubmit"
         />
       </div>

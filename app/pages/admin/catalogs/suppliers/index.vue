@@ -15,7 +15,8 @@ const modalRef = ref<{
 } | null>(null);
 const tableRef = useTemplateRef('table');
 
-const viewMode = ref<'list' | 'map'>('list');
+// Vista mapa deshabilitada temporalmente
+// const viewMode = ref<'list' | 'map'>('list');
 const search = ref('');
 const trustedOnly = ref(false);
 const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
@@ -27,9 +28,9 @@ function onRowSelect(_e: Event, row: TableRow<Supplier>) {
   }
 }
 
-function openSupplier(id: number) {
-  void modalRef.value?.openEdit(id);
-}
+// function openSupplier(id: number) {
+//   void modalRef.value?.openEdit(id);
+// }
 
 const {
   rows,
@@ -146,6 +147,7 @@ const columns: TableColumn<Supplier>[] = [
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
+            <!-- Vista mapa deshabilitada temporalmente
             <UFieldGroup>
               <UButton
                 :color="viewMode === 'list' ? 'primary' : 'neutral'"
@@ -162,6 +164,7 @@ const columns: TableColumn<Supplier>[] = [
                 @click="viewMode = 'map'"
               />
             </UFieldGroup>
+            -->
             <CatalogSupplierCreateModal ref="modalRef" />
           </div>
         </div>
@@ -199,7 +202,6 @@ const columns: TableColumn<Supplier>[] = [
         </div>
 
         <UTable
-          v-if="viewMode === 'list'"
           ref="table"
           sticky
           class="h-80"
@@ -210,11 +212,13 @@ const columns: TableColumn<Supplier>[] = [
           @select="onRowSelect"
         />
 
+        <!-- Vista mapa deshabilitada temporalmente
         <CatalogSuppliersMapView
           v-else
           :suppliers="filteredRows"
           @select="openSupplier"
         />
+        -->
       </UContainer>
     </template>
   </UDashboardPanel>

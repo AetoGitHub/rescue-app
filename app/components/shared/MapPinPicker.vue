@@ -36,13 +36,16 @@ const markerLatLng = computed(() => {
   return null;
 });
 
-function panToOnce(lat: number, lng: number, zoom = 14) {
-  nextTick(() => {
-    const map = sharedMapRef.value?.getMap();
-    if (!map) return;
+function panToOnce(lat: number, lng: number, zoom = 14, attempt = 0) {
+  const map = sharedMapRef.value?.getMap();
+  if (map) {
     map.panTo({ lat, lng });
     map.setZoom(zoom);
-  });
+    return;
+  }
+  if (attempt < 12) {
+    window.setTimeout(() => panToOnce(lat, lng, zoom, attempt + 1), 80);
+  }
 }
 
 function setCoordinates(lat: number, lng: number) {
@@ -105,6 +108,20 @@ async function requestCurrentLocation() {
     geolocationPending.value = false;
   }
 }
+
+watch(
+  () =>
+    [
+      parseCoordinate(latitude.value),
+      parseCoordinate(longitude.value),
+    ] as const,
+  ([lat, lng], previous) => {
+    if (lat == null || lng == null) return;
+    const [prevLat, prevLng] = previous ?? [undefined, undefined];
+    if (prevLat === lat && prevLng === lng) return;
+    recenterFromModel();
+  },
+);
 
 onMounted(() => {
   recenterFromModel();
