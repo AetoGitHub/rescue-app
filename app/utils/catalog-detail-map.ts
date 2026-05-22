@@ -25,6 +25,36 @@ export function mapCompanyDetail(raw: Record<string, unknown>): CompanyCreateBod
   };
 }
 
+/** Copies company catalog fields into a client draft; does not set `name`. */
+export function applyCompanyDetailToClientDraft<
+  T extends Pick<
+    CompanyCreateBody,
+    | 'business_name'
+    | 'rfc'
+    | 'phone'
+    | 'email'
+    | 'address'
+    | 'client_type'
+    | 'billing_type'
+    | 'commission_type'
+    | 'commission_value'
+    | 'commission_fixed'
+    | 'price_multiplier'
+  >,
+>(target: T, company: CompanyCreateBody): void {
+  target.business_name = company.business_name;
+  target.rfc = company.rfc;
+  target.phone = company.phone;
+  target.email = company.email;
+  target.address = company.address;
+  target.client_type = company.client_type;
+  target.billing_type = company.billing_type;
+  target.commission_type = company.commission_type;
+  target.commission_value = company.commission_value;
+  target.commission_fixed = company.commission_fixed;
+  target.price_multiplier = company.price_multiplier;
+}
+
 function mapCreditInfoBuckets(raw: Record<string, unknown>): {
   overdue_amount: number | null;
   overdue_invoices_count: number;
@@ -240,7 +270,7 @@ export function mapClientDetailToCreateBody(
   const base = mapClientDetail(raw);
   return {
     ...base,
-    company: base.company ?? 0,
+    company: base.company ?? null,
     seller: base.seller ?? 0,
   };
 }

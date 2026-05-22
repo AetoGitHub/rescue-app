@@ -43,7 +43,7 @@ export interface RescueCreateBody {
   serial_number?: string;
   service_description: string;
   supplier: number | null;
-  manager?: number | null;
+  operator?: number | null;
   location_latitude: string;
   location_longitude: string;
   location_description: string;

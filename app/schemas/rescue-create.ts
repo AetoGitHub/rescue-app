@@ -392,7 +392,7 @@ export function rescueFormToCreateBody(
     ...(serial ? { serial_number: serial } : {}),
     service_description: data.service_description,
     supplier: data.supplier ?? null,
-    manager: data.manager ?? null,
+    operator: data.manager ?? null,
     location_latitude: String(data.location_latitude ?? '').trim(),
     location_longitude: String(data.location_longitude ?? '').trim(),
     location_description: data.location_description,

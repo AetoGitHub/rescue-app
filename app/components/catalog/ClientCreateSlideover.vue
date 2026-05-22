@@ -187,6 +187,34 @@ watch(open, (v) => {
   }
 });
 
+watch(
+  () => state.company,
+  async (companyId, prev, onCleanup) => {
+    if (isEdit.value || companyId == null || companyId === prev) return;
+
+    let active = true;
+    onCleanup(() => {
+      active = false;
+    });
+
+    try {
+      const raw = await $fetch<Record<string, unknown>>(
+        `/api/catalogue/company/detail/${companyId}/`,
+      );
+      if (!active) return;
+      applyCompanyDetailToClientDraft(state, mapCompanyDetail(raw));
+    } catch (e) {
+      if (!active) return;
+      console.error(e);
+      toast.add({
+        title: 'No se pudo cargar la compañía',
+        description: getFetchErrorMessage(e),
+        color: 'error',
+      });
+    }
+  },
+);
+
 function fetchCompanyDropdown(
   name: string,
   options?: { signal?: AbortSignal },
@@ -302,7 +330,7 @@ const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 function buildSubmitBody(data: ZodInfer<typeof clientCreateSchema>): ClientCreateBody {
   return {
     ...data,
-    company: data.company,
+    company: data.company ?? null,
     seller: data.seller,
     is_active: data.is_active ?? true,
   };
@@ -396,10 +424,10 @@ async function requestSubmit() {
                 >
                   Datos generales
                 </h3>
-                <UFormField label="Compañía" name="company" required>
+                <UFormField label="Compañía" name="company">
                   <CatalogDropdownSelect
                     v-model="state.company"
-                    placeholder="Buscar compañía"
+                    placeholder="Buscar compañía (opcional)"
                     :fetcher="fetchCompanyDropdown"
                   />
                 </UFormField>
@@ -579,10 +607,10 @@ async function requestSubmit() {
           >
             Datos generales
           </h3>
-          <UFormField label="Compañía" name="company" required>
+          <UFormField label="Compañía" name="company">
             <CatalogDropdownSelect
               v-model="state.company"
-              placeholder="Buscar compañía"
+              placeholder="Buscar compañía (opcional)"
               :fetcher="fetchCompanyDropdown"
             />
           </UFormField>

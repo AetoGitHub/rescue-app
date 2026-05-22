@@ -42,7 +42,7 @@ export const companyCreateSchema = z.object({
 });
 
 export const clientCreateSchema = companyCreateSchema.extend({
-  company: z.number().int().positive({ error: 'Selecciona una compañía' }),
+  company: z.number().int().positive().optional(),
   seller: z.number().int().positive({ error: 'Selecciona un vendedor' }),
   notes: z.string(),
   is_active: z.boolean().optional(),

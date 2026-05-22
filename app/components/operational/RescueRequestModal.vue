@@ -157,7 +157,7 @@ function fetchManagerDropdown(
 ) {
   return $fetch<PaginatedResponse<Record<string, unknown>>>(
     '/api/auth/user/dropdown/',
-    { query: { name }, signal: options?.signal },
+    { query: { role: 'operator', name }, signal: options?.signal },
   ).then((res) => ({
     next: res.next,
     previous: res.previous,
