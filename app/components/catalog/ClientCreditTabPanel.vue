@@ -6,6 +6,13 @@ import {
   formatClientMoney,
 } from '~/utils/client-list-display';
 
+type CreditMetricRow = {
+  id: string;
+  label: string;
+  value: string;
+  highlight?: boolean;
+};
+
 const props = defineProps<{
   clientName: string;
   creditSummary: ClientCreditSummary;
@@ -74,6 +81,45 @@ const dueSoonCount = computed(
 function toggleBlockClient() {
   creditState.value.is_blocked = !creditState.value.is_blocked;
 }
+
+const creditMetricRows = computed((): CreditMetricRow[] => [
+  {
+    id: 'limit',
+    label: 'Límite',
+    value: formatClientMoney(props.creditSummary.credit_limit),
+  },
+  {
+    id: 'used',
+    label: 'Usado',
+    value: formatClientMoney(props.creditSummary.credit_used),
+  },
+  {
+    id: 'available',
+    label: 'Disponible',
+    value: formatClientMoney(props.creditSummary.credit_available),
+    highlight: true,
+  },
+  {
+    id: 'days',
+    label: 'Días de crédito',
+    value: `${creditState.value.days} días`,
+  },
+  {
+    id: 'extension',
+    label: 'Prórroga',
+    value: `${creditState.value.extension} días`,
+  },
+  {
+    id: 'tolerance',
+    label: 'Tolerancia remisión',
+    value: `${creditState.value.remision_tolerance} días`,
+  },
+  {
+    id: 'po',
+    label: 'Requiere OC',
+    value: creditState.value.requires_purchase_order ? 'Sí' : 'No',
+  },
+]);
 </script>
 
 <template>
@@ -119,61 +165,40 @@ function toggleBlockClient() {
         />
       </div>
 
-      <div class="grid gap-6 lg:grid-cols-[auto_1fr]">
-        <div class="flex flex-col items-center gap-2">
-          <CatalogClientCreditUsageRing :percent="usagePercent" size="md" />
+      <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
+        <div
+          class="flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-2"
+        >
+          <CatalogClientCreditUsageRing :percent="usagePercent" size="lg" />
           <span class="text-xs font-medium uppercase tracking-wider text-muted">
-            {{ usagePercent ?? 0 }}% usado
+            USADO
           </span>
         </div>
 
-        <div
+        <ul
           v-if="!lineEditOpen"
-          class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3"
+          class="min-w-0 flex-1 basis-0 divide-y divide-default border-t border-default"
         >
-          <div>
-            <p class="text-xs uppercase tracking-wider text-muted">Límite</p>
-            <p class="font-medium tabular-nums">
-              {{ formatClientMoney(creditSummary.credit_limit) }}
-            </p>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-wider text-muted">Usado</p>
-            <p class="font-medium tabular-nums">
-              {{ formatClientMoney(creditSummary.credit_used) }}
-            </p>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-wider text-muted">Disponible</p>
-            <p class="font-semibold tabular-nums text-primary">
-              {{ formatClientMoney(creditSummary.credit_available) }}
-            </p>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-wider text-muted">
-              Días de crédito
-            </p>
-            <p class="font-medium">{{ creditState.days }} días</p>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-wider text-muted">Prórroga</p>
-            <p class="font-medium">{{ creditState.extension }} días</p>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-wider text-muted">
-              Tolerancia remisión
-            </p>
-            <p class="font-medium">{{ creditState.remision_tolerance }} días</p>
-          </div>
-          <div>
-            <p class="text-xs uppercase tracking-wider text-muted">Requiere OC</p>
-            <p class="font-medium">
-              {{ creditState.requires_purchase_order ? 'Sí' : 'No' }}
-            </p>
-          </div>
-        </div>
+          <li
+            v-for="row in creditMetricRows"
+            :key="row.id"
+            class="flex items-center justify-between gap-4 py-3"
+          >
+            <span class="text-xs uppercase tracking-wider text-muted">
+              {{ row.label }}
+            </span>
+            <span
+              :class="[
+                'shrink-0 text-end font-semibold tabular-nums',
+                row.highlight ? 'text-primary' : 'text-default',
+              ]"
+            >
+              {{ row.value }}
+            </span>
+          </li>
+        </ul>
 
-        <div v-else class="space-y-4 sm:col-span-2">
+        <div v-else class="min-w-0 flex-1 basis-0 space-y-4">
           <UFormField label="Límite de crédito" required>
             <UInputNumber
               v-model="creditLimitModel"

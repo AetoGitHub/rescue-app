@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   percent: number | null;
-  size?: 'xs' | 'sm' | 'md';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }>();
 
 const sizeClass = computed(() => {
@@ -10,12 +10,14 @@ const sizeClass = computed(() => {
       return 'size-10 text-[10px]';
     case 'md':
       return 'size-20 text-sm';
+    case 'lg':
+      return 'size-[180px] text-2xl';
     default:
       return 'size-14 text-xs';
   }
 });
 
-const ringColor = computed(() => {
+const progressColor = computed(() => {
   if (props.percent == null) return 'text-muted';
   if (props.percent >= 100) return 'text-error';
   return 'text-primary';
@@ -41,7 +43,7 @@ const strokeDash = computed(() => {
         cy="18"
         r="15.5"
         fill="none"
-        class="stroke-muted/30"
+        class="stroke-neutral-200 dark:stroke-neutral-700"
         stroke-width="3"
       />
       <circle
@@ -49,21 +51,21 @@ const strokeDash = computed(() => {
         cy="18"
         r="15.5"
         fill="none"
-        :class="['stroke-current', ringColor]"
+        :class="['stroke-current', progressColor]"
         stroke-width="3"
         stroke-linecap="round"
         pathLength="100"
         :stroke-dasharray="strokeDash"
       />
     </svg>
-    <span
+    <div
       :class="[
-        'absolute inset-0 flex items-center justify-center font-semibold tabular-nums',
-        ringColor,
+        'absolute inset-0 flex flex-col items-center justify-center font-semibold tabular-nums leading-tight',
+        progressColor,
       ]"
     >
-      {{ percent }}%
-    </span>
+      <span>{{ percent }}%</span>
+    </div>
   </div>
   <span v-else class="text-muted">—</span>
 </template>

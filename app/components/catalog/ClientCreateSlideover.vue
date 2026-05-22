@@ -356,7 +356,7 @@ async function requestSubmit() {
   <USlideover
     v-model:open="open"
     :title="isEdit ? 'Editar cliente' : 'Nuevo cliente'"
-    :ui="{ content: 'max-w-3xl' }"
+    :ui="{ content: 'max-w-xl' }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -548,7 +548,7 @@ async function requestSubmit() {
 
           <template #credit>
             <CatalogClientCreditTabPanel
-              v-model:is-active="state.is_active"
+              v-model:is-active="state.is_active!"
               v-model:credit-state="creditState"
               :client-name="state.name"
               :credit-summary="creditSummary"
