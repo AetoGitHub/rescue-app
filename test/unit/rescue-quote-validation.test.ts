@@ -36,6 +36,12 @@ const baseFormFields = {
   internal_notes: '',
 };
 
+const extendedFlowLocationFields = {
+  location_latitude: '19.4326',
+  location_longitude: '-99.1332',
+  location_description: 'CDMX',
+};
+
 describe('getRescueStepQuoteSchema', () => {
   it('allows empty quote_lines for rescue', () => {
     const result = getRescueStepQuoteSchema('rescue').safeParse({
@@ -96,9 +102,10 @@ describe('getRescueStepQuoteWithSettingsSchema', () => {
 });
 
 describe('rescueCreateFormSchema quote_lines', () => {
-  it('allows empty quote on proyect submit', () => {
+  it('allows empty quote on proyect submit with required location', () => {
     const result = rescueCreateFormSchema.safeParse({
       ...baseFormFields,
+      ...extendedFlowLocationFields,
       service_type: 'proyect',
       quote_lines: [],
     });

@@ -82,10 +82,13 @@ watch(
     currentStep.value = 0;
     stepError.value = null;
     state.quote_lines = initialQuoteLinesForServiceType(state.service_type);
-    if (state.service_type !== 'rescue') {
+    if (!hasExtendedRescueWizardFlow(state.service_type)) {
       state.supplier = null;
       state.supplierLabel = '';
       state.service_description = '';
+      state.location_latitude = null;
+      state.location_longitude = null;
+      state.location_description = '';
     }
   },
 );

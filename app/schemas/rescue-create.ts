@@ -6,7 +6,10 @@ import type {
 } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import { getContractItemById } from '~/utils/rescue-company-settings';
-import { isQuoteOptionalForServiceType } from '~/utils/rescue-request';
+import {
+  hasExtendedRescueWizardFlow,
+  isQuoteOptionalForServiceType,
+} from '~/utils/rescue-request';
 const RESCUE_SERVICE_TYPES = [
   'rescue',
   'loan',
@@ -285,7 +288,7 @@ export const rescueCreateFormSchema = z
       required: !isQuoteOptionalForServiceType(data.service_type),
     });
 
-    if (data.service_type !== 'rescue') {
+    if (!hasExtendedRescueWizardFlow(data.service_type)) {
       return;
     }
     const lat = parseRescueCoord(
@@ -356,7 +359,7 @@ export function getStepSchemaForIndex(
   stepIndex: number,
   serviceType: RescueServiceType,
 ) {
-  if (serviceType === 'rescue') {
+  if (hasExtendedRescueWizardFlow(serviceType)) {
     switch (stepIndex) {
       case 0:
         return rescueStepBasicsSchema;

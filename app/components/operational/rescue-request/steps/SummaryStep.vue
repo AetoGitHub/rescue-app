@@ -85,7 +85,7 @@ const locationCoordsLabel = computed(() => {
           </dd>
         </div>
         <div
-          v-if="state.service_type === 'rescue'"
+          v-if="hasExtendedRescueWizardFlow(state.service_type)"
           class="sm:col-span-2"
         >
           <dt class="text-muted">Descripción del servicio</dt>

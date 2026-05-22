@@ -8,10 +8,16 @@ export type RescueWizardStepKind =
   | 'supplier'
   | 'summary';
 
-export function isQuoteOptionalForServiceType(
+export function hasExtendedRescueWizardFlow(
   serviceType: RescueServiceType,
 ): boolean {
   return serviceType === 'rescue' || serviceType === 'proyect';
+}
+
+export function isQuoteOptionalForServiceType(
+  serviceType: RescueServiceType,
+): boolean {
+  return hasExtendedRescueWizardFlow(serviceType);
 }
 
 function quoteStepItemFor(serviceType: RescueServiceType): StepperItem {
@@ -31,7 +37,7 @@ export function getWizardStepKind(
 ): RescueWizardStepKind {
   if (stepIndex === 0) return 'basics';
 
-  if (serviceType === 'rescue') {
+  if (hasExtendedRescueWizardFlow(serviceType)) {
     if (stepIndex === 1) return 'location';
     if (stepIndex === 2) return 'supplier';
     if (stepIndex === 3) return 'quote';
@@ -45,7 +51,7 @@ export function getWizardStepKind(
 export function getRescueStepItems(
   serviceType: RescueServiceType,
 ): StepperItem[] {
-  if (serviceType === 'rescue') {
+  if (hasExtendedRescueWizardFlow(serviceType)) {
     return [
       {
         title: 'Datos',
@@ -65,7 +71,7 @@ export function getRescueStepItems(
         icon: 'i-lucide-truck',
         value: 2,
       },
-      { ...quoteStepItemFor('rescue'), value: 3 },
+      { ...quoteStepItemFor(serviceType), value: 3 },
       {
         title: 'Resumen',
         description: 'Confirmar',
