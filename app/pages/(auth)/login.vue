@@ -87,6 +87,15 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
         title="No se pudo iniciar sesión"
         :description="loginErrorMessage"
       />
+
+      <p class="mt-4 text-center text-sm">
+        <NuxtLink
+          to="/password-reset"
+          class="text-primary hover:underline"
+        >
+          ¿Olvidaste tu contraseña?
+        </NuxtLink>
+      </p>
     </UPageCard>
   </div>
 </template>
