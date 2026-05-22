@@ -35,6 +35,7 @@ const showEditCreditTabs = computed(
 const showCreateCreditSection = computed(
   () => !isEdit.value && state.client_type === 'CREDIT',
 );
+const hasLinkedCredit = computed(() => editingCreditId.value != null);
 
 const editTabItems = [
   { label: 'General', value: 'general', slot: 'general' as const },
@@ -157,12 +158,6 @@ async function loadDetail(id: number) {
       if (creditState.limit) {
         creditSummary.credit_limit = creditState.limit;
       }
-      toast.add({
-        title: 'Crédito no vinculado',
-        description:
-          'No se encontró un registro de crédito para este cliente. Los datos pueden estar incompletos.',
-        color: 'warning',
-      });
     }
   } catch (e) {
     console.error(e);
@@ -317,6 +312,11 @@ function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
   const body = buildSubmitBody(payload.data);
 
   if (body.client_type === 'CREDIT') {
+    if (isEdit.value && !hasLinkedCredit.value) {
+      mutate({ body, id: editingId.value });
+      return;
+    }
+
     const creditResult = creditFormSchema.safeParse(creditState);
     if (!creditResult.success) {
       const issue = creditResult.error.issues[0];
@@ -548,11 +548,27 @@ async function requestSubmit() {
 
           <template #credit>
             <CatalogClientCreditTabPanel
+              v-if="hasLinkedCredit"
               v-model:is-active="state.is_active!"
               v-model:credit-state="creditState"
               :client-name="state.name"
               :credit-summary="creditSummary"
             />
+            <div
+              v-else
+              class="flex flex-col items-center justify-center gap-2 py-16 text-center text-sm"
+            >
+              <UIcon
+                name="i-lucide-landmark"
+                class="size-10 text-muted opacity-60"
+              />
+              <p class="font-medium text-default">
+                Sin línea de crédito
+              </p>
+              <p class="max-w-sm text-muted">
+                Este cliente no tiene un registro de crédito vinculado.
+              </p>
+            </div>
           </template>
         </UTabs>
 

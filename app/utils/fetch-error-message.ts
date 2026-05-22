@@ -8,7 +8,7 @@ function stringifyDetail(detail: unknown): string | null {
       .filter((x): x is string => typeof x === 'string')
       .map((s) => s.trim())
       .filter(Boolean);
-    return parts.length > 0 ? parts.join('. ') : null;
+    return parts.length > 0 ? parts.join(' ') : null;
   }
   return null;
 }
@@ -48,6 +48,64 @@ function readErrorDataAsString(data: Record<string, unknown>): string | null {
 
 function containsLikelyUrl(text: string): boolean {
   return /https?:\/\//i.test(text);
+}
+
+function extractFetchErrorData(error: unknown): Record<string, unknown> | null {
+  if (!error || typeof error !== 'object') return null;
+  const err = error as Record<string, unknown>;
+
+  const data = err.data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    return data as Record<string, unknown>;
+  }
+
+  const response = err.response;
+  if (response && typeof response === 'object') {
+    const responseData = (response as { _data?: unknown })._data;
+    if (
+      responseData
+      && typeof responseData === 'object'
+      && !Array.isArray(responseData)
+    ) {
+      return responseData as Record<string, unknown>;
+    }
+  }
+
+  return null;
+}
+
+/** Mensaje desde `data.detail` del API (DRF). */
+export function getApiDetailMessage(error: unknown): string | null {
+  const data = extractFetchErrorData(error);
+  if (!data) return null;
+  return stringifyDetail(data.detail);
+}
+
+export function getPasswordResetErrorMessage(error: unknown): string {
+  const fromDetail = getApiDetailMessage(error);
+  if (fromDetail) return fromDetail;
+
+  const data = extractFetchErrorData(error);
+  if (data) {
+    const fallback = readErrorDataAsString(data);
+    if (fallback) return fallback;
+  }
+
+  if (!error || typeof error !== 'object') {
+    return 'No se pudo completar la operación.';
+  }
+
+  const err = error as Record<string, unknown>;
+  const msg = typeof err.message === 'string' ? err.message.trim() : '';
+  if (
+    msg
+    && !containsLikelyUrl(msg)
+    && !/^\[POST\]|\[GET\]|Bad Request|Unauthorized/i.test(msg)
+  ) {
+    return msg;
+  }
+
+  return 'No se pudo completar la operación.';
 }
 
 function getFetchStatusCode(error: unknown): number | undefined {
@@ -104,13 +162,13 @@ export function getFetchErrorMessage(error: unknown): string {
     return 'No se pudo completar la operación.';
   }
 
-  const err = error as Record<string, unknown>;
-  const data = err.data;
-
-  if (data && typeof data === 'object' && !Array.isArray(data)) {
-    const fromData = readErrorDataAsString(data as Record<string, unknown>);
+  const data = extractFetchErrorData(error);
+  if (data) {
+    const fromData = readErrorDataAsString(data);
     if (fromData) return fromData;
   }
+
+  const err = error as Record<string, unknown>;
 
   if (typeof err.statusMessage === 'string' && err.statusMessage.trim()) {
     return err.statusMessage.trim();

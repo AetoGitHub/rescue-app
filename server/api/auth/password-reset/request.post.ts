@@ -6,12 +6,16 @@ export default defineEventHandler(async (event) => {
 
   const target = joinURL(apiUrl, '/api/auth/password_reset/request/');
 
-  await $fetch(target, {
-    method: 'POST',
-    body: {
-      identifier: body.identifier,
-    },
-  });
+  try {
+    await $fetch(target, {
+      method: 'POST',
+      body: {
+        identifier: body.identifier,
+      },
+    });
+  } catch (error) {
+    forwardFetchError(error);
+  }
 
   return { ok: true };
 });

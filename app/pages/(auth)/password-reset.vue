@@ -41,7 +41,7 @@ const { mutate: requestReset, asyncStatus: requestStatus } = useMutation({
   },
   onError: (e) => {
     console.error(e);
-    errorMessage.value = getFetchErrorMessage(e);
+    errorMessage.value = getPasswordResetErrorMessage(e);
   },
 });
 
@@ -62,7 +62,7 @@ const { mutate: confirmReset, asyncStatus: confirmStatus } = useMutation({
   },
   onError: (e) => {
     console.error(e);
-    errorMessage.value = getFetchErrorMessage(e);
+    errorMessage.value = getPasswordResetErrorMessage(e);
   },
 });
 
@@ -138,7 +138,7 @@ function goBackToRequest() {
             v-model="requestState.identifier"
             type="text"
             class="w-full"
-            autocomplete="username"
+            autocomplete="email"
             placeholder="usuario@correo.com"
           />
         </UFormField>
