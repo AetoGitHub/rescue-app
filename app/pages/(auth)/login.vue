@@ -66,7 +66,6 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
       <UAuthForm
         :schema="schema"
         title="Sistema operativo de rescates"
-        icon="i-lucide-user"
         :fields="fields"
         :submit="{
           label: 'Iniciar sesión',
@@ -79,7 +78,11 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
         }"
         :loading="asyncStatus === 'loading'"
         @submit="onSubmit"
-      />
+      >
+        <template #leading>
+          <SharedAetoLogo class="size-16 mx-auto" />
+        </template>
+    </UAuthForm>
       <UAlert
         v-if="loginErrorMessage"
         class="mb-4"
