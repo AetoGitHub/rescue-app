@@ -1,9 +1,10 @@
 import { useQuery } from '@pinia/colada';
 import { refDebounced } from '@vueuse/core';
-import type { SupplierListResponse } from '~/interfaces/catalogs/supplier';
+import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type { RescueSupplierSort } from '~/interfaces/rescue';
 import { SUPPLIER_LIST_PATH } from '~/constants/rescue-api';
 import { parseRescueCoord } from '~/schemas/rescue-create';
+import { mapSupplierListItem, mapSupplierListRow } from '~/utils/supplier-list';
 
 export function useRescueSupplierSearch(options: {
   latitude: Ref<string | null>;
@@ -57,7 +58,7 @@ export function useRescueSupplierSearch(options: {
       unitCoords.value.lng ?? '',
     ],
     query: async ({ signal }) =>
-      $fetch<SupplierListResponse>(SUPPLIER_LIST_PATH, {
+      $fetch<PaginatedResponse<Record<string, unknown>>>(SUPPLIER_LIST_PATH, {
         query: buildQuery(),
         signal,
       }),
@@ -68,7 +69,9 @@ export function useRescueSupplierSearch(options: {
 
   const suppliers = computed(() => {
     const rows = data.value?.results ?? [];
-    return groupTrustedFirst(rows.map(mapSupplierListItem));
+    return groupTrustedFirst(
+      rows.map((raw) => mapSupplierListItem(mapSupplierListRow(raw))),
+    );
   });
 
   const loading = computed(() => asyncStatus.value === 'loading');

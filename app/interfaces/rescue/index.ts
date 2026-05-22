@@ -12,6 +12,7 @@ export interface RescueSupplierNearbyRow {
   phone: string;
   is_trusted: boolean;
   score: number;
+  rescues_count: number;
   /** Alias of score for templates */
   ranking: number;
   distance_km: number | null;

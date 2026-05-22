@@ -15,6 +15,7 @@ export interface Supplier {
   is_trusted: boolean;
   is_active: boolean;
   score?: number;
+  rescues_count?: number;
   latitude?: string | number | null;
   longitude?: string | number | null;
 }
@@ -27,6 +28,7 @@ export interface SupplierListItem {
   is_trusted: boolean;
   is_active: boolean;
   score: number;
+  rescues_count: number;
   distance_km?: number | null;
   distance?: number | null;
   latitude?: string | number | null;
@@ -34,7 +36,7 @@ export interface SupplierListItem {
 }
 
 export interface SupplierListResponse {
-  count: number;
+  count?: number;
   results: SupplierListItem[];
   next?: string | null;
   previous?: string | null;

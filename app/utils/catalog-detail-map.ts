@@ -299,7 +299,7 @@ export function mapSupplierDetail(
     description: String(raw.description ?? ''),
     phone: formatMexicoPhoneInput(String(raw.phone ?? '')),
     email: String(raw.email ?? ''),
-    service_type: toSupplierServiceTypes(raw.service_type),
+    service_type: toSupplierServiceTypes(raw.service_types ?? raw.service_type),
     is_trusted: Boolean(raw.is_trusted),
     notes: String(raw.notes ?? ''),
     latitude: raw.latitude != null ? String(raw.latitude) : '',

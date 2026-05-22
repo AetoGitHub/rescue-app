@@ -297,9 +297,10 @@ function formatRanking(value: number) {
                   v-if="row.is_trusted"
                   color="warning"
                   variant="subtle"
-                  size="xs"
+                  size="sm"
+                  class="shrink-0"
                 >
-                  <UIcon name="i-lucide-star" class="size-3" />
+                  <UIcon name="i-lucide-star" class="size-4" />
                   Confianza
                 </UBadge>
               </div>
@@ -311,6 +312,10 @@ function formatRanking(value: number) {
                 <span class="inline-flex items-center gap-1">
                   <UIcon name="i-lucide-phone" class="size-3.5 shrink-0" />
                   {{ row.phone || '—' }}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <UIcon name="i-lucide-truck" class="size-3.5 shrink-0" />
+                  {{ formatSupplierRescuesCount(row.rescues_count) }}
                 </span>
                 <span class="inline-flex items-center gap-1">
                   <UIcon name="i-lucide-map-pin" class="size-3.5 shrink-0" />

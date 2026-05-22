@@ -34,15 +34,17 @@ function onRowSelect(_e: Event, row: TableRow<Supplier>) {
 // }
 
 const {
-  rows,
+  rows: rawRows,
   asyncStatus,
   hasNextPage,
   loadNextPage,
   isInitialLoading,
-} = useCatalogInfiniteList<Supplier>({
+} = useCatalogInfiniteList<Record<string, unknown>>({
   key: () => ['suppliers'],
   path: '/api/supplier/list/',
 });
+
+const rows = computed(() => rawRows.value.map(mapSupplierListRow));
 
 usePaginatedTableInfiniteScroll({
   tableRef,
@@ -96,7 +98,7 @@ const columns: TableColumn<Supplier>[] = [
             {
               color: 'warning',
               variant: 'subtle',
-              size: 'xs',
+              size: 'sm',
               class: 'ms-2 shrink-0',
               leadingIcon: 'i-lucide-star',
               label: 'Confianza',
@@ -115,6 +117,11 @@ const columns: TableColumn<Supplier>[] = [
         score: row.original.score,
         size: 'xs',
       }),
+  },
+  {
+    accessorKey: 'rescues_count',
+    header: 'Rescates',
+    cell: ({ row }) => String(row.original.rescues_count ?? 0),
   },
   {
     id: 'service_type',
