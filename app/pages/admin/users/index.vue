@@ -2,6 +2,7 @@
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { User, UserRole } from '~/interfaces/auth/user';
 import { USER_ROLE_OPTIONS } from '~/constants/user-select-options';
+import { adminListTableClass } from '~/constants/admin-list-layout';
 
 useHead({
   title: 'Usuarios',
@@ -72,50 +73,38 @@ const columns: TableColumn<User>[] = [
 </script>
 
 <template>
-  <UDashboardPanel>
-    <template #header>
-      <SharedNavbar title="Usuarios" />
+  <AdminListPageShell
+    navbar-title="Usuarios"
+    title="Usuarios"
+    description="Gestiona las cuentas y permisos del sistema"
+  >
+    <template #actions>
+      <UsersUserCreateSlideover ref="slideoverRef" />
     </template>
-    <template #body>
-      <UContainer>
-        <div class="flex flex-row justify-between items-center mb-4">
-          <div>
-            <h1 class="text-3xl font-bold tracking-tight">Usuarios</h1>
-            <p class="mt-1 text-sm text-muted">
-              Gestiona las cuentas y permisos del sistema
-            </p>
-          </div>
 
-          <UsersUserCreateSlideover ref="slideoverRef" />
-        </div>
+    <template #filters>
+      <UInput
+        leading-icon="i-lucide-search"
+        placeholder="Buscar usuario"
+        class="flex-1"
+        variant="subtle"
+        :ui="{
+          base: 'bg-default',
+        }"
+      />
 
-        <USeparator />
-
-        <div class="flex flex-row gap-2 my-4">
-          <UInput
-            leading-icon="i-lucide-search"
-            placeholder="Buscar usuario"
-            class="flex-1"
-            variant="subtle"
-            :ui="{
-              base: 'bg-default',
-            }"
-          />
-
-          <UButton label="Todos" variant="subtle" color="primary" />
-        </div>
-
-        <UTable
-          ref="table"
-          sticky
-          class="h-80"
-          :columns="columns"
-          :data="rows"
-          :loading="isInitialLoading"
-          :get-row-id="(row: User) => String(row.id)"
-          @select="onRowSelect"
-        />
-      </UContainer>
+      <UButton label="Todos" variant="subtle" color="primary" />
     </template>
-  </UDashboardPanel>
+
+    <UTable
+      ref="table"
+      sticky
+      :class="adminListTableClass"
+      :columns="columns"
+      :data="rows"
+      :loading="isInitialLoading"
+      :get-row-id="(row: User) => String(row.id)"
+      @select="onRowSelect"
+    />
+  </AdminListPageShell>
 </template>

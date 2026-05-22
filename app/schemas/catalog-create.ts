@@ -27,7 +27,7 @@ export const companyCreateSchema = z.object({
     .transform((s) => s.trim())
     .pipe(z.email({ error: 'Introduce un correo válido' })),
   address: requiredStr('La dirección'),
-  client_type: z.enum(['CASH', 'CREDIT'], {
+  client_type: z.enum(['CASH', 'CREDIT', 'PUBLIC'], {
     error: 'Selecciona un tipo de cliente',
   }),
   billing_type: z.enum(['DIRECT_INVOICE', 'MANUAL'], {
@@ -45,6 +45,7 @@ export const clientCreateSchema = companyCreateSchema.extend({
   company: z.number().int().positive({ error: 'Selecciona una compañía' }),
   seller: z.number().int().positive({ error: 'Selecciona un vendedor' }),
   notes: z.string(),
+  is_active: z.boolean().optional(),
 });
 
 const creditLimitField = requiredStr('El límite de crédito').refine(
@@ -104,18 +105,19 @@ export const supplierCreateSchema = z
       .string()
       .transform((s) => s.trim())
       .pipe(z.email({ error: 'Introduce un correo válido' })),
-    service_type: z.enum(
-      [
-        'cranes',
-        'mechanics',
-        'road_assist',
-        'forklifts',
-        'flatbed',
-        'transport',
-        'other',
-      ],
-      { error: 'Selecciona un tipo de servicio' },
-    ),
+    service_type: z
+      .array(
+        z.enum([
+          'cranes',
+          'mechanics',
+          'road_assist',
+          'forklifts',
+          'flatbed',
+          'transport',
+          'other',
+        ]),
+      )
+      .min(1, 'Selecciona al menos un tipo de servicio'),
     is_trusted: z.boolean(),
     notes: z.string(),
     latitude: z.string(),

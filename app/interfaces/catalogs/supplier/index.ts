@@ -10,7 +10,7 @@ export type SupplierServiceType =
 export interface Supplier {
   id: number;
   name: string;
-  service_type: SupplierServiceType;
+  service_type: SupplierServiceType[];
   phone: string;
   is_trusted: boolean;
   is_active: boolean;
@@ -22,7 +22,7 @@ export interface Supplier {
 export interface SupplierListItem {
   id: number;
   name: string;
-  service_type: SupplierServiceType;
+  service_type: SupplierServiceType[];
   phone: string;
   is_trusted: boolean;
   is_active: boolean;
@@ -45,7 +45,7 @@ export interface SupplierCreateBody {
   description: string;
   phone: string;
   email: string;
-  service_type: SupplierServiceType;
+  service_type: SupplierServiceType[];
   is_trusted: boolean;
   notes: string;
   latitude: string;

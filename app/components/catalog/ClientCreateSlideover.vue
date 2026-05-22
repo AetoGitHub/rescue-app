@@ -9,7 +9,7 @@ import {
   CLIENT_TYPE_OPTIONS,
   COMMISSION_TYPE_OPTIONS,
 } from '~/constants/catalog-select-options';
-import type { CreditFormState } from '~/interfaces/catalogs/credit';
+import type { ClientCreditSummary, CreditFormState } from '~/interfaces/catalogs/credit';
 import { clientCreateSchema, creditFormSchema, creditFormToCreateBody } from '~/schemas/catalog-create';
 
 const toast = useToast();
@@ -24,9 +24,22 @@ type ClientFormState = Omit<
 
 const open = ref(false);
 const editingId = ref<number | null>(null);
+const editingCreditId = ref<number | null>(null);
 const detailPending = ref(false);
+const editTab = ref<'general' | 'credit'>('general');
 
 const isEdit = computed(() => editingId.value != null);
+const showEditCreditTabs = computed(
+  () => isEdit.value && state.client_type === 'CREDIT',
+);
+const showCreateCreditSection = computed(
+  () => !isEdit.value && state.client_type === 'CREDIT',
+);
+
+const editTabItems = [
+  { label: 'General', value: 'general', slot: 'general' as const },
+  { label: 'Crédito', value: 'credit', slot: 'credit' as const },
+];
 
 function emptyCreditState(): CreditFormState {
   return {
@@ -36,6 +49,16 @@ function emptyCreditState(): CreditFormState {
     remision_tolerance: 3,
     requires_purchase_order: false,
     is_blocked: false,
+  };
+}
+
+function emptyCreditSummary(): ClientCreditSummary {
+  return {
+    credit_limit: null,
+    credit_used: null,
+    credit_available: null,
+    overdue_invoices_count: 0,
+    due_soon_invoices_count: 0,
   };
 }
 
@@ -56,11 +79,13 @@ function emptyState(): ClientFormState {
     company: undefined,
     seller: undefined,
     notes: '',
+    is_active: true,
   };
 }
 
 const state = reactive(emptyState());
 const creditState = reactive(emptyCreditState());
+const creditSummary = reactive(emptyCreditSummary());
 const commissionValueModel = useCommissionValueModel(
   toRef(state, 'commission_value'),
   toRef(state, 'commission_type'),
@@ -83,6 +108,9 @@ const creditRemisionToleranceModel = useRequiredIntegerModel(
 function resetForm() {
   Object.assign(state, emptyState());
   Object.assign(creditState, emptyCreditState());
+  Object.assign(creditSummary, emptyCreditSummary());
+  editingCreditId.value = null;
+  editTab.value = 'general';
 }
 
 function prepareCreate() {
@@ -90,14 +118,52 @@ function prepareCreate() {
   resetForm();
 }
 
+function applyCreditDetail(raw: Record<string, unknown>) {
+  const mapped = mapCreditDetail(raw);
+  if (mapped.creditId > 0) {
+    editingCreditId.value = mapped.creditId;
+  }
+  Object.assign(creditState, emptyCreditState(), mapped.form);
+  Object.assign(creditSummary, emptyCreditSummary(), mapped.summary);
+}
+
+async function loadCreditDetail(creditId: number) {
+  const raw = await $fetch<Record<string, unknown>>(
+    `/api/credit/detail/${creditId}/`,
+  );
+  applyCreditDetail(raw);
+}
+
 async function loadDetail(id: number) {
   detailPending.value = true;
+  editingCreditId.value = null;
   try {
     const raw = await $fetch<Record<string, unknown>>(
       `/api/catalogue/client/detail/${id}/`,
     );
-    Object.assign(state, emptyState(), mapClientDetail(raw));
+    const mapped = mapClientDetail(raw);
+    Object.assign(state, emptyState(), mapped);
     Object.assign(creditState, emptyCreditState(), mapClientCreditForm(raw));
+    Object.assign(creditSummary, emptyCreditSummary(), mapClientCreditSummary(raw));
+
+    const clientType = String(mapped.client_type ?? raw.client_type ?? '');
+    const creditId =
+      resolveCreditId(raw) ??
+      (creditSummary.credit_id != null ? creditSummary.credit_id : null);
+
+    if (clientType === 'CREDIT' && creditId != null) {
+      await loadCreditDetail(creditId);
+    } else if (clientType === 'CREDIT' && creditId == null) {
+      if (creditState.limit) {
+        creditSummary.credit_limit = creditState.limit;
+      }
+      toast.add({
+        title: 'Crédito no vinculado',
+        description:
+          'No se encontró un registro de crédito para este cliente. Los datos pueden estar incompletos.',
+        color: 'warning',
+      });
+    }
   } catch (e) {
     console.error(e);
     toast.add({
@@ -176,10 +242,22 @@ const { mutate, asyncStatus } = useMutation({
     credit?: ZodInfer<typeof creditFormSchema>;
   }) => {
     if (id != null) {
-      return $fetch(`/api/catalogue/client/update/${id}/`, {
+      await $fetch(`/api/catalogue/client/update/${id}/`, {
         method: 'PUT',
         body,
       });
+      if (body.client_type === 'CREDIT' && credit) {
+        const creditId = editingCreditId.value;
+        if (creditId == null) {
+          throw new Error('No se encontró el crédito del cliente para actualizar.');
+        }
+        await $fetch(`/api/credit/update/${creditId}/`, {
+          method: 'PUT',
+          body: creditFormToCreateBody(id, credit),
+        });
+        await loadCreditDetail(creditId);
+      }
+      return;
     }
 
     const created = await $fetch<{ id: number }>('/api/catalogue/client/create/', {
@@ -226,8 +304,19 @@ const { mutate, asyncStatus } = useMutation({
 
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
-function onSubmit(payload: { data: ClientCreateBody }) {
-  if (!isEdit.value && payload.data.client_type === 'CREDIT') {
+function buildSubmitBody(data: ZodInfer<typeof clientCreateSchema>): ClientCreateBody {
+  return {
+    ...data,
+    company: data.company,
+    seller: data.seller,
+    is_active: data.is_active ?? true,
+  };
+}
+
+function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
+  const body = buildSubmitBody(payload.data);
+
+  if (body.client_type === 'CREDIT') {
     const creditResult = creditFormSchema.safeParse(creditState);
     if (!creditResult.success) {
       const issue = creditResult.error.issues[0];
@@ -236,17 +325,18 @@ function onSubmit(payload: { data: ClientCreateBody }) {
         description: issue?.message ?? 'Completa los campos de crédito.',
         color: 'error',
       });
+      if (isEdit.value) editTab.value = 'credit';
       return;
     }
     mutate({
-      body: payload.data,
+      body,
       id: editingId.value,
       credit: creditResult.data,
     });
     return;
   }
 
-  mutate({ body: payload.data, id: editingId.value });
+  mutate({ body, id: editingId.value });
 }
 
 function onFormError() {
@@ -266,6 +356,7 @@ async function requestSubmit() {
   <USlideover
     v-model:open="open"
     :title="isEdit ? 'Editar cliente' : 'Nuevo cliente'"
+    :ui="{ content: 'max-w-3xl' }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -286,10 +377,186 @@ async function requestSubmit() {
         ref="formRef"
         :schema="clientCreateSchema"
         :state="state"
-        class="space-y-8 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
         @submit="onSubmit"
         @error="onFormError"
       >
+        <UTabs
+          v-if="showEditCreditTabs"
+          v-model="editTab"
+          :items="editTabItems"
+          class="flex min-h-0 flex-1 flex-col gap-6"
+          :ui="{ list: 'shrink-0' }"
+        >
+          <template #general>
+            <div class="space-y-8 pt-2">
+              <section class="space-y-4">
+                <h3
+                  class="text-xs font-semibold uppercase tracking-wider text-primary"
+                >
+                  Datos generales
+                </h3>
+                <UFormField label="Compañía" name="company" required>
+                  <CatalogDropdownSelect
+                    v-model="state.company"
+                    placeholder="Buscar compañía"
+                    :fetcher="fetchCompanyDropdown"
+                  />
+                </UFormField>
+                <UFormField label="Nombre" name="name" required>
+                  <UInput
+                    :model-value="state.name"
+                    class="w-full uppercase"
+                    @update:model-value="
+                      (value) => (state.name = formatCatalogNameInput(value))
+                    "
+                  />
+                </UFormField>
+                <UFormField label="Razón social" name="business_name" required>
+                  <UInput v-model="state.business_name" class="w-full" />
+                </UFormField>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <UFormField label="RFC" name="rfc" required>
+                    <UInput
+                      :model-value="state.rfc"
+                      class="w-full uppercase"
+                      maxlength="13"
+                      @update:model-value="
+                        (value) => (state.rfc = formatCatalogRfcInput(value))
+                      "
+                    />
+                  </UFormField>
+                  <UFormField label="Teléfono" name="phone" required>
+                    <UInput
+                      :model-value="state.phone"
+                      class="w-full"
+                      type="tel"
+                      inputmode="tel"
+                      autocomplete="tel"
+                      :placeholder="MEXICO_PHONE_MASK.replaceAll('#', '0')"
+                      @update:model-value="
+                        (value) => (state.phone = formatMexicoPhoneInput(value))
+                      "
+                    />
+                  </UFormField>
+                </div>
+                <UFormField label="Email" name="email" required>
+                  <UInput v-model="state.email" type="email" class="w-full" />
+                </UFormField>
+                <UFormField label="Dirección" name="address" required>
+                  <UInput v-model="state.address" class="w-full" />
+                </UFormField>
+              </section>
+
+              <section class="space-y-4">
+                <h3
+                  class="text-xs font-semibold uppercase tracking-wider text-primary"
+                >
+                  Configuración comercial
+                </h3>
+                <UFormField label="Tipo de cliente" name="client_type" required>
+                  <USelectMenu
+                    v-model="state.client_type"
+                    :items="[...CLIENT_TYPE_OPTIONS]"
+                    value-key="value"
+                    class="w-full"
+                    variant="subtle"
+                  />
+                </UFormField>
+                <UFormField label="Modo de facturación" name="billing_type" required>
+                  <USelectMenu
+                    v-model="state.billing_type"
+                    :items="[...BILLING_TYPE_OPTIONS]"
+                    value-key="value"
+                    class="w-full"
+                    variant="subtle"
+                  />
+                </UFormField>
+                <UFormField label="Vendedor asignado" name="seller" required>
+                  <CatalogDropdownSelect
+                    v-model="state.seller"
+                    placeholder="Buscar vendedor"
+                    :fetcher="fetchSellerDropdown"
+                  />
+                </UFormField>
+                <div class="space-y-2">
+                  <span class="block text-xs uppercase tracking-wider text-muted">
+                    Comisión del vendedor (sobre utilidad)
+                  </span>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <UFormField name="commission_type" required>
+                      <USelectMenu
+                        v-model="state.commission_type"
+                        :items="[...COMMISSION_TYPE_OPTIONS]"
+                        value-key="value"
+                        class="w-full"
+                        variant="subtle"
+                      />
+                    </UFormField>
+                    <UFormField name="commission_value" required>
+                      <UInputNumber
+                        :key="state.commission_type"
+                        v-model="commissionValueModel"
+                        v-bind="
+                          catalogCommissionValueInputProps(state.commission_type)
+                        "
+                      />
+                    </UFormField>
+                  </div>
+                </div>
+                <UFormField
+                  label="Comisión fija de vendedor por cotización"
+                  name="commission_fixed"
+                  required
+                  help="Se prorratea entre las partidas de la cotización al asignar el vendedor."
+                >
+                  <UInputNumber
+                    v-model="commissionFixedModel"
+                    v-bind="catalogCurrencyInputProps"
+                  />
+                </UFormField>
+                <UFormField
+                  label="Multiplicador de precios"
+                  name="price_multiplier"
+                  required
+                >
+                  <UInputNumber
+                    v-model="priceMultiplierModel"
+                    v-bind="catalogNumberInputProps"
+                  />
+                  <template #help>
+                    <span
+                      >Precio final = precio base del servicio × multiplicador.</span
+                    >
+                    <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>
+                  </template>
+                </UFormField>
+              </section>
+
+              <section class="space-y-4">
+                <h3
+                  class="text-xs font-semibold uppercase tracking-wider text-primary"
+                >
+                  Notas
+                </h3>
+                <UFormField label="Observaciones internas" name="notes">
+                  <UTextarea v-model="state.notes" class="w-full" :rows="4" />
+                </UFormField>
+              </section>
+            </div>
+          </template>
+
+          <template #credit>
+            <CatalogClientCreditTabPanel
+              v-model:is-active="state.is_active"
+              v-model:credit-state="creditState"
+              :client-name="state.name"
+              :credit-summary="creditSummary"
+            />
+          </template>
+        </UTabs>
+
+        <div v-else class="space-y-8">
         <section class="space-y-4">
           <h3
             class="text-xs font-semibold uppercase tracking-wider text-primary"
@@ -429,7 +696,7 @@ async function requestSubmit() {
           </UFormField>
         </section>
 
-        <section v-if="state.client_type === 'CREDIT'" class="space-y-4">
+        <section v-if="showCreateCreditSection" class="space-y-4">
           <h3
             class="text-xs font-semibold uppercase tracking-wider text-primary"
           >
@@ -485,6 +752,7 @@ async function requestSubmit() {
             <UTextarea v-model="state.notes" class="w-full" :rows="4" />
           </UFormField>
         </section>
+        </div>
       </UForm>
     </template>
 

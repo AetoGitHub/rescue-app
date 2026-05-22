@@ -1,6 +1,7 @@
 export const CLIENT_TYPE_OPTIONS = [
   { label: 'Contado', value: 'CASH' },
   { label: 'Crédito', value: 'CREDIT' },
+  { label: 'Público general', value: 'PUBLIC' },
 ] as const;
 
 export const BILLING_TYPE_OPTIONS = [

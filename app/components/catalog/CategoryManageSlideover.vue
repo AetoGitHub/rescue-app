@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Category } from '~/interfaces/catalogs/category';
+import {
+  adminListSlideoverBodyUi,
+  adminListTableClass,
+} from '~/constants/admin-list-layout';
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -55,11 +59,14 @@ const columns: TableColumn<Category>[] = [
     v-model:open="open"
     title="Categorías de servicio"
     description="Gestiona las categorías usadas al registrar servicios."
-    :ui="{ content: 'max-w-2xl' }"
+    :ui="{
+      content: 'max-w-2xl flex flex-col',
+      body: adminListSlideoverBodyUi.body,
+    }"
   >
     <template #body>
-      <div class="flex flex-col gap-4">
-        <div class="flex flex-wrap items-center gap-2">
+      <div class="flex min-h-0 flex-1 flex-col gap-4">
+        <div class="flex shrink-0 flex-wrap items-center gap-2">
           <UInput
             v-model="search"
             leading-icon="i-lucide-search"
@@ -77,7 +84,7 @@ const columns: TableColumn<Category>[] = [
         <UTable
           ref="table"
           sticky
-          class="h-[min(24rem,50vh)]"
+          :class="adminListTableClass"
           :columns="columns"
           :data="filteredRows"
           :loading="isInitialLoading"

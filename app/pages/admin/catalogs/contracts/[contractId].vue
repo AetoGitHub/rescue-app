@@ -72,9 +72,20 @@ const clientTypeLabel = computed(() => {
 });
 
 const clientCreditLabel = computed(() => {
-  const balance = clientDetail.value?.credit_balance;
+  const detail = clientDetail.value;
+  if (detail == null) return null;
+  const available = (detail as { credit_available?: number | null }).credit_available;
+  if (available != null && Number.isFinite(Number(available))) {
+    return Number(available).toLocaleString('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+  }
+  const balance = detail.credit_balance;
   if (balance == null || balance === '') return null;
-  const amount = Number(balance.replace(/,/g, ''));
+  const amount = Number(String(balance).replace(/,/g, ''));
   if (Number.isNaN(amount)) return balance;
   return amount.toLocaleString('es-MX', {
     style: 'currency',

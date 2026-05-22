@@ -1,6 +1,6 @@
 import type { CompanyCreateBody } from '~/interfaces/catalogs/company';
 import type { ClientCreateBody } from '~/interfaces/catalogs/client';
-import type { CreditFormState } from '~/interfaces/catalogs/credit';
+import type { ClientCreditSummary, CreditFormState } from '~/interfaces/catalogs/credit';
 import { SERVICE_UNIT_VALUES } from '~/constants/catalog-select-options';
 import type { ServiceCreateBody, ServiceUnit } from '~/interfaces/catalogs/service';
 import type {
@@ -25,6 +25,133 @@ export function mapCompanyDetail(raw: Record<string, unknown>): CompanyCreateBod
   };
 }
 
+function mapCreditInfoBuckets(raw: Record<string, unknown>): {
+  overdue_amount: number | null;
+  overdue_invoices_count: number;
+  due_soon_amount: number | null;
+  due_soon_invoices_count: number;
+} {
+  const creditInfo =
+    typeof raw.credit_info === 'object' && raw.credit_info != null
+      ? (raw.credit_info as Record<string, unknown>)
+      : null;
+  const overdue =
+    creditInfo != null &&
+    typeof creditInfo.overdue === 'object' &&
+    creditInfo.overdue != null
+      ? (creditInfo.overdue as Record<string, unknown>)
+      : null;
+  const upcoming =
+    creditInfo != null &&
+    typeof creditInfo.upcoming === 'object' &&
+    creditInfo.upcoming != null
+      ? (creditInfo.upcoming as Record<string, unknown>)
+      : null;
+
+  const overdueAmount = overdue?.amount ?? raw.overdue_amount ?? raw.credit_overdue_amount;
+  const upcomingAmount =
+    upcoming?.amount ?? raw.due_soon_amount ?? raw.credit_due_soon_amount;
+
+  return {
+    overdue_amount:
+      overdueAmount != null && overdueAmount !== '' && Number.isFinite(Number(overdueAmount))
+        ? Number(overdueAmount)
+        : null,
+    overdue_invoices_count:
+      Number(overdue?.count ?? raw.overdue_invoices_count ?? 0) || 0,
+    due_soon_amount:
+      upcomingAmount != null &&
+      upcomingAmount !== '' &&
+      Number.isFinite(Number(upcomingAmount))
+        ? Number(upcomingAmount)
+        : null,
+    due_soon_invoices_count:
+      Number(upcoming?.count ?? raw.due_soon_invoices_count ?? 0) || 0,
+  };
+}
+
+export function resolveCreditId(raw: Record<string, unknown>): number | null {
+  const direct = raw.credit_id ?? raw.creditId;
+  if (direct != null && direct !== '') {
+    const id = Number(direct);
+    return Number.isFinite(id) ? id : null;
+  }
+  if (typeof raw.credit === 'object' && raw.credit != null) {
+    const nestedId = (raw.credit as Record<string, unknown>).id;
+    if (nestedId != null && nestedId !== '') {
+      const id = Number(nestedId);
+      return Number.isFinite(id) ? id : null;
+    }
+  }
+  const selfId = raw.id;
+  if (
+    raw.client_id != null &&
+    selfId != null &&
+    selfId !== '' &&
+    (raw.limit != null || raw.credit_used != null)
+  ) {
+    const id = Number(selfId);
+    return Number.isFinite(id) ? id : null;
+  }
+  return null;
+}
+
+export function mapCreditDetail(raw: Record<string, unknown>): {
+  form: Partial<CreditFormState>;
+  summary: ClientCreditSummary;
+  creditId: number;
+} {
+  const creditId = resolveCreditId(raw) ?? Number(raw.id);
+  const info = mapCreditInfoBuckets(raw);
+  const limit = raw.limit ?? raw.credit_limit;
+  const used = raw.credit_used;
+  const available = raw.credit_available;
+
+  const form = mapClientCreditForm(raw);
+
+  return {
+    creditId: Number.isFinite(creditId) ? creditId : 0,
+    form,
+    summary: {
+      credit_id: Number.isFinite(creditId) ? creditId : null,
+      credit_limit: limit != null && limit !== '' ? String(limit) : null,
+      credit_used: used != null && used !== '' ? String(used) : null,
+      credit_available:
+        available != null && available !== '' && Number.isFinite(Number(available))
+          ? Number(available)
+          : null,
+      overdue_amount: info.overdue_amount,
+      overdue_invoices_count: info.overdue_invoices_count,
+      due_soon_amount: info.due_soon_amount,
+      due_soon_invoices_count: info.due_soon_invoices_count,
+    },
+  };
+}
+
+export function mapClientCreditSummary(
+  raw: Record<string, unknown>,
+): ClientCreditSummary {
+  const limit = raw.credit_limit ?? raw.limit;
+  const used = raw.credit_used;
+  const available = raw.credit_available;
+  const info = mapCreditInfoBuckets(raw);
+  const creditId = resolveCreditId(raw);
+
+  return {
+    credit_id: creditId,
+    credit_limit: limit != null && limit !== '' ? String(limit) : null,
+    credit_used: used != null && used !== '' ? String(used) : null,
+    credit_available:
+      available != null && available !== '' && Number.isFinite(Number(available))
+        ? Number(available)
+        : null,
+    overdue_amount: info.overdue_amount,
+    overdue_invoices_count: info.overdue_invoices_count,
+    due_soon_amount: info.due_soon_amount,
+    due_soon_invoices_count: info.due_soon_invoices_count,
+  };
+}
+
 export function mapClientDetail(raw: Record<string, unknown>): Omit<
   ClientCreateBody,
   'company' | 'seller'
@@ -32,6 +159,7 @@ export function mapClientDetail(raw: Record<string, unknown>): Omit<
   company?: number;
   seller?: number;
   credit_balance?: string;
+  is_active?: boolean;
 } {
   const company = raw.company ?? raw.company_id;
   const seller = raw.seller ?? raw.seller_id;
@@ -52,6 +180,7 @@ export function mapClientDetail(raw: Record<string, unknown>): Omit<
     company: company != null && company !== '' ? Number(company) : undefined,
     seller: seller != null && seller !== '' ? Number(seller) : undefined,
     notes: String(raw.notes ?? ''),
+    is_active: raw.is_active != null ? Boolean(raw.is_active) : true,
     credit_balance:
       credit != null && credit !== '' ? String(credit) : undefined,
   };
@@ -146,11 +275,20 @@ const SUPPLIER_SERVICE_TYPES: readonly SupplierServiceType[] = [
   'other',
 ];
 
-function toSupplierServiceType(value: unknown): SupplierServiceType {
+export function toSupplierServiceTypes(value: unknown): SupplierServiceType[] {
+  if (Array.isArray(value)) {
+    const mapped = value
+      .map((item) => String(item ?? ''))
+      .filter((item): item is SupplierServiceType =>
+        (SUPPLIER_SERVICE_TYPES as readonly string[]).includes(item),
+      );
+    return mapped.length > 0 ? [...new Set(mapped)] : ['other'];
+  }
   const v = String(value ?? '');
-  return (SUPPLIER_SERVICE_TYPES as readonly string[]).includes(v)
-    ? (v as SupplierServiceType)
-    : 'other';
+  if ((SUPPLIER_SERVICE_TYPES as readonly string[]).includes(v)) {
+    return [v as SupplierServiceType];
+  }
+  return ['other'];
 }
 
 export function mapSupplierDetail(
@@ -161,7 +299,7 @@ export function mapSupplierDetail(
     description: String(raw.description ?? ''),
     phone: formatMexicoPhoneInput(String(raw.phone ?? '')),
     email: String(raw.email ?? ''),
-    service_type: toSupplierServiceType(raw.service_type),
+    service_type: toSupplierServiceTypes(raw.service_type),
     is_trusted: Boolean(raw.is_trusted),
     notes: String(raw.notes ?? ''),
     latitude: raw.latitude != null ? String(raw.latitude) : '',

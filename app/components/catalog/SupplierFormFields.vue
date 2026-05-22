@@ -73,8 +73,20 @@ const locationStatusLabel = computed(() => {
   return `Ubicación: ${state.value.latitude}, ${state.value.longitude}`;
 });
 
-function selectServiceType(value: SupplierServiceType) {
-  state.value.service_type = value;
+function toggleServiceType(value: SupplierServiceType) {
+  const current = [...state.value.service_type];
+  const index = current.indexOf(value);
+  if (index >= 0) {
+    if (current.length === 1) return;
+    current.splice(index, 1);
+  } else {
+    current.push(value);
+  }
+  state.value.service_type = current;
+}
+
+function isServiceTypeSelected(value: SupplierServiceType) {
+  return state.value.service_type.includes(value);
 }
 
 function applyParsedCoordinates(lat: number, lng: number) {
@@ -154,14 +166,14 @@ function clearCoordinates() {
             :key="option.value"
             type="button"
             size="sm"
-            :color="state.service_type === option.value ? 'primary' : 'neutral'"
-            :variant="state.service_type === option.value ? 'solid' : 'subtle'"
+            :color="isServiceTypeSelected(option.value) ? 'primary' : 'neutral'"
+            :variant="isServiceTypeSelected(option.value) ? 'solid' : 'subtle'"
             :label="option.label"
-            @click="selectServiceType(option.value)"
+            @click="toggleServiceType(option.value)"
           />
         </div>
         <p
-          v-if="state.service_type === 'other'"
+          v-if="state.service_type.includes('other')"
           class="mt-2 text-xs text-muted"
         >
           Indica el tipo en notas si no aparece en la lista.

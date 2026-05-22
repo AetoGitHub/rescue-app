@@ -126,7 +126,7 @@ function emptySupplierState(): SupplierCreateBody {
     description: '',
     phone: '',
     email: '',
-    service_type: 'cranes',
+    service_type: ['cranes'],
     is_trusted: false,
     notes: '',
     latitude: state.value.location_latitude ?? '',

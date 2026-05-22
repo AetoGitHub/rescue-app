@@ -17,7 +17,7 @@ function emptyState(): SupplierCreateBody {
     description: '',
     phone: '',
     email: '',
-    service_type: 'cranes',
+    service_type: ['cranes'],
     is_trusted: false,
     notes: '',
     latitude: '',

@@ -4,6 +4,7 @@ import type { TableColumn } from '@nuxt/ui';
 import type { ClientContractRow, Contract } from '~/interfaces/catalogs/contract';
 import type { Client } from '~/interfaces/catalogs/client';
 import { contractCreateBody } from '~/schemas/catalog-create';
+import { adminListTableClass } from '~/constants/admin-list-layout';
 
 useHead({
   title: 'Contratos',
@@ -172,49 +173,35 @@ const columns: TableColumn<ClientContractRow>[] = [
 </script>
 
 <template>
-  <UDashboardPanel>
-    <template #header>
-      <SharedNavbar title="Contratos" />
+  <AdminListPageShell
+    navbar-title="Contratos"
+    title="Contratos"
+    description="Asigna y gestiona contratos por cliente"
+  >
+    <template #filters>
+      <UInput
+        leading-icon="i-lucide-search"
+        placeholder="Buscar cliente"
+        class="flex-1"
+        variant="subtle"
+        :ui="{
+          base: 'bg-default',
+        }"
+      />
+
+      <UButton label="Todos" variant="subtle" color="primary" />
+      <UButton label="Con contrato" variant="subtle" color="neutral" />
+      <UButton label="Sin contracto" variant="subtle" color="neutral" />
     </template>
-    <template #body>
-      <UContainer>
-        <div class="flex flex-row justify-between items-center mb-4">
-          <div>
-            <h1 class="text-3xl font-bold tracking-tight">Contratos</h1>
-            <p class="mt-1 text-sm text-muted">
-              Asigna y gestiona contratos por cliente
-            </p>
-          </div>
-        </div>
 
-        <USeparator />
-
-        <div class="flex flex-row gap-2 my-4">
-          <UInput
-            leading-icon="i-lucide-search"
-            placeholder="Buscar cliente"
-            class="flex-1"
-            variant="subtle"
-            :ui="{
-              base: 'bg-default',
-            }"
-          />
-
-          <UButton label="Todos" variant="subtle" color="primary" />
-          <UButton label="Con contrato" variant="subtle" color="neutral" />
-          <UButton label="Sin contracto" variant="subtle" color="neutral" />
-        </div>
-
-        <UTable
-          ref="table"
-          sticky
-          class="h-80"
-          :columns="columns"
-          :data="rows"
-          :loading="isInitialLoading"
-          :get-row-id="(row: ClientContractRow) => String(row.client.id)"
-        />
-      </UContainer>
-    </template>
-  </UDashboardPanel>
+    <UTable
+      ref="table"
+      sticky
+      :class="adminListTableClass"
+      :columns="columns"
+      :data="rows"
+      :loading="isInitialLoading"
+      :get-row-id="(row: ClientContractRow) => String(row.client.id)"
+    />
+  </AdminListPageShell>
 </template>
