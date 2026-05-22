@@ -1,4 +1,5 @@
 import { joinURL } from 'ufo';
+import { SESSION_MAX_AGE } from '../../../shared/constants/session';
 
 interface Response {
   token: string;
@@ -21,14 +22,18 @@ export default defineEventHandler(async (event) => {
     },
   });
 
-  await setUserSession(event, {
-    user: {
-      name: body.username,
-      id: response.id,
-      role: response.role,
+  await setUserSession(
+    event,
+    {
+      user: {
+        name: body.username,
+        id: response.id,
+        role: response.role,
+      },
+      token: response.token,
     },
-    token: response.token,
-  });
+    { maxAge: SESSION_MAX_AGE },
+  );
 
   return {
     ok: true,

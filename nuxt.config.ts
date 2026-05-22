@@ -1,3 +1,5 @@
+import { SESSION_MAX_AGE } from './shared/constants/session';
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -47,6 +49,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     apiUrl: '',
+    session: {
+      maxAge: SESSION_MAX_AGE,
+    },
     public: {
       googleMapsApiKey: '',
     },

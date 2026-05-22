@@ -53,12 +53,15 @@ const items = computed<NavigationMenuItem[][]>(() => [
   ],
 ]);
 
-const { user } = useUserSession();
+const { user, clear: clearUserSession } = useUserSession();
 
-const { mutate: logout } = useMutation({
-  mutation: () => $fetch('/api/auth/logout', { method: 'POST' }),
-  onSuccess: () => {
-    navigateTo('/login');
+const { mutate: logout, asyncStatus: logoutStatus } = useMutation({
+  mutation: async () => {
+    await $fetch('/api/auth/logout', { method: 'POST' });
+    await clearUserSession();
+  },
+  onSuccess: async () => {
+    await navigateTo('/login', { replace: true });
   },
 });
 </script>
@@ -110,6 +113,7 @@ const { mutate: logout } = useMutation({
           variant="ghost"
           icon="i-lucide-log-out"
           :label="collapsed ? undefined : 'Cerrar sesión'"
+          :loading="logoutStatus === 'loading'"
           @click="() => logout()"
         />
       </div>

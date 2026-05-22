@@ -89,7 +89,7 @@ const requestedColumnItems = [{ id: 1 }];
               />
 
               <UFieldGroup>
-                <UButton color="primary" label="Sin filtro" variant="solid" />
+                <UButton color="neutral" label="Sin filtro" variant="solid" />
 
                 <UButton color="neutral" label="Alerta SLA" variant="subtle" />
 
@@ -102,7 +102,7 @@ const requestedColumnItems = [{ id: 1 }];
 
               <UFieldGroup>
                 <UButton
-                  color="primary"
+                  color="neutral"
                   label="Agente: todos"
                   variant="solid"
                 />
@@ -117,7 +117,7 @@ const requestedColumnItems = [{ id: 1 }];
               </UFieldGroup>
             </div>
 
-            <div class="flex flex-row gap-3">
+            <div class="ml-auto flex flex-row gap-3">
               <UDropdownMenu
                 :items="[{ label: 'Columnas visibles', type: 'label' }, ...columnDropdownItems]"
                 :content="{ align: 'end' }"

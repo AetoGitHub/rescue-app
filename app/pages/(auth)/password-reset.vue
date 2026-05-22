@@ -9,6 +9,7 @@ import {
 
 definePageMeta({
   layout: false,
+  middleware: 'guest',
 });
 
 const toast = useToast();
