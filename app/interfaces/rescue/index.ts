@@ -1,3 +1,12 @@
+export type {
+  RescueCard,
+  RescueCardApproved,
+  RescueCardBase,
+  RescueCardClosed,
+  RescueCardInProgress,
+  RescueCardWaitingAdvance,
+} from './card';
+
 export type RescueServiceType =
   | 'rescue'
   | 'loan'

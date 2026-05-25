@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useMutation } from '@pinia/colada';
+import { useMutation, useQueryCache } from '@pinia/colada';
 import type { FormSubmitEvent } from '@nuxt/ui';
 import type { Client } from '~/interfaces/catalogs/client';
 import type { RescueCreateResponse } from '~/interfaces/rescue';
@@ -17,6 +17,7 @@ import {
 } from '~/schemas/rescue-create';
 
 const toast = useToast();
+const queryCache = useQueryCache();
 
 const open = ref(false);
 const currentStep = ref(0);
@@ -195,6 +196,7 @@ const { mutate, asyncStatus } = useMutation({
           description: `Folio: ${rescue.folio}. ${getFetchErrorMessage(quoteError)}`,
           color: 'error',
         });
+        await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });
         open.value = false;
         return rescue;
       }
@@ -209,6 +211,7 @@ const { mutate, asyncStatus } = useMutation({
       description,
       color: 'success',
     });
+    await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });
     open.value = false;
     return rescue;
   },

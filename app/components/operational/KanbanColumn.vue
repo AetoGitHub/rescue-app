@@ -4,9 +4,30 @@ interface Props<T> {
   items: T[];
   /** Hex color for the column header top border. */
   accentColor: string;
+  isInitialLoading?: boolean;
+  isLoadingMore?: boolean;
+  isError?: boolean;
+  isLoadMoreError?: boolean;
+  errorMessage?: string;
 }
 
-defineProps<Props<T>>();
+withDefaults(defineProps<Props<T>>(), {
+  isInitialLoading: false,
+  isLoadingMore: false,
+  isError: false,
+  isLoadMoreError: false,
+  errorMessage: '',
+});
+
+const emit = defineEmits<{
+  retry: [];
+}>();
+
+const scrollContainerRef = ref<HTMLElement | null>(null);
+
+defineExpose({
+  scrollContainerRef,
+});
 </script>
 
 <template>
@@ -26,10 +47,97 @@ defineProps<Props<T>>();
       </div>
     </div>
 
-    <div class="min-h-0 flex-1 overflow-y-auto space-y-2 bg-accented p-2">
-      <slot v-for="(item, index) in items" :key="index" :item="item">
-        <UCard>{{ index }}</UCard>
-      </slot>
+    <div
+      ref="scrollContainerRef"
+      class="min-h-0 flex-1 overflow-y-auto space-y-2 bg-accented p-2"
+    >
+      <template v-if="isInitialLoading">
+        <UCard
+          v-for="index in 3"
+          :key="`skeleton-${index}`"
+          :ui="{ body: 'space-y-3 p-3' }"
+        >
+          <USkeleton class="h-4 w-2/3" />
+          <USkeleton class="h-4 w-full" />
+          <USkeleton class="h-3 w-4/5" />
+          <USkeleton class="h-3 w-1/2" />
+        </UCard>
+      </template>
+
+      <div
+        v-else-if="isError"
+        class="flex flex-col items-center gap-3 px-2 py-8 text-center"
+      >
+        <UIcon
+          name="i-lucide-triangle-alert"
+          class="size-8 text-error"
+        />
+        <div class="space-y-1">
+          <p class="text-sm font-medium text-highlighted">
+            No se pudo cargar la columna
+          </p>
+          <p
+            v-if="errorMessage"
+            class="text-xs text-muted"
+          >
+            {{ errorMessage }}
+          </p>
+        </div>
+        <UButton
+          color="neutral"
+          icon="i-lucide-refresh-cw"
+          label="Reintentar"
+          size="sm"
+          variant="subtle"
+          @click="emit('retry')"
+        />
+      </div>
+
+      <template v-else>
+        <slot v-for="item in items" :key="(item as { id?: number }).id ?? item" :item="item">
+          <UCard>{{ item }}</UCard>
+        </slot>
+
+        <p
+          v-if="items.length === 0"
+          class="px-2 py-6 text-center text-xs text-muted"
+        >
+          Sin rescates
+        </p>
+
+        <div
+          v-if="isLoadMoreError"
+          class="rounded-lg border border-error/30 bg-error/5 px-3 py-2 text-center space-y-2"
+        >
+          <p class="text-xs text-error">
+            No se pudieron cargar más rescates
+          </p>
+          <p
+            v-if="errorMessage"
+            class="text-xs text-muted"
+          >
+            {{ errorMessage }}
+          </p>
+          <UButton
+            color="neutral"
+            icon="i-lucide-refresh-cw"
+            label="Reintentar"
+            size="xs"
+            variant="subtle"
+            @click="emit('retry')"
+          />
+        </div>
+      </template>
+
+      <div
+        v-if="isLoadingMore"
+        class="flex justify-center py-2"
+      >
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-5 animate-spin text-muted"
+        />
+      </div>
     </div>
   </div>
 </template>

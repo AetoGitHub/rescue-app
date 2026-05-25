@@ -9,45 +9,36 @@ const rescueRequestModalRef = ref<{
 
 const columnVisibility = ref<Record<string, boolean>>(
   Object.fromEntries(
-    OPERATIONAL_KANBAN_COLUMNS.map((column) => [column.id, true]),
+    OPERATIONAL_KANBAN_COLUMNS.map((column) => [column.status, true]),
   ),
 );
 
 const visibleColumns = computed(() =>
   OPERATIONAL_KANBAN_COLUMNS.filter(
-    (column) => columnVisibility.value[column.id],
+    (column) => columnVisibility.value[column.status],
   ),
 );
 
 type KanbanColumnMenuItem = DropdownMenuItem & {
   accentColor: string;
-
-  columnId: string;
+  columnStatus: string;
 };
 
 const columnDropdownItems = computed((): KanbanColumnMenuItem[] =>
   OPERATIONAL_KANBAN_COLUMNS.map((column) => ({
     label: column.title,
-
     type: 'checkbox' as const,
-
-    columnId: column.id,
-
+    columnStatus: column.status,
     accentColor: column.accentColor,
-
-    checked: columnVisibility.value[column.id] ?? true,
-
+    checked: columnVisibility.value[column.status] ?? true,
     onUpdateChecked(checked: boolean) {
-      columnVisibility.value[column.id] = checked;
+      columnVisibility.value[column.status] = checked;
     },
-
     onSelect(e: Event) {
       e.preventDefault();
     },
   })),
 );
-
-const requestedColumnItems = [{ id: 1 }];
 </script>
 
 <template>
@@ -166,17 +157,13 @@ const requestedColumnItems = [{ id: 1 }];
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div class="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
             <div class="flex h-full min-h-0 min-w-max gap-3 items-stretch">
-              <OperationalKanbanColumn
+              <OperationalKanbanColumnData
                 v-for="column in visibleColumns"
-                :key="column.id"
+                :key="column.status"
+                :status="column.status"
                 :title="column.title"
                 :accent-color="column.accentColor"
-                :items="column.id === 'requested' ? requestedColumnItems : []"
-              >
-                <template v-if="column.id === 'requested'" #default="{ item }">
-                  <UCard>{{ item.id }}</UCard>
-                </template>
-              </OperationalKanbanColumn>
+              />
             </div>
           </div>
         </div>
