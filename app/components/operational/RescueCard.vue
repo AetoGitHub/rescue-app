@@ -5,6 +5,10 @@ const props = defineProps<{
   card: RescueCard;
 }>();
 
+const emit = defineEmits<{
+  select: [id: number];
+}>();
+
 const serviceTypeBadge = computed(() =>
   getRescueServiceTypeBadge(props.card.service_type),
 );
@@ -17,7 +21,6 @@ const gestorBadgeColor = computed(() =>
 const elapsedLabel = computed(() => getRescueCardElapsedLabel(props.card));
 const salePrice = computed(() => formatRescueCardMoney(props.card.sub_total));
 const advanceAmount = computed(() => getRescueCardAdvanceAmount(props.card));
-const hasSupplier = computed(() => hasRescueCardSupplier(props.card.supplier_name));
 
 const approvedAmount = computed(() => {
   if (props.card.operative_status !== 'approved') return null;
@@ -31,19 +34,19 @@ const collectedTotal = computed(() => {
   return total ? formatRescueCardMoney(total) : null;
 });
 
-const quickChatMessage = ref('');
-
-const showQuickChat = computed(
-  () => props.card.operative_status !== 'requested',
-);
+function onCardClick() {
+  emit('select', props.card.id);
+}
 </script>
 
 <template>
   <UCard
+    class="cursor-pointer transition-shadow hover:shadow-md"
     :ui="{
       root: 'overflow-hidden shadow-sm ring ring-default',
       body: 'space-y-3 p-3',
     }"
+    @click="onCardClick"
   >
     <div class="flex items-start justify-between gap-2">
       <span class="text-sm font-semibold text-primary">
@@ -69,10 +72,10 @@ const showQuickChat = computed(
     <div class="flex items-center justify-between gap-2 text-xs">
       <span
         class="inline-flex min-w-0 items-center gap-1 truncate"
-        :class="hasSupplier ? 'text-muted' : 'text-error'"
+        :class="card.supplier_name?.trim() ? 'text-muted' : 'text-error'"
       >
         <UIcon name="i-lucide-truck" class="size-3.5 shrink-0" />
-        {{ hasSupplier ? card.supplier_name : 'Sin proveedor' }}
+        {{ card.supplier_name?.trim() ? card.supplier_name : 'Sin proveedor' }}
       </span>
       <span class="inline-flex shrink-0 items-center gap-1.5 font-medium text-highlighted">
         {{ salePrice }}
@@ -128,6 +131,7 @@ const showQuickChat = computed(
     <div
       v-if="card.operative_status === 'requested'"
       class="space-y-2"
+      @click.stop
     >
       <UBadge
         v-if="!card.operator_id"
@@ -142,26 +146,6 @@ const showQuickChat = computed(
         color="primary"
         label="Tomar solicitud"
         size="sm"
-      />
-    </div>
-
-    <div
-      v-if="showQuickChat"
-      class="flex items-center gap-1.5"
-    >
-      <UInput
-        v-model="quickChatMessage"
-        class="min-w-0 flex-1"
-        placeholder="Mensaje rápido al chat..."
-        size="sm"
-        :ui="{ base: 'text-xs' }"
-      />
-      <UButton
-        color="neutral"
-        icon="i-lucide-send"
-        size="sm"
-        variant="ghost"
-        aria-label="Enviar mensaje"
       />
     </div>
   </UCard>

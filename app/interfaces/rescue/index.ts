@@ -1,4 +1,13 @@
 export type {
+  RescueChatMessage,
+  RescueChatMessageCreateBody,
+  RescueChatMessageCreateResponse,
+  RescueChatMessageType,
+} from './chat';
+
+export type { RescueCardDetail } from './detail';
+
+export type {
   RescueCard,
   RescueCardApproved,
   RescueCardBase,

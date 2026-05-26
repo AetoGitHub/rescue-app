@@ -11,6 +11,14 @@ const rescueRequestModalRef = ref<{
   openCreate: () => void;
 } | null>(null);
 
+const rescueDetailModalRef = ref<{
+  open: (id: number) => void;
+} | null>(null);
+
+function openRescueDetail(id: number) {
+  rescueDetailModalRef.value?.open(id);
+}
+
 const columnVisibility = ref<Record<string, boolean>>(
   Object.fromEntries(
     OPERATIONAL_KANBAN_COLUMNS.map((column) => [column.status, true]),
@@ -233,6 +241,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
         </div>
 
         <OperationalRescueRequestModal ref="rescueRequestModalRef" />
+        <OperationalRescueDetailModal ref="rescueDetailModalRef" />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div class="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
@@ -244,6 +253,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 :title="column.title"
                 :accent-color="column.accentColor"
                 :filters="boardFilters"
+                @select="openRescueDetail"
               />
             </div>
           </div>

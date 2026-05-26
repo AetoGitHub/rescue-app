@@ -9,6 +9,10 @@ const props = defineProps<{
   filters: OperationalBoardFilters;
 }>();
 
+const emit = defineEmits<{
+  select: [id: number];
+}>();
+
 const {
   rows,
   asyncStatus,
@@ -76,7 +80,10 @@ function retryColumn() {
     @retry="retryColumn"
   >
     <template #default="{ item }">
-      <OperationalRescueCard :card="item" />
+      <OperationalRescueCard
+        :card="item"
+        @select="emit('select', $event)"
+      />
     </template>
   </OperationalKanbanColumn>
 </template>
