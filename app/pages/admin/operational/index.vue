@@ -72,10 +72,8 @@ function isServiceTypeSelected(value: RescueServiceType) {
   return isOperationalServiceTypeActive(selectedServiceTypes.value, value);
 }
 
-const {
-  fetchOperationalCompanyDropdown,
-  fetchOperationalManagerDropdown,
-} = useOperationalBoardDropdownFetchers();
+const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
+  useOperationalBoardDropdownFetchers();
 </script>
 
 <template>
@@ -102,35 +100,29 @@ const {
 
               <UFieldGroup>
                 <UButton
-                  :color="selectedServiceTypes.length === 0 ? 'primary' : 'neutral'"
+                  :color="
+                    selectedServiceTypes.length === 0 ? 'primary' : 'neutral'
+                  "
                   label="Todos"
-                  :variant="selectedServiceTypes.length === 0 ? 'solid' : 'subtle'"
+                  :variant="
+                    selectedServiceTypes.length === 0 ? 'solid' : 'subtle'
+                  "
                   @click="clearServiceTypeFilters"
                 />
 
                 <UButton
                   v-for="option in RESCUE_SERVICE_TYPE_OPTIONS"
                   :key="option.value"
-                  :color="isServiceTypeSelected(option.value) ? 'primary' : 'neutral'"
+                  :color="
+                    isServiceTypeSelected(option.value) ? 'primary' : 'neutral'
+                  "
                   :label="option.label"
-                  :variant="isServiceTypeSelected(option.value) ? 'solid' : 'subtle'"
+                  :variant="
+                    isServiceTypeSelected(option.value) ? 'solid' : 'subtle'
+                  "
                   @click="toggleServiceType(option.value)"
                 />
               </UFieldGroup>
-
-              <CatalogDropdownSelect
-                v-model="companyId"
-                class="min-w-52"
-                placeholder="Compañía: todas"
-                :fetcher="fetchOperationalCompanyDropdown"
-              />
-
-              <CatalogDropdownSelect
-                v-model="managerId"
-                class="min-w-52"
-                placeholder="Gestor: todos"
-                :fetcher="fetchOperationalManagerDropdown"
-              />
 
               <UButton
                 color="neutral"
@@ -168,8 +160,37 @@ const {
             </div>
 
             <div class="ml-auto flex flex-row gap-3">
+              <USlideover title="Filtros">
+                <UButton
+                  icon="i-lucide-filter"
+                  color="neutral"
+                  label="Mas filtros"
+                  variant="subtle"
+                />
+
+                <template #body>
+                  <div class="flex flex-col gap-3">
+                    <CatalogDropdownSelect
+                      v-model="companyId"
+                      class="min-w-52"
+                      placeholder="Compañía: todas"
+                      :fetcher="fetchOperationalCompanyDropdown"
+                    />
+
+                    <CatalogDropdownSelect
+                      v-model="managerId"
+                      class="min-w-52"
+                      placeholder="Gestor: todos"
+                      :fetcher="fetchOperationalManagerDropdown"
+                    />
+                  </div>
+                </template>
+              </USlideover>
               <UDropdownMenu
-                :items="[{ label: 'Columnas visibles', type: 'label' }, ...columnDropdownItems]"
+                :items="[
+                  { label: 'Columnas visibles', type: 'label' },
+                  ...columnDropdownItems,
+                ]"
                 :content="{ align: 'end' }"
                 :ui="{ content: 'w-64' }"
               >
