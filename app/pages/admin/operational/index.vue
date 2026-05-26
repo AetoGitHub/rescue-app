@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { refDebounced } from '@vueuse/core';
 import type { DropdownMenuItem } from '@nuxt/ui';
 
 import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
+import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
+import type { RescueServiceType } from '~/interfaces/rescue';
+import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
 
 const rescueRequestModalRef = ref<{
   openCreate: () => void;
@@ -39,6 +43,39 @@ const columnDropdownItems = computed((): KanbanColumnMenuItem[] =>
     },
   })),
 );
+
+const folioSearch = ref('');
+const debouncedFolio = refDebounced(folioSearch, 300);
+const selectedServiceTypes = ref<RescueServiceType[]>([]);
+const companyId = ref<number | null>(null);
+const managerId = ref<number | null>(null);
+
+const boardFilters = computed<OperationalBoardFilters>(() => ({
+  folio: debouncedFolio.value,
+  serviceTypes: selectedServiceTypes.value,
+  companyId: companyId.value,
+  managerId: managerId.value,
+}));
+
+function clearServiceTypeFilters() {
+  selectedServiceTypes.value = [];
+}
+
+function toggleServiceType(value: RescueServiceType) {
+  selectedServiceTypes.value = toggleOperationalServiceTypeFilter(
+    selectedServiceTypes.value,
+    value,
+  );
+}
+
+function isServiceTypeSelected(value: RescueServiceType) {
+  return isOperationalServiceTypeActive(selectedServiceTypes.value, value);
+}
+
+const {
+  fetchOperationalCompanyDropdown,
+  fetchOperationalManagerDropdown,
+} = useOperationalBoardDropdownFetchers();
 </script>
 
 <template>
@@ -57,21 +94,43 @@ const columnDropdownItems = computed((): KanbanColumnMenuItem[] =>
           <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div class="flex flex-row gap-3 flex-wrap">
               <UInput
+                v-model="folioSearch"
                 leading-icon="i-lucide-search"
                 placeholder="Buscar folio"
+                class="min-w-48"
               />
 
               <UFieldGroup>
-                <UButton color="primary" label="Todos" variant="solid" />
+                <UButton
+                  :color="selectedServiceTypes.length === 0 ? 'primary' : 'neutral'"
+                  label="Todos"
+                  :variant="selectedServiceTypes.length === 0 ? 'solid' : 'subtle'"
+                  @click="clearServiceTypeFilters"
+                />
 
-                <UButton color="neutral" label="Rescate" variant="subtle" />
-
-                <UButton color="neutral" label="Préstamo" variant="subtle" />
-
-                <UButton color="neutral" label="Cotización" variant="subtle" />
-
-                <UButton color="neutral" label="Proyecto" variant="subtle" />
+                <UButton
+                  v-for="option in RESCUE_SERVICE_TYPE_OPTIONS"
+                  :key="option.value"
+                  :color="isServiceTypeSelected(option.value) ? 'primary' : 'neutral'"
+                  :label="option.label"
+                  :variant="isServiceTypeSelected(option.value) ? 'solid' : 'subtle'"
+                  @click="toggleServiceType(option.value)"
+                />
               </UFieldGroup>
+
+              <CatalogDropdownSelect
+                v-model="companyId"
+                class="min-w-52"
+                placeholder="Compañía: todas"
+                :fetcher="fetchOperationalCompanyDropdown"
+              />
+
+              <CatalogDropdownSelect
+                v-model="managerId"
+                class="min-w-52"
+                placeholder="Gestor: todos"
+                :fetcher="fetchOperationalManagerDropdown"
+              />
 
               <UButton
                 color="neutral"
@@ -163,6 +222,7 @@ const columnDropdownItems = computed((): KanbanColumnMenuItem[] =>
                 :status="column.status"
                 :title="column.title"
                 :accent-color="column.accentColor"
+                :filters="boardFilters"
               />
             </div>
           </div>

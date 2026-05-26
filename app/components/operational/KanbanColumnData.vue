@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
+import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
 
 const props = defineProps<{
   status: OperationalRescueStatus;
   title: string;
   accentColor: string;
+  filters: OperationalBoardFilters;
 }>();
 
 const {
@@ -18,7 +20,7 @@ const {
   isLoadMoreError,
   errorMessage,
   refresh,
-} = useOperationalRescueCards(() => props.status);
+} = useOperationalRescueCards(() => props.status, () => props.filters);
 
 const renderError = ref<string | null>(null);
 

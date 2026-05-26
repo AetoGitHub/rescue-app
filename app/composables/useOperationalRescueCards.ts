@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
+import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
 import type { RescueCard } from '~/interfaces/rescue';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
@@ -8,9 +9,11 @@ const RESCUE_CARDS_PATH = '/api/rescue/cards/';
 
 export function useOperationalRescueCards(
   status: MaybeRefOrGetter<OperationalRescueStatus>,
+  filters: MaybeRefOrGetter<OperationalBoardFilters>,
 ) {
   const apiFetch = useApiFetch();
   const statusValue = computed(() => toValue(status));
+  const filtersValue = computed(() => toValue(filters));
 
   const {
     data,
@@ -21,13 +24,20 @@ export function useOperationalRescueCards(
     error,
     refresh,
   } = useInfiniteQuery<PaginatedResponse<RescueCard>, Error, string | null>({
-    key: () => ['operational-rescue-cards', statusValue.value],
+    key: () => [
+      'operational-rescue-cards',
+      statusValue.value,
+      ...operationalBoardFiltersKey(filtersValue.value),
+    ],
     initialPageParam: null,
     query: ({ pageParam }) =>
       pageParam
         ? apiFetch<PaginatedResponse<RescueCard>>(pageParam)
         : apiFetch<PaginatedResponse<RescueCard>>(RESCUE_CARDS_PATH, {
-            query: { status: statusValue.value },
+            query: buildOperationalCardsQuery(
+              statusValue.value,
+              filtersValue.value,
+            ),
           }),
     getNextPageParam: getNextPaginatedPageParam,
   });
