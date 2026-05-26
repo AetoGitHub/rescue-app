@@ -156,7 +156,7 @@ const hasSupplier = computed(() =>
 
     <div class="space-y-4">
       <section
-        class="space-y-3 rounded-lg border border-warning/40 bg-warning/5 p-4"
+        class="space-y-3 rounded-lg border border-default bg-default p-4"
       >
         <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
           Autorización del cliente
@@ -196,8 +196,8 @@ const hasSupplier = computed(() =>
           Proveedor
         </h3>
         <div
-          class="flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm"
-          :class="hasSupplier ? 'border-default bg-muted/20' : ''"
+          class="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
+          :class="hasSupplier ? 'border-default bg-muted/20' : 'border-warning/30 bg-warning/5 '"
         >
           <span :class="hasSupplier ? 'text-highlighted' : 'text-warning'">
             {{ hasSupplier ? detail.supplier_name : 'Sin proveedor asignado' }}
