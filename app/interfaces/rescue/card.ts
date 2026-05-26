@@ -7,16 +7,17 @@ export interface RescueCardBase {
   client_id: number;
   client_name: string;
   description: string;
-  sale_price: string | null;
+  total: string | null;
   operative_status: OperationalRescueStatus;
-  manager_id: number | null;
-  manager_name: string | null;
+  operator_id: number | null;
+  operator_name: string | null;
   supplier_id: number | null;
   supplier_name: string | null;
   multiple_managers: boolean;
-  advance_amount: string | null;
+  sub_total: string | null;
   admin_status: string;
   created_at: string;
+  phase_started_at: string;
 }
 
 export interface RescueCardWaitingAdvance extends RescueCardBase {

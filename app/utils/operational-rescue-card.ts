@@ -105,8 +105,8 @@ export function getGestorBadgeColor(adminStatus: string | null | undefined): str
 
 export function getRescueCardElapsedLabel(card: {
   operative_status: string;
-  created_at?: string | null;
   elapsed_minutes?: number;
+  phase_started_at?: string | null;
 }): string {
   if (
     card.operative_status === 'in_progress'
@@ -115,13 +115,13 @@ export function getRescueCardElapsedLabel(card: {
     return formatElapsedDuration(card.elapsed_minutes);
   }
 
-  return formatElapsedSince(card.created_at);
+  return formatElapsedSince(card.phase_started_at);
 }
 
 export function getRescueCardAdvanceAmount(card: {
-  advance_amount?: string | null;
+  sub_total?: string | null;
 }): string {
-  return formatRescueCardMoney(card.advance_amount);
+  return formatRescueCardMoney(card.sub_total);
 }
 
 export function hasRescueCardSupplier(supplierName: string | null | undefined): boolean {

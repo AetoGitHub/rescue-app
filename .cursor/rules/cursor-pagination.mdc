@@ -1,0 +1,78 @@
+---
+description: Cursor-based pagination for all list/infinite-scroll API calls
+alwaysApply: true
+---
+
+# Cursor pagination
+
+All backend list endpoints in this project use **cursor-based pagination**.
+
+## Response shape
+
+```typescript
+interface PaginatedResponse<T> {
+  next: string | null;   // full URL with ?cursor=... (never fetch it as-is)
+  previous: string | null;
+  results: T[];
+}
+```
+
+Example `next` from the API:
+
+```text
+http://localhost:8010/api/rescue/cards/?status=requested&cursor=dasdasdasdas
+```
+
+Extract **only** `dasdasdasdas` via `extractCursorFromPaginatedNext(next)` and send it on the next call as `?cursor=dasdasdasdas` together with the same path and filters (status, folio, etc.) — never re-use the full `next` URL.
+
+## Request rules
+
+| Page | Query params |
+|------|----------------|
+| First | Same path and filters; **do not** send `cursor` |
+| Next | **Same path and same filter params** + `cursor=<value from previous next>` |
+
+Extract the cursor with `extractCursorFromPaginatedNext(lastPage.next)` or `getNextCursorPageParam(lastPage)`. If `next` has no `cursor` query param, pagination stops (`null`).
+
+Build requests with `buildPaginatedQuery(baseQuery, pageParam)` where `pageParam` is the cursor string or `null`.
+
+## Do not
+
+- Follow `lastPage.next` as a full fetch URL (`apiFetch(pageParam)` when `pageParam` is a path/URL). That drops filters from page 1 and breaks the proxy contract.
+- Use offset/page-number pagination unless the API explicitly requires it.
+
+## Pinia Colada pattern
+
+Use `useInfiniteQuery` with `initialPageParam: null` and `pageParam` = cursor only:
+
+```typescript
+const apiFetch = useApiFetch();
+const baseQuery = computed(() => ({ /* filters */ }));
+
+useInfiniteQuery({
+  key: () => ['my-list', ...serializeFilters(baseQuery.value)],
+  initialPageParam: null,
+  query: ({ pageParam }) =>
+    apiFetch('/api/example/list/', {
+      query: buildPaginatedQuery(baseQuery.value, pageParam),
+    }),
+  getNextPageParam: getNextCursorPageParam,
+});
+```
+
+Flatten rows with `flattenPaginatedPages(data.value?.pages)`.
+
+## Auth
+
+Use `useApiFetch()` (not bare `$fetch`) for paginated requests in pages/composables so the session token is forwarded.
+
+## Utils (auto-imported from `app/utils/catalog-pagination.ts`)
+
+- `extractCursorFromPaginatedNext`
+- `buildPaginatedQuery`
+- `getNextCursorPageParam`
+- `flattenPaginatedPages`
+
+## New infinite lists
+
+Any new table, kanban column, or load-more UI must reuse `useCatalogInfiniteList` or mirror this pattern. Dropdowns that only load the first page do not need `cursor` until infinite scroll is added.

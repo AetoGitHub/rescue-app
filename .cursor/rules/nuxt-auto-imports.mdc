@@ -13,7 +13,7 @@ This project uses [Nuxt auto-imports](https://nuxt.com/docs/guide/concepts/auto-
 |--------|----------|
 | `app/components/` | `<CatalogDropdownSelect>`, `<OperationalRescueRequestStepsQuoteStep>` |
 | `app/composables/` | `useCatalogDropdown()`, `useRescueSupplierSearch()` |
-| `app/utils/` | `computeQuoteSummary()`, `getWizardStepKind()`, `formatQuoteMoney()` |
+| `app/utils/` | `computeQuoteSummary()`, `buildPaginatedQuery()`, `getNextCursorPageParam()`, `flattenPaginatedPages()` |
 | Vue / Nuxt | `ref`, `computed`, `watch`, `$fetch`, `useToast`, `navigateTo` |
 
 ```vue

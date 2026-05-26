@@ -21,12 +21,10 @@ export function useCatalogInfiniteList<T>(options: CatalogInfiniteListOptions) {
     key: options.key,
     initialPageParam: null,
     query: ({ pageParam }) =>
-      pageParam
-        ? apiFetch<PaginatedResponse<T>>(pageParam)
-        : apiFetch<PaginatedResponse<T>>(options.path, {
-            query: options.query,
-          }),
-    getNextPageParam: getNextPaginatedPageParam,
+      apiFetch<PaginatedResponse<T>>(options.path, {
+        query: buildPaginatedQuery(options.query, pageParam),
+      }),
+    getNextPageParam: getNextCursorPageParam,
   });
 
   const rows = computed(() =>

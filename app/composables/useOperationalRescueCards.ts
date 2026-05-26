@@ -14,6 +14,9 @@ export function useOperationalRescueCards(
   const apiFetch = useApiFetch();
   const statusValue = computed(() => toValue(status));
   const filtersValue = computed(() => toValue(filters));
+  const baseQuery = computed(() =>
+    buildOperationalCardsQuery(statusValue.value, filtersValue.value),
+  );
 
   const {
     data,
@@ -31,15 +34,10 @@ export function useOperationalRescueCards(
     ],
     initialPageParam: null,
     query: ({ pageParam }) =>
-      pageParam
-        ? apiFetch<PaginatedResponse<RescueCard>>(pageParam)
-        : apiFetch<PaginatedResponse<RescueCard>>(RESCUE_CARDS_PATH, {
-            query: buildOperationalCardsQuery(
-              statusValue.value,
-              filtersValue.value,
-            ),
-          }),
-    getNextPageParam: getNextPaginatedPageParam,
+      apiFetch<PaginatedResponse<RescueCard>>(RESCUE_CARDS_PATH, {
+        query: buildPaginatedQuery(baseQuery.value, pageParam),
+      }),
+    getNextPageParam: getNextCursorPageParam,
   });
 
   const rows = computed(() =>

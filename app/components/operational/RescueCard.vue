@@ -9,13 +9,13 @@ const serviceTypeBadge = computed(() =>
   getRescueServiceTypeBadge(props.card.service_type),
 );
 const gestorInitials = computed(() =>
-  getGestorInitials(props.card.manager_name),
+  getGestorInitials(props.card.operator_name),
 );
 const gestorBadgeColor = computed(() =>
   getGestorBadgeColor(props.card.admin_status),
 );
 const elapsedLabel = computed(() => getRescueCardElapsedLabel(props.card));
-const salePrice = computed(() => formatRescueCardMoney(props.card.sale_price));
+const salePrice = computed(() => formatRescueCardMoney(props.card.sub_total));
 const advanceAmount = computed(() => getRescueCardAdvanceAmount(props.card));
 const hasSupplier = computed(() => hasRescueCardSupplier(props.card.supplier_name));
 
@@ -63,12 +63,6 @@ const showQuickChat = computed(
     <div class="space-y-0.5">
       <p class="text-sm font-semibold text-highlighted leading-snug">
         {{ card.client_name ?? 'Sin cliente' }}
-      </p>
-      <p
-        v-if="card.description?.trim()"
-        class="text-xs text-muted line-clamp-2"
-      >
-        {{ card.description }}
       </p>
     </div>
 
@@ -136,7 +130,7 @@ const showQuickChat = computed(
       class="space-y-2"
     >
       <UBadge
-        v-if="!card.manager_id"
+        v-if="!card.operator_id"
         color="error"
         variant="subtle"
         size="sm"
