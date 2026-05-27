@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import type { RescueChatMessage } from '~/interfaces/rescue';
+
 const props = defineProps<{
   rescueId: number;
 }>();
 
 const messageText = ref('');
+
+const { user } = useUserSession();
+const currentUserId = computed(() => user.value?.id ?? null);
 
 const {
   messages,
@@ -32,6 +37,17 @@ const messageCountLabel = computed(() => {
   const count = messages.value.length;
   return `${count} mensaje${count === 1 ? '' : 's'}`;
 });
+
+function messageVariant(message: RescueChatMessage) {
+  return getRescueChatMessageVariant(message, currentUserId.value);
+}
+
+function senderLabel(
+  message: RescueChatMessage,
+  variant: ReturnType<typeof getRescueChatMessageVariant>,
+): string {
+  return getRescueChatMessageSenderLabel(message, variant);
+}
 
 async function submitMessage() {
   const text = messageText.value.trim();
@@ -87,27 +103,54 @@ async function submitMessage() {
         <div
           v-for="message in messages"
           :key="message.id"
-          :class="message.type === 'system' ? 'text-center' : ''"
         >
-          <p
-            v-if="message.type === 'system'"
-            class="text-xs text-muted"
-          >
-            — {{ message.text }} —
-          </p>
           <div
-            v-else
-            class="max-w-[85%] rounded-lg bg-elevated px-3 py-2 text-left"
+            v-if="messageVariant(message) === 'system'"
+            class="flex justify-center py-1"
           >
-            <p class="text-xs font-medium text-highlighted">
-              {{ message.created_by_name ?? 'Usuario' }}
-            </p>
-            <p class="text-sm text-default whitespace-pre-wrap">
+            <p
+              class="max-w-[90%] rounded-full bg-muted/40 px-3 py-1 text-center text-xs text-muted"
+              :aria-label="`Mensaje del sistema: ${message.text}`"
+            >
               {{ message.text }}
             </p>
-            <p class="mt-1 text-[10px] text-muted">
-              {{ formatChatMessageTime(message.created_at) }}
-            </p>
+          </div>
+
+          <div
+            v-else-if="messageVariant(message) === 'own'"
+            class="flex justify-end"
+          >
+            <div
+              class="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-inverted"
+              :aria-label="`Tu mensaje: ${message.text}`"
+            >
+              <p class="text-sm whitespace-pre-wrap">
+                {{ message.text }}
+              </p>
+              <p class="mt-1 text-right text-[10px] text-inverted/80">
+                {{ formatChatMessageTime(message.created_at) }}
+              </p>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="flex justify-start"
+          >
+            <div
+              class="max-w-[85%] rounded-2xl rounded-bl-sm border border-default bg-elevated px-3 py-2 text-left"
+              :aria-label="`Mensaje de ${senderLabel(message, 'other')}: ${message.text}`"
+            >
+              <p class="text-xs font-medium text-highlighted">
+                {{ senderLabel(message, 'other') }}
+              </p>
+              <p class="text-sm text-default whitespace-pre-wrap">
+                {{ message.text }}
+              </p>
+              <p class="mt-1 text-[10px] text-muted">
+                {{ formatChatMessageTime(message.created_at) }}
+              </p>
+            </div>
           </div>
         </div>
       </template>
