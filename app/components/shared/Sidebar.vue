@@ -50,6 +50,11 @@ const items = computed<NavigationMenuItem[][]>(() => [
       to: '/admin/users',
       icon: 'i-lucide-users-round',
     },
+    {
+      label: 'Configuración SLA',
+      to: '/admin/configuracion/sla',
+      icon: 'i-lucide-timer',
+    },
   ],
 ]);
 
