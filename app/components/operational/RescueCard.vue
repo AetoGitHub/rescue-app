@@ -24,13 +24,15 @@ const advanceAmount = computed(() => getRescueCardAdvanceAmount(props.card));
 
 const approvedAmount = computed(() => {
   if (props.card.operative_status !== 'approved') return null;
-  const amount = (props.card as { approved_amount?: string | null }).approved_amount;
+  const amount = (props.card as { approved_amount?: string | null })
+    .approved_amount;
   return amount ? formatRescueCardMoney(amount) : null;
 });
 
 const collectedTotal = computed(() => {
   if (props.card.operative_status !== 'closed') return null;
-  const total = (props.card as { total_collected?: string | null }).total_collected;
+  const total = (props.card as { total_collected?: string | null })
+    .total_collected;
   return total ? formatRescueCardMoney(total) : null;
 });
 
@@ -77,7 +79,9 @@ function onCardClick() {
         <UIcon name="i-lucide-truck" class="size-3.5 shrink-0" />
         {{ card.supplier_name?.trim() ? card.supplier_name : 'Sin proveedor' }}
       </span>
-      <span class="inline-flex shrink-0 items-center gap-1.5 font-medium text-highlighted">
+      <span
+        class="inline-flex shrink-0 items-center gap-1.5 font-medium text-highlighted"
+      >
         {{ salePrice }}
         <UBadge
           :color="gestorBadgeColor as 'neutral'"
@@ -91,14 +95,18 @@ function onCardClick() {
     </div>
 
     <div class="flex items-center justify-between gap-2 text-xs text-muted">
-      <span class="inline-flex items-center gap-1">
-        <UIcon name="i-lucide-clock" class="size-3.5 shrink-0" />
-        {{ elapsedLabel }}
-      </span>
-      <span class="inline-flex items-center gap-1 text-error">
-        <UIcon name="i-lucide-clock-alert" class="size-3.5 shrink-0" />
-        SLA —
-      </span>
+      <UBadge
+        color="neutral"
+        icon="i-lucide-timer"
+        :label="elapsedLabel"
+        variant="subtle"
+      />
+      <UBadge
+        color="error"
+        icon="i-lucide-clock-alert"
+        label="SLA —"
+        variant="subtle"
+      />
     </div>
 
     <div
@@ -108,16 +116,15 @@ function onCardClick() {
       <UBadge color="primary" variant="subtle" size="sm">
         Anticipo: {{ advanceAmount }}
       </UBadge>
-      <p class="text-xs text-muted">
-        Pendiente de recibir
-      </p>
+      <p class="text-xs text-muted">Pendiente de recibir</p>
     </div>
 
     <div
       v-else-if="card.operative_status === 'approved' && approvedAmount"
       class="text-xs text-muted"
     >
-      Aprobado: <span class="font-medium text-highlighted">{{ approvedAmount }}</span>
+      Aprobado:
+      <span class="font-medium text-highlighted">{{ approvedAmount }}</span>
     </div>
 
     <div
@@ -128,25 +135,17 @@ function onCardClick() {
       <span class="font-medium text-highlighted">{{ collectedTotal }}</span>
     </div>
 
+    <USeparator />
+
     <div
       v-if="card.operative_status === 'requested'"
       class="space-y-2"
       @click.stop
     >
-      <UBadge
-        v-if="!card.operator_id"
-        color="error"
-        variant="subtle"
-        size="sm"
-      >
+      <UBadge v-if="!card.operator_id" color="error" variant="subtle" size="sm">
         Sin gestor asignado
       </UBadge>
-      <UButton
-        block
-        color="primary"
-        label="Tomar solicitud"
-        size="sm"
-      />
+      <UButton block color="primary" label="Tomar solicitud" size="sm" />
     </div>
   </UCard>
 </template>
