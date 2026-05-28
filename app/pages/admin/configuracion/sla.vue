@@ -53,6 +53,7 @@ onMounted(() => {
             :items="[...SLA_TAB_ITEMS]"
             class="flex flex-col gap-4"
             :ui="{ list: 'flex-wrap' }"
+            variant="link"
           >
             <template #stages>
               <AdminSlaConfigSlaStagesTab />

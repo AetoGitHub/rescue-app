@@ -7,6 +7,10 @@ import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
 import type { RescueServiceType } from '~/interfaces/rescue';
 import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
 
+useHead({
+  title: 'Operacional',
+})
+
 const rescueRequestModalRef = ref<{
   openCreate: () => void;
 } | null>(null);
