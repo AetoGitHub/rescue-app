@@ -103,7 +103,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 v-model="folioSearch"
                 leading-icon="i-lucide-search"
                 placeholder="Buscar folio"
-                class="min-w-48"
+                class="min-w-80"
               />
 
               <UFieldGroup>
