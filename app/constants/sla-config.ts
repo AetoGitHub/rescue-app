@@ -2,12 +2,24 @@ import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
 import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import type { RescueServiceType } from '~/interfaces/rescue';
-import type { SlaAlertLevelConfig, SlaDurationUnit } from '~/interfaces/sla';
+import type { SlaDurationUnit } from '~/interfaces/sla';
 
 export const SLA_API_PATHS = {
-  stages: '/api/sla/stages/',
-  alertLevels: '/api/sla/alert-levels/',
-  chatIdleAlerts: '/api/sla/chat-idle-alerts/',
+  timePerStage: {
+    list: '/api/sla/list/',
+    create: '/api/sla/create/',
+    update: (id: number) => `/api/sla/update/${id}/`,
+  },
+  levelAlert: {
+    list: '/api/sla/level_alert/list/',
+    create: '/api/sla/level_alert/create/',
+    update: (id: number) => `/api/sla/level_alert/update/${id}/`,
+  },
+  updateChat: {
+    list: '/api/sla/update_chat/list/',
+    create: '/api/sla/update_chat/create/',
+    update: (id: number) => `/api/sla/update_chat/update/${id}/`,
+  },
 } as const;
 
 export const SLA_SERVICE_TYPES: RescueServiceType[] = [
@@ -17,13 +29,17 @@ export const SLA_SERVICE_TYPES: RescueServiceType[] = [
   'proyect',
 ];
 
-export const SLA_OPERATIONAL_STATUS_OPTIONS = OPERATIONAL_KANBAN_COLUMNS.filter(
-  (column) =>
-    column.status !== 'requested' && column.status !== 'canceled',
+export const SLA_ALL_STATUS_OPTIONS = OPERATIONAL_KANBAN_COLUMNS.filter(
+  (column) => column.status !== 'canceled',
 ).map((column) => ({
   label: column.title,
   value: column.status as OperationalRescueStatus,
 }));
+
+/** @deprecated use SLA_ALL_STATUS_OPTIONS — kept for chat tab excluding requested */
+export const SLA_OPERATIONAL_STATUS_OPTIONS = SLA_ALL_STATUS_OPTIONS.filter(
+  (option) => option.value !== 'requested',
+);
 
 export const SLA_PORTAL_FROM_STATUS: OperationalRescueStatus = 'requested';
 
@@ -84,39 +100,6 @@ export function getSlaRequestTypeLabel(serviceType: RescueServiceType): string {
   );
 }
 
-export const SLA_DEFAULT_ALERT_LEVELS: Omit<
-  SlaAlertLevelConfig,
-  'id'
->[] = [
-  {
-    name: 'Aviso',
-    threshold_percent: 70,
-    color: '#22c55e',
-    is_active: true,
-    notify_assigned_manager: true,
-    notify_admin: false,
-    notify_direction: false,
-  },
-  {
-    name: 'Urgente',
-    threshold_percent: 100,
-    color: '#f59e0b',
-    is_active: true,
-    notify_assigned_manager: true,
-    notify_admin: true,
-    notify_direction: false,
-  },
-  {
-    name: 'Crítico',
-    threshold_percent: 150,
-    color: '#ef4444',
-    is_active: true,
-    notify_assigned_manager: true,
-    notify_admin: true,
-    notify_direction: true,
-  },
-];
-
 export const SLA_TAB_ITEMS = [
   {
     label: 'Etapas y tiempos',
@@ -139,9 +122,9 @@ export const SLA_TAB_ITEMS = [
 ];
 
 export const SLA_ALERT_NOTIFY_OPTIONS = [
-  { label: 'Gestor asignado', key: 'notify_assigned_manager' as const },
+  { label: 'Gestor asignado', key: 'notify_gestor' as const },
   { label: 'Admin', key: 'notify_admin' as const },
-  { label: 'Dirección', key: 'notify_direction' as const },
+  { label: 'Dirección', key: 'notify_direccion' as const },
 ];
 
 export type SlaConfigTabValue = (typeof SLA_TAB_ITEMS)[number]['value'];

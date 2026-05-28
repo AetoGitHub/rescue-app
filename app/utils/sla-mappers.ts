@@ -1,8 +1,9 @@
 import type {
-  SlaAlertLevelConfig,
-  SlaChatIdleAlertConfig,
-  SlaStageConfig,
+  SlaLevelAlertConfig,
+  SlaTimePerStage,
+  SlaUpdateChatConfig,
 } from '~/interfaces/sla';
+import type { SlaDurationUnit } from '~/interfaces/sla';
 
 function toNumber(value: unknown, fallback = 0): number {
   const parsed = Number(value);
@@ -22,126 +23,117 @@ function toNullableId(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function mapSlaStageFromApi(raw: Record<string, unknown>): SlaStageConfig {
+function toDurationUnit(value: unknown): SlaDurationUnit {
+  const unit = String(value ?? 'minutes');
+  if (unit === 'hours' || unit === 'days') return unit;
+  return 'minutes';
+}
+
+function extractResults(payload: unknown): Record<string, unknown>[] {
+  if (Array.isArray(payload)) {
+    return payload as Record<string, unknown>[];
+  }
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    Array.isArray((payload as { results?: unknown }).results)
+  ) {
+    return (payload as { results: Record<string, unknown>[] }).results;
+  }
+  return [];
+}
+
+export function mapSlaTimePerStageFromApi(
+  raw: Record<string, unknown>,
+): SlaTimePerStage {
   return {
     id: toNullableId(raw.id),
-    service_type: String(raw.service_type ?? 'rescue') as SlaStageConfig['service_type'],
-    stage_name: String(raw.stage_name ?? ''),
-    from_status: String(raw.from_status ?? 'active_without_quote') as SlaStageConfig['from_status'],
-    to_status: String(raw.to_status ?? 'pending_authorization') as SlaStageConfig['to_status'],
-    limit_minutes: toNumber(raw.limit_minutes, 60),
-    is_active: toBoolean(raw.is_active, true),
+    service_type: String(
+      raw.service_type ?? 'rescue',
+    ) as SlaTimePerStage['service_type'],
+    operative_status: String(
+      raw.operative_status ?? 'active_without_quote',
+    ) as SlaTimePerStage['operative_status'],
+    time: toNumber(raw.time, 60),
+    unit: toDurationUnit(raw.unit),
   };
 }
 
-export function mapSlaStageToApiBody(stage: SlaStageConfig) {
+export function mapSlaTimePerStageToApiBody(row: SlaTimePerStage) {
   return {
-    id: stage.id,
-    service_type: stage.service_type,
-    stage_name: stage.stage_name.trim(),
-    from_status: stage.from_status,
-    to_status: stage.to_status,
-    limit_minutes: stage.limit_minutes,
-    is_active: stage.is_active,
+    service_type: row.service_type,
+    operative_status: row.operative_status,
+    time: row.time,
+    unit: row.unit,
   };
 }
 
-export function mapSlaAlertLevelFromApi(
+export function mapSlaTimePerStageListFromApi(payload: unknown): SlaTimePerStage[] {
+  return extractResults(payload).map(mapSlaTimePerStageFromApi);
+}
+
+export function mapSlaLevelAlertFromApi(
   raw: Record<string, unknown>,
-): SlaAlertLevelConfig {
+): SlaLevelAlertConfig {
   return {
     id: toNullableId(raw.id),
     name: String(raw.name ?? ''),
-    threshold_percent: toNumber(raw.threshold_percent, 0),
+    percentage_limit: toNumber(raw.percentage_limit, 0),
     color: String(raw.color ?? '#6366f1'),
-    is_active: toBoolean(raw.is_active, true),
-    notify_assigned_manager: toBoolean(raw.notify_assigned_manager, false),
+    notify_gestor: toBoolean(raw.notify_gestor, false),
     notify_admin: toBoolean(raw.notify_admin, false),
-    notify_direction: toBoolean(raw.notify_direction, false),
+    notify_direccion: toBoolean(raw.notify_direccion, false),
   };
 }
 
-export function mapSlaAlertLevelToApiBody(level: SlaAlertLevelConfig) {
+export function mapSlaLevelAlertToApiBody(level: SlaLevelAlertConfig) {
   return {
-    id: level.id,
     name: level.name.trim(),
-    threshold_percent: level.threshold_percent,
+    percentage_limit: level.percentage_limit,
     color: level.color,
-    is_active: level.is_active,
-    notify_assigned_manager: level.notify_assigned_manager,
+    notify_gestor: level.notify_gestor,
     notify_admin: level.notify_admin,
-    notify_direction: level.notify_direction,
+    notify_direccion: level.notify_direccion,
   };
 }
 
-export function mapSlaChatIdleAlertFromApi(
+export function mapSlaLevelAlertListFromApi(
+  payload: unknown,
+): SlaLevelAlertConfig[] {
+  return extractResults(payload).map(mapSlaLevelAlertFromApi);
+}
+
+export function mapSlaUpdateChatFromApi(
   raw: Record<string, unknown>,
-): SlaChatIdleAlertConfig {
+): SlaUpdateChatConfig {
   return {
     id: toNullableId(raw.id),
-    service_type: String(raw.service_type ?? 'rescue') as SlaChatIdleAlertConfig['service_type'],
+    service_type: String(
+      raw.service_type ?? 'rescue',
+    ) as SlaUpdateChatConfig['service_type'],
     operative_status: String(
       raw.operative_status ?? 'in_progress',
-    ) as SlaChatIdleAlertConfig['operative_status'],
-    yellow_limit_minutes: toNumber(raw.yellow_limit_minutes, 30),
-    red_limit_minutes: toNumber(raw.red_limit_minutes, 60),
-    is_active: toBoolean(raw.is_active, true),
+    ) as SlaUpdateChatConfig['operative_status'],
+    yellow_time: toNumber(raw.yellow_time, 30),
+    yellow_unit: toDurationUnit(raw.yellow_unit),
+    red_time: toNumber(raw.red_time, 60),
+    red_unit: toDurationUnit(raw.red_unit),
   };
 }
 
-export function mapSlaChatIdleAlertToApiBody(alert: SlaChatIdleAlertConfig) {
+export function mapSlaUpdateChatToApiBody(row: SlaUpdateChatConfig) {
   return {
-    id: alert.id,
-    service_type: alert.service_type,
-    operative_status: alert.operative_status,
-    yellow_limit_minutes: alert.yellow_limit_minutes,
-    red_limit_minutes: alert.red_limit_minutes,
-    is_active: alert.is_active,
+    service_type: row.service_type,
+    operative_status: row.operative_status,
+    yellow_time: row.yellow_time,
+    yellow_unit: row.yellow_unit,
+    red_time: row.red_time,
+    red_unit: row.red_unit,
   };
 }
 
-export function mapSlaStageListFromApi(
+export function mapSlaUpdateChatListFromApi(
   payload: unknown,
-): SlaStageConfig[] {
-  if (Array.isArray(payload)) {
-    return payload.map((item) =>
-      mapSlaStageFromApi(item as Record<string, unknown>),
-    );
-  }
-  if (payload && typeof payload === 'object' && Array.isArray((payload as { results?: unknown }).results)) {
-    return ((payload as { results: Record<string, unknown>[] }).results).map(
-      mapSlaStageFromApi,
-    );
-  }
-  return [];
-}
-
-export function mapSlaAlertLevelListFromApi(payload: unknown): SlaAlertLevelConfig[] {
-  if (Array.isArray(payload)) {
-    return payload.map((item) =>
-      mapSlaAlertLevelFromApi(item as Record<string, unknown>),
-    );
-  }
-  if (payload && typeof payload === 'object' && Array.isArray((payload as { results?: unknown }).results)) {
-    return ((payload as { results: Record<string, unknown>[] }).results).map(
-      mapSlaAlertLevelFromApi,
-    );
-  }
-  return [];
-}
-
-export function mapSlaChatIdleAlertListFromApi(
-  payload: unknown,
-): SlaChatIdleAlertConfig[] {
-  if (Array.isArray(payload)) {
-    return payload.map((item) =>
-      mapSlaChatIdleAlertFromApi(item as Record<string, unknown>),
-    );
-  }
-  if (payload && typeof payload === 'object' && Array.isArray((payload as { results?: unknown }).results)) {
-    return ((payload as { results: Record<string, unknown>[] }).results).map(
-      mapSlaChatIdleAlertFromApi,
-    );
-  }
-  return [];
+): SlaUpdateChatConfig[] {
+  return extractResults(payload).map(mapSlaUpdateChatFromApi);
 }

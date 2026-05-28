@@ -1,58 +1,61 @@
 import { z } from 'zod';
+import { displayToMinutes } from '~/utils/sla-duration';
 
 const operationalStatusSchema = z.string().min(1);
+const durationUnitSchema = z.enum(['minutes', 'hours', 'days']);
 
-export const slaStageRowSchema = z
-  .object({
-    stage_name: z.string().trim().min(1, { message: 'Indica el nombre de la etapa' }),
-    from_status: operationalStatusSchema,
-    to_status: operationalStatusSchema,
-    limit_minutes: z.number().int().positive({ message: 'El tiempo debe ser mayor a 0' }),
-    is_active: z.boolean(),
-  })
-  .refine((data) => data.from_status !== data.to_status, {
-    message: 'La etapa origen y destino deben ser distintas',
-    path: ['to_status'],
-  });
+export const slaTimePerStageRowSchema = z.object({
+  operative_status: operationalStatusSchema,
+  time: z.number().int().min(1, { message: 'El tiempo debe ser al menos 1' }),
+  unit: durationUnitSchema,
+});
 
-export const slaAlertLevelRowSchema = z
+export const slaLevelAlertRowSchema = z
   .object({
-    name: z.string().trim().min(1, { message: 'Indica el nombre del nivel' }),
-    threshold_percent: z
+    name: z
+      .string()
+      .trim()
+      .min(1, { message: 'Indica el nombre del nivel' })
+      .max(50),
+    percentage_limit: z
       .number()
-      .min(0, { message: 'El porcentaje no puede ser negativo' }),
-    color: z.string().min(1, { message: 'Indica un color' }),
-    is_active: z.boolean(),
-    notify_assigned_manager: z.boolean(),
+      .int()
+      .min(1, { message: 'El porcentaje debe ser al menos 1' }),
+    color: z
+      .string()
+      .regex(/^#[0-9A-Fa-f]{6}$/, { message: 'Indica un color hex válido' }),
+    notify_gestor: z.boolean(),
     notify_admin: z.boolean(),
-    notify_direction: z.boolean(),
+    notify_direccion: z.boolean(),
   })
   .refine(
-    (data) =>
-      !data.is_active ||
-      data.notify_assigned_manager ||
-      data.notify_admin ||
-      data.notify_direction,
+    (data) => data.notify_gestor || data.notify_admin || data.notify_direccion,
     {
       message: 'Selecciona al menos un destinatario de notificación',
-      path: ['notify_assigned_manager'],
+      path: ['notify_gestor'],
     },
   );
 
-export const slaChatIdleAlertRowSchema = z
+export const slaUpdateChatRowSchema = z
   .object({
     operative_status: operationalStatusSchema,
-    yellow_limit_minutes: z
+    yellow_time: z
       .number()
       .int()
-      .positive({ message: 'El umbral amarillo debe ser mayor a 0' }),
-    red_limit_minutes: z
+      .min(1, { message: 'El umbral amarillo debe ser al menos 1' }),
+    yellow_unit: durationUnitSchema,
+    red_time: z
       .number()
       .int()
-      .positive({ message: 'El umbral rojo debe ser mayor a 0' }),
-    is_active: z.boolean(),
+      .min(1, { message: 'El umbral rojo debe ser al menos 1' }),
+    red_unit: durationUnitSchema,
   })
-  .refine((data) => data.red_limit_minutes >= data.yellow_limit_minutes, {
-    message: 'El umbral rojo debe ser mayor o igual al amarillo',
-    path: ['red_limit_minutes'],
-  });
+  .refine(
+    (data) =>
+      displayToMinutes(data.red_time, data.red_unit) >=
+      displayToMinutes(data.yellow_time, data.yellow_unit),
+    {
+      message: 'El umbral rojo debe ser mayor o igual al amarillo',
+      path: ['red_time'],
+    },
+  );

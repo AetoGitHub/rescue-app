@@ -21,10 +21,9 @@ export default defineAppConfig({
     },
     table: {
       slots: {
-        root: 'rounded-lg border border-muted',
+        root: 'rounded-lg border border-muted bg-default',
         thead: 'bg-elevated/50',
         th: 'text-left text-xs uppercase tracking-wider text-muted',
-        td: 'bg-default',
       },
     },
   },

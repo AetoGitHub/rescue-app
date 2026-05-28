@@ -4,7 +4,6 @@ import { SLA_DURATION_UNITS } from '~/constants/sla-config';
 
 const props = withDefaults(
   defineProps<{
-    minutes: number;
     variant?: 'default' | 'amber' | 'red';
     minutesOnly?: boolean;
     disabled?: boolean;
@@ -16,12 +15,8 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{
-  'update:minutes': [value: number];
-}>();
-
-const unit = ref<SlaDurationUnit>('minutes');
-const displayValue = ref(0);
+const time = defineModel<number>('time', { required: true });
+const unit = defineModel<SlaDurationUnit>('unit', { required: true });
 
 const borderClass = computed(() => {
   if (props.variant === 'amber') return 'ring-1 ring-warning/60 rounded-md';
@@ -29,44 +24,36 @@ const borderClass = computed(() => {
   return '';
 });
 
-function syncFromMinutes(value: number) {
-  const resolvedUnit = props.minutesOnly
-    ? 'minutes'
-    : inferBestDurationUnit(value);
-  unit.value = resolvedUnit;
-  displayValue.value = minutesToDisplay(value, resolvedUnit);
-}
-
 watch(
-  () => props.minutes,
-  (value) => syncFromMinutes(value),
+  () => props.minutesOnly,
+  (minutesOnly) => {
+    if (minutesOnly && unit.value !== 'minutes') {
+      unit.value = 'minutes';
+    }
+  },
   { immediate: true },
 );
 
-function onValueChange(value: number | null | undefined) {
-  const safe = value ?? 0;
-  displayValue.value = safe;
-  const resolvedUnit = props.minutesOnly ? 'minutes' : unit.value;
-  emit('update:minutes', displayToMinutes(safe, resolvedUnit));
+const preview = computed(() => formatSlaTimePreview(time.value, unit.value));
+
+function onTimeChange(value: number | null | undefined) {
+  time.value = value ?? 0;
 }
 
 function onUnitChange(value: SlaDurationUnit) {
   unit.value = value;
-  emit('update:minutes', displayToMinutes(displayValue.value, value));
 }
-
-const preview = computed(() => formatSlaDurationPreview(props.minutes));
 </script>
 
 <template>
   <div class="flex flex-col gap-1">
     <div class="flex gap-2" :class="borderClass">
       <UInputNumber
-        :model-value="displayValue"
+        :model-value="time"
         v-bind="catalogIntegerInputProps"
         class="min-w-0 flex-1"
         :disabled="disabled"
-        @update:model-value="onValueChange"
+        @update:model-value="onTimeChange"
       />
       <USelect
         v-if="!minutesOnly"

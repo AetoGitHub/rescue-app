@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import { SLA_ALERT_NOTIFY_OPTIONS } from '~/constants/sla-config';
-import type { SlaAlertLevelConfigRow } from '~/interfaces/sla';
+import type { SlaLevelAlertConfigRow } from '~/interfaces/sla';
 
 const sla = useSlaConfigurationInject();
 
-const levelRows = computed(() => sla.alertLevels.value);
-const alertLevelsDirty = computed(() => sla.hasDirtyAlertLevels.value);
+const levelRows = computed(() => sla.levelAlerts.value);
+const levelAlertsDirty = computed(() => sla.hasDirtyLevelAlerts.value);
 
-function onLevelChange(row: SlaAlertLevelConfigRow) {
-  sla.markAlertDirty(row);
+function onLevelChange(row: SlaLevelAlertConfigRow) {
+  sla.markLevelAlertDirty(row);
 }
 
 function notifyValue(
-  row: SlaAlertLevelConfigRow,
+  row: SlaLevelAlertConfigRow,
   key: (typeof SLA_ALERT_NOTIFY_OPTIONS)[number]['key'],
 ) {
   return row[key];
 }
 
 function setNotify(
-  row: SlaAlertLevelConfigRow,
+  row: SlaLevelAlertConfigRow,
   key: (typeof SLA_ALERT_NOTIFY_OPTIONS)[number]['key'],
   value: boolean,
 ) {
@@ -34,6 +34,13 @@ function setNotify(
       Umbrales porcentuales que disparan alertas en todas las etapas SLA.
     </p>
 
+    <div
+      v-if="levelRows.length === 0"
+      class="rounded-lg border border-dashed border-default px-4 py-8 text-center text-sm text-muted"
+    >
+      No hay niveles configurados. Agrega uno para empezar.
+    </div>
+
     <article
       v-for="(row, index) in levelRows"
       :key="row.id ?? `alert-new-${index}`"
@@ -41,7 +48,7 @@ function setNotify(
       :style="{ borderLeftWidth: '4px', borderLeftColor: row.color }"
     >
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-center">
-        <div class="flex flex-wrap items-center gap-3 sm:col-span-8">
+        <div class="flex flex-wrap items-center gap-3 sm:col-span-12">
           <input
             v-model="row.color"
             type="color"
@@ -55,21 +62,6 @@ function setNotify(
             placeholder="Nombre del nivel"
             @update:model-value="onLevelChange(row)"
           />
-          <UCheckbox
-            v-model="row.is_active"
-            label="Activo"
-            @update:model-value="onLevelChange(row)"
-          />
-        </div>
-        <div class="flex justify-end sm:col-span-4">
-          <UButton
-            icon="i-lucide-trash-2"
-            color="error"
-            variant="ghost"
-            size="sm"
-            aria-label="Eliminar nivel"
-            @click="sla.removeAlertLevel(row)"
-          />
         </div>
       </div>
 
@@ -77,7 +69,7 @@ function setNotify(
         <div class="flex flex-wrap items-center gap-2 text-sm">
           <span>Alertar cuando se consuma el</span>
           <UInputNumber
-            v-model="row.threshold_percent"
+            v-model="row.percentage_limit"
             v-bind="catalogIntegerInputProps"
             class="w-24"
             @update:model-value="onLevelChange(row)"
@@ -86,9 +78,9 @@ function setNotify(
         </div>
         <p
           class="text-sm font-medium"
-          :class="getSlaAlertThresholdHelper(row.threshold_percent).colorClass"
+          :class="getSlaAlertThresholdHelper(row.percentage_limit).colorClass"
         >
-          {{ getSlaAlertThresholdHelper(row.threshold_percent).text }}
+          {{ getSlaAlertThresholdHelper(row.percentage_limit).text }}
         </p>
       </div>
 
@@ -114,7 +106,7 @@ function setNotify(
           :style="{ backgroundColor: row.color }"
         >
           <span class="size-1.5 rounded-full bg-white/90" />
-          {{ row.name }} ({{ row.threshold_percent }}%)
+          {{ row.name }} ({{ row.percentage_limit }}%)
         </span>
       </div>
     </article>
@@ -126,15 +118,15 @@ function setNotify(
         color="neutral"
         variant="outline"
         size="sm"
-        @click="sla.addAlertLevel()"
+        @click="sla.addLevelAlert()"
       />
       <UButton
         icon="i-lucide-save"
         label="Guardar todos los niveles"
         size="sm"
         :loading="sla.isSaving('alert-levels')"
-        :disabled="!alertLevelsDirty"
-        @click="sla.saveAlertLevels()"
+        :disabled="!levelAlertsDirty"
+        @click="sla.saveLevelAlerts()"
       />
     </div>
   </div>

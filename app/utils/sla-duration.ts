@@ -1,5 +1,6 @@
-import type { SlaDurationUnit } from '~/interfaces/sla';
-import type { SlaStageConfig } from '~/interfaces/sla';
+import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
+import type { SlaDurationUnit, SlaTimePerStage } from '~/interfaces/sla';
+import type { RescueServiceType } from '~/interfaces/rescue';
 import { getOperationalStatusLabel } from '~/utils/operational-rescue-detail';
 
 const MINUTES_PER_HOUR = 60;
@@ -25,11 +26,20 @@ export function minutesToDisplay(
   return safe;
 }
 
-export function inferBestDurationUnit(minutes: number): SlaDurationUnit {
-  const safe = Math.max(0, Math.floor(Number(minutes) || 0));
-  if (safe > 0 && safe % MINUTES_PER_DAY === 0) return 'days';
-  if (safe > 0 && safe % MINUTES_PER_HOUR === 0) return 'hours';
-  return 'minutes';
+export function formatSlaTimePreview(
+  time: number,
+  unit: SlaDurationUnit,
+): string {
+  const safe = Math.max(0, Math.floor(Number(time) || 0));
+  if (safe === 0) return '0 min';
+
+  if (unit === 'days') {
+    return safe === 1 ? '1 día' : `${safe} días`;
+  }
+  if (unit === 'hours') {
+    return safe === 1 ? '1 hr' : `${safe} hrs`;
+  }
+  return safe === 1 ? '1 min' : `${safe} min`;
 }
 
 export function formatSlaDurationPreview(minutes: number): string {
@@ -50,76 +60,47 @@ export function formatSlaDurationPreview(minutes: number): string {
   return parts.join(' ') || '0 min';
 }
 
-export function formatSlaFlowDuration(minutes: number): string {
-  const preview = formatSlaDurationPreview(minutes);
-  return preview.replace(/\s+/g, ' ').trim();
-}
-
-export function isOptionalSlaStage(
-  fromStatus: string,
-  toStatus?: string,
-): boolean {
-  if (fromStatus === 'waiting_advance_payment') return true;
-  if (toStatus === 'waiting_advance_payment') return true;
-  return false;
-}
-
-export interface SlaFlowDiagramStep {
-  fromLabel: string;
-  toLabel: string;
+export interface SlaStatusTimelineItem {
+  label: string;
   durationLabel: string;
   isOptional: boolean;
 }
 
-export function buildSlaFlowSteps(
-  stages: Pick<
-    SlaStageConfig,
-    'from_status' | 'to_status' | 'limit_minutes' | 'is_active'
-  >[],
-): SlaFlowDiagramStep[] {
-  const active = stages.filter((s) => s.is_active);
-  if (active.length === 0) return [];
+export function buildSlaStatusTimeline(
+  rows: Pick<SlaTimePerStage, 'service_type' | 'operative_status' | 'time' | 'unit'>[],
+  serviceType: RescueServiceType,
+): SlaStatusTimelineItem[] {
+  const filtered = rows.filter((row) => row.service_type === serviceType);
+  if (filtered.length === 0) return [];
 
-  const steps: SlaFlowDiagramStep[] = [];
-  const used = new Set<string>();
+  const order = new Map(
+    OPERATIONAL_KANBAN_COLUMNS.map((column, index) => [column.status, index]),
+  );
 
-  let current = active.find((s) => !active.some((o) => o.to_status === s.from_status));
-  if (!current) current = active[0];
+  const sorted = [...filtered].sort((a, b) => {
+    const aIndex = order.get(a.operative_status) ?? 999;
+    const bIndex = order.get(b.operative_status) ?? 999;
+    return aIndex - bIndex;
+  });
 
-  const maxIterations = active.length + 2;
-  let iterations = 0;
-
-  while (current && iterations < maxIterations) {
-    const key = `${current.from_status}->${current.to_status}`;
-    if (used.has(key)) break;
-    used.add(key);
-
-    steps.push({
-      fromLabel: getOperationalStatusLabel(current.from_status),
-      toLabel: getOperationalStatusLabel(current.to_status),
-      durationLabel: formatSlaFlowDuration(current.limit_minutes),
-      isOptional: isOptionalSlaStage(current.from_status, current.to_status),
-    });
-
-    const next = active.find((s) => s.from_status === current!.to_status);
-    current = next;
-    iterations += 1;
-  }
-
-  return steps;
+  return sorted.map((row) => ({
+    label: getOperationalStatusLabel(row.operative_status),
+    durationLabel: formatSlaTimePreview(row.time, row.unit),
+    isOptional: row.operative_status === 'waiting_advance_payment',
+  }));
 }
 
-export function getSlaAlertThresholdHelper(percent: number): {
+export function getSlaAlertThresholdHelper(percentageLimit: number): {
   text: string;
   colorClass: string;
 } {
-  if (percent < 100) {
+  if (percentageLimit < 100) {
     return {
       text: '⏰ Alerta preventiva',
       colorClass: 'text-success',
     };
   }
-  if (percent === 100) {
+  if (percentageLimit === 100) {
     return {
       text: '⚠️ Alerta de vencimiento',
       colorClass: 'text-warning',

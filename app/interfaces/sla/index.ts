@@ -3,61 +3,45 @@ import type { RescueServiceType } from '~/interfaces/rescue';
 
 export type SlaDurationUnit = 'minutes' | 'hours' | 'days';
 
-export interface SlaStageConfig {
-  id: number | null;
-  service_type: RescueServiceType;
-  stage_name: string;
-  from_status: OperationalRescueStatus;
-  to_status: OperationalRescueStatus;
-  limit_minutes: number;
-  is_active: boolean;
-}
-
-export interface SlaStageConfigRow extends SlaStageConfig {
-  _dirty?: boolean;
-  _isNew?: boolean;
-}
-
-export interface SlaAlertLevelConfig {
-  id: number | null;
-  name: string;
-  threshold_percent: number;
-  color: string;
-  is_active: boolean;
-  notify_assigned_manager: boolean;
-  notify_admin: boolean;
-  notify_direction: boolean;
-}
-
-export interface SlaAlertLevelConfigRow extends SlaAlertLevelConfig {
-  _dirty?: boolean;
-  _isNew?: boolean;
-}
-
-export interface SlaChatIdleAlertConfig {
+export interface SlaTimePerStage {
   id: number | null;
   service_type: RescueServiceType;
   operative_status: OperationalRescueStatus;
-  yellow_limit_minutes: number;
-  red_limit_minutes: number;
-  is_active: boolean;
+  time: number;
+  unit: SlaDurationUnit;
 }
 
-export interface SlaChatIdleAlertConfigRow extends SlaChatIdleAlertConfig {
+export interface SlaTimePerStageRow extends SlaTimePerStage {
   _dirty?: boolean;
   _isNew?: boolean;
 }
 
-export interface SlaStagesSaveBody {
-  service_type: RescueServiceType;
-  stages: Omit<SlaStageConfig, 'id'> & { id?: number | null }[];
+export interface SlaLevelAlertConfig {
+  id: number | null;
+  name: string;
+  percentage_limit: number;
+  color: string;
+  notify_gestor: boolean;
+  notify_admin: boolean;
+  notify_direccion: boolean;
 }
 
-export interface SlaAlertLevelsSaveBody {
-  levels: Omit<SlaAlertLevelConfig, 'id'> & { id?: number | null }[];
+export interface SlaLevelAlertConfigRow extends SlaLevelAlertConfig {
+  _dirty?: boolean;
+  _isNew?: boolean;
 }
 
-export interface SlaChatIdleAlertsSaveBody {
+export interface SlaUpdateChatConfig {
+  id: number | null;
   service_type: RescueServiceType;
-  alerts: Omit<SlaChatIdleAlertConfig, 'id'> & { id?: number | null }[];
+  operative_status: OperationalRescueStatus;
+  yellow_time: number;
+  yellow_unit: SlaDurationUnit;
+  red_time: number;
+  red_unit: SlaDurationUnit;
+}
+
+export interface SlaUpdateChatConfigRow extends SlaUpdateChatConfig {
+  _dirty?: boolean;
+  _isNew?: boolean;
 }

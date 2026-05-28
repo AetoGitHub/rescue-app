@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { SLA_REQUEST_TYPE_META, SLA_SERVICE_TYPES } from '~/constants/sla-config';
+import {
+  SLA_PORTAL_FROM_STATUS,
+  SLA_REQUEST_TYPE_META,
+  SLA_SERVICE_TYPES,
+} from '~/constants/sla-config';
 import type { RescueServiceType } from '~/interfaces/rescue';
-import type { SlaStageConfigRow } from '~/interfaces/sla';
-import { isOptionalSlaStage } from '~/utils/sla-duration';
+import type { SlaTimePerStageRow } from '~/interfaces/sla';
 
 const sla = useSlaConfigurationInject();
 
@@ -13,20 +16,26 @@ const openByType = ref<Record<RescueServiceType, boolean>>({
   proyect: false,
 });
 
-function flowSteps(serviceType: RescueServiceType) {
-  return buildSlaFlowSteps(sla.stagesForType(serviceType, false));
+function timelineItems(serviceType: RescueServiceType) {
+  return buildSlaStatusTimeline(
+    sla.timePerStageForType(serviceType, false),
+    serviceType,
+  );
 }
 
-function onStageFieldChange(row: SlaStageConfigRow) {
-  sla.markStageDirty(row);
+function onRowChange(row: SlaTimePerStageRow) {
+  sla.markTimePerStageDirty(row);
 }
 
 function portalRowForType(serviceType: RescueServiceType) {
-  return sla.stages.value.find(
-    (row) =>
-      row.service_type === serviceType &&
-      row.from_status === 'requested',
-  );
+  return sla.timePerStageForType(serviceType, true)[0] ?? null;
+}
+
+function disabledStatusesForRow(
+  serviceType: RescueServiceType,
+  row: SlaTimePerStageRow,
+) {
+  return sla.usedStatusesForType(serviceType, 'timePerStage', row);
 }
 </script>
 
@@ -38,32 +47,30 @@ function portalRowForType(serviceType: RescueServiceType) {
       :open="openByType[serviceType]"
       :service-type="serviceType"
       @update:open="(v) => (openByType[serviceType] = v)"
-      :count-label="`${sla.stagesForType(serviceType, false).length} etapa(s)`"
-      :has-dirty="sla.hasDirtyStagesForType(serviceType, false)"
+      :count-label="`${sla.timePerStageForType(serviceType, false).length} etapa(s)`"
+      :has-dirty="sla.hasDirtyTimePerStageForType(serviceType, false)"
     >
-      <AdminSlaConfigSlaFlowDiagram :steps="flowSteps(serviceType)" />
+      <AdminSlaConfigSlaFlowDiagram :items="timelineItems(serviceType)" />
 
       <div class="hidden text-xs font-medium text-muted sm:grid sm:grid-cols-12 sm:gap-3 sm:px-1">
-        <span class="col-span-3">Etapa</span>
-        <span class="col-span-4">Transición</span>
-        <span class="col-span-3">Tiempo límite</span>
-        <span class="col-span-2">Acciones</span>
+        <span class="col-span-5">Estatus operativo</span>
+        <span class="col-span-7">Tiempo límite</span>
       </div>
 
       <div
-        v-for="(row, index) in sla.stagesForType(serviceType, false)"
+        v-for="(row, index) in sla.timePerStageForType(serviceType, false)"
         :key="row.id ?? `new-${serviceType}-${index}`"
         class="grid grid-cols-1 gap-3 rounded-lg border border-default p-3 sm:grid-cols-12 sm:items-start sm:gap-3"
       >
-        <div class="sm:col-span-3">
-          <UInput
-            v-model="row.stage_name"
-            class="w-full"
-            placeholder="Nombre de etapa"
-            @update:model-value="onStageFieldChange(row)"
+        <div class="sm:col-span-5">
+          <AdminSlaConfigSlaOperationalStatusSelect
+            v-model="row.operative_status"
+            :exclude-statuses="[SLA_PORTAL_FROM_STATUS]"
+            :disabled-statuses="disabledStatusesForRow(serviceType, row)"
+            @update:model-value="onRowChange(row)"
           />
           <UBadge
-            v-if="isOptionalSlaStage(row.from_status, row.to_status)"
+            v-if="row.operative_status === 'waiting_advance_payment'"
             class="mt-1"
             color="neutral"
             variant="subtle"
@@ -72,43 +79,12 @@ function portalRowForType(serviceType: RescueServiceType) {
           />
         </div>
 
-        <div class="flex flex-col gap-2 sm:col-span-4 sm:flex-row sm:items-start">
-          <AdminSlaConfigSlaOperationalStatusSelect
-            v-model="row.from_status"
-            @update:model-value="onStageFieldChange(row)"
-          />
-          <span class="hidden shrink-0 self-center text-muted sm:inline">→</span>
-          <AdminSlaConfigSlaOperationalStatusSelect
-            v-model="row.to_status"
-            @update:model-value="onStageFieldChange(row)"
-          />
-        </div>
-
-        <div class="sm:col-span-3">
+        <div class="sm:col-span-7">
           <AdminSlaConfigSlaDurationInput
-            :minutes="row.limit_minutes"
-            @update:minutes="
-              (v) => {
-                row.limit_minutes = v;
-                onStageFieldChange(row);
-              }
-            "
-          />
-        </div>
-
-        <div class="flex items-center justify-between gap-2 sm:col-span-2 sm:justify-end">
-          <UCheckbox
-            v-model="row.is_active"
-            label="Activo"
-            @update:model-value="onStageFieldChange(row)"
-          />
-          <UButton
-            icon="i-lucide-trash-2"
-            color="error"
-            variant="ghost"
-            size="sm"
-            aria-label="Eliminar etapa"
-            @click="sla.removeStage(row)"
+            v-model:time="row.time"
+            v-model:unit="row.unit"
+            @update:time="onRowChange(row)"
+            @update:unit="onRowChange(row)"
           />
         </div>
       </div>
@@ -127,15 +103,16 @@ function portalRowForType(serviceType: RescueServiceType) {
           color="neutral"
           variant="outline"
           size="sm"
-          @click="sla.addStage(serviceType, false)"
+          :disabled="!sla.canAddTimePerStage(serviceType, false)"
+          @click="sla.addTimePerStage(serviceType, false)"
         />
         <UButton
           icon="i-lucide-save"
           :label="`Guardar cambios de ${SLA_REQUEST_TYPE_META[serviceType].label}`"
           size="sm"
           :loading="sla.isSaving(`stages-${serviceType}`)"
-          :disabled="!sla.hasDirtyStagesForType(serviceType, false)"
-          @click="sla.saveStagesForType(serviceType)"
+          :disabled="!sla.hasDirtyTimePerStageForType(serviceType, false)"
+          @click="sla.saveTimePerStageForType(serviceType)"
         />
       </div>
     </AdminSlaConfigSlaRequestTypeCollapsible>
@@ -158,26 +135,24 @@ function portalRowForType(serviceType: RescueServiceType) {
         :key="`portal-${serviceType}`"
         class="flex flex-col gap-3 rounded-lg border border-default p-4 sm:flex-row sm:items-end sm:justify-between"
       >
+        <div class="min-w-0 flex-1">
+          <p class="font-medium">
+            {{ SLA_REQUEST_TYPE_META[serviceType].label }}
+          </p>
+          <p class="text-sm text-muted">
+            Tiempo en estatus Solicitado
+          </p>
+        </div>
+
         <template v-if="portalRowForType(serviceType)">
-          <div class="min-w-0 flex-1">
-            <p class="font-medium">
-              {{ SLA_REQUEST_TYPE_META[serviceType].label }}
-            </p>
-            <p class="text-sm text-muted">
-              Desde Solicitado → Activo sin cotizar
-            </p>
-          </div>
           <div class="flex flex-wrap items-end gap-3">
-            <div class="w-40">
+            <div class="w-48">
               <AdminSlaConfigSlaDurationInput
-                :minutes="portalRowForType(serviceType)!.limit_minutes"
+                v-model:time="portalRowForType(serviceType)!.time"
+                v-model:unit="portalRowForType(serviceType)!.unit"
                 minutes-only
-                @update:minutes="
-                  (v) => {
-                    portalRowForType(serviceType)!.limit_minutes = v;
-                    sla.markStageDirty(portalRowForType(serviceType)!);
-                  }
-                "
+                @update:time="sla.markTimePerStageDirty(portalRowForType(serviceType)!)"
+                @update:unit="sla.markTimePerStageDirty(portalRowForType(serviceType)!)"
               />
             </div>
             <UButton
@@ -185,11 +160,21 @@ function portalRowForType(serviceType: RescueServiceType) {
               label="Guardar"
               size="sm"
               :loading="sla.isSaving(`portal-${serviceType}`)"
-              :disabled="!sla.hasDirtyStagesForType(serviceType, true)"
-              @click="sla.savePortalStage(portalRowForType(serviceType)!)"
+              :disabled="!portalRowForType(serviceType)!._dirty"
+              @click="sla.savePortalTimePerStage(portalRowForType(serviceType)!)"
             />
           </div>
         </template>
+        <UButton
+          v-else
+          icon="i-lucide-plus"
+          label="Configurar portal"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :disabled="!sla.canAddTimePerStage(serviceType, true)"
+          @click="sla.addTimePerStage(serviceType, true)"
+        />
       </div>
     </section>
   </div>

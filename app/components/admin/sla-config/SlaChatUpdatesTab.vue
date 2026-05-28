@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SLA_REQUEST_TYPE_META, SLA_SERVICE_TYPES } from '~/constants/sla-config';
 import type { RescueServiceType } from '~/interfaces/rescue';
-import type { SlaChatIdleAlertConfigRow } from '~/interfaces/sla';
+import type { SlaUpdateChatConfigRow } from '~/interfaces/sla';
 
 const sla = useSlaConfigurationInject();
 
@@ -12,12 +12,19 @@ const openByType = ref<Record<RescueServiceType, boolean>>({
   proyect: false,
 });
 
-function onChatChange(row: SlaChatIdleAlertConfigRow) {
-  sla.markChatDirty(row);
+function onChatChange(row: SlaUpdateChatConfigRow) {
+  sla.markUpdateChatDirty(row);
 }
 
 function setOpen(serviceType: RescueServiceType, value: boolean) {
   openByType.value[serviceType] = value;
+}
+
+function disabledStatusesForRow(
+  serviceType: RescueServiceType,
+  row: SlaUpdateChatConfigRow,
+) {
+  return sla.usedStatusesForType(serviceType, 'updateChat', row);
 }
 </script>
 
@@ -36,65 +43,44 @@ function setOpen(serviceType: RescueServiceType, value: boolean) {
       :key="serviceType"
       :open="openByType[serviceType]"
       :service-type="serviceType"
-      :count-label="`${sla.chatForType(serviceType).length} estatus configurados`"
-      :has-dirty="sla.hasDirtyChatForType(serviceType)"
+      :count-label="`${sla.updateChatForType(serviceType).length} estatus configurados`"
+      :has-dirty="sla.hasDirtyUpdateChatForType(serviceType)"
       @update:open="(v) => setOpen(serviceType, v)"
     >
       <div class="hidden text-xs font-medium text-muted sm:grid sm:grid-cols-12 sm:gap-3">
         <span class="col-span-4">Estatus operativo</span>
-        <span class="col-span-3">Amarillo</span>
-        <span class="col-span-3">Rojo</span>
-        <span class="col-span-2">Acciones</span>
+        <span class="col-span-4">Amarillo</span>
+        <span class="col-span-4">Rojo</span>
       </div>
 
       <div
-        v-for="(row, index) in sla.chatForType(serviceType)"
+        v-for="(row, index) in sla.updateChatForType(serviceType)"
         :key="row.id ?? `chat-${serviceType}-${index}`"
         class="grid grid-cols-1 gap-3 rounded-lg border border-default p-3 sm:grid-cols-12 sm:items-start"
       >
         <div class="sm:col-span-4">
           <AdminSlaConfigSlaOperationalStatusSelect
             v-model="row.operative_status"
+            :disabled-statuses="disabledStatusesForRow(serviceType, row)"
             @update:model-value="onChatChange(row)"
           />
         </div>
-        <div class="sm:col-span-3">
+        <div class="sm:col-span-4">
           <AdminSlaConfigSlaDurationInput
+            v-model:time="row.yellow_time"
+            v-model:unit="row.yellow_unit"
             variant="amber"
-            :minutes="row.yellow_limit_minutes"
-            @update:minutes="
-              (v) => {
-                row.yellow_limit_minutes = v;
-                onChatChange(row);
-              }
-            "
+            @update:time="onChatChange(row)"
+            @update:unit="onChatChange(row)"
           />
         </div>
-        <div class="sm:col-span-3">
+        <div class="sm:col-span-4">
           <AdminSlaConfigSlaDurationInput
+            v-model:time="row.red_time"
+            v-model:unit="row.red_unit"
             variant="red"
-            :minutes="row.red_limit_minutes"
-            @update:minutes="
-              (v) => {
-                row.red_limit_minutes = v;
-                onChatChange(row);
-              }
-            "
-          />
-        </div>
-        <div class="flex items-center justify-between gap-2 sm:col-span-2 sm:justify-end">
-          <UCheckbox
-            v-model="row.is_active"
-            label="Activo"
-            @update:model-value="onChatChange(row)"
-          />
-          <UButton
-            icon="i-lucide-trash-2"
-            color="error"
-            variant="ghost"
-            size="sm"
-            aria-label="Eliminar"
-            @click="sla.removeChatAlert(row)"
+            @update:time="onChatChange(row)"
+            @update:unit="onChatChange(row)"
           />
         </div>
       </div>
@@ -106,15 +92,16 @@ function setOpen(serviceType: RescueServiceType, value: boolean) {
           color="neutral"
           variant="outline"
           size="sm"
-          @click="sla.addChatAlert(serviceType)"
+          :disabled="!sla.canAddUpdateChat(serviceType)"
+          @click="sla.addUpdateChat(serviceType)"
         />
         <UButton
           icon="i-lucide-save"
           :label="`Guardar cambios de ${SLA_REQUEST_TYPE_META[serviceType].label}`"
           size="sm"
           :loading="sla.isSaving(`chat-${serviceType}`)"
-          :disabled="!sla.hasDirtyChatForType(serviceType)"
-          @click="sla.saveChatForType(serviceType)"
+          :disabled="!sla.hasDirtyUpdateChatForType(serviceType)"
+          @click="sla.saveUpdateChatForType(serviceType)"
         />
       </div>
     </AdminSlaConfigSlaRequestTypeCollapsible>

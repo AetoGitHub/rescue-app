@@ -1,107 +1,164 @@
 import { SLA_API_PATHS } from '~/constants/sla-config';
-import type { RescueServiceType } from '~/interfaces/rescue';
+import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type {
-  SlaAlertLevelConfig,
-  SlaChatIdleAlertConfig,
-  SlaStageConfig,
+  SlaLevelAlertConfig,
+  SlaTimePerStage,
+  SlaUpdateChatConfig,
 } from '~/interfaces/sla';
 import {
-  mapSlaAlertLevelListFromApi,
-  mapSlaAlertLevelToApiBody,
-  mapSlaChatIdleAlertListFromApi,
-  mapSlaChatIdleAlertToApiBody,
-  mapSlaStageListFromApi,
-  mapSlaStageToApiBody,
+  mapSlaLevelAlertFromApi,
+  mapSlaLevelAlertListFromApi,
+  mapSlaLevelAlertToApiBody,
+  mapSlaTimePerStageFromApi,
+  mapSlaTimePerStageListFromApi,
+  mapSlaTimePerStageToApiBody,
+  mapSlaUpdateChatFromApi,
+  mapSlaUpdateChatListFromApi,
+  mapSlaUpdateChatToApiBody,
 } from '~/utils/sla-mappers';
 
+async function fetchAllPaginated<T>(
+  apiFetch: ReturnType<typeof useApiFetch>,
+  path: string,
+  baseQuery?: Record<string, string>,
+  mapItem?: (raw: Record<string, unknown>) => T,
+): Promise<T[]> {
+  const results: T[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const page = await apiFetch<PaginatedResponse<Record<string, unknown>>>(
+      path,
+      {
+        query: buildPaginatedQuery(baseQuery, cursor),
+      },
+    );
+
+    for (const raw of page.results) {
+      results.push(mapItem ? mapItem(raw) : (raw as T));
+    }
+
+    cursor = extractCursorFromPaginatedNext(page.next);
+  } while (cursor);
+
+  return results;
+}
+
 /**
- * SLA API layer. Adjust paths in SLA_API_PATHS when backend is ready.
- *
- * Suggested contracts:
- * - GET  /api/sla/stages/           → list all stage configs
- * - PUT  /api/sla/stages/           → { service_type, stages: [...] }
- * - DELETE /api/sla/stages/:id/
- * - GET/PUT /api/sla/alert-levels/  → list / replace all levels
- * - GET/PUT /api/sla/chat-idle-alerts/ → list / { service_type, alerts }
+ * SLA API layer — TimePerStage, LevelAlert, UpdateChat.
+ * Each resource: list (paginated) + create + update. No DELETE endpoints.
  */
 export function useSlaConfigApi() {
-  async function listStages(): Promise<SlaStageConfig[]> {
-    const payload = await $fetch<unknown>(SLA_API_PATHS.stages);
-    return mapSlaStageListFromApi(payload);
+  const apiFetch = useApiFetch();
+
+  async function listTimePerStage(): Promise<SlaTimePerStage[]> {
+    const rows = await fetchAllPaginated(
+      apiFetch,
+      SLA_API_PATHS.timePerStage.list,
+      undefined,
+      mapSlaTimePerStageFromApi,
+    );
+    return rows.length > 0 ? rows : mapSlaTimePerStageListFromApi({ results: [] });
   }
 
-  async function saveStagesBatch(
-    serviceType: RescueServiceType,
-    stages: SlaStageConfig[],
+  async function createTimePerStage(
+    body: Omit<SlaTimePerStage, 'id'>,
+  ): Promise<number> {
+    const response = await apiFetch<{ id: number }>(
+      SLA_API_PATHS.timePerStage.create,
+      {
+        method: 'POST',
+        body: mapSlaTimePerStageToApiBody({ id: null, ...body }),
+      },
+    );
+    return response.id;
+  }
+
+  async function updateTimePerStage(
+    id: number,
+    body: Omit<SlaTimePerStage, 'id'>,
   ): Promise<void> {
-    await $fetch(SLA_API_PATHS.stages, {
+    await apiFetch(SLA_API_PATHS.timePerStage.update(id), {
       method: 'PUT',
-      body: {
-        service_type: serviceType,
-        stages: stages.map(mapSlaStageToApiBody),
+      body: mapSlaTimePerStageToApiBody({ id, ...body }),
+    });
+  }
+
+  async function listLevelAlert(): Promise<SlaLevelAlertConfig[]> {
+    const rows = await fetchAllPaginated(
+      apiFetch,
+      SLA_API_PATHS.levelAlert.list,
+      undefined,
+      mapSlaLevelAlertFromApi,
+    );
+    return rows.length > 0 ? rows : mapSlaLevelAlertListFromApi({ results: [] });
+  }
+
+  async function createLevelAlert(
+    body: Omit<SlaLevelAlertConfig, 'id'>,
+  ): Promise<number> {
+    const response = await apiFetch<{ id: number }>(
+      SLA_API_PATHS.levelAlert.create,
+      {
+        method: 'POST',
+        body: mapSlaLevelAlertToApiBody({ id: null, ...body }),
       },
-    });
+    );
+    return response.id;
   }
 
-  async function deleteStage(id: number): Promise<void> {
-    await $fetch(`${SLA_API_PATHS.stages}${id}/`, {
-      method: 'DELETE',
-    });
-  }
-
-  async function listAlertLevels(): Promise<SlaAlertLevelConfig[]> {
-    const payload = await $fetch<unknown>(SLA_API_PATHS.alertLevels);
-    return mapSlaAlertLevelListFromApi(payload);
-  }
-
-  async function saveAlertLevels(levels: SlaAlertLevelConfig[]): Promise<void> {
-    await $fetch(SLA_API_PATHS.alertLevels, {
-      method: 'PUT',
-      body: {
-        levels: levels.map(mapSlaAlertLevelToApiBody),
-      },
-    });
-  }
-
-  async function deleteAlertLevel(id: number): Promise<void> {
-    await $fetch(`${SLA_API_PATHS.alertLevels}${id}/`, {
-      method: 'DELETE',
-    });
-  }
-
-  async function listChatIdleAlerts(): Promise<SlaChatIdleAlertConfig[]> {
-    const payload = await $fetch<unknown>(SLA_API_PATHS.chatIdleAlerts);
-    return mapSlaChatIdleAlertListFromApi(payload);
-  }
-
-  async function saveChatIdleAlertsBatch(
-    serviceType: RescueServiceType,
-    alerts: SlaChatIdleAlertConfig[],
+  async function updateLevelAlert(
+    id: number,
+    body: Omit<SlaLevelAlertConfig, 'id'>,
   ): Promise<void> {
-    await $fetch(SLA_API_PATHS.chatIdleAlerts, {
+    await apiFetch(SLA_API_PATHS.levelAlert.update(id), {
       method: 'PUT',
-      body: {
-        service_type: serviceType,
-        alerts: alerts.map(mapSlaChatIdleAlertToApiBody),
-      },
+      body: mapSlaLevelAlertToApiBody({ id, ...body }),
     });
   }
 
-  async function deleteChatIdleAlert(id: number): Promise<void> {
-    await $fetch(`${SLA_API_PATHS.chatIdleAlerts}${id}/`, {
-      method: 'DELETE',
+  async function listUpdateChat(): Promise<SlaUpdateChatConfig[]> {
+    const rows = await fetchAllPaginated(
+      apiFetch,
+      SLA_API_PATHS.updateChat.list,
+      undefined,
+      mapSlaUpdateChatFromApi,
+    );
+    return rows.length > 0 ? rows : mapSlaUpdateChatListFromApi({ results: [] });
+  }
+
+  async function createUpdateChat(
+    body: Omit<SlaUpdateChatConfig, 'id'>,
+  ): Promise<number> {
+    const response = await apiFetch<{ id: number }>(
+      SLA_API_PATHS.updateChat.create,
+      {
+        method: 'POST',
+        body: mapSlaUpdateChatToApiBody({ id: null, ...body }),
+      },
+    );
+    return response.id;
+  }
+
+  async function updateUpdateChat(
+    id: number,
+    body: Omit<SlaUpdateChatConfig, 'id'>,
+  ): Promise<void> {
+    await apiFetch(SLA_API_PATHS.updateChat.update(id), {
+      method: 'PUT',
+      body: mapSlaUpdateChatToApiBody({ id, ...body }),
     });
   }
 
   return {
-    listStages,
-    saveStagesBatch,
-    deleteStage,
-    listAlertLevels,
-    saveAlertLevels,
-    deleteAlertLevel,
-    listChatIdleAlerts,
-    saveChatIdleAlertsBatch,
-    deleteChatIdleAlert,
+    listTimePerStage,
+    createTimePerStage,
+    updateTimePerStage,
+    listLevelAlert,
+    createLevelAlert,
+    updateLevelAlert,
+    listUpdateChat,
+    createUpdateChat,
+    updateUpdateChat,
   };
 }
