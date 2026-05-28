@@ -36,6 +36,10 @@ const collectedTotal = computed(() => {
   return total ? formatRescueCardMoney(total) : null;
 });
 
+const showQuickChat = computed(
+  () => props.card.operative_status !== 'requested',
+);
+
 function onCardClick() {
   emit('select', props.card.id);
 }
@@ -147,5 +151,10 @@ function onCardClick() {
       </UBadge>
       <UButton block color="primary" label="Tomar solicitud" size="sm" />
     </div>
+
+    <OperationalRescueCardQuickChat
+      v-if="showQuickChat"
+      :rescue-id="card.id"
+    />
   </UCard>
 </template>

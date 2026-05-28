@@ -169,9 +169,11 @@ async function submitMessage() {
     <div class="flex items-end gap-2">
       <UTextarea
         v-model="messageText"
-        :rows="2"
+        :rows="1"
+        :max-rows="1"
         class="min-w-0 flex-1"
         placeholder="Escribe un mensaje o actualización del servicio..."
+        autoresize
         :disabled="isSending"
       />
       <UButton
