@@ -18,6 +18,7 @@ export interface RescueCardBase {
   admin_status: string;
   created_at: string;
   phase_started_at: string;
+  last_comment_at?: string | null;
 }
 
 export interface RescueCardWaitingAdvance extends RescueCardBase {

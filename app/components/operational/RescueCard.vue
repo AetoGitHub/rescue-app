@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useNow } from '@vueuse/core';
 import type { RescueCard } from '~/interfaces/rescue';
 
 const props = defineProps<{
@@ -9,6 +10,9 @@ const emit = defineEmits<{
   select: [id: number];
 }>();
 
+const { settings } = useRescueGeneralSettings();
+const now = useNow({ interval: 30_000 });
+
 const serviceTypeBadge = computed(() =>
   getRescueServiceTypeBadge(props.card.service_type),
 );
@@ -18,9 +22,30 @@ const gestorInitials = computed(() =>
 const gestorBadgeColor = computed(() =>
   getGestorBadgeColor(props.card.admin_status),
 );
-const elapsedLabel = computed(() => getRescueCardElapsedLabel(props.card));
 const salePrice = computed(() => formatRescueCardMoney(props.card.sub_total));
 const advanceAmount = computed(() => getRescueCardAdvanceAmount(props.card));
+
+const chatBadge = computed(() =>
+  getOperationalChatBadgeState(
+    props.card,
+    settings.value,
+    now.value.getTime(),
+  ),
+);
+
+const slaBadge = computed(() =>
+  getOperationalSlaBadgeState(
+    props.card,
+    settings.value,
+    now.value.getTime(),
+  ),
+);
+
+const hasCriticalAlert = computed(
+  () =>
+    chatBadge.value.color === 'error'
+    || slaBadge.value.color === 'error',
+);
 
 const approvedAmount = computed(() => {
   if (props.card.operative_status !== 'approved') return null;
@@ -40,6 +65,14 @@ const showQuickChat = computed(
   () => props.card.operative_status !== 'requested',
 );
 
+const supplierLabel = computed(() =>
+  props.card.supplier_name?.trim() ? props.card.supplier_name : 'Sin proveedor',
+);
+
+const supplierBadgeColor = computed(() =>
+  props.card.supplier_name?.trim() ? 'neutral' : 'error',
+);
+
 function onCardClick() {
   emit('select', props.card.id);
 }
@@ -48,6 +81,7 @@ function onCardClick() {
 <template>
   <UCard
     class="cursor-pointer transition-shadow hover:shadow-md"
+    :class="{ 'operational-rescue-card--critical': hasCriticalAlert }"
     :ui="{
       root: 'overflow-hidden shadow-sm ring ring-default',
       body: 'space-y-3 p-3',
@@ -76,13 +110,14 @@ function onCardClick() {
     </div>
 
     <div class="flex items-center justify-between gap-2 text-xs">
-      <span
-        class="inline-flex min-w-0 items-center gap-1 truncate"
-        :class="card.supplier_name?.trim() ? 'text-muted' : 'text-error'"
-      >
-        <UIcon name="i-lucide-truck" class="size-3.5 shrink-0" />
-        {{ card.supplier_name?.trim() ? card.supplier_name : 'Sin proveedor' }}
-      </span>
+      <UBadge
+        :color="supplierBadgeColor as 'neutral'"
+        icon="i-lucide-truck"
+        :label="supplierLabel"
+        variant="subtle"
+        size="sm"
+        class="min-w-0 max-w-[60%] truncate"
+      />
       <span
         class="inline-flex shrink-0 items-center gap-1.5 font-medium text-highlighted"
       >
@@ -99,18 +134,26 @@ function onCardClick() {
     </div>
 
     <div class="flex items-center justify-between gap-2 text-xs text-muted">
-      <UBadge
-        color="neutral"
-        icon="i-lucide-timer"
-        :label="elapsedLabel"
-        variant="subtle"
-      />
-      <UBadge
-        color="error"
-        icon="i-lucide-clock-alert"
-        label="SLA —"
-        variant="subtle"
-      />
+      <UTooltip :text="chatBadge.tooltip">
+        <UBadge
+          :color="chatBadge.color as 'neutral'"
+          icon="i-lucide-message-square"
+          :label="chatBadge.label"
+          variant="subtle"
+          size="sm"
+        />
+      </UTooltip>
+      <UTooltip :text="slaBadge.tooltip">
+        <UBadge
+          :color="slaBadge.customStyle ? 'neutral' : (slaBadge.color as 'neutral')"
+          icon="i-lucide-clock-alert"
+          :label="slaBadge.label"
+          :style="slaBadge.customStyle"
+          :class="slaBadge.customStyle ? '!ring-0' : undefined"
+          variant="subtle"
+          size="sm"
+        />
+      </UTooltip>
     </div>
 
     <div
@@ -158,3 +201,32 @@ function onCardClick() {
     />
   </UCard>
 </template>
+
+<style scoped>
+@keyframes operational-rescue-card-critical-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(239 68 68 / 0.55),
+      0 0 8px rgb(239 68 68 / 0.25);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 2px rgb(239 68 68 / 0.95),
+      0 0 14px rgb(239 68 68 / 0.55);
+  }
+}
+
+.operational-rescue-card--critical {
+  --tw-ring-color: transparent;
+  animation: operational-rescue-card-critical-glow 1.25s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operational-rescue-card--critical {
+    animation: none;
+    box-shadow: 0 0 0 2px rgb(239 68 68 / 0.85);
+  }
+}
+</style>

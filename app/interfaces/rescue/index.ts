@@ -7,6 +7,9 @@ export type {
 
 export type { RescueCardDetail } from './detail';
 
+export type { RescueGeneralSettings } from './settings';
+export { RESCUE_GENERAL_SETTINGS_PATH } from './settings';
+
 export type {
   RescueCard,
   RescueCardApproved,
