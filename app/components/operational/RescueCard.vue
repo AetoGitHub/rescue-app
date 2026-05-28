@@ -149,7 +149,7 @@ function onCardClick() {
           icon="i-lucide-clock-alert"
           :label="slaBadge.label"
           :style="slaBadge.customStyle"
-          :class="slaBadge.customStyle ? '!ring-0' : undefined"
+          :class="slaBadge.customStyle ? 'ring-0' : undefined"
           variant="subtle"
           size="sm"
         />
