@@ -1,5 +1,6 @@
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
+import { RESCUE_CHAT_MESSAGE_CREATE_PATH } from '~/constants/rescue-chat-api';
 import type {
   RescueChatMessageCreateBody,
   RescueChatMessageCreateResponse,
@@ -13,13 +14,18 @@ export function useRescueChatSendMessage(rescueId: MaybeRefOrGetter<number | nul
 
   const { mutate, mutateAsync, asyncStatus } = useMutation({
     mutation: (text: string) => {
+      const currentId = id.value;
+      if (currentId == null) {
+        return Promise.reject(new Error('Sin solicitud seleccionada'));
+      }
+
       const body: RescueChatMessageCreateBody = {
         text: text.trim(),
         response_to: null,
       };
 
       return apiFetch<RescueChatMessageCreateResponse>(
-        `/api/chat/${id.value}/messages/create/`,
+        RESCUE_CHAT_MESSAGE_CREATE_PATH(currentId),
         {
           method: 'POST',
           body,
@@ -27,9 +33,10 @@ export function useRescueChatSendMessage(rescueId: MaybeRefOrGetter<number | nul
       );
     },
     onSuccess: async () => {
-      await queryCache.invalidateQueries({
-        key: ['rescue-chat-messages', id.value],
-      });
+      const currentId = id.value;
+      if (currentId != null) {
+        await invalidateRescueDataAfterChatMessage(queryCache, currentId);
+      }
       toast.add({
         title: 'Mensaje enviado',
         color: 'success',

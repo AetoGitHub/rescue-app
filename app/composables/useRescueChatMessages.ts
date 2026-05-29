@@ -1,11 +1,8 @@
 import { useInfiniteQuery } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
+import { RESCUE_CHAT_MESSAGES_PATH } from '~/constants/rescue-chat-api';
 import type { RescueChatMessage } from '~/interfaces/rescue';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
-
-function rescueChatMessagesPath(rescueId: number) {
-  return `/api/chat/${rescueId}/messages/`;
-}
 
 export function useRescueChatMessages(rescueId: MaybeRefOrGetter<number | null>) {
   const apiFetch = useApiFetch();
@@ -24,7 +21,7 @@ export function useRescueChatMessages(rescueId: MaybeRefOrGetter<number | null>)
     initialPageParam: null,
     query: ({ pageParam }) =>
       apiFetch<PaginatedResponse<RescueChatMessage>>(
-        rescueChatMessagesPath(id.value!),
+        RESCUE_CHAT_MESSAGES_PATH(id.value!),
         {
           query: buildPaginatedQuery(undefined, pageParam),
         },

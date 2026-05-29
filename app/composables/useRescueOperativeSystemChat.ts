@@ -1,5 +1,6 @@
 import { useQueryCache } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
+import { RESCUE_CHAT_MESSAGE_CREATE_PATH } from '~/constants/rescue-chat-api';
 import type { RescueChatMessageCreateResponse } from '~/interfaces/rescue';
 import { formatRescueCardMoney } from '~/utils/operational-rescue-card';
 import { parseAdvanceAmountValue } from '~/utils/advance-amount';
@@ -18,7 +19,7 @@ export function useRescueOperativeSystemChat(
 
     try {
       await apiFetch<RescueChatMessageCreateResponse>(
-        `/api/chat/${currentId}/messages/create/`,
+        RESCUE_CHAT_MESSAGE_CREATE_PATH(currentId),
         {
           method: 'POST',
           body: {
@@ -27,9 +28,7 @@ export function useRescueOperativeSystemChat(
           },
         },
       );
-      await queryCache.invalidateQueries({
-        key: ['rescue-chat-messages', currentId],
-      });
+      await invalidateRescueDataAfterChatMessage(queryCache, currentId);
     } catch (error) {
       if (!options?.silent) {
         toast.add({
