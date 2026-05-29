@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import type { RescueDetailTabValue } from '~/constants/operational-rescue-detail';
 import { RESCUE_DETAIL_TAB_ITEMS } from '~/constants/operational-rescue-detail';
+import { RESCUE_EVIDENCE_MODAL_COPY } from '~/constants/rescue-evidence-api';
 
 const open = ref(false);
 const rescueId = ref<number | null>(null);
 const activeTab = ref<RescueDetailTabValue>('general');
+const previousTab = ref<RescueDetailTabValue>('general');
+const serviceEvidenceOpen = ref(false);
+const toast = useToast();
 
 const { detail, isPending, errorMessage, refresh } = useRescueCardDetail(rescueId);
 
@@ -65,7 +69,26 @@ watch(open, (isOpen) => {
   if (!isOpen) {
     rescueId.value = null;
     activeTab.value = 'general';
+    previousTab.value = 'general';
+    serviceEvidenceOpen.value = false;
   }
+});
+
+watch(activeTab, (tab, oldTab) => {
+  if (tab === 'evidence') {
+    serviceEvidenceOpen.value = true;
+    activeTab.value = oldTab ?? previousTab.value;
+    return;
+  }
+  if (tab === 'supplier_payment') {
+    toast.add({
+      title: RESCUE_EVIDENCE_MODAL_COPY.supplierPaymentComingSoon,
+      color: 'neutral',
+    });
+    activeTab.value = oldTab ?? previousTab.value;
+    return;
+  }
+  previousTab.value = tab;
 });
 
 defineExpose({ open: openDetail });
@@ -164,10 +187,10 @@ defineExpose({ open: openDetail });
             </OperationalRescueDetailGeneralTab>
           </template>
           <template #evidence>
-            <OperationalRescueDetailPlaceholderTab />
+            <span class="sr-only" />
           </template>
           <template #supplier_payment>
-            <OperationalRescueDetailPlaceholderTab />
+            <span class="sr-only" />
           </template>
           <template #quote>
             <OperationalRescueDetailQuoteTab
@@ -212,5 +235,12 @@ defineExpose({ open: openDetail });
     v-model:cancel-reason="cancelReason"
     :loading="isUpdatingOperative"
     @submit="submitCancelService"
+  />
+
+  <OperationalRescueDetailEvidenceModal
+    v-if="detail && rescueId != null"
+    v-model:open="serviceEvidenceOpen"
+    :rescue-id="rescueId"
+    :folio="detail.folio"
   />
 </template>

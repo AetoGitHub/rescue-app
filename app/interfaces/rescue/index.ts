@@ -8,6 +8,13 @@ export type {
 export type { RescueCardDetail } from './detail';
 
 export type {
+  RescueEvidence,
+  RescueEvidenceCreateBody,
+  RescueEvidenceItemInput,
+  RescueEvidenceType,
+} from './evidence';
+
+export type {
   RescueAdvanceFormState,
   RescueAdvancePanelMode,
   RescueFooterAction,

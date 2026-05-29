@@ -54,6 +54,7 @@ export default defineNuxtConfig({
     },
     public: {
       googleMapsApiKey: '',
+      firebaseUploadWebhookUrl: '',
     },
   },
 
