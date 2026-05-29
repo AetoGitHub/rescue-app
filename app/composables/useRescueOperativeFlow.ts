@@ -36,6 +36,7 @@ export function useRescueOperativeFlow(options: {
   const detail = computed(() => toValue(options.detail));
 
   const { updateOperative, isUpdating } = useRescueOperativeMutation(rescueId);
+  const systemChat = useRescueOperativeSystemChat(rescueId);
 
   const advancePanelOpen = ref(false);
   const advancePanelMode = ref<RescueAdvancePanelMode>('request');
@@ -122,6 +123,7 @@ export function useRescueOperativeFlow(options: {
     if (d) resetAdvanceFormFromDetail(d);
     advancePanelMode.value = mode;
     advancePanelOpen.value = true;
+    options.setActiveTab('general');
   }
 
   function openCompletedPanel() {
@@ -134,6 +136,21 @@ export function useRescueOperativeFlow(options: {
     completedPanelOpen.value = true;
   }
 
+  function getOperativeSuccessToast(action: RescueOperativeActionId): string {
+    switch (action) {
+      case 'request_advance':
+        return RESCUE_OPERATIVE_TOAST.advanceRequested;
+      case 'modify_advance_amount':
+        return RESCUE_OPERATIVE_TOAST.advanceModified;
+      case 'confirm_advance_received':
+        return RESCUE_OPERATIVE_TOAST.advanceConfirmed;
+      case 'approve_without_advance':
+        return RESCUE_OPERATIVE_TOAST.advanceApprovedWithout;
+      default:
+        return RESCUE_OPERATIVE_TOAST.operativeUpdated;
+    }
+  }
+
   async function runUpdate(
     action: RescueOperativeActionId,
     forms?: {
@@ -141,14 +158,22 @@ export function useRescueOperativeFlow(options: {
       completed?: RescueServiceCompletedFormState;
       cancelReason?: string;
     },
+    afterSuccess?: () => Promise<void>,
   ) {
     const d = detail.value;
     if (d == null || rescueId.value == null) return;
 
     const body = toOperativeUpdatePayload(action, d, forms);
     await updateOperative(body);
+    if (afterSuccess) {
+      try {
+        await afterSuccess();
+      } catch {
+        // Chat u otros efectos colaterales no bloquean el flujo principal
+      }
+    }
     toast.add({
-      title: RESCUE_OPERATIVE_TOAST.operativeUpdated,
+      title: getOperativeSuccessToast(action),
       color: 'success',
     });
     await options.refresh();
@@ -238,62 +263,73 @@ export function useRescueOperativeFlow(options: {
     if (!d) return;
     const mode = advancePanelMode.value;
 
-    if (mode === 'approve_without') {
-      await runUpdate('approve_without_advance', { advance: { ...advanceForm } });
-      advancePanelOpen.value = false;
-      return;
-    }
-
-    if (mode === 'modify') {
-      const parsed = rescueAdvanceAmountSchema.safeParse(advanceForm);
-      if (!parsed.success) {
-        toast.add({
-          title: parsed.error.issues[0]?.message ?? RESCUE_OPERATIVE_TOAST.advanceAmountRequired,
-          color: 'error',
-        });
+    try {
+      if (mode === 'approve_without') {
+        await runUpdate('approve_without_advance', { advance: { ...advanceForm } });
+        advancePanelOpen.value = false;
         return;
       }
-      await runUpdate('modify_advance_amount', {
-        advance: { ...advanceForm, advance_amount: parsed.data.advance_amount },
-      });
-      toast.add({
-        title: RESCUE_OPERATIVE_TOAST.clientNotified,
-        color: 'info',
-      });
-      advancePanelOpen.value = false;
-      return;
-    }
 
-    if (mode === 'confirm') {
-      const parsed = rescueAdvanceConfirmSchema.safeParse(advanceForm);
+      if (mode === 'modify') {
+        const parsed = rescueAdvanceAmountSchema.safeParse(advanceForm);
+        if (!parsed.success) {
+          toast.add({
+            title:
+              parsed.error.issues[0]?.message
+              ?? RESCUE_OPERATIVE_TOAST.advanceAmountRequired,
+            color: 'error',
+          });
+          return;
+        }
+        const amount = parsed.data.advance_amount;
+        await runUpdate(
+          'modify_advance_amount',
+          { advance: { ...advanceForm, advance_amount: amount } },
+          () =>
+            systemChat.postAdvanceModifiedMessage(amount, d.operator_name),
+        );
+        advancePanelOpen.value = false;
+        return;
+      }
+
+      if (mode === 'confirm') {
+        const parsed = rescueAdvanceConfirmSchema.safeParse(advanceForm);
+        if (!parsed.success) {
+          toast.add({
+            title:
+              parsed.error.issues[0]?.message
+              ?? RESCUE_OPERATIVE_TOAST.advanceConfirmRequired,
+            color: 'error',
+          });
+          return;
+        }
+        await runUpdate('confirm_advance_received', {
+          advance: { ...advanceForm, ...parsed.data },
+        });
+        advancePanelOpen.value = false;
+        return;
+      }
+
+      const parsed = rescueAdvanceAmountSchema.safeParse(advanceForm);
       if (!parsed.success) {
         toast.add({
           title:
             parsed.error.issues[0]?.message
-            ?? RESCUE_OPERATIVE_TOAST.advanceConfirmRequired,
+            ?? RESCUE_OPERATIVE_TOAST.advanceAmountRequired,
           color: 'error',
         });
         return;
       }
-      await runUpdate('confirm_advance_received', {
-        advance: { ...advanceForm, ...parsed.data },
-      });
+      const amount = parsed.data.advance_amount;
+      await runUpdate(
+        'request_advance',
+        { advance: { ...advanceForm, advance_amount: amount } },
+        () => systemChat.postAdvanceRequiredMessage(amount, d.operator_name),
+      );
       advancePanelOpen.value = false;
-      return;
+    } catch {
+      // Error API: el panel permanece abierto para reintentar
     }
-
-    const parsed = rescueAdvanceAmountSchema.safeParse(advanceForm);
-    if (!parsed.success) {
-      toast.add({
-        title: parsed.error.issues[0]?.message ?? RESCUE_OPERATIVE_TOAST.advanceAmountRequired,
-        color: 'error',
-      });
-      return;
-    }
-    await runUpdate('request_advance', {
-      advance: { ...advanceForm, advance_amount: parsed.data.advance_amount },
-    });
-    advancePanelOpen.value = false;
   }
 
   async function submitCompletedPanel() {

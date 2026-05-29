@@ -8,7 +8,22 @@ const activeTab = ref<RescueDetailTabValue>('general');
 
 const { detail, isPending, errorMessage, refresh } = useRescueCardDetail(rescueId);
 
-const operativeFlow = useRescueOperativeFlow({
+const {
+  advancePanelOpen,
+  advancePanelMode,
+  advanceForm,
+  quoteTotalForAdvance,
+  completedPanelOpen,
+  completedForm,
+  cancelModalOpen,
+  cancelReason,
+  handleAction,
+  submitAdvancePanel,
+  submitCompletedPanel,
+  submitCancelService,
+  isUpdating,
+  detailForActions,
+} = useRescueOperativeFlow({
   rescueId,
   detail,
   refresh,
@@ -18,10 +33,10 @@ const operativeFlow = useRescueOperativeFlow({
 });
 
 const detailForFooter = computed(
-  () => operativeFlow.detailForActions.value ?? detail.value,
+  () => detailForActions.value ?? detail.value,
 );
 
-const isUpdatingOperative = computed(() => operativeFlow.isUpdating.value);
+const isUpdatingOperative = computed(() => isUpdating.value);
 
 const modalTitle = computed(() => detail.value?.folio ?? 'Detalle de rescate');
 
@@ -133,7 +148,20 @@ defineExpose({ open: openDetail });
           :ui="{ list: 'shrink-0 flex-wrap' }"
         >
           <template #general>
-            <OperationalRescueDetailGeneralTab :detail="detail" />
+            <OperationalRescueDetailGeneralTab :detail="detail">
+              <template #afterChat>
+                <OperationalRescueDetailAdvancePanel
+                  v-if="advancePanelOpen"
+                  v-model:open="advancePanelOpen"
+                  v-model:form="advanceForm"
+                  :mode="advancePanelMode"
+                  :quote-total="quoteTotalForAdvance"
+                  :loading="isUpdatingOperative"
+                  @submit="submitAdvancePanel"
+                  @cancel="advancePanelOpen = false"
+                />
+              </template>
+            </OperationalRescueDetailGeneralTab>
           </template>
           <template #evidence>
             <OperationalRescueDetailPlaceholderTab />
@@ -165,34 +193,24 @@ defineExpose({ open: openDetail });
       <OperationalRescueDetailFooterActions
         :detail="detailForFooter"
         :loading="isUpdatingOperative"
-        @action="operativeFlow.handleAction"
+        @action="handleAction"
       />
     </template>
   </UModal>
 
-  <OperationalRescueDetailAdvancePanel
-    v-if="detail"
-    v-model:open="operativeFlow.advancePanelOpen"
-    v-model:form="operativeFlow.advanceForm"
-    :mode="operativeFlow.advancePanelMode"
-    :quote-total="operativeFlow.quoteTotalForAdvance"
-    :loading="isUpdatingOperative"
-    @submit="operativeFlow.submitAdvancePanel"
-  />
-
   <OperationalRescueDetailServiceCompletedPanel
     v-if="detail"
-    v-model:open="operativeFlow.completedPanelOpen"
-    v-model:form="operativeFlow.completedForm"
+    v-model:open="completedPanelOpen"
+    v-model:form="completedForm"
     :is-loan="detail.service_type === 'loan'"
     :loading="isUpdatingOperative"
-    @submit="operativeFlow.submitCompletedPanel"
+    @submit="submitCompletedPanel"
   />
 
   <OperationalRescueDetailCancelServiceModal
-    v-model:open="operativeFlow.cancelModalOpen"
-    v-model:cancel-reason="operativeFlow.cancelReason"
+    v-model:open="cancelModalOpen"
+    v-model:cancel-reason="cancelReason"
     :loading="isUpdatingOperative"
-    @submit="operativeFlow.submitCancelService"
+    @submit="submitCancelService"
   />
 </template>

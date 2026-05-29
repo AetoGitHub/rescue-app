@@ -6,7 +6,7 @@ const positiveAmountString = z
   .refine((s) => {
     const n = Number(s.replace(/,/g, ''));
     return Number.isFinite(n) && n > 0;
-  }, 'El monto debe ser mayor a cero');
+  }, 'El monto del anticipo debe ser mayor a $0');
 
 export const rescueAdvanceAmountSchema = z.object({
   advance_amount: positiveAmountString,

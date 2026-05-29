@@ -23,11 +23,10 @@ export type RescueOperativeActionId =
   | 'complete_project'
   | 'take_request';
 
-export interface RescueOperativeUpdateBody {
-  operative_status?: OperationalRescueStatus;
-  advance_amount?: string | number;
-  requires_advance?: boolean;
-  advance_received?: boolean;
+/** POST /api/rescue/change_phase/{rescue_pk}/ */
+export interface RescueChangePhaseBody {
+  to: OperationalRescueStatus;
+  advance_amount?: string;
   advance_date?: string;
   advance_payment_method?: string;
   advance_reference?: string;
@@ -37,6 +36,9 @@ export interface RescueOperativeUpdateBody {
   cancel_reason?: string;
   supplier_ratings?: RescueSupplierRatingPayload[];
 }
+
+/** @deprecated Use RescueChangePhaseBody */
+export type RescueOperativeUpdateBody = RescueChangePhaseBody;
 
 export interface RescueSupplierRatingPayload {
   supplier_id: number;

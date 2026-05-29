@@ -221,5 +221,11 @@ const hasSupplier = computed(() =>
     </div>
 
     <OperationalRescueDetailChat :rescue-id="detail.id" class="col-span-2" />
+    <div
+      v-if="$slots.afterChat"
+      class="col-span-2"
+    >
+      <slot name="afterChat" />
+    </div>
   </div>
 </template>

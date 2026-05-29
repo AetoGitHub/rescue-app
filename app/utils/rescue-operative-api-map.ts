@@ -2,49 +2,62 @@ import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type {
   RescueAdvanceFormState,
+  RescueChangePhaseBody,
   RescueOperativeActionId,
-  RescueOperativeUpdateBody,
   RescueServiceCompletedFormState,
 } from '~/interfaces/rescue/operative';
+import { formatAdvanceAmountForApi } from '~/utils/advance-amount';
 
-export function mapOperativePatchToApi(
-  body: RescueOperativeUpdateBody,
-): Record<string, unknown> {
-  return { ...body };
+export function mapOperativeUpdateToApi(
+  body: RescueChangePhaseBody,
+): RescueChangePhaseBody {
+  const mapped: RescueChangePhaseBody = { to: body.to };
+  if (body.advance_amount != null) {
+    mapped.advance_amount = formatAdvanceAmountForApi(body.advance_amount);
+  }
+  if (body.advance_date) mapped.advance_date = body.advance_date;
+  if (body.advance_payment_method) {
+    mapped.advance_payment_method = body.advance_payment_method;
+  }
+  if (body.advance_reference) mapped.advance_reference = body.advance_reference;
+  if (body.cancel_reason) mapped.cancel_reason = body.cancel_reason;
+  if (body.close_date) mapped.close_date = body.close_date;
+  if (body.disbursement_date) mapped.disbursement_date = body.disbursement_date;
+  if (body.disbursement_payment_method) {
+    mapped.disbursement_payment_method = body.disbursement_payment_method;
+  }
+  if (body.supplier_ratings?.length) {
+    mapped.supplier_ratings = body.supplier_ratings;
+  }
+  return mapped;
 }
 
 export function toOperativeUpdatePayload(
   action: RescueOperativeActionId,
-  detail: RescueCardDetail,
+  _detail: RescueCardDetail,
   forms?: {
     advance?: RescueAdvanceFormState;
     completed?: RescueServiceCompletedFormState;
     cancelReason?: string;
   },
-): RescueOperativeUpdateBody {
+): RescueChangePhaseBody {
   switch (action) {
     case 'send_to_authorization':
-      return { operative_status: 'pending_authorization' };
+      return { to: 'pending_authorization' };
 
     case 'approve_loan':
     case 'approve_without_advance':
-      return {
-        operative_status: 'approved',
-        requires_advance: false,
-        advance_amount: '0',
-      };
+      return { to: 'approved' };
 
     case 'request_advance':
       return {
-        operative_status: 'waiting_advance_payment',
+        to: 'waiting_advance_payment',
         advance_amount: forms?.advance?.advance_amount ?? '0',
-        requires_advance: true,
       };
 
     case 'confirm_advance_received':
       return {
-        operative_status: 'approved',
-        advance_received: true,
+        to: 'approved',
         advance_amount: forms?.advance?.advance_amount,
         advance_date: forms?.advance?.advance_date,
         advance_payment_method: forms?.advance?.advance_payment_method,
@@ -53,45 +66,37 @@ export function toOperativeUpdatePayload(
 
     case 'modify_advance_amount':
       return {
+        to: 'waiting_advance_payment',
         advance_amount: forms?.advance?.advance_amount,
-        requires_advance: true,
       };
 
     case 'cancel_advance':
-      return {
-        operative_status: 'pending_authorization',
-        requires_advance: false,
-        advance_amount: '0',
-      };
+      return { to: 'pending_authorization' };
 
     case 'start_project':
-      return { operative_status: 'in_progress' };
+      return { to: 'in_progress' };
 
     case 'complete_service':
     case 'complete_project':
     case 'confirm_disbursement':
-      return buildClosePayload(detail, forms?.completed);
+      return buildClosePayload(forms?.completed);
 
     case 'cancel_service':
       return {
-        operative_status: 'canceled',
+        to: 'canceled',
         cancel_reason: forms?.cancelReason,
       };
 
     case 'take_request':
-      return { operative_status: 'active_without_quote' };
-
-    default:
-      return {};
+      return { to: 'active_without_quote' };
   }
 }
 
 function buildClosePayload(
-  detail: RescueCardDetail,
   completed?: RescueServiceCompletedFormState,
-): RescueOperativeUpdateBody {
-  const payload: RescueOperativeUpdateBody = {
-    operative_status: 'closed_unpaid',
+): RescueChangePhaseBody {
+  const payload: RescueChangePhaseBody = {
+    to: 'closed_unpaid',
     close_date: completed?.close_date,
     supplier_ratings: completed?.ratings
       .filter((r) => r.score >= 1)
@@ -102,7 +107,7 @@ function buildClosePayload(
       })),
   };
 
-  if (detail.service_type === 'loan' && completed) {
+  if (completed) {
     payload.disbursement_date = completed.disbursement_date;
     payload.disbursement_payment_method = completed.disbursement_payment_method;
   }
@@ -119,6 +124,7 @@ export function targetStatusForAction(
     approve_without_advance: 'approved',
     request_advance: 'waiting_advance_payment',
     confirm_advance_received: 'approved',
+    modify_advance_amount: 'waiting_advance_payment',
     cancel_advance: 'pending_authorization',
     start_project: 'in_progress',
     complete_service: 'closed_unpaid',

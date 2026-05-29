@@ -1,11 +1,11 @@
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
 import {
+  RESCUE_CHANGE_PHASE_PATH,
   RESCUE_OPERATIVE_UPDATE_METHOD,
-  RESCUE_OPERATIVE_UPDATE_PATH,
 } from '~/constants/rescue-operative-flow';
-import type { RescueOperativeUpdateBody } from '~/interfaces/rescue/operative';
-import { mapOperativePatchToApi } from '~/utils/rescue-operative-api-map';
+import type { RescueChangePhaseBody } from '~/interfaces/rescue/operative';
+import { mapOperativeUpdateToApi } from '~/utils/rescue-operative-api-map';
 
 export function useRescueOperativeMutation(
   rescueId: MaybeRefOrGetter<number | null>,
@@ -16,15 +16,15 @@ export function useRescueOperativeMutation(
   const id = computed(() => toValue(rescueId));
 
   const { mutateAsync, asyncStatus } = useMutation({
-    mutation: (body: RescueOperativeUpdateBody) => {
+    mutation: (body: RescueChangePhaseBody) => {
       const currentId = id.value;
       if (currentId == null) {
         return Promise.reject(new Error('Sin solicitud seleccionada'));
       }
 
-      return apiFetch(RESCUE_OPERATIVE_UPDATE_PATH(currentId), {
+      return apiFetch(RESCUE_CHANGE_PHASE_PATH(currentId), {
         method: RESCUE_OPERATIVE_UPDATE_METHOD,
-        body: mapOperativePatchToApi(body),
+        body: mapOperativeUpdateToApi(body),
       });
     },
     onSuccess: async () => {
