@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import type { RescueDetailTabValue } from '~/constants/operational-rescue-detail';
 import { RESCUE_DETAIL_TAB_ITEMS } from '~/constants/operational-rescue-detail';
-import { RESCUE_EVIDENCE_MODAL_COPY } from '~/constants/rescue-evidence-api';
+import {
+  RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
+  RESCUE_EVIDENCE_TYPE_SERVICE,
+} from '~/constants/rescue-evidence-api';
+import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
 
 const open = ref(false);
 const rescueId = ref<number | null>(null);
 const activeTab = ref<RescueDetailTabValue>('general');
 const previousTab = ref<RescueDetailTabValue>('general');
-const serviceEvidenceOpen = ref(false);
-const toast = useToast();
+const evidenceModalOpen = ref(false);
+const evidenceModalType = ref<RescueEvidenceType>(RESCUE_EVIDENCE_TYPE_SERVICE);
 
 const { detail, isPending, errorMessage, refresh } = useRescueCardDetail(rescueId);
 
@@ -70,21 +74,23 @@ watch(open, (isOpen) => {
     rescueId.value = null;
     activeTab.value = 'general';
     previousTab.value = 'general';
-    serviceEvidenceOpen.value = false;
+    evidenceModalOpen.value = false;
   }
 });
+
+function openEvidenceModal(type: RescueEvidenceType) {
+  evidenceModalType.value = type;
+  evidenceModalOpen.value = true;
+}
 
 function onActiveTabChange(tab: string | number) {
   const value = tab as RescueDetailTabValue;
   if (value === 'evidence') {
-    serviceEvidenceOpen.value = true;
+    openEvidenceModal(RESCUE_EVIDENCE_TYPE_SERVICE);
     return;
   }
   if (value === 'supplier_payment') {
-    toast.add({
-      title: RESCUE_EVIDENCE_MODAL_COPY.supplierPaymentComingSoon,
-      color: 'neutral',
-    });
+    openEvidenceModal(RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER);
     return;
   }
   activeTab.value = value;
@@ -240,7 +246,8 @@ defineExpose({ open: openDetail });
 
   <OperationalRescueDetailEvidenceModal
     v-if="detail && rescueId != null"
-    v-model:open="serviceEvidenceOpen"
+    v-model:open="evidenceModalOpen"
+    :type="evidenceModalType"
     :rescue-id="rescueId"
     :folio="detail.folio"
   />

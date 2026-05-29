@@ -27,6 +27,8 @@ export const RESCUE_EVIDENCE_MODAL_COPY = {
       'Aún no hay evidencia subida. Arrastra o selecciona fotos, videos o PDFs arriba.',
     fileCountLabel: (count: number) =>
       `${count} archivo${count === 1 ? '' : 's'}`,
+    uploadSuccess: 'Evidencia guardada',
+    invalidFile: 'Solo imágenes, videos o PDF dentro del tamaño máximo',
   },
   payment_provider: {
     title: (folio: string) => `Pago a Proveedor – ${folio}`,
@@ -38,13 +40,12 @@ export const RESCUE_EVIDENCE_MODAL_COPY = {
       'Aún no hay comprobante. Arrastra o selecciona la captura o PDF arriba.',
     fileCountLabel: (count: number) =>
       `${count} comprobante${count === 1 ? '' : 's'}`,
+    uploadSuccess: 'Comprobante guardado',
+    invalidFile: 'Solo imágenes o PDF dentro del tamaño máximo',
   },
   downloadAll: 'Descargar todo',
   uploading: 'Subiendo…',
   upload: 'Subir',
   close: 'Cerrar',
-  uploadSuccess: 'Evidencia guardada',
   uploadError: 'No se pudo subir la evidencia',
-  invalidFile: 'Solo imágenes, videos o PDF dentro del tamaño máximo',
-  supplierPaymentComingSoon: 'Pago a proveedor estará disponible pronto',
 } as const;

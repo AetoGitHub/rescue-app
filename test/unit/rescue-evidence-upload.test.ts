@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
   RESCUE_EVIDENCE_TYPE_SERVICE,
   RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
 } from '~/constants/rescue-evidence-api';
@@ -15,6 +16,12 @@ describe('buildRescueEvidenceStoragePath', () => {
     expect(buildRescueEvidenceStoragePath(42, RESCUE_EVIDENCE_TYPE_SERVICE)).toBe(
       'rescue-2/rescue/42/services',
     );
+  });
+
+  it('builds payment provider evidence path', () => {
+    expect(
+      buildRescueEvidenceStoragePath(42, RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER),
+    ).toBe('rescue-2/rescue/42/payment_provider');
   });
 });
 

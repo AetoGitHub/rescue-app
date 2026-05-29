@@ -66,7 +66,7 @@ async function uploadFiles(files: File[]) {
   );
   if (invalid) {
     toast.add({
-      title: RESCUE_EVIDENCE_MODAL_COPY.invalidFile,
+      title: copy.value.invalidFile,
       color: 'error',
     });
     return;
@@ -92,7 +92,7 @@ async function uploadFiles(files: File[]) {
     await createEvidences({ evidences: uploaded });
     await refresh();
     toast.add({
-      title: RESCUE_EVIDENCE_MODAL_COPY.uploadSuccess,
+      title: copy.value.uploadSuccess,
       color: 'success',
     });
   } catch (error) {
@@ -112,10 +112,6 @@ async function onPendingFilesChange(value: File[] | null | undefined) {
 
   await uploadFiles(files);
   pendingFiles.value = [];
-}
-
-function onDownloadAll() {
-  downloadAllEvidenceUrls(items.value.map((item) => item.url));
 }
 
 watch(open, (isOpen) => {
@@ -231,13 +227,12 @@ function fileLabel(url: string, index: number) {
         <div class="flex flex-wrap gap-2">
           <UButton
             v-if="canDownloadAll"
-            color="neutral"
+            color="primary"
             icon="i-lucide-archive"
             :label="RESCUE_EVIDENCE_MODAL_COPY.downloadAll"
-            variant="outline"
+            variant="solid"
             size="sm"
-            :disabled="isBusy"
-            @click="onDownloadAll"
+            disabled
           />
           <UButton
             color="neutral"

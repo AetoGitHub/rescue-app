@@ -14,3 +14,7 @@ export interface RescueEvidenceItemInput {
 export interface RescueEvidenceCreateBody {
   evidences: RescueEvidenceItemInput[];
 }
+
+export interface RescueEvidenceCreateResponse {
+  created: number;
+}
