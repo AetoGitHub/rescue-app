@@ -25,6 +25,7 @@ const { sendMessageAsync, isSending } = useRescueChatSendMessage(
 );
 
 const scrollContainerRef = ref<HTMLElement | null>(null);
+const pendingScrollAfterSend = ref(false);
 
 useScrollContainerInfiniteLoad({
   containerRef: scrollContainerRef,
@@ -49,6 +50,18 @@ function senderLabel(
   return getRescueChatMessageSenderLabel(message, variant);
 }
 
+function scrollChatToBottom() {
+  const container = scrollContainerRef.value;
+  if (!container) return;
+  container.scrollTop = container.scrollHeight;
+}
+
+watch(messages, () => {
+  if (!pendingScrollAfterSend.value) return;
+  pendingScrollAfterSend.value = false;
+  nextTick(scrollChatToBottom);
+});
+
 async function submitMessage() {
   const text = messageText.value.trim();
   if (!text || isSending.value) return;
@@ -56,7 +69,11 @@ async function submitMessage() {
   try {
     await sendMessageAsync(text);
     messageText.value = '';
+    pendingScrollAfterSend.value = true;
+    await nextTick();
+    scrollChatToBottom();
   } catch {
+    pendingScrollAfterSend.value = false;
     // Toast handled in mutation
   }
 }

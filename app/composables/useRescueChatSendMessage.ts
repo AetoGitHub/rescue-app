@@ -37,10 +37,6 @@ export function useRescueChatSendMessage(rescueId: MaybeRefOrGetter<number | nul
       if (currentId != null) {
         await invalidateRescueDataAfterChatMessage(queryCache, currentId);
       }
-      toast.add({
-        title: 'Mensaje enviado',
-        color: 'success',
-      });
     },
     onError: (error) => {
       toast.add({

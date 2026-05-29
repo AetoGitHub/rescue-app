@@ -74,22 +74,22 @@ watch(open, (isOpen) => {
   }
 });
 
-watch(activeTab, (tab, oldTab) => {
-  if (tab === 'evidence') {
+function onActiveTabChange(tab: string | number) {
+  const value = tab as RescueDetailTabValue;
+  if (value === 'evidence') {
     serviceEvidenceOpen.value = true;
-    activeTab.value = oldTab ?? previousTab.value;
     return;
   }
-  if (tab === 'supplier_payment') {
+  if (value === 'supplier_payment') {
     toast.add({
       title: RESCUE_EVIDENCE_MODAL_COPY.supplierPaymentComingSoon,
       color: 'neutral',
     });
-    activeTab.value = oldTab ?? previousTab.value;
     return;
   }
-  previousTab.value = tab;
-});
+  activeTab.value = value;
+  previousTab.value = value;
+}
 
 defineExpose({ open: openDetail });
 </script>
@@ -165,8 +165,9 @@ defineExpose({ open: openDetail });
 
         <UTabs
           v-else-if="detail"
-          v-model="activeTab"
+          :model-value="activeTab"
           :items="[...RESCUE_DETAIL_TAB_ITEMS]"
+          @update:model-value="onActiveTabChange"
           class="flex flex-col gap-4"
           :ui="{ list: 'shrink-0 flex-wrap' }"
         >
