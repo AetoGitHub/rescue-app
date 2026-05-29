@@ -7,6 +7,12 @@ import {
   RESCUE_DETAIL_PLACEHOLDER_UNASSIGNED,
 } from '~/constants/operational-rescue-detail';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
+import type { RescueCardDetail } from '~/interfaces/rescue/detail';
+import {
+  getRescueDetailFooterFlowLabel as footerFlowLabelForContext,
+  getRescueDetailPrimaryActionLabel as primaryActionLabelForContext,
+  rescueDetailToFlowContext,
+} from '~/utils/rescue-operative-flow';
 
 export function getOperationalStatusLabel(
   status: OperationalRescueStatus | string,
@@ -100,32 +106,14 @@ export function showSalePriceFromQuote(
   return sale === 0 && sub > 0;
 }
 
-export function getRescueDetailFooterFlowLabel(
-  operativeStatus: OperationalRescueStatus | string,
+export function getRescueDetailFooterFlowLabelFromDetail(
+  detail: RescueCardDetail,
 ): string {
-  switch (operativeStatus) {
-    case 'active_without_quote':
-      return 'Activo sin cotizar > Enviar a Autorización';
-    case 'pending_authorization':
-      return 'Pendiente de autorizar > Aprobado';
-    case 'requested':
-      return 'Solicitado > Activo sin cotizar';
-    default:
-      return `${getOperationalStatusLabel(operativeStatus)} > Siguiente paso`;
-  }
+  return footerFlowLabelForContext(rescueDetailToFlowContext(detail));
 }
 
-export function getRescueDetailPrimaryActionLabel(
-  operativeStatus: OperationalRescueStatus | string,
+export function getRescueDetailPrimaryActionLabelFromDetail(
+  detail: RescueCardDetail,
 ): string {
-  switch (operativeStatus) {
-    case 'active_without_quote':
-      return 'Enviar a Autorización';
-    case 'pending_authorization':
-      return 'Autorizar';
-    case 'requested':
-      return 'Tomar solicitud';
-    default:
-      return 'Continuar';
-  }
+  return primaryActionLabelForContext(rescueDetailToFlowContext(detail));
 }

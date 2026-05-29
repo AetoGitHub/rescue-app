@@ -28,4 +28,20 @@ export interface RescueCardDetail {
   supplier_score: number | null;
   latitude: string | null;
   longitude: string | null;
+  quote_count?: number;
+  advance_amount?: string | number | null;
+  requires_advance?: boolean;
+  advance_received?: boolean;
+  advance_date?: string | null;
+  advance_payment_method?: string | null;
+  advance_reference?: string | null;
+  close_date?: string | null;
+  disbursement_date?: string | null;
+  disbursement_payment_method?: string | null;
+  credit_limit?: string | number | null;
+  credit_available?: number | null;
+  assigned_suppliers?: {
+    id: number;
+    name: string;
+  }[];
 }

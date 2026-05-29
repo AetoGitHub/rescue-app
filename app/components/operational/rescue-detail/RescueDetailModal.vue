@@ -8,6 +8,21 @@ const activeTab = ref<RescueDetailTabValue>('general');
 
 const { detail, isPending, errorMessage, refresh } = useRescueCardDetail(rescueId);
 
+const operativeFlow = useRescueOperativeFlow({
+  rescueId,
+  detail,
+  refresh,
+  setActiveTab(tab) {
+    activeTab.value = tab;
+  },
+});
+
+const detailForFooter = computed(
+  () => operativeFlow.detailForActions.value ?? detail.value,
+);
+
+const isUpdatingOperative = computed(() => operativeFlow.isUpdating.value);
+
 const modalTitle = computed(() => detail.value?.folio ?? 'Detalle de rescate');
 
 const serviceTypeBadge = computed(() => {
@@ -23,16 +38,6 @@ const operativeStatusLabel = computed(() => {
 const adminStatusBadge = computed(() => {
   if (!detail.value) return null;
   return getAdminStatusBadge(detail.value.admin_status);
-});
-
-const footerFlowLabel = computed(() => {
-  if (!detail.value) return '';
-  return getRescueDetailFooterFlowLabel(detail.value.operative_status);
-});
-
-const primaryActionLabel = computed(() => {
-  if (!detail.value) return 'Continuar';
-  return getRescueDetailPrimaryActionLabel(detail.value.operative_status);
 });
 
 function openDetail(id: number) {
@@ -137,7 +142,11 @@ defineExpose({ open: openDetail });
             <OperationalRescueDetailPlaceholderTab />
           </template>
           <template #quote>
-            <OperationalRescueDetailPlaceholderTab />
+            <OperationalRescueDetailQuoteTab
+              :detail="detail"
+              :rescue-id="rescueId!"
+              @saved="refresh()"
+            />
           </template>
           <template #pdf_report>
             <OperationalRescueDetailPlaceholderTab />
@@ -150,30 +159,40 @@ defineExpose({ open: openDetail });
     </template>
 
     <template
-      v-if="detail && !isPending && !errorMessage"
+      v-if="detailForFooter && !isPending && !errorMessage"
       #footer
     >
-      <div class="flex w-full flex-wrap items-center justify-between gap-3">
-        <p class="text-xs text-muted">
-          {{ footerFlowLabel }}
-        </p>
-        <div class="flex items-center gap-2">
-          <UButton
-            color="primary"
-            :label="primaryActionLabel"
-          />
-          <UDropdownMenu
-            :items="[[{ label: 'Más opciones', disabled: true }]]"
-          >
-            <UButton
-              color="neutral"
-              icon="i-lucide-ellipsis"
-              variant="outline"
-              aria-label="Más opciones"
-            />
-          </UDropdownMenu>
-        </div>
-      </div>
+      <OperationalRescueDetailFooterActions
+        :detail="detailForFooter"
+        :loading="isUpdatingOperative"
+        @action="operativeFlow.handleAction"
+      />
     </template>
   </UModal>
+
+  <OperationalRescueDetailAdvancePanel
+    v-if="detail"
+    v-model:open="operativeFlow.advancePanelOpen"
+    v-model:form="operativeFlow.advanceForm"
+    :mode="operativeFlow.advancePanelMode"
+    :quote-total="operativeFlow.quoteTotalForAdvance"
+    :loading="isUpdatingOperative"
+    @submit="operativeFlow.submitAdvancePanel"
+  />
+
+  <OperationalRescueDetailServiceCompletedPanel
+    v-if="detail"
+    v-model:open="operativeFlow.completedPanelOpen"
+    v-model:form="operativeFlow.completedForm"
+    :is-loan="detail.service_type === 'loan'"
+    :loading="isUpdatingOperative"
+    @submit="operativeFlow.submitCompletedPanel"
+  />
+
+  <OperationalRescueDetailCancelServiceModal
+    v-model:open="operativeFlow.cancelModalOpen"
+    v-model:cancel-reason="operativeFlow.cancelReason"
+    :loading="isUpdatingOperative"
+    @submit="operativeFlow.submitCancelService"
+  />
 </template>

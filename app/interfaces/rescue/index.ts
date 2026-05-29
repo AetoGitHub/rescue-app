@@ -7,6 +7,18 @@ export type {
 
 export type { RescueCardDetail } from './detail';
 
+export type {
+  RescueAdvanceFormState,
+  RescueAdvancePanelMode,
+  RescueFooterAction,
+  RescueOperativeActionId,
+  RescueOperativeFlowContext,
+  RescueOperativeUpdateBody,
+  RescueServiceCompletedFormState,
+  RescueSupplierRatingPayload,
+  RescueSupplierRatingRow,
+} from './operative';
+
 export type { RescueGeneralSettings } from './settings';
 export { RESCUE_GENERAL_SETTINGS_PATH } from './settings';
 
