@@ -13,7 +13,7 @@ import {
 describe('buildRescueEvidenceStoragePath', () => {
   it('builds service evidence path', () => {
     expect(buildRescueEvidenceStoragePath(42, RESCUE_EVIDENCE_TYPE_SERVICE)).toBe(
-      'rescue-2/rescue/42/services/',
+      'rescue-2/rescue/42/services',
     );
   });
 });
@@ -30,7 +30,7 @@ describe('buildFirebaseGeneralUploadUrl', () => {
         storagePath,
       ),
     ).toBe(
-      `${RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT}?path=rescue-2/rescue/42/services/`,
+      `${RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT}?path=rescue-2/rescue/42/services`,
     );
     expect(
       buildFirebaseGeneralUploadUrl(
@@ -44,9 +44,9 @@ describe('buildFirebaseGeneralUploadUrl', () => {
     expect(
       buildFirebaseGeneralUploadUrl(
         'https://example.com/hook?old=1',
-        'rescue-2/rescue/1/services/',
+        'rescue-2/rescue/1/services',
       ),
-    ).toBe('https://example.com/hook?path=rescue-2/rescue/1/services/');
+    ).toBe('https://example.com/hook?path=rescue-2/rescue/1/services');
   });
 });
 
