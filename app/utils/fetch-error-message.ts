@@ -50,7 +50,7 @@ function containsLikelyUrl(text: string): boolean {
   return /https?:\/\//i.test(text);
 }
 
-function extractFetchErrorData(error: unknown): Record<string, unknown> | null {
+export function extractFetchErrorData(error: unknown): Record<string, unknown> | null {
   if (!error || typeof error !== 'object') return null;
   const err = error as Record<string, unknown>;
 

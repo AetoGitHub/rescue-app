@@ -1,12 +1,28 @@
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
-import { RESCUE_QUOTE_CREATE_PATH } from '~/constants/rescue-quote-api';
-import type { RescueQuoteCreateBody } from '~/interfaces/rescue/quote';
+import {
+  RESCUE_QUOTE_CREATE_PATH,
+  RESCUE_QUOTE_UPDATE_PATH,
+} from '~/constants/rescue-quote-api';
+import type {
+  RescueQuoteCreateBody,
+  RescueQuoteCreateResponse,
+  RescueQuoteUpdateBody,
+} from '~/interfaces/rescue/quote';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
-import type { RescueQuoteCreateResponse } from '~/interfaces/rescue/quote';
 import { getRescueStepQuoteWithSettingsSchema } from '~/schemas/rescue-create';
-import { buildRescueQuoteCreateBody } from '~/utils/rescue-quote-create';
+import {
+  buildRescueQuoteCreateBody,
+  buildRescueQuoteUpdateBody,
+} from '~/utils/rescue-quote-create';
+import { isRescueQuoteNotFoundError } from '~/utils/rescue-quote-not-found';
+
+type QuoteSavePayload = {
+  quoteLines: RescueQuoteLine[];
+  companySettings: RescueCompanySettings | null;
+  serviceType: RescueServiceType;
+};
 
 export function useRescueQuoteSave(
   rescueId: MaybeRefOrGetter<number | null>,
@@ -16,41 +32,49 @@ export function useRescueQuoteSave(
   const toast = useToast();
   const id = computed(() => toValue(rescueId));
 
-  const { mutateAsync, asyncStatus } = useMutation({
+  async function invalidateQuoteQueries() {
+    const currentId = id.value;
+    if (currentId != null) {
+      await queryCache.invalidateQueries({
+        key: ['rescue-card-detail', currentId],
+      });
+      await queryCache.invalidateQueries({
+        key: ['rescue-quote-detail', currentId],
+      });
+    }
+    await queryCache.invalidateQueries({
+      key: ['operational-rescue-cards'],
+    });
+  }
+
+  const { mutateAsync: createQuote, asyncStatus: createStatus } = useMutation({
     mutation: (body: RescueQuoteCreateBody) =>
       apiFetch<RescueQuoteCreateResponse>(RESCUE_QUOTE_CREATE_PATH, {
         method: 'POST',
         body,
       }),
-    onSuccess: async () => {
-      const currentId = id.value;
-      if (currentId != null) {
-        await queryCache.invalidateQueries({
-          key: ['rescue-card-detail', currentId],
-        });
-      }
-      await queryCache.invalidateQueries({
-        key: ['operational-rescue-cards'],
-      });
-    },
-    onError: (error) => {
-      toast.add({
-        title: 'No se pudo guardar la cotización',
-        description: getFetchErrorMessage(error),
-        color: 'error',
-      });
-    },
+    onSuccess: invalidateQuoteQueries,
   });
 
-  const isSaving = computed(() => asyncStatus.value === 'loading');
+  const { mutateAsync: updateQuote, asyncStatus: updateStatus } = useMutation({
+    mutation: (body: RescueQuoteUpdateBody) =>
+      apiFetch<RescueQuoteCreateResponse>(
+        RESCUE_QUOTE_UPDATE_PATH(id.value as number),
+        {
+          method: 'PUT',
+          body,
+        },
+      ),
+    onSuccess: invalidateQuoteQueries,
+  });
 
-  async function saveCreate(payload: {
-    quoteLines: RescueQuoteLine[];
-    companySettings: RescueCompanySettings | null;
-    serviceType: RescueServiceType;
-  }) {
+  const isSaving = computed(
+    () => createStatus.value === 'loading' || updateStatus.value === 'loading',
+  );
+
+  function validateQuotePayload(payload: QuoteSavePayload) {
     const currentId = id.value;
-    if (currentId == null) return false;
+    if (currentId == null) return null;
 
     const schema = getRescueStepQuoteWithSettingsSchema(payload.serviceType);
     const parsed = schema.safeParse({
@@ -63,13 +87,20 @@ export function useRescueQuoteSave(
         title: first?.message ?? 'Revisa la cotización',
         color: 'error',
       });
-      return false;
+      return null;
     }
 
+    return { currentId, parsed: parsed.data };
+  }
+
+  async function saveCreate(payload: QuoteSavePayload) {
+    const validated = validateQuotePayload(payload);
+    if (validated == null) return false;
+
     const body = buildRescueQuoteCreateBody(
-      currentId,
-      parsed.data.quote_lines,
-      parsed.data.company_settings,
+      validated.currentId,
+      validated.parsed.quote_lines,
+      validated.parsed.company_settings,
     );
     if (body == null) {
       toast.add({
@@ -80,19 +111,61 @@ export function useRescueQuoteSave(
     }
 
     try {
-      await mutateAsync(body);
+      await createQuote(body);
       toast.add({
         title: 'Cotización guardada',
         color: 'success',
       });
       return true;
-    } catch {
+    } catch (error) {
+      if (isRescueQuoteNotFoundError(error)) {
+        return saveUpdate(payload);
+      }
+      toast.add({
+        title: 'No se pudo guardar la cotización',
+        description: getFetchErrorMessage(error),
+        color: 'error',
+      });
+      return false;
+    }
+  }
+
+  async function saveUpdate(payload: QuoteSavePayload) {
+    const validated = validateQuotePayload(payload);
+    if (validated == null) return false;
+
+    const body = buildRescueQuoteUpdateBody(
+      validated.parsed.quote_lines,
+      validated.parsed.company_settings,
+    );
+    if (body == null) {
+      toast.add({
+        title: 'Agrega al menos un servicio con precio',
+        color: 'error',
+      });
+      return false;
+    }
+
+    try {
+      await updateQuote(body);
+      toast.add({
+        title: 'Cotización actualizada',
+        color: 'success',
+      });
+      return true;
+    } catch (error) {
+      toast.add({
+        title: 'No se pudo actualizar la cotización',
+        description: getFetchErrorMessage(error),
+        color: 'error',
+      });
       return false;
     }
   }
 
   return {
     saveCreate,
+    saveUpdate,
     isSaving,
   };
 }

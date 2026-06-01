@@ -3,6 +3,7 @@ import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 import {
   buildRescueQuoteCreateBody,
+  buildRescueQuoteUpdateBody,
   formatQuoteDecimal,
 } from '~/utils/rescue-quote-create';
 
@@ -167,5 +168,26 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.comissions_apply).toBe('100.00');
     expect(body!.sub_total).toBe('1100.00');
     expect(body!.total).toBe('1100.00');
+  });
+});
+
+describe('buildRescueQuoteUpdateBody', () => {
+  it('omits rescue field from create body', () => {
+    const lines = [
+      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
+    ];
+    const updateBody = buildRescueQuoteUpdateBody(lines, baseSettings, {
+      ivaRate: 0,
+      roundToTen: false,
+    });
+
+    expect(updateBody).not.toBeNull();
+    expect(updateBody).not.toHaveProperty('rescue');
+    expect(updateBody!.technical_cost).toBe('500.00');
+    expect(updateBody!.services).toHaveLength(1);
+  });
+
+  it('returns null when no filled quote lines', () => {
+    expect(buildRescueQuoteUpdateBody([emptyLine()], baseSettings)).toBeNull();
   });
 });

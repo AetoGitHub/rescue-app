@@ -3,6 +3,7 @@ import type { RescueQuoteLine } from '~/interfaces/rescue';
 import type {
   RescueQuoteCreateBody,
   RescueQuoteServiceCreateBody,
+  RescueQuoteUpdateBody,
 } from '~/interfaces/rescue/quote';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import {
@@ -82,4 +83,16 @@ export function buildRescueQuoteCreateBody(
   }
 
   return body;
+}
+
+export function buildRescueQuoteUpdateBody(
+  lines: RescueQuoteLine[],
+  settings: RescueCompanySettings | null | undefined,
+  options: QuotePricingOptions = {},
+): RescueQuoteUpdateBody | null {
+  const createBody = buildRescueQuoteCreateBody(0, lines, settings, options);
+  if (createBody == null) return null;
+
+  const { rescue: _rescue, ...updateBody } = createBody;
+  return updateBody;
 }

@@ -20,6 +20,32 @@ export interface RescueQuoteCreateBody {
   services: RescueQuoteServiceCreateBody[];
 }
 
+export type RescueQuoteUpdateBody = Omit<RescueQuoteCreateBody, 'rescue'>;
+
 export interface RescueQuoteCreateResponse {
   id: number;
+}
+
+export interface RescueQuoteServiceDetail {
+  id: number;
+  service_id: number;
+  service_name: string;
+  quantity: number;
+  real_cost: string;
+  pre_total: string;
+  percenaje_apply: string;
+  amount_applied: string;
+  amount_rounded: string;
+  total: string;
+}
+
+export interface RescueQuoteDetail {
+  id: number;
+  rescue_id: number;
+  technical_cost: string;
+  sub_total: string;
+  total: string;
+  comissions_apply: string;
+  iva: number;
+  services: RescueQuoteServiceDetail[];
 }

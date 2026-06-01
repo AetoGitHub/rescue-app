@@ -41,31 +41,41 @@ function minimalDetail(
 }
 
 describe('rescue quote detail tab helpers', () => {
-  it('canEditRescueQuote when no sub_total or quote_count', () => {
-    const detail = minimalDetail({
-      operative_status: 'active_without_quote',
-      sub_total: null,
-      quote_count: 0,
-    });
-    expect(canEditRescueQuote(detail)).toBe(true);
-    expect(hasRescueQuoteOnDetail(detail)).toBe(false);
-  });
-
-  it('cannot edit when sub_total is set', () => {
+  it('canEditRescueQuote for non-terminal operative statuses', () => {
     const detail = minimalDetail({
       operative_status: 'active_without_quote',
       sub_total: '1500.00',
     });
-    expect(canEditRescueQuote(detail)).toBe(false);
+    expect(canEditRescueQuote(detail)).toBe(true);
     expect(hasRescueQuoteOnDetail(detail)).toBe(true);
   });
 
-  it('cannot edit when quote_count is positive', () => {
+  it('cannot edit in terminal statuses even with quote', () => {
+    for (const status of ['closed', 'closed_unpaid', 'canceled'] as const) {
+      const detail = minimalDetail({
+        operative_status: status,
+        sub_total: '1500.00',
+      });
+      expect(canEditRescueQuote(detail)).toBe(false);
+    }
+  });
+
+  it('hasRescueQuoteOnDetail when sub_total is set', () => {
     const detail = minimalDetail({
       operative_status: 'pending_authorization',
+      sub_total: '1500.00',
+    });
+    expect(hasRescueQuoteOnDetail(detail)).toBe(true);
+    expect(canEditRescueQuote(detail)).toBe(true);
+  });
+
+  it('hasRescueQuoteOnDetail when quote_count is positive', () => {
+    const detail = minimalDetail({
+      operative_status: 'approved',
       quote_count: 2,
       sub_total: null,
     });
-    expect(canEditRescueQuote(detail)).toBe(false);
+    expect(hasRescueQuoteOnDetail(detail)).toBe(true);
+    expect(canEditRescueQuote(detail)).toBe(true);
   });
 });
