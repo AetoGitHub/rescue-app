@@ -354,18 +354,18 @@ function onPrimaryAction() {
             :fetch-manager-dropdown="fetchManagerDropdown"
           />
 
-          <OperationalRescueRequestStepsQuoteStep
+          <LazyOperationalRescueRequestStepsQuoteStep
             v-else-if="currentStepKind === 'quote'"
             v-model="state"
             :fetch-service-dropdown="fetchServiceDropdown"
           />
 
-          <OperationalRescueRequestStepsLocationStep
+          <LazyOperationalRescueRequestStepsLocationStep
             v-else-if="currentStepKind === 'location'"
             v-model="state"
           />
 
-          <OperationalRescueRequestStepsSupplierStep
+          <LazyOperationalRescueRequestStepsSupplierStep
             v-else-if="currentStepKind === 'supplier'"
             v-model="state"
           />

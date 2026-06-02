@@ -11,6 +11,11 @@ useHead({
   title: 'Operacional',
 })
 
+const requestModalMounted = ref(false);
+const detailModalMounted = ref(false);
+const pendingOpenCreate = ref(false);
+const pendingDetailId = ref<number | null>(null);
+
 const rescueRequestModalRef = ref<{
   openCreate: () => void;
 } | null>(null);
@@ -19,9 +24,37 @@ const rescueDetailModalRef = ref<{
   open: (id: number) => void;
 } | null>(null);
 
-function openRescueDetail(id: number) {
-  rescueDetailModalRef.value?.open(id);
+function openCreateRequest() {
+  if (requestModalMounted.value) {
+    rescueRequestModalRef.value?.openCreate();
+    return;
+  }
+  pendingOpenCreate.value = true;
+  requestModalMounted.value = true;
 }
+
+function openRescueDetail(id: number) {
+  if (detailModalMounted.value) {
+    rescueDetailModalRef.value?.open(id);
+    return;
+  }
+  pendingDetailId.value = id;
+  detailModalMounted.value = true;
+}
+
+watch(rescueRequestModalRef, (modal) => {
+  if (modal && pendingOpenCreate.value) {
+    modal.openCreate();
+    pendingOpenCreate.value = false;
+  }
+});
+
+watch(rescueDetailModalRef, (modal) => {
+  if (modal && pendingDetailId.value != null) {
+    modal.open(pendingDetailId.value);
+    pendingDetailId.value = null;
+  }
+});
 
 const columnVisibility = ref<Record<string, boolean>>(
   Object.fromEntries(
@@ -238,21 +271,28 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
               <UButton
                 icon="i-lucide-plus"
                 label="Nueva solicitud"
-                @click="rescueRequestModalRef?.openCreate()"
+                @click="openCreateRequest()"
               />
             </div>
           </div>
         </div>
 
-        <OperationalRescueRequestModal ref="rescueRequestModalRef" />
-        <OperationalRescueDetailModal ref="rescueDetailModalRef" />
+        <LazyOperationalRescueRequestModal
+          v-if="requestModalMounted"
+          ref="rescueRequestModalRef"
+        />
+        <LazyOperationalRescueDetailModal
+          v-if="detailModalMounted"
+          ref="rescueDetailModalRef"
+        />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div class="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
             <div class="flex h-full min-h-0 min-w-max gap-3 items-stretch">
-              <OperationalKanbanColumnData
+              <LazyOperationalKanbanColumnData
                 v-for="column in visibleColumns"
                 :key="column.status"
+                hydrate-on-visible
                 :status="column.status"
                 :title="column.title"
                 :accent-color="column.accentColor"

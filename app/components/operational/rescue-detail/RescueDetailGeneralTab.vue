@@ -217,7 +217,10 @@ const hasSupplier = computed(() =>
         </div>
       </section>
 
-      <OperationalRescueDetailLocationMap :detail="detail" />
+      <LazyOperationalRescueDetailLocationMap
+        hydrate-on-visible
+        :detail="detail"
+      />
     </div>
 
     <OperationalRescueDetailChat :rescue-id="detail.id" class="col-span-2" />

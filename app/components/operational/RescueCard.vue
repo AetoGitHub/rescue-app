@@ -195,8 +195,9 @@ function onCardClick() {
       <UButton block color="primary" label="Tomar solicitud" size="sm" />
     </div>
 
-    <OperationalRescueCardQuickChat
+    <LazyOperationalRescueCardQuickChat
       v-if="showQuickChat"
+      hydrate-on-visible
       :rescue-id="card.id"
     />
   </UCard>

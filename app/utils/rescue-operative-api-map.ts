@@ -89,6 +89,9 @@ export function toOperativeUpdatePayload(
 
     case 'take_request':
       return { to: 'active_without_quote' };
+
+    case 'mark_as_closed':
+      return { to: 'closed' };
   }
 }
 
@@ -132,6 +135,7 @@ export function targetStatusForAction(
     confirm_disbursement: 'closed_unpaid',
     cancel_service: 'canceled',
     take_request: 'active_without_quote',
+    mark_as_closed: 'closed',
   };
   return map[action] ?? null;
 }

@@ -21,7 +21,8 @@ export type RescueOperativeActionId =
   | 'confirm_disbursement'
   | 'start_project'
   | 'complete_project'
-  | 'take_request';
+  | 'take_request'
+  | 'mark_as_closed';
 
 /** POST /api/rescue/change_phase/{rescue_pk}/ */
 export interface RescueChangePhaseBody {

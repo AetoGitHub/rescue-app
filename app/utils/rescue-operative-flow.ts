@@ -229,6 +229,15 @@ export function getRescueDetailFooterActions(
         }),
       ];
 
+    case 'closed_unpaid':
+      return [
+        action({
+          id: 'mark_as_closed',
+          label: RESCUE_OPERATIVE_BUTTON_LABELS.markAsClosed,
+          primary: true,
+        }),
+      ];
+
     default:
       return [];
   }

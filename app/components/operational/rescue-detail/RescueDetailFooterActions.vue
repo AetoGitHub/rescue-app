@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
+import type { RescueEvidence } from '~/interfaces/rescue/evidence';
 import type { RescueOperativeActionId } from '~/interfaces/rescue/operative';
+import { applyCloseEvidenceGuard } from '~/utils/rescue-evidence-requirements';
 import {
   getMoreOptionsActions,
   getRescueDetailFooterActions,
@@ -10,6 +12,7 @@ import {
 
 const props = defineProps<{
   detail: RescueCardDetail;
+  evidences?: RescueEvidence[];
   loading?: boolean;
 }>();
 
@@ -20,7 +23,10 @@ const emit = defineEmits<{
 const flowContext = computed(() => rescueDetailToFlowContext(props.detail));
 
 const footerActions = computed(() =>
-  getRescueDetailFooterActions(flowContext.value),
+  applyCloseEvidenceGuard(
+    getRescueDetailFooterActions(flowContext.value),
+    props.evidences ?? [],
+  ),
 );
 
 const flowLabel = computed(() =>

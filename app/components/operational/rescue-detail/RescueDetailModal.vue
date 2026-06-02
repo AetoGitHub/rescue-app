@@ -31,12 +31,13 @@ const {
   submitCancelService,
   isUpdating,
   detailForActions,
+  evidences,
 } = useRescueOperativeFlow({
   rescueId,
   detail,
   refresh,
   setActiveTab(tab) {
-    activeTab.value = tab;
+    navigateToTab(tab);
   },
 });
 
@@ -83,18 +84,21 @@ function openEvidenceModal(type: RescueEvidenceType) {
   evidenceModalOpen.value = true;
 }
 
-function onActiveTabChange(tab: string | number) {
-  const value = tab as RescueDetailTabValue;
-  if (value === 'evidence') {
+function navigateToTab(tab: RescueDetailTabValue) {
+  if (tab === 'evidence') {
     openEvidenceModal(RESCUE_EVIDENCE_TYPE_SERVICE);
     return;
   }
-  if (value === 'supplier_payment') {
+  if (tab === 'supplier_payment') {
     openEvidenceModal(RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER);
     return;
   }
-  activeTab.value = value;
-  previousTab.value = value;
+  activeTab.value = tab;
+  previousTab.value = tab;
+}
+
+function onActiveTabChange(tab: string | number) {
+  navigateToTab(tab as RescueDetailTabValue);
 }
 
 defineExpose({ open: openDetail });
@@ -200,7 +204,8 @@ defineExpose({ open: openDetail });
             <span class="sr-only" />
           </template>
           <template #quote>
-            <OperationalRescueDetailQuoteTab
+            <LazyOperationalRescueDetailQuoteTab
+              v-if="activeTab === 'quote'"
               :detail="detail"
               :rescue-id="rescueId!"
               @saved="refresh()"
@@ -222,14 +227,15 @@ defineExpose({ open: openDetail });
     >
       <OperationalRescueDetailFooterActions
         :detail="detailForFooter"
+        :evidences="evidences"
         :loading="isUpdatingOperative"
         @action="handleAction"
       />
     </template>
   </UModal>
 
-  <OperationalRescueDetailServiceCompletedPanel
-    v-if="detail"
+  <LazyOperationalRescueDetailServiceCompletedPanel
+    v-if="detail && completedPanelOpen"
     v-model:open="completedPanelOpen"
     v-model:form="completedForm"
     :is-loan="detail.service_type === 'loan'"
@@ -237,15 +243,16 @@ defineExpose({ open: openDetail });
     @submit="submitCompletedPanel"
   />
 
-  <OperationalRescueDetailCancelServiceModal
+  <LazyOperationalRescueDetailCancelServiceModal
+    v-if="cancelModalOpen"
     v-model:open="cancelModalOpen"
     v-model:cancel-reason="cancelReason"
     :loading="isUpdatingOperative"
     @submit="submitCancelService"
   />
 
-  <OperationalRescueDetailEvidenceModal
-    v-if="detail && rescueId != null"
+  <LazyOperationalRescueDetailEvidenceModal
+    v-if="detail && rescueId != null && evidenceModalOpen"
     v-model:open="evidenceModalOpen"
     :type="evidenceModalType"
     :rescue-id="rescueId"

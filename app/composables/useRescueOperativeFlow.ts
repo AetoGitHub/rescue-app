@@ -24,6 +24,13 @@ import {
   todayIsoDate,
 } from '~/utils/rescue-operative-flow';
 import { mapClientCreditSummary } from '~/utils/catalog-detail-map';
+import {
+  getEvidenceRequiredToastMessage,
+  getMissingCloseEvidenceTypes,
+  getPrimaryEvidenceTabForMissing,
+  hasRequiredCloseEvidences,
+  MARK_AS_CLOSED_ACTION,
+} from '~/utils/rescue-evidence-requirements';
 
 export function useRescueOperativeFlow(options: {
   rescueId: MaybeRefOrGetter<number | null>;
@@ -36,6 +43,7 @@ export function useRescueOperativeFlow(options: {
   const detail = computed(() => toValue(options.detail));
 
   const { updateOperative, isUpdating } = useRescueOperativeMutation(rescueId);
+  const { evidences } = useRescueEvidenceList(rescueId);
 
   const advancePanelOpen = ref(false);
   const advancePanelMode = ref<RescueAdvancePanelMode>('request');
@@ -135,6 +143,18 @@ export function useRescueOperativeFlow(options: {
     completedPanelOpen.value = true;
   }
 
+  function ensureCloseEvidencesOrRedirect(): boolean {
+    if (hasRequiredCloseEvidences(evidences.value)) return true;
+
+    const missing = getMissingCloseEvidenceTypes(evidences.value);
+    toast.add({
+      title: getEvidenceRequiredToastMessage(missing),
+      color: 'error',
+    });
+    options.setActiveTab(getPrimaryEvidenceTabForMissing(missing));
+    return false;
+  }
+
   function getOperativeSuccessToast(action: RescueOperativeActionId): string {
     switch (action) {
       case 'request_advance':
@@ -145,6 +165,8 @@ export function useRescueOperativeFlow(options: {
         return RESCUE_OPERATIVE_TOAST.advanceConfirmed;
       case 'approve_without_advance':
         return RESCUE_OPERATIVE_TOAST.advanceApprovedWithout;
+      case 'mark_as_closed':
+        return RESCUE_OPERATIVE_TOAST.operativeUpdated;
       default:
         return RESCUE_OPERATIVE_TOAST.operativeUpdated;
     }
@@ -242,7 +264,14 @@ export function useRescueOperativeFlow(options: {
       || actionId === 'confirm_disbursement'
       || actionId === 'complete_project'
     ) {
+      if (!ensureCloseEvidencesOrRedirect()) return;
       openCompletedPanel();
+      return;
+    }
+
+    if (actionId === MARK_AS_CLOSED_ACTION) {
+      if (!ensureCloseEvidencesOrRedirect()) return;
+      await runUpdate(MARK_AS_CLOSED_ACTION);
       return;
     }
 
@@ -351,6 +380,8 @@ export function useRescueOperativeFlow(options: {
           ? 'complete_project'
           : 'complete_service';
 
+    if (!ensureCloseEvidencesOrRedirect()) return;
+
     await runUpdate(action, { completed: { ...completedForm, ...parsed.data } });
     completedPanelOpen.value = false;
   }
@@ -380,6 +411,7 @@ export function useRescueOperativeFlow(options: {
 
   return {
     detailForActions,
+    evidences,
     advancePanelOpen,
     advancePanelMode,
     completedPanelOpen,

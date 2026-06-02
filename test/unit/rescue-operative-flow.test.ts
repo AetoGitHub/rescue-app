@@ -61,6 +61,16 @@ describe('getRescueDetailFooterActions', () => {
     );
     expect(actions.map((a) => a.id)).toEqual(['send_to_authorization']);
   });
+
+  it('offers mark_as_closed in closed_unpaid', () => {
+    const actions = getRescueDetailFooterActions(
+      ctx({
+        operative_status: 'closed_unpaid',
+        service_type: 'rescue',
+      }),
+    );
+    expect(actions.map((a) => a.id)).toEqual(['mark_as_closed']);
+  });
 });
 
 describe('getMoreOptionsActions', () => {
