@@ -12,6 +12,7 @@ import {
   rescueAdvanceAmountSchema,
   rescueAdvanceConfirmSchema,
   rescueCancelServiceSchema,
+  rescueRevertCancellationSchema,
   rescueServiceCompletedSchema,
 } from '~/schemas/rescue-operative';
 import { toOperativeUpdatePayload } from '~/utils/rescue-operative-api-map';
@@ -43,12 +44,14 @@ export function useRescueOperativeFlow(options: {
   const detail = computed(() => toValue(options.detail));
 
   const { updateOperative, isUpdating } = useRescueOperativeMutation(rescueId);
+  const { revertCancellation, isReverting } = useRescueRevertCancellation(rescueId);
   const { evidences } = useRescueEvidenceList(rescueId);
 
   const advancePanelOpen = ref(false);
   const advancePanelMode = ref<RescueAdvancePanelMode>('request');
   const completedPanelOpen = ref(false);
   const cancelModalOpen = ref(false);
+  const revertModalOpen = ref(false);
 
   const advanceForm = reactive<RescueAdvanceFormState>({
     advance_amount: '',
@@ -64,7 +67,8 @@ export function useRescueOperativeFlow(options: {
     ratings: [],
   });
 
-  const cancelReason = ref('');
+  const cancellationReasonId = ref<number | null>(null);
+  const reacceptanceReasonId = ref<number | null>(null);
 
   const creditOverlay = ref<{
     credit_limit: string | null;
@@ -177,7 +181,7 @@ export function useRescueOperativeFlow(options: {
     forms?: {
       advance?: RescueAdvanceFormState;
       completed?: RescueServiceCompletedFormState;
-      cancelReason?: string;
+      cancellationReasonId?: number | null;
     },
     afterSuccess?: () => Promise<void>,
   ) {
@@ -224,8 +228,14 @@ export function useRescueOperativeFlow(options: {
     }
 
     if (actionId === 'cancel_service') {
-      cancelReason.value = '';
+      cancellationReasonId.value = null;
       cancelModalOpen.value = true;
+      return;
+    }
+
+    if (actionId === 'revert_cancellation') {
+      reacceptanceReasonId.value = null;
+      revertModalOpen.value = true;
       return;
     }
 
@@ -388,7 +398,7 @@ export function useRescueOperativeFlow(options: {
 
   async function submitCancelService() {
     const parsed = rescueCancelServiceSchema.safeParse({
-      cancel_reason: cancelReason.value,
+      cancellation_reason: cancellationReasonId.value,
     });
     if (!parsed.success) {
       toast.add({
@@ -398,10 +408,43 @@ export function useRescueOperativeFlow(options: {
       return;
     }
     await runUpdate('cancel_service', {
-      cancelReason: parsed.data.cancel_reason,
+      cancellationReasonId: parsed.data.cancellation_reason,
     });
     cancelModalOpen.value = false;
   }
+
+  async function submitRevertCancellation() {
+    const parsed = rescueRevertCancellationSchema.safeParse({
+      reacceptance_reason: reacceptanceReasonId.value,
+    });
+    if (!parsed.success) {
+      toast.add({
+        title: parsed.error.issues[0]?.message ?? 'Indica el motivo',
+        color: 'error',
+      });
+      return;
+    }
+
+    if (rescueId.value == null) return;
+
+    try {
+      await revertCancellation({
+        reacceptance_reason: parsed.data.reacceptance_reason,
+      });
+      toast.add({
+        title: RESCUE_OPERATIVE_TOAST.cancellationReverted,
+        color: 'success',
+      });
+      revertModalOpen.value = false;
+      await options.refresh();
+    } catch {
+      // Error toast handled in mutation
+    }
+  }
+
+  const isUpdatingOperative = computed(
+    () => isUpdating.value || isReverting.value,
+  );
 
   const quoteTotalForAdvance = computed(() => {
     const d = detail.value;
@@ -416,15 +459,18 @@ export function useRescueOperativeFlow(options: {
     advancePanelMode,
     completedPanelOpen,
     cancelModalOpen,
+    revertModalOpen,
     advanceForm,
     completedForm,
-    cancelReason,
-    isUpdating,
+    cancellationReasonId,
+    reacceptanceReasonId,
+    isUpdating: isUpdatingOperative,
     quoteTotalForAdvance,
     handleAction,
     submitAdvancePanel,
     submitCompletedPanel,
     submitCancelService,
+    submitRevertCancellation,
     openAdvancePanel,
     openCompletedPanel,
   };

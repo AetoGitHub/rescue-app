@@ -1,10 +1,38 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui';
+import type { MultipurposeCatalogueType } from '~/constants/multipurpose-catalog';
 import type { Category } from '~/interfaces/catalogs/category';
 import {
   adminListSlideoverBodyUi,
   adminListTableClass,
 } from '~/constants/admin-list-layout';
+
+const props = withDefaults(
+  defineProps<{
+    catalogueType?: MultipurposeCatalogueType;
+    title?: string;
+    description?: string;
+    searchPlaceholder?: string;
+    newItemLabel?: string;
+    createTitle?: string;
+    editTitle?: string;
+    successCreateLabel?: string;
+    successEditLabel?: string;
+    namePlaceholder?: string;
+  }>(),
+  {
+    catalogueType: 'service_category',
+    title: 'Categorías de servicio',
+    description: 'Gestiona las categorías usadas al registrar servicios.',
+    searchPlaceholder: 'Buscar categoría',
+    newItemLabel: 'Nueva categoría',
+    createTitle: 'Nueva categoría',
+    editTitle: 'Editar categoría',
+    successCreateLabel: 'Categoría creada',
+    successEditLabel: 'Categoría actualizada',
+    namePlaceholder: 'Ej. Grúas',
+  },
+);
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -30,9 +58,9 @@ const {
   loadNextPage,
   isInitialLoading,
 } = useCatalogInfiniteList<Category>({
-  key: () => ['catalog-categories', 'service_category'],
+  key: () => ['catalog-multipurpose', props.catalogueType],
   path: '/api/catalogue/multipurpose/list/',
-  query: { catalogue_type: 'service_category' },
+  query: { type: props.catalogueType },
 });
 
 usePaginatedTableInfiniteScroll({
@@ -57,8 +85,8 @@ const columns: TableColumn<Category>[] = [
 <template>
   <USlideover
     v-model:open="open"
-    title="Categorías de servicio"
-    description="Gestiona las categorías usadas al registrar servicios."
+    :title="title"
+    :description="description"
     :ui="{
       content: 'max-w-2xl flex flex-col',
       body: adminListSlideoverBodyUi.body,
@@ -70,13 +98,13 @@ const columns: TableColumn<Category>[] = [
           <UInput
             v-model="search"
             leading-icon="i-lucide-search"
-            placeholder="Buscar categoría"
+            :placeholder="searchPlaceholder"
             class="min-w-0 flex-1"
             variant="subtle"
           />
           <UButton
             icon="i-lucide-plus"
-            label="Nueva categoría"
+            :label="newItemLabel"
             @click="categoryCrudRef?.prepareCreate()"
           />
         </div>
@@ -96,6 +124,13 @@ const columns: TableColumn<Category>[] = [
       <CatalogCategoryCreateSlideover
         ref="categoryCrudRef"
         :show-trigger="false"
+        :catalogue-type="catalogueType"
+        :create-title="createTitle"
+        :edit-title="editTitle"
+        :new-item-label="newItemLabel"
+        :success-create-label="successCreateLabel"
+        :success-edit-label="successEditLabel"
+        :name-placeholder="namePlaceholder"
       />
     </template>
   </USlideover>

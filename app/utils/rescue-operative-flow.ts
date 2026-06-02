@@ -238,6 +238,15 @@ export function getRescueDetailFooterActions(
         }),
       ];
 
+    case 'canceled':
+      return [
+        action({
+          id: 'revert_cancellation',
+          label: RESCUE_OPERATIVE_BUTTON_LABELS.revertCancellation,
+          primary: true,
+        }),
+      ];
+
     default:
       return [];
   }

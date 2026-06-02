@@ -20,7 +20,9 @@ export function mapOperativeUpdateToApi(
     mapped.advance_payment_method = body.advance_payment_method;
   }
   if (body.advance_reference) mapped.advance_reference = body.advance_reference;
-  if (body.cancel_reason) mapped.cancel_reason = body.cancel_reason;
+  if (body.cancellation_reason != null) {
+    mapped.cancellation_reason = body.cancellation_reason;
+  }
   if (body.close_date) mapped.close_date = body.close_date;
   if (body.disbursement_date) mapped.disbursement_date = body.disbursement_date;
   if (body.disbursement_payment_method) {
@@ -38,7 +40,7 @@ export function toOperativeUpdatePayload(
   forms?: {
     advance?: RescueAdvanceFormState;
     completed?: RescueServiceCompletedFormState;
-    cancelReason?: string;
+    cancellationReasonId?: number | null;
   },
 ): RescueChangePhaseBody {
   switch (action) {
@@ -84,7 +86,7 @@ export function toOperativeUpdatePayload(
     case 'cancel_service':
       return {
         to: 'canceled',
-        cancel_reason: forms?.cancelReason,
+        cancellation_reason: forms?.cancellationReasonId ?? undefined,
       };
 
     case 'take_request':

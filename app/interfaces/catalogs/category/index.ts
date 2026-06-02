@@ -1,12 +1,14 @@
+import type { MultipurposeCatalogueType } from '~/constants/multipurpose-catalog';
+
 export interface Category {
   id: number;
-  catalogue_type: string;
+  catalogue_type: MultipurposeCatalogueType | string;
   name: string;
   is_active: boolean;
 }
 
 export interface CategoryCreateBody {
-  catalogue_type: 'service_category';
+  catalogue_type: MultipurposeCatalogueType;
   name: string;
 }
 

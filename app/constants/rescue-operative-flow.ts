@@ -6,6 +6,9 @@ export const RESCUE_OPERATIVE_UPDATE_METHOD = 'POST' as const;
 export const RESCUE_CHANGE_PHASE_PATH = (rescueId: number) =>
   `/api/rescue/change_phase/${rescueId}/`;
 
+export const RESCUE_REVERT_CANCELLATION_PATH = (rescueId: number) =>
+  `/api/rescue/revert_cancellation/${rescueId}/`;
+
 /** @deprecated Use RESCUE_CHANGE_PHASE_PATH */
 export const RESCUE_OPERATIVE_UPDATE_PATH = RESCUE_CHANGE_PHASE_PATH;
 
@@ -22,6 +25,7 @@ export const RESCUE_OPERATIVE_TOAST = {
   advanceConfirmRequired:
     'Completa monto, fecha, forma de pago y referencia del anticipo',
   operativeUpdated: 'Solicitud actualizada',
+  cancellationReverted: 'Cancelación revertida',
   advanceRequested: 'Anticipo solicitado',
   advanceModified: 'Monto de anticipo actualizado',
   advanceConfirmed: 'Anticipo confirmado',
@@ -67,6 +71,7 @@ export const RESCUE_OPERATIVE_BUTTON_LABELS = {
   completeProject: 'Proyecto completado',
   takeRequest: 'Tomar solicitud',
   markAsClosed: 'Marcar como cerrado',
+  revertCancellation: 'Revertir cancelación',
 } as const;
 
 export const RESCUE_ADVANCE_PERCENT_SHORTCUTS = [25, 50, 75, 100] as const;

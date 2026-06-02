@@ -71,6 +71,18 @@ describe('getRescueDetailFooterActions', () => {
     );
     expect(actions.map((a) => a.id)).toEqual(['mark_as_closed']);
   });
+
+  it('offers revert_cancellation in canceled', () => {
+    const actions = getRescueDetailFooterActions(
+      ctx({
+        operative_status: 'canceled',
+        service_type: 'rescue',
+      }),
+    );
+    expect(actions).toHaveLength(1);
+    expect(actions[0]?.id).toBe('revert_cancellation');
+    expect(actions[0]?.primary).toBe(true);
+  });
 });
 
 describe('getMoreOptionsActions', () => {

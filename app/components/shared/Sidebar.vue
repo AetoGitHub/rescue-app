@@ -38,6 +38,11 @@ const items = computed<NavigationMenuItem[][]>(() => [
       icon: 'i-lucide-wrench',
     },
     {
+      label: 'Cancelación',
+      to: '/admin/catalogs/cancellation-reasons',
+      icon: 'i-lucide-ban',
+    },
+    {
       label: 'Proveedores',
       to: '/admin/catalogs/suppliers',
       icon: 'i-lucide-truck',

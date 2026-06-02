@@ -1,16 +1,33 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
+import type { MultipurposeCatalogueType } from '~/constants/multipurpose-catalog';
 import type {
   CategoryCreateBody,
   CategoryUpdateBody,
 } from '~/interfaces/catalogs/category';
 import { categoryCreateSchema } from '~/schemas/catalog-create';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     showTrigger?: boolean;
+    catalogueType?: MultipurposeCatalogueType;
+    createTitle?: string;
+    editTitle?: string;
+    newItemLabel?: string;
+    successCreateLabel?: string;
+    successEditLabel?: string;
+    namePlaceholder?: string;
   }>(),
-  { showTrigger: true },
+  {
+    showTrigger: true,
+    catalogueType: 'service_category',
+    createTitle: 'Nueva categoría',
+    editTitle: 'Editar categoría',
+    newItemLabel: 'Nueva categoría',
+    successCreateLabel: 'Categoría creada',
+    successEditLabel: 'Categoría actualizada',
+    namePlaceholder: 'Ej. Grúas',
+  },
 );
 
 const toast = useToast();
@@ -19,6 +36,10 @@ const open = ref(false);
 const editingId = ref<number | null>(null);
 
 const isEdit = computed(() => editingId.value != null);
+
+const slideoverTitle = computed(() =>
+  isEdit.value ? props.editTitle : props.createTitle,
+);
 
 function emptyState() {
   return { name: '' };
@@ -74,10 +95,12 @@ const { mutate, asyncStatus } = useMutation({
   async onSuccess() {
     const wasEdit = editingId.value != null;
     toast.add({
-      title: wasEdit ? 'Categoría actualizada' : 'Categoría creada',
+      title: wasEdit ? props.successEditLabel : props.successCreateLabel,
       color: 'success',
     });
-    await queryCache.invalidateQueries({ key: ['catalog-categories'] });
+    await queryCache.invalidateQueries({
+      key: ['catalog-multipurpose', props.catalogueType],
+    });
     open.value = false;
     resetForm();
     editingId.value = null;
@@ -104,7 +127,7 @@ function onSubmit(payload: { data: { name: string } }) {
   }
 
   const body: CategoryCreateBody = {
-    catalogue_type: 'service_category',
+    catalogue_type: props.catalogueType,
     name: payload.data.name,
   };
   mutate({ body, id: null });
@@ -126,12 +149,12 @@ async function requestSubmit() {
 <template>
   <USlideover
     v-model:open="open"
-    :title="isEdit ? 'Editar categoría' : 'Nueva categoría'"
+    :title="slideoverTitle"
   >
     <UButton
       v-if="showTrigger"
       icon="i-lucide-plus"
-      label="Nueva categoría"
+      :label="newItemLabel"
       size="lg"
       @click="prepareCreate"
     />
@@ -148,7 +171,7 @@ async function requestSubmit() {
           <UInput
             :model-value="state.name"
             class="w-full uppercase"
-            placeholder="Ej. Grúas"
+            :placeholder="namePlaceholder"
             @update:model-value="(value) => (state.name = formatCatalogNameInput(value))"
           />
         </UFormField>

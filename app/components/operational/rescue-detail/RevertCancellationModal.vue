@@ -13,20 +13,20 @@ const emit = defineEmits<{
   submit: [];
 }>();
 
-const cancellationReasonId = defineModel<number | null>('cancellationReasonId', {
+const reacceptanceReasonId = defineModel<number | null>('reacceptanceReasonId', {
   required: true,
 });
 
 const apiFetch = useApiFetch();
 
-const fetchCancellationReasonDropdown: CatalogDropdownFetcher = (
+const fetchReacceptanceReasonDropdown: CatalogDropdownFetcher = (
   name,
   options,
 ) =>
   apiFetch<PaginatedResponse<CatalogDropdownRow>>(
     '/api/catalogue/multipurpose/dropdown/',
     {
-      query: { type: 'cancellation_reason', name },
+      query: { type: 'reacceptance_reason', name },
       signal: options?.signal,
     },
   );
@@ -39,20 +39,20 @@ function onSubmit() {
 <template>
   <UModal
     v-model:open="open"
-    title="Cancelar servicio"
+    title="Revertir cancelación"
     :ui="{ content: 'max-w-md' }"
   >
     <template #body>
       <div class="space-y-3">
         <UFormField
-          label="Motivo de cancelación"
-          name="cancellation_reason"
+          label="Motivo de re-aceptación"
+          name="reacceptance_reason"
           required
         >
           <CatalogDropdownSelect
-            v-model="cancellationReasonId"
+            v-model="reacceptanceReasonId"
             placeholder="Selecciona un motivo"
-            :fetcher="fetchCancellationReasonDropdown"
+            :fetcher="fetchReacceptanceReasonDropdown"
           />
         </UFormField>
 
@@ -75,8 +75,8 @@ function onSubmit() {
           @click="open = false"
         />
         <UButton
-          color="error"
-          label="Cancelar servicio"
+          color="primary"
+          label="Revertir cancelación"
           :loading="loading"
           @click="onSubmit"
         />

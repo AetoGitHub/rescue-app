@@ -25,10 +25,17 @@ export const rescueAdvanceConfirmSchema = z.object({
 });
 
 export const rescueCancelServiceSchema = z.object({
-  cancel_reason: z
-    .string()
-    .trim()
-    .min(3, 'Indica el motivo de cancelación'),
+  cancellation_reason: z
+    .number()
+    .int()
+    .positive('Selecciona un motivo de cancelación'),
+});
+
+export const rescueRevertCancellationSchema = z.object({
+  reacceptance_reason: z
+    .number()
+    .int()
+    .positive('Selecciona un motivo de re-aceptación'),
 });
 
 const ratingRowSchema = z.object({

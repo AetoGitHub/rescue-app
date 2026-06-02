@@ -24,11 +24,14 @@ const {
   completedPanelOpen,
   completedForm,
   cancelModalOpen,
-  cancelReason,
+  revertModalOpen,
+  cancellationReasonId,
+  reacceptanceReasonId,
   handleAction,
   submitAdvancePanel,
   submitCompletedPanel,
   submitCancelService,
+  submitRevertCancellation,
   isUpdating,
   detailForActions,
   evidences,
@@ -246,9 +249,17 @@ defineExpose({ open: openDetail });
   <LazyOperationalRescueDetailCancelServiceModal
     v-if="cancelModalOpen"
     v-model:open="cancelModalOpen"
-    v-model:cancel-reason="cancelReason"
+    v-model:cancellation-reason-id="cancellationReasonId"
     :loading="isUpdatingOperative"
     @submit="submitCancelService"
+  />
+
+  <LazyOperationalRescueDetailRevertCancellationModal
+    v-if="revertModalOpen"
+    v-model:open="revertModalOpen"
+    v-model:reacceptance-reason-id="reacceptanceReasonId"
+    :loading="isUpdatingOperative"
+    @submit="submitRevertCancellation"
   />
 
   <LazyOperationalRescueDetailEvidenceModal

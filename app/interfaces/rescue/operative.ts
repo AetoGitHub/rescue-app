@@ -11,6 +11,7 @@ export type RescueAdvancePanelMode =
 export type RescueOperativeActionId =
   | 'send_to_authorization'
   | 'cancel_service'
+  | 'revert_cancellation'
   | 'approve_loan'
   | 'request_advance'
   | 'approve_without_advance'
@@ -34,8 +35,13 @@ export interface RescueChangePhaseBody {
   close_date?: string;
   disbursement_date?: string;
   disbursement_payment_method?: string;
-  cancel_reason?: string;
+  cancellation_reason?: number;
   supplier_ratings?: RescueSupplierRatingPayload[];
+}
+
+/** POST /api/rescue/revert_cancellation/{rescue_pk}/ */
+export interface RescueRevertCancellationBody {
+  reacceptance_reason: number;
 }
 
 /** @deprecated Use RescueChangePhaseBody */
