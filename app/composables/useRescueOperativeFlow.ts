@@ -36,7 +36,6 @@ export function useRescueOperativeFlow(options: {
   const detail = computed(() => toValue(options.detail));
 
   const { updateOperative, isUpdating } = useRescueOperativeMutation(rescueId);
-  const systemChat = useRescueOperativeSystemChat(rescueId);
 
   const advancePanelOpen = ref(false);
   const advancePanelMode = ref<RescueAdvancePanelMode>('request');
@@ -282,12 +281,10 @@ export function useRescueOperativeFlow(options: {
           return;
         }
         const amount = parsed.data.advance_amount;
-        await runUpdate(
-          'modify_advance_amount',
-          { advance: { ...advanceForm, advance_amount: amount } },
-          () =>
-            systemChat.postAdvanceModifiedMessage(amount, d.operator_name),
-        );
+        // PENDING: mensaje de chat lo genera el backend
+        await runUpdate('modify_advance_amount', {
+          advance: { ...advanceForm, advance_amount: amount },
+        });
         advancePanelOpen.value = false;
         return;
       }
@@ -321,11 +318,10 @@ export function useRescueOperativeFlow(options: {
         return;
       }
       const amount = parsed.data.advance_amount;
-      await runUpdate(
-        'request_advance',
-        { advance: { ...advanceForm, advance_amount: amount } },
-        () => systemChat.postAdvanceRequiredMessage(amount, d.operator_name),
-      );
+      // PENDING: mensaje de chat lo genera el backend
+      await runUpdate('request_advance', {
+        advance: { ...advanceForm, advance_amount: amount },
+      });
       advancePanelOpen.value = false;
     } catch {
       // Error API: el panel permanece abierto para reintentar
