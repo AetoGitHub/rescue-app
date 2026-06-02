@@ -13,6 +13,12 @@ const activeTab = ref<RescueDetailTabValue>('general');
 const previousTab = ref<RescueDetailTabValue>('general');
 const evidenceModalOpen = ref(false);
 const evidenceModalType = ref<RescueEvidenceType>(RESCUE_EVIDENCE_TYPE_SERVICE);
+/** Blocks UTabs from re-opening the evidence modal after close (tab sync). */
+const ignoreEvidenceTabSelection = ref(false);
+
+function isEvidenceTab(tab: RescueDetailTabValue): boolean {
+  return tab === 'evidence' || tab === 'supplier_payment';
+}
 
 const { detail, isPending, errorMessage, refresh } = useRescueCardDetail(rescueId);
 
@@ -101,8 +107,32 @@ function navigateToTab(tab: RescueDetailTabValue) {
 }
 
 function onActiveTabChange(tab: string | number) {
-  navigateToTab(tab as RescueDetailTabValue);
+  const nextTab = tab as RescueDetailTabValue;
+
+  if (isEvidenceTab(nextTab)) {
+    if (ignoreEvidenceTabSelection.value) {
+      activeTab.value = previousTab.value;
+      return;
+    }
+    if (!evidenceModalOpen.value) {
+      navigateToTab(nextTab);
+    }
+    activeTab.value = previousTab.value;
+    return;
+  }
+
+  navigateToTab(nextTab);
 }
+
+watch(evidenceModalOpen, (isOpen, wasOpen) => {
+  if (wasOpen && !isOpen) {
+    ignoreEvidenceTabSelection.value = true;
+    activeTab.value = previousTab.value;
+    nextTick(() => {
+      ignoreEvidenceTabSelection.value = false;
+    });
+  }
+});
 
 defineExpose({ open: openDetail });
 </script>
@@ -263,7 +293,7 @@ defineExpose({ open: openDetail });
   />
 
   <LazyOperationalRescueDetailEvidenceModal
-    v-if="detail && rescueId != null && evidenceModalOpen"
+    v-if="detail && rescueId != null"
     v-model:open="evidenceModalOpen"
     :type="evidenceModalType"
     :rescue-id="rescueId"

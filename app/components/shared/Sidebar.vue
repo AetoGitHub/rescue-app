@@ -14,6 +14,11 @@ const items = computed<NavigationMenuItem[][]>(() => [
       to: '/admin/operational',
       icon: 'i-lucide-file-text',
     },
+    {
+      label: 'Administrativo',
+      to: '/admin/administrativo',
+      icon: 'i-lucide-receipt',
+    },
   ],
   [
     { label: 'Catálogos', type: 'label' },

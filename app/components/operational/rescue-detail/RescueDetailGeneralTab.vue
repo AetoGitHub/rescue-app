@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import type { RescueCardDetail } from '~/interfaces/rescue';
 
-const props = defineProps<{
-  detail: RescueCardDetail;
-}>();
+const props = withDefaults(
+  defineProps<{
+    detail: RescueCardDetail;
+    hideClientAuthorization?: boolean;
+    hideChat?: boolean;
+  }>(),
+  {
+    hideClientAuthorization: false,
+    hideChat: false,
+  },
+);
 
 const serviceTypeBadge = computed(() =>
   getRescueServiceTypeBadge(props.detail.service_type),
@@ -156,6 +164,7 @@ const hasSupplier = computed(() =>
 
     <div class="space-y-4">
       <section
+        v-if="!hideClientAuthorization"
         class="space-y-3 rounded-lg border border-default bg-default p-4"
       >
         <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -223,7 +232,11 @@ const hasSupplier = computed(() =>
       />
     </div>
 
-    <OperationalRescueDetailChat :rescue-id="detail.id" class="col-span-2" />
+    <OperationalRescueDetailChat
+      v-if="!hideChat"
+      :rescue-id="detail.id"
+      class="col-span-2"
+    />
     <div
       v-if="$slots.afterChat"
       class="col-span-2"
