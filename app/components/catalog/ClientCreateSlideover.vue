@@ -34,14 +34,6 @@ const showCreateCreditSection = computed(
   () => !isEdit.value && state.client_type === 'CREDIT',
 );
 const hasLinkedCredit = computed(() => editingCreditId.value != null);
-const hasCreditData = computed(
-  () =>
-    hasLinkedCredit.value
-    || creditSummary.credit_limit != null
-    || creditSummary.credit_used != null
-    || creditSummary.credit_available != null,
-);
-const showCreditPanel = computed(() => hasCreditData.value);
 
 const editTabItems = [
   { label: 'General', value: 'general', slot: 'general' as const },
@@ -57,18 +49,6 @@ function emptyCreditState(): CreditFormState {
     requires_purchase_order: false,
     is_blocked: false,
   };
-}
-
-function isCreditFormFilled(state: CreditFormState): boolean {
-  const defaults = emptyCreditState();
-  return (
-    state.limit !== defaults.limit
-    || state.days !== defaults.days
-    || state.extension !== defaults.extension
-    || state.remision_tolerance !== defaults.remision_tolerance
-    || state.requires_purchase_order !== defaults.requires_purchase_order
-    || state.is_blocked !== defaults.is_blocked
-  );
 }
 
 function emptyCreditSummary(): ClientCreditSummary {
@@ -154,7 +134,7 @@ async function loadDetail(id: number) {
     );
     const mapped = mapClientDetail(raw);
     Object.assign(state, emptyState(), mapped);
-    Object.assign(creditState, emptyCreditState(), mapClientCreditForm(raw));
+    const mappedForm = mapClientCreditForm(raw);
     Object.assign(creditSummary, emptyCreditSummary(), mapClientCreditSummary(raw));
 
     const creditId =
@@ -163,8 +143,14 @@ async function loadDetail(id: number) {
 
     if (creditId != null) {
       await loadCreditDetail(creditId);
-    } else if (creditSummary.credit_limit == null && creditState.limit) {
-      creditSummary.credit_limit = creditState.limit;
+    } else {
+      const hydrated = hydrateClientCreditDisplayWithoutLine(
+        String(mapped.client_type ?? 'CASH'),
+        creditSummary,
+        mappedForm,
+      );
+      Object.assign(creditSummary, hydrated.summary);
+      Object.assign(creditState, hydrated.form);
     }
   } catch (e) {
     console.error(e);
@@ -362,8 +348,7 @@ function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
   const creatingCredit =
     isEdit.value
     && !hasLinkedCredit.value
-    && !hasCreditData.value
-    && isCreditFormFilled(creditState);
+    && (parseClientMoney(creditState.limit) ?? 0) > 0;
   const updatingCredit = isEdit.value && hasLinkedCredit.value;
   const creditOnCreate = !isEdit.value && body.client_type === 'CREDIT';
 
@@ -605,16 +590,12 @@ async function requestSubmit() {
 
           <template #credit>
             <CatalogClientCreditTabPanel
-              v-if="showCreditPanel"
               v-model:is-active="state.is_active!"
               v-model:credit-state="creditState"
               :client-name="state.name"
+              :client-type="state.client_type"
               :credit-summary="creditSummary"
-            />
-            <CatalogClientCreditFormSection
-              v-else
-              v-model:credit-state="creditState"
-              intro="Completa los datos para registrar una línea de crédito."
+              :has-credit-line="hasLinkedCredit"
             />
           </template>
         </UTabs>

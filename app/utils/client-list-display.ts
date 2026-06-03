@@ -40,7 +40,10 @@ export function clientCreditUsagePercent(
 ): number | null {
   const usedAmount = parseClientMoney(used);
   const limitAmount = parseClientMoney(limit);
-  if (usedAmount == null || limitAmount == null || limitAmount <= 0) return null;
+  if (usedAmount == null) return null;
+  if (limitAmount == null || limitAmount <= 0) {
+    return usedAmount > 0 ? 100 : null;
+  }
   return Math.min(100, Math.round((usedAmount / limitAmount) * 100));
 }
 

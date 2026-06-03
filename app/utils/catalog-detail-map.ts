@@ -185,6 +185,49 @@ export function mapCreditDetail(raw: Record<string, unknown>): {
   };
 }
 
+function parseCreditMoney(value: string | number | null | undefined): number {
+  if (value == null || value === '') return 0;
+  const parsed = Number(String(value).replace(/,/g, ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function isCashLikeClientType(clientType: string | null | undefined): boolean {
+  return clientType === 'CASH' || clientType === 'PUBLIC';
+}
+
+/** Normalizes summary + form when the client has no linked credit record. */
+export function hydrateClientCreditDisplayWithoutLine(
+  clientType: string,
+  summary: ClientCreditSummary,
+  form: Partial<CreditFormState>,
+): { summary: ClientCreditSummary; form: CreditFormState } {
+  const nextSummary: ClientCreditSummary = { ...summary };
+
+  if (nextSummary.credit_limit == null || nextSummary.credit_limit === '') {
+    nextSummary.credit_limit = isCashLikeClientType(clientType)
+      ? '0.00'
+      : (form.limit ?? '0.00');
+  }
+
+  if (nextSummary.credit_available == null) {
+    const limit = parseCreditMoney(nextSummary.credit_limit);
+    const used = parseCreditMoney(nextSummary.credit_used);
+    nextSummary.credit_available = limit - used;
+  }
+
+  return {
+    summary: nextSummary,
+    form: {
+      limit: nextSummary.credit_limit ?? '0.00',
+      days: form.days ?? (isCashLikeClientType(clientType) ? 0 : 30),
+      extension: form.extension ?? 0,
+      remision_tolerance: form.remision_tolerance ?? 0,
+      requires_purchase_order: form.requires_purchase_order ?? false,
+      is_blocked: form.is_blocked ?? false,
+    },
+  };
+}
+
 export function mapClientCreditSummary(
   raw: Record<string, unknown>,
 ): ClientCreditSummary {

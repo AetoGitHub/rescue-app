@@ -16,6 +16,8 @@ describe('client-list-display', () => {
     expect(clientCreditUsagePercent('2563.60', '50000.00')).toBe(5);
     expect(clientCreditUsagePercent('50000', '50000')).toBe(100);
     expect(clientCreditUsagePercent('0', null)).toBeNull();
+    expect(clientCreditUsagePercent('320611.52', '0')).toBe(100);
+    expect(clientCreditUsagePercent('0', '0')).toBeNull();
   });
 
   it('maps client type badges', () => {

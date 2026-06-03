@@ -15,7 +15,9 @@ type CreditMetricRow = {
 
 const props = defineProps<{
   clientName: string;
+  clientType: string;
   creditSummary: ClientCreditSummary;
+  hasCreditLine?: boolean;
 }>();
 
 const isActive = defineModel<boolean>('isActive', { required: true });
@@ -63,7 +65,7 @@ const usagePercent = computed(() =>
   ),
 );
 
-const typeBadge = computed(() => clientTypeBadgeProps('CREDIT'));
+const typeBadge = computed(() => clientTypeBadgeProps(props.clientType));
 
 const overdueAmount = computed(() =>
   formatClientMoney(props.creditSummary.overdue_amount ?? 0),

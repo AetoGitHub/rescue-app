@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  hydrateClientCreditDisplayWithoutLine,
   mapCreditDetail,
   mapClientCreditSummary,
   resolveCreditId,
@@ -98,5 +99,28 @@ describe('mapClientCreditSummary', () => {
     expect(summary.credit_used).toBe('1200.00');
     expect(summary.credit_available).toBe(73800);
     expect(summary.overdue_invoices_count).toBe(1);
+  });
+});
+
+describe('hydrateClientCreditDisplayWithoutLine', () => {
+  it('normalizes cash client without credit line', () => {
+    const result = hydrateClientCreditDisplayWithoutLine(
+      'CASH',
+      {
+        credit_limit: null,
+        credit_used: '3654.00',
+        credit_available: null,
+        overdue_amount: 247136.27,
+        overdue_invoices_count: 9,
+        due_soon_amount: 29819.37,
+        due_soon_invoices_count: 1,
+      },
+      {},
+    );
+
+    expect(result.summary.credit_limit).toBe('0.00');
+    expect(result.summary.credit_used).toBe('3654.00');
+    expect(result.summary.credit_available).toBe(-3654);
+    expect(result.form.days).toBe(0);
   });
 });
