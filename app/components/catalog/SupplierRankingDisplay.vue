@@ -45,7 +45,9 @@ const iconSize = computed(() => (props.size === 'xs' ? 'size-3' : 'size-3.5'));
         name="i-lucide-star"
         :class="[
           iconSize,
-          index <= filledStars ? 'fill-current' : 'opacity-30',
+          index <= filledStars
+            ? 'fill-current stroke-current'
+            : 'fill-none stroke-current opacity-40',
         ]"
       />
     </span>

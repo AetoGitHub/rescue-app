@@ -90,16 +90,24 @@ function onSubmit() {
               {{ row.supplier_name }}
             </p>
             <div class="flex items-center gap-1">
-              <UButton
+              <button
                 v-for="star in 5"
                 :key="star"
-                :color="row.score >= star ? 'warning' : 'neutral'"
-                :icon="row.score >= star ? 'i-lucide-star' : 'i-lucide-star'"
-                size="xs"
-                variant="ghost"
+                type="button"
+                class="rounded p-0.5 transition-colors hover:bg-elevated"
                 :aria-label="`${star} estrellas`"
                 @click="setRating(index, star)"
-              />
+              >
+                <UIcon
+                  name="i-lucide-star"
+                  class="size-5"
+                  :class="
+                    row.score >= star
+                      ? 'fill-current stroke-current text-warning'
+                      : 'fill-none stroke-current text-muted opacity-60'
+                  "
+                />
+              </button>
             </div>
             <UFormField
               :name="`rating_comment_${row.supplier_id}`"
