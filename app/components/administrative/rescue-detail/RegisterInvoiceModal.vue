@@ -3,9 +3,17 @@ import type { RescueInvoiceFormState } from '~/interfaces/rescue/administrative'
 
 const open = defineModel<boolean>('open', { required: true });
 
-defineProps<{
-  loading?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    loading?: boolean;
+    title?: string;
+    submitLabel?: string;
+  }>(),
+  {
+    title: 'Registrar factura',
+    submitLabel: 'Registrar factura',
+  },
+);
 
 const emit = defineEmits<{
   submit: [];
@@ -27,7 +35,7 @@ const invoiceAmountModel = useStringNumberModel(
 <template>
   <UModal
     v-model:open="open"
-    title="Registrar factura"
+    :title="props.title"
     :ui="{ content: 'max-w-md' }"
   >
     <template #body>
@@ -78,7 +86,7 @@ const invoiceAmountModel = useStringNumberModel(
         <UButton
           block
           color="primary"
-          label="Registrar factura"
+          :label="props.submitLabel"
           :loading="loading"
           @click="emit('submit')"
         />

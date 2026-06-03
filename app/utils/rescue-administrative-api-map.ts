@@ -169,10 +169,15 @@ export function mapAdministrativeDetailFromApi(
         : deriveRequiresRemision(clientType),
     remittance_number:
       readString(raw, 'remittance_number')
+      ?? readString(raw, 'remittance_folio')
       ?? readString(raw, 'remision_number'),
-    invoice_number: readString(raw, 'invoice_number'),
+    invoice_number:
+      readString(raw, 'invoice_number')
+      ?? readString(raw, 'invoice_folio'),
     invoice_date: readString(raw, 'invoice_date'),
-    invoice_amount: readString(raw, 'invoice_amount'),
+    invoice_amount:
+      readString(raw, 'invoice_amount')
+      ?? readString(raw, 'invoiced_amount'),
     payment_amount: readString(raw, 'payment_amount'),
     payment_date: readString(raw, 'payment_date'),
     payment_method: readString(raw, 'payment_method'),
@@ -255,17 +260,69 @@ export function administrativeDetailToCardDetail(
   };
 }
 
-export function mapAdministrativeUpdateToApi(
+export function isAdministrativePhaseChange(
+  body: RescueAdministrativeChangePhaseBody,
+): boolean {
+  return body.billing_status != null;
+}
+
+export function mapAdministrativeChangeAdminStatusToApi(
   body: RescueAdministrativeChangePhaseBody,
 ): Record<string, unknown> {
-  const { billing_status, ...rest } = body;
-  const mapped: Record<string, unknown> = { ...rest };
+  const api: Record<string, unknown> = {};
 
-  if (billing_status != null) {
-    mapped.admin_status = billing_status;
+  if (body.billing_status != null) {
+    api.to = body.billing_status;
+  }
+
+  if (body.remittance_number != null) {
+    api.remittance_folio = body.remittance_number;
+  }
+
+  if (body.invoice_number != null) {
+    api.invoice_folio = body.invoice_number;
+  }
+  if (body.invoice_date != null) {
+    api.invoice_date = body.invoice_date;
+  }
+  if (body.invoice_amount != null) {
+    api.invoiced_amount = body.invoice_amount;
+  }
+  if (body.invoice_notes != null) {
+    api.notes = body.invoice_notes;
+  }
+
+  if (body.payment_evidence_url != null) {
+    api.payment_evidence_url = body.payment_evidence_url;
+  }
+
+  if (body.admin_cancellation_reason != null) {
+    api.cancellation_reason = body.admin_cancellation_reason;
+  }
+
+  return api;
+}
+
+/** Legacy shape for purchase order save only. */
+export function mapAdministrativeLegacyUpdateToApi(
+  body: RescueAdministrativeChangePhaseBody,
+): Record<string, unknown> {
+  const mapped: Record<string, unknown> = {};
+
+  if (body.purchase_order_number != null) {
+    mapped.purchase_order_number = body.purchase_order_number;
   }
 
   return mapped;
+}
+
+export function mapAdministrativeUpdateToApi(
+  body: RescueAdministrativeChangePhaseBody,
+): Record<string, unknown> {
+  if (isAdministrativePhaseChange(body)) {
+    return mapAdministrativeChangeAdminStatusToApi(body);
+  }
+  return mapAdministrativeLegacyUpdateToApi(body);
 }
 
 export function targetBillingStatusForAction(
@@ -296,7 +353,7 @@ export function toAdministrativeUpdatePayload(
     payment?: RescueAdministrativePaymentFormState;
     purchaseOrderNumber?: string;
     cancellationReasonId?: number | null;
-    closedAt?: string;
+    invoiceNotes?: string;
   },
 ): RescueAdministrativeChangePhaseBody {
   const billingStatus = targetBillingStatusForAction(action);
@@ -316,6 +373,7 @@ export function toAdministrativeUpdatePayload(
         body.invoice_number = forms.invoice.invoice_number;
         body.invoice_date = forms.invoice.invoice_date;
         body.invoice_amount = forms.invoice.invoice_amount;
+        body.invoice_notes = forms.invoiceNotes ?? '';
       }
       break;
 
@@ -323,14 +381,11 @@ export function toAdministrativeUpdatePayload(
       body.invoice_number = forms?.invoice?.invoice_number;
       body.invoice_date = forms?.invoice?.invoice_date;
       body.invoice_amount = forms?.invoice?.invoice_amount;
+      body.invoice_notes = forms?.invoiceNotes ?? '';
       break;
 
     case 'apply_payment':
-      body.payment_amount = forms?.payment?.payment_amount;
-      body.payment_date = forms?.payment?.payment_date;
-      body.payment_method = forms?.payment?.payment_method;
-      body.payment_reference = forms?.payment?.payment_reference;
-      body.closed_at = forms?.closedAt;
+      body.payment_evidence_url = forms?.payment?.payment_evidence_url;
       break;
 
     case 'admin_cancel':
@@ -340,7 +395,6 @@ export function toAdministrativeUpdatePayload(
       break;
 
     case 'open_warranty':
-      body.operative_status = 'warranty_pending';
       break;
 
     case 'save_purchase_order':

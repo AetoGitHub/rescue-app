@@ -6,6 +6,8 @@ import {
   getAdministrativeStepperCurrentIndex,
   getAdministrativeStepperItems,
   getAdministrativeStepperSteps,
+  getValidAdminBillingTransitions,
+  isAdminActionAllowed,
   isAdministrativeLinearStepperVisible,
   isPurchaseOrderBlockingInvoice,
   showOperativeWarningBanner,
@@ -81,15 +83,80 @@ describe('getAdministrativeStepperItems', () => {
   });
 });
 
+describe('getValidAdminBillingTransitions', () => {
+  it('allows invoiced from unattended for credit', () => {
+    expect(
+      getValidAdminBillingTransitions('CREDIT', 'unattended'),
+    ).toContain('invoiced');
+  });
+
+  it('allows warranty from paid for credit', () => {
+    expect(
+      getValidAdminBillingTransitions('CREDIT', 'paid'),
+    ).toContain('warranty');
+  });
+
+  it('does not allow warranty from paid for public', () => {
+    expect(
+      getValidAdminBillingTransitions('PUBLIC', 'paid'),
+    ).not.toContain('warranty');
+  });
+});
+
+describe('isAdminActionAllowed', () => {
+  it('blocks open_warranty for public clients', () => {
+    expect(
+      isAdminActionAllowed(
+        ctx({ billing_status: 'paid', client_type: 'PUBLIC' }),
+        'open_warranty',
+      ),
+    ).toBe(false);
+  });
+
+  it('blocks admin_cancel from paid for credit', () => {
+    expect(
+      isAdminActionAllowed(
+        ctx({ billing_status: 'paid', client_type: 'CREDIT' }),
+        'admin_cancel',
+      ),
+    ).toBe(false);
+  });
+
+  it('allows revert from canceled', () => {
+    expect(
+      isAdminActionAllowed(
+        ctx({ billing_status: 'canceled', client_type: 'CREDIT' }),
+        'revert_admin_cancellation',
+      ),
+    ).toBe(true);
+  });
+
+  it('allows skip to invoiced when remision required for credit', () => {
+    expect(
+      isAdminActionAllowed(
+        ctx({
+          billing_status: 'unattended',
+          client_type: 'CREDIT',
+          requires_remision: true,
+        }),
+        'skip_to_invoiced',
+      ),
+    ).toBe(true);
+  });
+});
+
 describe('getAdministrativeFooterActions', () => {
-  it('offers remittance when requires_remision', () => {
+  it('offers remittance and skip to invoiced when requires_remision', () => {
     const actions = getAdministrativeFooterActions(
       ctx({
         billing_status: 'unattended',
+        client_type: 'CREDIT',
         requires_remision: true,
       }),
     );
-    expect(actions.map((a) => a.id)).toContain('issue_remittance');
+    const ids = actions.map((a) => a.id);
+    expect(ids).toContain('issue_remittance');
+    expect(ids).toContain('skip_to_invoiced');
   });
 
   it('offers skip to invoiced without remision', () => {
@@ -114,11 +181,25 @@ describe('getAdministrativeFooterActions', () => {
     expect(actions[0]?.disabled).toBe(true);
   });
 
-  it('offers open warranty only when paid', () => {
+  it('offers open warranty only when paid for credit', () => {
     const actions = getAdministrativeFooterActions(
-      ctx({ billing_status: 'paid' }),
+      ctx({ billing_status: 'paid', client_type: 'CREDIT' }),
     );
     expect(actions.map((a) => a.id)).toEqual(['open_warranty']);
+  });
+
+  it('offers no actions when paid for public', () => {
+    const actions = getAdministrativeFooterActions(
+      ctx({ billing_status: 'paid', client_type: 'PUBLIC' }),
+    );
+    expect(actions).toEqual([]);
+  });
+
+  it('offers revert when canceled', () => {
+    const actions = getAdministrativeFooterActions(
+      ctx({ billing_status: 'canceled', client_type: 'CREDIT' }),
+    );
+    expect(actions.map((a) => a.id)).toEqual(['revert_admin_cancellation']);
   });
 });
 

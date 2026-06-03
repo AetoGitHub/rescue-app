@@ -6,6 +6,7 @@ import {
   RESCUE_EVIDENCE_TYPE_SERVICE,
 } from '~/constants/rescue-evidence-api';
 import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
+import { RESCUE_ADMINISTRATIVE_BUTTON_LABELS } from '~/constants/rescue-administrative-flow';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import {
   administrativeDetailToCardDetail,
@@ -41,21 +42,25 @@ const quoteDetail = computed(() =>
 const {
   remittanceModalOpen,
   invoiceModalOpen,
+  invoiceSubmitAction,
   paymentModalOpen,
   cancelModalOpen,
   warrantyModalOpen,
+  revertCancelModalOpen,
   remittanceForm,
   invoiceForm,
   paymentForm,
   cancellationReasonId,
+  reacceptanceReasonId,
   purchaseOrderNumber,
   flowContext,
   handleAction,
   submitRemittance,
-  submitInvoice,
+  submitInvoiceFromModal,
   submitPayment,
   submitAdminCancel,
   submitOpenWarranty,
+  submitRevertAdminCancel,
   submitPurchaseOrder,
   regenerateRemittanceNumber,
   regenerateInvoiceNumber,
@@ -70,6 +75,12 @@ const {
 
 const modalTitle = computed(
   () => displayDetail.value?.folio ?? 'Detalle administrativo',
+);
+
+const invoiceModalTitle = computed(() =>
+  invoiceSubmitAction.value === 'skip_to_invoiced'
+    ? RESCUE_ADMINISTRATIVE_BUTTON_LABELS.skipToInvoiced
+    : RESCUE_ADMINISTRATIVE_BUTTON_LABELS.registerInvoice,
 );
 
 const serviceTypeBadge = computed(() => {
@@ -290,16 +301,27 @@ defineExpose({ open: openDetail });
     v-model:open="invoiceModalOpen"
     v-model:form="invoiceForm"
     :loading="isUpdating"
+    :submit-label="invoiceModalTitle"
+    :title="invoiceModalTitle"
     @regenerate="regenerateInvoiceNumber"
-    @submit="submitInvoice('register_invoice')"
+    @submit="submitInvoiceFromModal"
   />
 
   <LazyAdministrativeRescueDetailApplyPaymentModal
-    v-if="paymentModalOpen"
+    v-if="paymentModalOpen && rescueId != null"
     v-model:open="paymentModalOpen"
     v-model:form="paymentForm"
+    :rescue-id="rescueId"
     :loading="isUpdating"
     @submit="submitPayment"
+  />
+
+  <LazyAdministrativeRescueDetailRevertAdminCancelModal
+    v-if="revertCancelModalOpen"
+    v-model:open="revertCancelModalOpen"
+    v-model:reacceptance-reason-id="reacceptanceReasonId"
+    :loading="isUpdating"
+    @submit="submitRevertAdminCancel"
   />
 
   <LazyAdministrativeRescueDetailAdminCancelModal

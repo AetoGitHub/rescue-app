@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   administrativeDetailToCardDetail,
   mapAdministrativeCardFromApi,
+  mapAdministrativeChangeAdminStatusToApi,
   mapAdministrativeDetailFromApi,
   mapAdministrativeUpdateToApi,
   targetBillingStatusForAction,
@@ -169,39 +170,97 @@ describe('administrativeDetailToCardDetail', () => {
   });
 });
 
+describe('mapAdministrativeChangeAdminStatusToApi', () => {
+  it('maps remittance transition', () => {
+    const api = mapAdministrativeChangeAdminStatusToApi({
+      billing_status: 'in_remittance',
+      remittance_number: 'REM-2026-001',
+    });
+    expect(api).toEqual({
+      to: 'in_remittance',
+      remittance_folio: 'REM-2026-001',
+    });
+  });
+
+  it('maps invoice transition with notes', () => {
+    const api = mapAdministrativeChangeAdminStatusToApi({
+      billing_status: 'invoiced',
+      invoice_number: 'FAC-2026-042',
+      invoice_date: '2026-06-01',
+      invoice_amount: '1044.00',
+      invoice_notes: '',
+    });
+    expect(api).toEqual({
+      to: 'invoiced',
+      invoice_folio: 'FAC-2026-042',
+      invoice_date: '2026-06-01',
+      invoiced_amount: '1044.00',
+      notes: '',
+    });
+  });
+
+  it('maps apply payment with evidence url only', () => {
+    const api = mapAdministrativeChangeAdminStatusToApi({
+      billing_status: 'paid',
+      payment_evidence_url: 'https://ejemplo.com/comprobante.pdf',
+    });
+    expect(api).toEqual({
+      to: 'paid',
+      payment_evidence_url: 'https://ejemplo.com/comprobante.pdf',
+    });
+  });
+
+  it('maps admin cancel with cancellation_reason', () => {
+    const api = mapAdministrativeChangeAdminStatusToApi({
+      billing_status: 'canceled',
+      admin_cancellation_reason: 1,
+    });
+    expect(api).toEqual({
+      to: 'canceled',
+      cancellation_reason: 1,
+    });
+  });
+});
+
 describe('mapAdministrativeUpdateToApi', () => {
-  it('sends admin_status instead of billing_status', () => {
+  it('uses change_admin_status shape for phase transitions', () => {
     const api = mapAdministrativeUpdateToApi({
       billing_status: 'paid',
-      operative_status: 'closed',
+      payment_evidence_url: 'https://example.com/p.pdf',
     });
-    expect(api.admin_status).toBe('paid');
-    expect(api.billing_status).toBeUndefined();
-    expect(api.operative_status).toBe('closed');
+    expect(api.to).toBe('paid');
+    expect(api.admin_status).toBeUndefined();
+  });
+
+  it('uses legacy shape for purchase order only', () => {
+    const api = mapAdministrativeUpdateToApi({
+      purchase_order_number: 'OC-123',
+    });
+    expect(api).toEqual({ purchase_order_number: 'OC-123' });
+    expect(api.to).toBeUndefined();
   });
 });
 
 describe('toAdministrativeUpdatePayload', () => {
-  it('maps apply payment with closed_at', () => {
+  it('maps apply payment with payment_evidence_url', () => {
     const body = toAdministrativeUpdatePayload('apply_payment', {
       payment: {
-        payment_amount: '1000',
-        payment_date: '2026-06-02',
-        payment_method: 'cash',
-        payment_reference: '',
+        payment_evidence_url: 'https://ejemplo.com/comprobante.pdf',
       },
-      closedAt: '2026-06-02',
     });
     expect(body.billing_status).toBe('paid');
-    expect(body.closed_at).toBe('2026-06-02');
-    expect(mapAdministrativeUpdateToApi(body).admin_status).toBe('paid');
+    expect(body.payment_evidence_url).toBe(
+      'https://ejemplo.com/comprobante.pdf',
+    );
+    expect(mapAdministrativeChangeAdminStatusToApi(body).to).toBe('paid');
   });
 
-  it('maps open warranty to operative warranty_pending', () => {
+  it('maps open warranty without operative_status', () => {
     const body = toAdministrativeUpdatePayload('open_warranty');
     expect(body.billing_status).toBe('warranty');
-    expect(mapAdministrativeUpdateToApi(body).admin_status).toBe('warranty');
-    expect(body.operative_status).toBe('warranty_pending');
+    expect(mapAdministrativeChangeAdminStatusToApi(body)).toEqual({
+      to: 'warranty',
+    });
   });
 });
 

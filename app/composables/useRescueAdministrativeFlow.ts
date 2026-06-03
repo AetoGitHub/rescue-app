@@ -3,12 +3,12 @@ import { RESCUE_ADMINISTRATIVE_TOAST } from '~/constants/rescue-administrative-f
 import type { AdministrativeRescueDetail } from '~/interfaces/rescue/administrative';
 import type {
   RescueAdministrativeActionId,
-  RescueAdministrativePaymentFormState,
   RescueInvoiceFormState,
   RescueRemittanceFormState,
 } from '~/interfaces/rescue/administrative';
 import {
   rescueAdminCancelSchema,
+  rescueAdminRevertCancelSchema,
   rescueAdministrativePaymentSchema,
   rescueInvoiceSchema,
   rescuePurchaseOrderSchema,
@@ -21,6 +21,7 @@ import {
 } from '~/utils/rescue-administrative-doc-numbers';
 import {
   administrativeDetailToFlowContext,
+  isAdminActionAllowed,
   isPurchaseOrderBlockingInvoice,
 } from '~/utils/rescue-administrative-flow';
 import { todayIsoDate } from '~/utils/rescue-operative-flow';
@@ -35,14 +36,18 @@ export function useRescueAdministrativeFlow(options: {
   const rescueId = computed(() => toValue(options.rescueId));
   const detail = computed(() => toValue(options.detail));
 
-  const { updateAdministrative, isUpdating } =
+  const { updateAdministrative, revertAdministrativeCancellation, isUpdating } =
     useRescueAdministrativeMutation(rescueId);
 
   const remittanceModalOpen = ref(false);
   const invoiceModalOpen = ref(false);
+  const invoiceSubmitAction = ref<'skip_to_invoiced' | 'register_invoice'>(
+    'register_invoice',
+  );
   const paymentModalOpen = ref(false);
   const cancelModalOpen = ref(false);
   const warrantyModalOpen = ref(false);
+  const revertCancelModalOpen = ref(false);
 
   const remittanceForm = reactive<RescueRemittanceFormState>({
     remittance_number: generateRemittanceNumber(),
@@ -54,14 +59,12 @@ export function useRescueAdministrativeFlow(options: {
     invoice_amount: '',
   });
 
-  const paymentForm = reactive<RescueAdministrativePaymentFormState>({
-    payment_amount: '',
-    payment_date: todayIsoDate(),
-    payment_method: '',
-    payment_reference: '',
+  const paymentForm = reactive({
+    payment_evidence_url: '',
   });
 
   const cancellationReasonId = ref<number | null>(null);
+  const reacceptanceReasonId = ref<number | null>(null);
   const purchaseOrderNumber = ref('');
 
   const flowContext = computed(() => {
@@ -75,7 +78,6 @@ export function useRescueAdministrativeFlow(options: {
     (d) => {
       if (!d) return;
       purchaseOrderNumber.value = d.purchase_order_number ?? '';
-      paymentForm.payment_amount = d.sale_price ?? d.invoice_amount ?? '';
       invoiceForm.invoice_amount = d.sale_price ?? d.invoice_amount ?? '';
     },
     { immediate: true },
@@ -87,6 +89,15 @@ export function useRescueAdministrativeFlow(options: {
 
   function regenerateInvoiceNumber() {
     invoiceForm.invoice_number = generateInvoiceNumber();
+  }
+
+  function openInvoiceModal(action: 'skip_to_invoiced' | 'register_invoice') {
+    const d = detail.value;
+    invoiceSubmitAction.value = action;
+    invoiceForm.invoice_number = d?.invoice_number ?? generateInvoiceNumber();
+    invoiceForm.invoice_date = d?.invoice_date ?? todayIsoDate();
+    invoiceForm.invoice_amount = d?.sale_price ?? d?.invoice_amount ?? '';
+    invoiceModalOpen.value = true;
   }
 
   function openDocumentAction(_channel: 'pdf' | 'email' | 'whatsapp') {
@@ -102,7 +113,6 @@ export function useRescueAdministrativeFlow(options: {
   ) {
     const body = toAdministrativeUpdatePayload(action, forms);
     await updateAdministrative(body);
-    // TODO: onBillingStatusChanged / onOperativeStatusChanged (commissions)
     toast.add({
       title: RESCUE_ADMINISTRATIVE_TOAST.updated,
       color: 'success',
@@ -114,6 +124,10 @@ export function useRescueAdministrativeFlow(options: {
   function handleAction(action: RescueAdministrativeActionId) {
     const ctx = flowContext.value;
     if (!ctx) return;
+
+    if (!isAdminActionAllowed(ctx, action)) {
+      return;
+    }
 
     if (action === 'register_invoice' && isPurchaseOrderBlockingInvoice(ctx)) {
       toast.add({
@@ -129,17 +143,13 @@ export function useRescueAdministrativeFlow(options: {
         remittanceModalOpen.value = true;
         break;
       case 'skip_to_invoiced':
-        void submitSkipToInvoiced();
+        openInvoiceModal('skip_to_invoiced');
         break;
       case 'register_invoice':
-        invoiceForm.invoice_number =
-          detail.value?.invoice_number ?? generateInvoiceNumber();
-        invoiceForm.invoice_date =
-          detail.value?.invoice_date ?? todayIsoDate();
-        invoiceModalOpen.value = true;
+        openInvoiceModal('register_invoice');
         break;
       case 'apply_payment':
-        paymentForm.payment_date = todayIsoDate();
+        paymentForm.payment_evidence_url = '';
         paymentModalOpen.value = true;
         break;
       case 'admin_cancel':
@@ -149,27 +159,13 @@ export function useRescueAdministrativeFlow(options: {
       case 'open_warranty':
         warrantyModalOpen.value = true;
         break;
+      case 'revert_admin_cancellation':
+        reacceptanceReasonId.value = null;
+        revertCancelModalOpen.value = true;
+        break;
       default:
         break;
     }
-  }
-
-  async function submitSkipToInvoiced() {
-    const d = detail.value;
-    const payload: RescueInvoiceFormState = {
-      invoice_number: generateInvoiceNumber(),
-      invoice_date: todayIsoDate(),
-      invoice_amount: d?.sale_price ?? d?.invoice_amount ?? '0',
-    };
-    const parsed = rescueInvoiceSchema.safeParse(payload);
-    if (!parsed.success) {
-      toast.add({
-        title: 'No hay monto de venta para facturar',
-        color: 'error',
-      });
-      return;
-    }
-    await runUpdate('skip_to_invoiced', { invoice: parsed.data });
   }
 
   async function submitRemittance() {
@@ -198,6 +194,10 @@ export function useRescueAdministrativeFlow(options: {
     invoiceModalOpen.value = false;
   }
 
+  async function submitInvoiceFromModal() {
+    await submitInvoice(invoiceSubmitAction.value);
+  }
+
   async function submitPayment() {
     const parsed = rescueAdministrativePaymentSchema.safeParse(paymentForm);
     if (!parsed.success) {
@@ -207,13 +207,7 @@ export function useRescueAdministrativeFlow(options: {
       });
       return;
     }
-    await runUpdate('apply_payment', {
-      payment: {
-        ...parsed.data,
-        payment_reference: parsed.data.payment_reference ?? '',
-      },
-      closedAt: parsed.data.payment_date,
-    });
+    await runUpdate('apply_payment', { payment: parsed.data });
     paymentModalOpen.value = false;
   }
 
@@ -237,6 +231,29 @@ export function useRescueAdministrativeFlow(options: {
   async function submitOpenWarranty() {
     await runUpdate('open_warranty');
     warrantyModalOpen.value = false;
+  }
+
+  async function submitRevertAdminCancel() {
+    const parsed = rescueAdminRevertCancelSchema.safeParse({
+      reacceptance_reason_id: reacceptanceReasonId.value,
+    });
+    if (!parsed.success) {
+      toast.add({
+        title: parsed.error.issues[0]?.message ?? 'Selecciona un motivo',
+        color: 'error',
+      });
+      return;
+    }
+    await revertAdministrativeCancellation({
+      reacceptance_reason: parsed.data.reacceptance_reason_id,
+    });
+    toast.add({
+      title: RESCUE_ADMINISTRATIVE_TOAST.updated,
+      color: 'success',
+    });
+    await options.refresh();
+    options.onChanged?.();
+    revertCancelModalOpen.value = false;
   }
 
   async function submitPurchaseOrder() {
@@ -264,21 +281,26 @@ export function useRescueAdministrativeFlow(options: {
   return {
     remittanceModalOpen,
     invoiceModalOpen,
+    invoiceSubmitAction,
     paymentModalOpen,
     cancelModalOpen,
     warrantyModalOpen,
+    revertCancelModalOpen,
     remittanceForm,
     invoiceForm,
     paymentForm,
     cancellationReasonId,
+    reacceptanceReasonId,
     purchaseOrderNumber,
     flowContext,
     handleAction,
     submitRemittance,
     submitInvoice,
+    submitInvoiceFromModal,
     submitPayment,
     submitAdminCancel,
     submitOpenWarranty,
+    submitRevertAdminCancel,
     submitPurchaseOrder,
     regenerateRemittanceNumber,
     regenerateInvoiceNumber,

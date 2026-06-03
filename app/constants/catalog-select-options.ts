@@ -7,6 +7,7 @@ export const CLIENT_TYPE_OPTIONS = [
 export const BILLING_TYPE_OPTIONS = [
   { label: 'Factura directa', value: 'DIRECT_INVOICE' },
   { label: 'Manual', value: 'MANUAL' },
+  { label: 'Remisión', value: 'REMISSION' },
 ] as const;
 
 export const COMMISSION_TYPE_OPTIONS = [

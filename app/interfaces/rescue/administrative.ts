@@ -1,6 +1,5 @@
 import type { AdministrativeBillingStatus } from '~/constants/administrative-kanban';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
-import type { RescuePaymentMethod } from '~/constants/rescue-operative-flow';
 import type { RescueServiceType } from '~/interfaces/rescue';
 
 export type RescueAdministrativeActionId =
@@ -10,7 +9,8 @@ export type RescueAdministrativeActionId =
   | 'apply_payment'
   | 'admin_cancel'
   | 'open_warranty'
-  | 'save_purchase_order';
+  | 'save_purchase_order'
+  | 'revert_admin_cancellation';
 
 /**
  * Administrative board card. `billing_status` is the frontend name for API `admin_status`
@@ -70,21 +70,21 @@ export interface AdministrativeRescueDetail extends AdministrativeRescueCard {
   supplier_score: number | null;
 }
 
-/** Internal change body; mapped to API with `admin_status` in mapAdministrativeUpdateToApi */
+/** Internal change body; phase transitions map to `change_admin_status` API. */
 export interface RescueAdministrativeChangePhaseBody {
   billing_status?: AdministrativeBillingStatus;
-  operative_status?: OperationalRescueStatus;
   remittance_number?: string;
   invoice_number?: string;
   invoice_date?: string;
   invoice_amount?: string;
-  payment_amount?: string;
-  payment_date?: string;
-  payment_method?: string;
-  payment_reference?: string;
+  invoice_notes?: string;
+  payment_evidence_url?: string;
   purchase_order_number?: string;
   admin_cancellation_reason?: number;
-  closed_at?: string;
+}
+
+export interface RescueAdministrativeRevertCancellationBody {
+  reacceptance_reason: number;
 }
 
 export interface RescueAdministrativeFlowContext {
@@ -118,8 +118,5 @@ export interface RescueInvoiceFormState {
 }
 
 export interface RescueAdministrativePaymentFormState {
-  payment_amount: string;
-  payment_date: string;
-  payment_method: RescuePaymentMethod | '';
-  payment_reference: string;
+  payment_evidence_url: string;
 }

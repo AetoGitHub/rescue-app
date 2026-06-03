@@ -17,16 +17,17 @@ export const rescueInvoiceSchema = z.object({
 });
 
 export const rescueAdministrativePaymentSchema = z.object({
-  payment_amount: z
+  payment_evidence_url: z
     .string()
     .trim()
-    .min(1, 'Ingresa el monto del pago')
-    .refine((value) => Number(value.replace(/,/g, '')) > 0, {
-      message: 'El monto debe ser mayor a 0',
-    }),
-  payment_date: z.string().trim().min(1, 'Ingresa la fecha de pago'),
-  payment_method: z.string().trim().min(1, 'Selecciona la forma de pago'),
-  payment_reference: z.string().optional(),
+    .min(1, 'Sube o ingresa el comprobante de pago'),
+});
+
+export const rescueAdminRevertCancelSchema = z.object({
+  reacceptance_reason_id: z
+    .number({ message: 'Selecciona un motivo' })
+    .int()
+    .positive('Selecciona un motivo'),
 });
 
 export const rescueAdminCancelSchema = z.object({
