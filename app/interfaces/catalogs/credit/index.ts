@@ -45,3 +45,13 @@ export interface ClientCreditSummary {
   due_soon_amount?: string | number | null;
   due_soon_invoices_count?: number;
 }
+
+/** Pending invoice row from GET /api/credit/client/{id}/invoices/ */
+export interface ClientCreditInvoice {
+  id: number;
+  folio?: string;
+  amount?: string | number;
+  billed_at?: string;
+  days_overdue?: number;
+  status?: string;
+}

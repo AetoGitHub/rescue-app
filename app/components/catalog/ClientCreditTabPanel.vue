@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { CreditFormState, ClientCreditSummary } from '~/interfaces/catalogs/credit';
+import type {
+  ClientCreditInvoice,
+  CreditFormState,
+  ClientCreditSummary,
+} from '~/interfaces/catalogs/credit';
 import {
   clientCreditUsagePercent,
   clientTypeBadgeProps,
@@ -18,6 +22,13 @@ const props = defineProps<{
   clientType: string;
   creditSummary: ClientCreditSummary;
   hasCreditLine?: boolean;
+  invoices?: ClientCreditInvoice[];
+  invoicesLoading?: boolean;
+  hasMoreInvoices?: boolean;
+}>();
+
+const emit = defineEmits<{
+  loadMoreInvoices: [];
 }>();
 
 const isActive = defineModel<boolean>('isActive', { required: true });
@@ -83,6 +94,24 @@ const dueSoonCount = computed(
 function toggleBlockClient() {
   creditState.value.is_blocked = !creditState.value.is_blocked;
 }
+
+function formatInvoiceDate(iso: string | undefined): string {
+  if (!iso?.trim()) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function invoiceOverdueLabel(days: number | undefined): string | null {
+  if (days == null || days <= 0) return null;
+  return `${days}d vencida`;
+}
+
+const invoiceRows = computed(() => props.invoices ?? []);
 
 const creditMetricRows = computed((): CreditMetricRow[] => [
   {
@@ -292,12 +321,52 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
       <h3 class="text-xs font-semibold uppercase tracking-wider text-primary">
         Facturas pendientes
       </h3>
+      <div v-if="invoicesLoading" class="flex justify-center py-8">
+        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-muted" />
+      </div>
       <div
+        v-else-if="invoiceRows.length === 0"
         class="flex flex-col items-center gap-2 rounded-lg border border-dashed border-default py-8 text-center"
       >
         <UIcon name="i-lucide-circle-check" class="size-8 text-primary" />
         <p class="font-medium">Sin facturas pendientes</p>
         <p class="text-sm text-muted">El cliente está al corriente</p>
+      </div>
+      <ul v-else class="divide-y divide-default rounded-lg border border-default">
+        <li
+          v-for="invoice in invoiceRows"
+          :key="invoice.id"
+          class="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+        >
+          <div class="min-w-0 space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-semibold tabular-nums">
+                {{ invoice.folio ?? `#${invoice.id}` }}
+              </span>
+              <UBadge
+                v-if="invoiceOverdueLabel(invoice.days_overdue)"
+                color="error"
+                variant="subtle"
+                :label="invoiceOverdueLabel(invoice.days_overdue)!"
+              />
+            </div>
+            <p class="text-sm text-muted">
+              Facturada: {{ formatInvoiceDate(invoice.billed_at) }}
+            </p>
+          </div>
+          <span class="shrink-0 font-semibold tabular-nums text-default">
+            {{ formatClientMoney(invoice.amount) }}
+          </span>
+        </li>
+      </ul>
+      <div v-if="hasMoreInvoices && invoiceRows.length > 0" class="flex justify-center pt-2">
+        <UButton
+          label="Cargar más"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          @click="emit('loadMoreInvoices')"
+        />
       </div>
     </UPageCard>
 

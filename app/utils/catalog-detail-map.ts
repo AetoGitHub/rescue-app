@@ -1,6 +1,6 @@
 import type { CompanyCreateBody } from '~/interfaces/catalogs/company';
 import type { ClientCreateBody } from '~/interfaces/catalogs/client';
-import type { ClientCreditSummary, CreditFormState } from '~/interfaces/catalogs/credit';
+import type { ClientCreditSummary, ClientCreditInvoice, CreditFormState } from '~/interfaces/catalogs/credit';
 import { SERVICE_UNIT_VALUES } from '~/constants/catalog-select-options';
 import type { ServiceCreateBody, ServiceUnit } from '~/interfaces/catalogs/service';
 import type {
@@ -225,6 +225,23 @@ export function hydrateClientCreditDisplayWithoutLine(
       requires_purchase_order: form.requires_purchase_order ?? false,
       is_blocked: form.is_blocked ?? false,
     },
+  };
+}
+
+export function mapClientCreditInvoice(raw: Record<string, unknown>): ClientCreditInvoice {
+  const id = Number(raw.id);
+  const daysRaw = raw.days_overdue ?? raw.overdue_days ?? raw.days;
+  const daysParsed = daysRaw != null && daysRaw !== '' ? Number(daysRaw) : NaN;
+
+  return {
+    id: Number.isFinite(id) ? id : 0,
+    folio:
+      String(raw.folio ?? raw.invoice_number ?? raw.number ?? '').trim() || undefined,
+    amount: (raw.amount ?? raw.total ?? raw.balance) as string | number | undefined,
+    billed_at:
+      String(raw.billed_at ?? raw.invoice_date ?? raw.date ?? '').trim() || undefined,
+    days_overdue: Number.isFinite(daysParsed) ? Math.trunc(daysParsed) : undefined,
+    status: String(raw.status ?? '').trim() || undefined,
   };
 }
 

@@ -25,15 +25,12 @@ type ClientFormState = Omit<
 const open = ref(false);
 const editingId = ref<number | null>(null);
 const editingCreditId = ref<number | null>(null);
-const detailPending = ref(false);
+const clientDetailRaw = ref<Record<string, unknown> | null>(null);
+const clientDetailLoaded = ref(false);
+const clientDetailPending = ref(false);
 const editTab = ref<'general' | 'credit'>('general');
 
 const isEdit = computed(() => editingId.value != null);
-const showEditCreditTabs = computed(() => isEdit.value);
-const showCreateCreditSection = computed(
-  () => !isEdit.value && state.client_type === 'CREDIT',
-);
-const hasLinkedCredit = computed(() => editingCreditId.value != null);
 
 const editTabItems = [
   { label: 'General', value: 'general', slot: 'general' as const },
@@ -96,11 +93,51 @@ const priceMultiplierModel = useStringNumberModel(
   toRef(state, 'price_multiplier'),
 );
 
+const showEditCreditTabs = computed(() => isEdit.value);
+const showCreateCreditSection = computed(
+  () => !isEdit.value && state.client_type === 'CREDIT',
+);
+const hasLinkedCredit = computed(() => editingCreditId.value != null);
+
+const clientCredit = useClientCredit({
+  clientId: computed(() => editingId.value),
+  clientDetailFallback: clientDetailRaw,
+  clientType: computed(() => state.client_type),
+  enabled: computed(
+    () => isEdit.value && editingId.value != null && clientDetailLoaded.value,
+  ),
+});
+
+const clientCreditInvoices = useClientCreditInvoices({
+  clientId: computed(() => editingId.value),
+  enabled: computed(
+    () =>
+      isEdit.value
+      && editingId.value != null
+      && editTab.value === 'credit'
+      && clientDetailLoaded.value,
+  ),
+});
+
+const detailPending = computed(
+  () =>
+    clientDetailPending.value
+    || (isEdit.value && clientDetailLoaded.value && clientCredit.isPending.value),
+);
+
+const creditTabInvoiceBindings = computed(() => ({
+  invoices: clientCreditInvoices.rows.value,
+  invoicesLoading: clientCreditInvoices.isInitialLoading.value,
+  hasMoreInvoices: clientCreditInvoices.hasNextPage.value,
+}));
+
 function resetForm() {
   Object.assign(state, emptyState());
   Object.assign(creditState, emptyCreditState());
   Object.assign(creditSummary, emptyCreditSummary());
   editingCreditId.value = null;
+  clientDetailRaw.value = null;
+  clientDetailLoaded.value = false;
   editTab.value = 'general';
 }
 
@@ -109,24 +146,25 @@ function prepareCreate() {
   resetForm();
 }
 
-function applyCreditDetail(raw: Record<string, unknown>) {
-  const mapped = mapCreditDetail(raw);
-  if (mapped.creditId > 0) {
-    editingCreditId.value = mapped.creditId;
-  }
-  Object.assign(creditState, emptyCreditState(), mapped.form);
-  Object.assign(creditSummary, emptyCreditSummary(), mapped.summary);
+function syncCreditFromComposable() {
+  const view = clientCredit.view.value;
+  if (!view) return;
+  editingCreditId.value = view.creditId;
+  Object.assign(creditState, view.form);
+  Object.assign(creditSummary, emptyCreditSummary(), view.summary);
 }
 
-async function loadCreditDetail(creditId: number) {
-  const raw = await $fetch<Record<string, unknown>>(
-    `/api/credit/detail/${creditId}/`,
-  );
-  applyCreditDetail(raw);
-}
+watch(
+  () => clientCredit.view.value,
+  () => {
+    syncCreditFromComposable();
+  },
+);
 
 async function loadDetail(id: number) {
-  detailPending.value = true;
+  clientDetailPending.value = true;
+  clientDetailLoaded.value = false;
+  clientDetailRaw.value = null;
   editingCreditId.value = null;
   try {
     const raw = await $fetch<Record<string, unknown>>(
@@ -134,24 +172,8 @@ async function loadDetail(id: number) {
     );
     const mapped = mapClientDetail(raw);
     Object.assign(state, emptyState(), mapped);
-    const mappedForm = mapClientCreditForm(raw);
-    Object.assign(creditSummary, emptyCreditSummary(), mapClientCreditSummary(raw));
-
-    const creditId =
-      resolveCreditId(raw) ??
-      (creditSummary.credit_id != null ? creditSummary.credit_id : null);
-
-    if (creditId != null) {
-      await loadCreditDetail(creditId);
-    } else {
-      const hydrated = hydrateClientCreditDisplayWithoutLine(
-        String(mapped.client_type ?? 'CASH'),
-        creditSummary,
-        mappedForm,
-      );
-      Object.assign(creditSummary, hydrated.summary);
-      Object.assign(creditState, hydrated.form);
-    }
+    clientDetailRaw.value = raw;
+    clientDetailLoaded.value = true;
   } catch (e) {
     console.error(e);
     toast.add({
@@ -160,7 +182,7 @@ async function loadDetail(id: number) {
       color: 'error',
     });
   } finally {
-    detailPending.value = false;
+    clientDetailPending.value = false;
   }
 }
 
@@ -266,15 +288,10 @@ const { mutate, asyncStatus } = useMutation({
       });
       if (credit) {
         if (createCredit) {
-          const created = await $fetch<Record<string, unknown>>('/api/credit/create/', {
+          await $fetch('/api/credit/create/', {
             method: 'POST',
             body: creditFormToCreateBody(id, credit),
           });
-          const newCreditId = resolveCreditId(created) ?? Number(created.id);
-          if (Number.isFinite(newCreditId) && newCreditId > 0) {
-            editingCreditId.value = newCreditId;
-            await loadCreditDetail(newCreditId);
-          }
         } else {
           const creditId = editingCreditId.value;
           if (creditId == null) {
@@ -284,8 +301,10 @@ const { mutate, asyncStatus } = useMutation({
             method: 'PUT',
             body: creditFormToCreateBody(id, credit),
           });
-          await loadCreditDetail(creditId);
         }
+        await clientCredit.refresh();
+        await clientCreditInvoices.refresh();
+        syncCreditFromComposable();
       }
       return;
     }
@@ -596,6 +615,8 @@ async function requestSubmit() {
               :client-type="state.client_type"
               :credit-summary="creditSummary"
               :has-credit-line="hasLinkedCredit"
+              v-bind="creditTabInvoiceBindings"
+              @load-more-invoices="clientCreditInvoices.loadNextPage()"
             />
           </template>
         </UTabs>
