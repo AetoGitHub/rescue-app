@@ -18,7 +18,7 @@ useHead({
 });
 
 const viewMode = ref<'kanban' | 'list'>('kanban');
-const filtersExpanded = ref(true);
+const filtersExpanded = ref(false);
 const detailModalMounted = ref(false);
 const pendingDetailOpen = ref<{
   id: number;
@@ -224,7 +224,7 @@ const {
           <div class="flex flex-wrap items-center gap-3">
             <UButton
               color="neutral"
-              :icon="filtersExpanded ? 'i-lucide-chevron-up' : 'i-lucide-filter'"
+              :icon="filtersExpanded ? 'i-lucide-chevron-up' : 'i-lucide-sliders-horizontal'"
               label="Filtros"
               variant="subtle"
               @click="filtersExpanded = !filtersExpanded"
