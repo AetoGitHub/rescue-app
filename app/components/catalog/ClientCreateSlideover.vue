@@ -29,13 +29,19 @@ const detailPending = ref(false);
 const editTab = ref<'general' | 'credit'>('general');
 
 const isEdit = computed(() => editingId.value != null);
-const showEditCreditTabs = computed(
-  () => isEdit.value && state.client_type === 'CREDIT',
-);
+const showEditCreditTabs = computed(() => isEdit.value);
 const showCreateCreditSection = computed(
   () => !isEdit.value && state.client_type === 'CREDIT',
 );
 const hasLinkedCredit = computed(() => editingCreditId.value != null);
+const hasCreditData = computed(
+  () =>
+    hasLinkedCredit.value
+    || creditSummary.credit_limit != null
+    || creditSummary.credit_used != null
+    || creditSummary.credit_available != null,
+);
+const showCreditPanel = computed(() => hasCreditData.value);
 
 const editTabItems = [
   { label: 'General', value: 'general', slot: 'general' as const },
@@ -51,6 +57,18 @@ function emptyCreditState(): CreditFormState {
     requires_purchase_order: false,
     is_blocked: false,
   };
+}
+
+function isCreditFormFilled(state: CreditFormState): boolean {
+  const defaults = emptyCreditState();
+  return (
+    state.limit !== defaults.limit
+    || state.days !== defaults.days
+    || state.extension !== defaults.extension
+    || state.remision_tolerance !== defaults.remision_tolerance
+    || state.requires_purchase_order !== defaults.requires_purchase_order
+    || state.is_blocked !== defaults.is_blocked
+  );
 }
 
 function emptyCreditSummary(): ClientCreditSummary {
@@ -97,14 +115,6 @@ const commissionFixedModel = useStringNumberModel(
 const priceMultiplierModel = useStringNumberModel(
   toRef(state, 'price_multiplier'),
 );
-const creditLimitModel = useStringNumberModel(toRef(creditState, 'limit'));
-const creditDaysModel = useRequiredIntegerModel(toRef(creditState, 'days'));
-const creditExtensionModel = useRequiredIntegerModel(
-  toRef(creditState, 'extension'),
-);
-const creditRemisionToleranceModel = useRequiredIntegerModel(
-  toRef(creditState, 'remision_tolerance'),
-);
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -147,17 +157,14 @@ async function loadDetail(id: number) {
     Object.assign(creditState, emptyCreditState(), mapClientCreditForm(raw));
     Object.assign(creditSummary, emptyCreditSummary(), mapClientCreditSummary(raw));
 
-    const clientType = String(mapped.client_type ?? raw.client_type ?? '');
     const creditId =
       resolveCreditId(raw) ??
       (creditSummary.credit_id != null ? creditSummary.credit_id : null);
 
-    if (clientType === 'CREDIT' && creditId != null) {
+    if (creditId != null) {
       await loadCreditDetail(creditId);
-    } else if (clientType === 'CREDIT' && creditId == null) {
-      if (creditState.limit) {
-        creditSummary.credit_limit = creditState.limit;
-      }
+    } else if (creditSummary.credit_limit == null && creditState.limit) {
+      creditSummary.credit_limit = creditState.limit;
     }
   } catch (e) {
     console.error(e);
@@ -259,26 +266,40 @@ const { mutate, asyncStatus } = useMutation({
     body,
     id,
     credit,
+    createCredit,
   }: {
     body: ClientCreateBody;
     id: number | null;
     credit?: ZodInfer<typeof creditFormSchema>;
+    createCredit?: boolean;
   }) => {
     if (id != null) {
       await $fetch(`/api/catalogue/client/update/${id}/`, {
         method: 'PUT',
         body,
       });
-      if (body.client_type === 'CREDIT' && credit) {
-        const creditId = editingCreditId.value;
-        if (creditId == null) {
-          throw new Error('No se encontró el crédito del cliente para actualizar.');
+      if (credit) {
+        if (createCredit) {
+          const created = await $fetch<Record<string, unknown>>('/api/credit/create/', {
+            method: 'POST',
+            body: creditFormToCreateBody(id, credit),
+          });
+          const newCreditId = resolveCreditId(created) ?? Number(created.id);
+          if (Number.isFinite(newCreditId) && newCreditId > 0) {
+            editingCreditId.value = newCreditId;
+            await loadCreditDetail(newCreditId);
+          }
+        } else {
+          const creditId = editingCreditId.value;
+          if (creditId == null) {
+            throw new Error('No se encontró el crédito del cliente para actualizar.');
+          }
+          await $fetch(`/api/credit/update/${creditId}/`, {
+            method: 'PUT',
+            body: creditFormToCreateBody(id, credit),
+          });
+          await loadCreditDetail(creditId);
         }
-        await $fetch(`/api/credit/update/${creditId}/`, {
-          method: 'PUT',
-          body: creditFormToCreateBody(id, credit),
-        });
-        await loadCreditDetail(creditId);
       }
       return;
     }
@@ -337,14 +358,16 @@ function buildSubmitBody(data: ZodInfer<typeof clientCreateSchema>): ClientCreat
 }
 
 function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
-  const body = buildSubmitBody(payload.data);
+  let body = buildSubmitBody(payload.data);
+  const creatingCredit =
+    isEdit.value
+    && !hasLinkedCredit.value
+    && !hasCreditData.value
+    && isCreditFormFilled(creditState);
+  const updatingCredit = isEdit.value && hasLinkedCredit.value;
+  const creditOnCreate = !isEdit.value && body.client_type === 'CREDIT';
 
-  if (body.client_type === 'CREDIT') {
-    if (isEdit.value && !hasLinkedCredit.value) {
-      mutate({ body, id: editingId.value });
-      return;
-    }
-
+  if (creatingCredit || updatingCredit || creditOnCreate) {
     const creditResult = creditFormSchema.safeParse(creditState);
     if (!creditResult.success) {
       const issue = creditResult.error.issues[0];
@@ -356,10 +379,16 @@ function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
       if (isEdit.value) editTab.value = 'credit';
       return;
     }
+
+    if (creatingCredit && body.client_type !== 'CREDIT') {
+      body = { ...body, client_type: 'CREDIT' };
+    }
+
     mutate({
       body,
       id: editingId.value,
       credit: creditResult.data,
+      createCredit: creatingCredit,
     });
     return;
   }
@@ -576,27 +605,17 @@ async function requestSubmit() {
 
           <template #credit>
             <CatalogClientCreditTabPanel
-              v-if="hasLinkedCredit"
+              v-if="showCreditPanel"
               v-model:is-active="state.is_active!"
               v-model:credit-state="creditState"
               :client-name="state.name"
               :credit-summary="creditSummary"
             />
-            <div
+            <CatalogClientCreditFormSection
               v-else
-              class="flex flex-col items-center justify-center gap-2 py-16 text-center text-sm"
-            >
-              <UIcon
-                name="i-lucide-landmark"
-                class="size-10 text-muted opacity-60"
-              />
-              <p class="font-medium text-default">
-                Sin línea de crédito
-              </p>
-              <p class="max-w-sm text-muted">
-                Este cliente no tiene un registro de crédito vinculado.
-              </p>
-            </div>
+              v-model:credit-state="creditState"
+              intro="Completa los datos para registrar una línea de crédito."
+            />
           </template>
         </UTabs>
 
@@ -740,51 +759,10 @@ async function requestSubmit() {
           </UFormField>
         </section>
 
-        <section v-if="showCreateCreditSection" class="space-y-4">
-          <h3
-            class="text-xs font-semibold uppercase tracking-wider text-primary"
-          >
-            Crédito
-          </h3>
-          <UFormField label="Límite de crédito" required>
-            <UInputNumber
-              v-model="creditLimitModel"
-              v-bind="catalogCurrencyInputProps"
-            />
-          </UFormField>
-          <div class="grid grid-cols-1 gap-2">
-            <UFormField label="Días de crédito" required>
-              <UInputNumber
-                v-model="creditDaysModel"
-                v-bind="catalogIntegerInputProps"
-              />
-            </UFormField>
-            <UFormField label="Prórroga (días)" required>
-              <UInputNumber
-                v-model="creditExtensionModel"
-                v-bind="catalogIntegerInputProps"
-              />
-            </UFormField>
-            <UFormField label="Tolerancia remisión (días)" required>
-              <UInputNumber
-                v-model="creditRemisionToleranceModel"
-                v-bind="catalogIntegerInputProps"
-              />
-            </UFormField>
-          </div>
-          <UFormField name="requires_purchase_order">
-            <UCheckbox
-              v-model="creditState.requires_purchase_order"
-              label="El cliente requiere orden de compra"
-            />
-          </UFormField>
-          <UFormField name="is_blocked">
-            <UCheckbox
-              v-model="creditState.is_blocked"
-              label="Bloquear crédito del cliente"
-            />
-          </UFormField>
-        </section>
+        <CatalogClientCreditFormSection
+          v-if="showCreateCreditSection"
+          v-model:credit-state="creditState"
+        />
 
         <section class="space-y-4">
           <h3

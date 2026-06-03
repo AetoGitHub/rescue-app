@@ -14,6 +14,10 @@ describe('resolveCreditId', () => {
     expect(resolveCreditId({ credit: { id: 7 } })).toBe(7);
   });
 
+  it('reads credit as numeric FK', () => {
+    expect(resolveCreditId({ credit: 12 })).toBe(12);
+  });
+
   it('reads id from credit detail payload', () => {
     expect(
       resolveCreditId({
@@ -74,5 +78,25 @@ describe('mapClientCreditSummary', () => {
 
     expect(summary.due_soon_amount).toBe(25);
     expect(summary.due_soon_invoices_count).toBe(1);
+  });
+
+  it('reads metrics from nested credit object', () => {
+    const summary = mapClientCreditSummary({
+      client_type: 'CREDIT',
+      credit: {
+        limit: '75000.00',
+        credit_used: '1200.00',
+        credit_available: 73800,
+        credit_info: {
+          overdue: { amount: 100, count: 1 },
+          upcoming: { amount: 0, count: 0 },
+        },
+      },
+    });
+
+    expect(summary.credit_limit).toBe('75000.00');
+    expect(summary.credit_used).toBe('1200.00');
+    expect(summary.credit_available).toBe(73800);
+    expect(summary.overdue_invoices_count).toBe(1);
   });
 });

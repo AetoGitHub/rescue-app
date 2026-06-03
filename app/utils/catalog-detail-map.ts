@@ -100,17 +100,44 @@ function mapCreditInfoBuckets(raw: Record<string, unknown>): {
   };
 }
 
+function creditNestedRecord(
+  raw: Record<string, unknown>,
+): Record<string, unknown> | null {
+  const credit = raw.credit;
+  if (typeof credit === 'object' && credit != null) {
+    return credit as Record<string, unknown>;
+  }
+  return null;
+}
+
+/** Merges top-level client fields with nested `credit` object for summary mapping. */
+function mergeClientCreditRaw(raw: Record<string, unknown>): Record<string, unknown> {
+  const nested = creditNestedRecord(raw);
+  if (nested == null) return raw;
+  return {
+    ...raw,
+    ...nested,
+    credit_info: nested.credit_info ?? raw.credit_info,
+  };
+}
+
 export function resolveCreditId(raw: Record<string, unknown>): number | null {
   const direct = raw.credit_id ?? raw.creditId;
   if (direct != null && direct !== '') {
     const id = Number(direct);
     return Number.isFinite(id) ? id : null;
   }
-  if (typeof raw.credit === 'object' && raw.credit != null) {
-    const nestedId = (raw.credit as Record<string, unknown>).id;
-    if (nestedId != null && nestedId !== '') {
-      const id = Number(nestedId);
-      return Number.isFinite(id) ? id : null;
+  const credit = raw.credit;
+  if (credit != null && credit !== '') {
+    if (typeof credit === 'object') {
+      const nestedId = (credit as Record<string, unknown>).id;
+      if (nestedId != null && nestedId !== '') {
+        const id = Number(nestedId);
+        return Number.isFinite(id) ? id : null;
+      }
+    } else {
+      const id = Number(credit);
+      if (Number.isFinite(id) && id > 0) return id;
     }
   }
   const selfId = raw.id;
@@ -161,10 +188,11 @@ export function mapCreditDetail(raw: Record<string, unknown>): {
 export function mapClientCreditSummary(
   raw: Record<string, unknown>,
 ): ClientCreditSummary {
-  const limit = raw.credit_limit ?? raw.limit;
-  const used = raw.credit_used;
-  const available = raw.credit_available;
-  const info = mapCreditInfoBuckets(raw);
+  const merged = mergeClientCreditRaw(raw);
+  const limit = merged.credit_limit ?? merged.limit;
+  const used = merged.credit_used;
+  const available = merged.credit_available;
+  const info = mapCreditInfoBuckets(merged);
   const creditId = resolveCreditId(raw);
 
   return {
