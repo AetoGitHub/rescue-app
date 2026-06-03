@@ -35,7 +35,7 @@ const fetchCancellationReasonDropdown: CatalogDropdownFetcher = (
 <template>
   <UModal
     v-model:open="open"
-    title="Cancelar administrativamente"
+    title="Cancelar"
     :ui="{ content: 'max-w-md' }"
   >
     <template #body>

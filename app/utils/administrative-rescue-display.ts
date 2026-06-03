@@ -4,6 +4,7 @@ import {
 } from '~/constants/administrative-kanban';
 import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
+import { RESCUE_PAYMENT_METHOD_OPTIONS } from '~/constants/rescue-operative-flow';
 
 export function getBillingStatusLabel(
   status: AdministrativeBillingStatus | string,
@@ -50,4 +51,16 @@ export function getAdministrativeOperativeStatusLabel(
     OPERATIONAL_KANBAN_COLUMNS.find((column) => column.status === status)
       ?.title ?? String(status)
   );
+}
+
+export function getRescuePaymentMethodLabel(
+  method: string | null | undefined,
+): string {
+  const trimmed = method?.trim();
+  if (!trimmed) return '—';
+
+  const match = RESCUE_PAYMENT_METHOD_OPTIONS.find(
+    (option) => option.value === trimmed,
+  );
+  return match?.label ?? trimmed;
 }

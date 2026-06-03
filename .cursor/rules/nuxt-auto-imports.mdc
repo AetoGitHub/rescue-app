@@ -47,6 +47,22 @@ import type { RescueRequestFormState } from '~/schemas/rescue-create';
 import { z } from 'zod';
 ```
 
+## Nested `rescue-detail` components
+
+Nuxt builds the template tag from **folder path + filename** and removes duplicate segments.
+
+| Path | Filename | Tag in template |
+|------|----------|-----------------|
+| `administrative/rescue-detail/` | `ManagementSection.vue` | `<AdministrativeRescueDetailManagementSection>` |
+| `operational/rescue-detail/` | `FooterActions.vue` | `<OperationalRescueDetailFooterActions>` |
+
+Rules for `*/rescue-detail/`:
+
+- Do **not** repeat the domain prefix in the filename (`AdministrativeManagementSection.vue` inside `administrative/rescue-detail/` becomes `AdministrativeRescueDetailAdministrativeManagementSection`).
+- Prefer short names: `GeneralTab.vue`, `IssueRemittanceModal.vue`. Billing progress uses `UStepper` inside `ManagementSection.vue`, not a custom stepper component.
+- Lazy modals: prefix `Lazy` + resolved name, e.g. `LazyAdministrativeRescueDetailIssueRemittanceModal`.
+- After renames, run `pnpm run postinstall` and check `.nuxt/components.d.ts` for the exact tag.
+
 ## When editing files
 
 - Do not add redundant imports for components, composables, or utils.

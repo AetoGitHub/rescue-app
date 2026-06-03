@@ -1,9 +1,11 @@
+import type { StepperItem } from '@nuxt/ui';
 import {
   ADMINISTRATIVE_LINEAR_STEPS,
   RESCUE_ADMINISTRATIVE_BUTTON_LABELS,
   RESCUE_ADMINISTRATIVE_REMISSION_ALERT,
 } from '~/constants/rescue-administrative-flow';
 import type { AdministrativeBillingStatus } from '~/constants/administrative-kanban';
+import { getBillingStatusLabel } from '~/utils/administrative-rescue-display';
 import type { AdministrativeRescueDetail } from '~/interfaces/rescue/administrative';
 import type {
   RescueAdministrativeFlowContext,
@@ -71,6 +73,25 @@ export function getAdministrativeStepperSteps(
   }
 
   return ADMINISTRATIVE_LINEAR_STEPS.CASH;
+}
+
+const ADMINISTRATIVE_STEPPER_ICONS: Partial<
+  Record<AdministrativeBillingStatus, string>
+> = {
+  unattended: 'i-lucide-inbox',
+  in_remittance: 'i-lucide-file-text',
+  invoiced: 'i-lucide-receipt',
+  paid: 'i-lucide-circle-check',
+};
+
+export function getAdministrativeStepperItems(
+  steps: AdministrativeBillingStatus[],
+): StepperItem[] {
+  return steps.map((status, index) => ({
+    title: getBillingStatusLabel(status),
+    icon: ADMINISTRATIVE_STEPPER_ICONS[status],
+    value: index,
+  }));
 }
 
 export function isPurchaseOrderBlockingInvoice(

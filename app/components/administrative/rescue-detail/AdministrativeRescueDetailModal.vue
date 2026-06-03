@@ -14,9 +14,9 @@ import {
 
 const open = ref(false);
 const rescueId = ref<number | null>(null);
-const previewDetail = ref<ReturnType<typeof cardToAdministrativePreviewDetail> | null>(
-  null,
-);
+const previewDetail = ref<ReturnType<
+  typeof cardToAdministrativePreviewDetail
+> | null>(null);
 const activeTab = ref<RescueDetailTabValue>('general');
 const previousTab = ref<RescueDetailTabValue>('general');
 const evidenceModalOpen = ref(false);
@@ -30,9 +30,7 @@ function isEvidenceTab(tab: RescueDetailTabValue): boolean {
 const { detail, isInitialLoading, errorMessage, refresh } =
   useRescueAdministrativeDetail(rescueId);
 
-const displayDetail = computed(
-  () => detail.value ?? previewDetail.value,
-);
+const displayDetail = computed(() => detail.value ?? previewDetail.value);
 
 const quoteDetail = computed(() =>
   displayDetail.value
@@ -168,14 +166,8 @@ defineExpose({ open: openDetail });
     :ui="{ content: 'max-w-6xl' }"
   >
     <template #body>
-      <div
-        v-if="open && rescueId != null"
-        class="space-y-4"
-      >
-        <div
-          v-if="isInitialLoading"
-          class="space-y-4"
-        >
+      <div v-if="open && rescueId != null" class="space-y-4">
+        <div v-if="isInitialLoading" class="space-y-4">
           <USkeleton class="h-8 w-64" />
           <USkeleton class="h-24 w-full" />
           <USkeleton class="h-96 w-full" />
@@ -185,10 +177,7 @@ defineExpose({ open: openDetail });
           v-else-if="errorMessage && !detail"
           class="flex flex-col items-center gap-3 py-12 text-center"
         >
-          <UIcon
-            name="i-lucide-triangle-alert"
-            class="size-10 text-error"
-          />
+          <UIcon name="i-lucide-triangle-alert" class="size-10 text-error" />
           <p class="text-sm text-muted">
             {{ errorMessage }}
           </p>
@@ -209,21 +198,11 @@ defineExpose({ open: openDetail });
               variant="subtle"
               class="uppercase"
             >
-              <UIcon
-                :name="serviceTypeBadge.icon"
-                class="size-3.5"
-              />
+              <UIcon :name="serviceTypeBadge.icon" class="size-3.5" />
               {{ serviceTypeBadge.label }}
             </UBadge>
-            <UBadge
-              color="warning"
-              variant="outline"
-              class="uppercase"
-            >
-              <UIcon
-                name="i-lucide-clock"
-                class="size-3.5"
-              />
+            <UBadge color="warning" variant="outline" class="uppercase">
+              <UIcon name="i-lucide-clock" class="size-3.5" />
               {{ operativeStatusLabel }}
             </UBadge>
             <UBadge
@@ -232,15 +211,12 @@ defineExpose({ open: openDetail });
               variant="outline"
               class="uppercase"
             >
-              <UIcon
-                name="i-lucide-receipt"
-                class="size-3.5"
-              />
+              <UIcon name="i-lucide-receipt" class="size-3.5" />
               {{ billingBadge.label }}
             </UBadge>
           </div>
 
-          <AdministrativeManagementSection
+          <LazyAdministrativeRescueDetailManagementSection
             :detail="displayDetail"
             :flow-context="flowContext"
             :purchase-order-highlight="purchaseOrderHighlight"
@@ -285,20 +261,14 @@ defineExpose({ open: openDetail });
           </UTabs>
         </template>
 
-        <p
-          v-else
-          class="py-12 text-center text-sm text-muted"
-        >
+        <p v-else class="py-12 text-center text-sm text-muted">
           No se pudo cargar el detalle
         </p>
       </div>
     </template>
 
-    <template
-      v-if="displayDetail && flowContext && !isInitialLoading"
-      #footer
-    >
-      <AdministrativeFooterActions
+    <template v-if="displayDetail && flowContext && !isInitialLoading" #footer>
+      <AdministrativeRescueDetailFooterActions
         :context="flowContext"
         :loading="isUpdating"
         @action="handleAction"
@@ -306,7 +276,7 @@ defineExpose({ open: openDetail });
     </template>
   </UModal>
 
-  <LazyAdministrativeIssueRemittanceModal
+  <LazyAdministrativeRescueDetailIssueRemittanceModal
     v-if="remittanceModalOpen"
     v-model:open="remittanceModalOpen"
     v-model:form="remittanceForm"
@@ -315,7 +285,7 @@ defineExpose({ open: openDetail });
     @submit="submitRemittance"
   />
 
-  <LazyAdministrativeRegisterInvoiceModal
+  <LazyAdministrativeRescueDetailRegisterInvoiceModal
     v-if="invoiceModalOpen"
     v-model:open="invoiceModalOpen"
     v-model:form="invoiceForm"
@@ -324,7 +294,7 @@ defineExpose({ open: openDetail });
     @submit="submitInvoice('register_invoice')"
   />
 
-  <LazyAdministrativeApplyPaymentModal
+  <LazyAdministrativeRescueDetailApplyPaymentModal
     v-if="paymentModalOpen"
     v-model:open="paymentModalOpen"
     v-model:form="paymentForm"
@@ -332,7 +302,7 @@ defineExpose({ open: openDetail });
     @submit="submitPayment"
   />
 
-  <LazyAdministrativeAdminCancelModal
+  <LazyAdministrativeRescueDetailAdminCancelModal
     v-if="cancelModalOpen"
     v-model:open="cancelModalOpen"
     v-model:cancellation-reason-id="cancellationReasonId"
@@ -340,7 +310,7 @@ defineExpose({ open: openDetail });
     @submit="submitAdminCancel"
   />
 
-  <LazyAdministrativeOpenWarrantyConfirmModal
+  <LazyAdministrativeRescueDetailOpenWarrantyConfirmModal
     v-if="warrantyModalOpen"
     v-model:open="warrantyModalOpen"
     :loading="isUpdating"

@@ -24,8 +24,8 @@ export const RESCUE_ADMINISTRATIVE_BUTTON_LABELS = {
   skipToInvoiced: 'Pasar a facturado',
   registerInvoice: 'Registrar factura',
   applyPayment: 'Aplicar pago',
-  adminCancel: 'Cancelar administrativamente',
-  openWarranty: 'Abrir garantía',
+  adminCancel: 'Cancelar',
+  openWarranty: 'Abrir Garantía administrativa',
   savePurchaseOrder: 'Guardar OC',
 } as const;
 

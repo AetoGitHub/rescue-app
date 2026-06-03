@@ -4,6 +4,7 @@ import {
   getAdministrativeFooterActions,
   getAdministrativeRemissionAlert,
   getAdministrativeStepperCurrentIndex,
+  getAdministrativeStepperItems,
   getAdministrativeStepperSteps,
   isAdministrativeLinearStepperVisible,
   isPurchaseOrderBlockingInvoice,
@@ -46,6 +47,37 @@ describe('getAdministrativeStepperSteps', () => {
       ctx({ billing_status: 'unattended', client_type: 'CASH' }),
     );
     expect(steps).toEqual(['unattended', 'invoiced', 'paid']);
+  });
+});
+
+describe('getAdministrativeStepperItems', () => {
+  it('maps credit flow to four stepper items with kanban titles', () => {
+    const steps = getAdministrativeStepperSteps(
+      ctx({ billing_status: 'unattended', client_type: 'CREDIT' }),
+    );
+    const items = getAdministrativeStepperItems(steps);
+    expect(items).toHaveLength(4);
+    expect(items.map((item) => item.title)).toEqual([
+      'Sin atender',
+      'En remisión',
+      'Facturado',
+      'Pagado',
+    ]);
+    expect(items.map((item) => item.value)).toEqual([0, 1, 2, 3]);
+    expect(items[0]?.icon).toBe('i-lucide-inbox');
+  });
+
+  it('maps cash flow to three stepper items without remittance', () => {
+    const steps = getAdministrativeStepperSteps(
+      ctx({ billing_status: 'unattended', client_type: 'CASH' }),
+    );
+    const items = getAdministrativeStepperItems(steps);
+    expect(items).toHaveLength(3);
+    expect(items.map((item) => item.title)).toEqual([
+      'Sin atender',
+      'Facturado',
+      'Pagado',
+    ]);
   });
 });
 

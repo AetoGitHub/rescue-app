@@ -8,6 +8,7 @@ import {
   getAdministrativeFooterActions,
   getAdministrativeRemissionAlert,
   getAdministrativeStepperCurrentIndex,
+  getAdministrativeStepperItems,
   getAdministrativeStepperSteps,
   isAdministrativeLinearStepperVisible,
   showOperativeWarningBanner,
@@ -50,6 +51,10 @@ const currentStepIndex = computed(() =>
     stepperSteps.value,
     props.flowContext.billing_status,
   ),
+);
+
+const stepperItems = computed(() =>
+  getAdministrativeStepperItems(stepperSteps.value),
 );
 
 const showStepper = computed(() =>
@@ -98,10 +103,19 @@ function onAction(id: RescueAdministrativeActionId) {
       :ui="{ root: 'border border-info/30' }"
     />
 
-    <AdministrativeBillingStepper
-      v-if="showStepper && stepperSteps.length > 0"
-      :steps="stepperSteps"
-      :current-index="currentStepIndex"
+    <UStepper
+      v-if="showStepper && stepperItems.length > 0"
+      :model-value="currentStepIndex"
+      :items="stepperItems"
+      disabled
+      size="sm"
+      class="w-full"
+      :ui="{ title: 'uppercase tracking-wide text-xs' }"
+    />
+
+    <AdministrativeRescueDetailPaidSummaryPanel
+      v-if="detail.billing_status === 'paid'"
+      :detail="detail"
     />
 
     <div
@@ -111,11 +125,19 @@ function onAction(id: RescueAdministrativeActionId) {
       <UButton
         v-for="action in primaryActions"
         :key="action.id"
-        :color="action.color ?? 'primary'"
+        :color="
+          action.id === 'open_warranty' && detail.billing_status === 'paid'
+            ? 'neutral'
+            : (action.color ?? 'primary')
+        "
         :disabled="action.disabled || loading"
         :label="action.label"
         :loading="loading && action.primary"
-        variant="solid"
+        :variant="
+          action.id === 'open_warranty' && detail.billing_status === 'paid'
+            ? 'outline'
+            : 'solid'
+        "
         @click="onAction(action.id)"
       />
       <UButton
@@ -135,18 +157,6 @@ function onAction(id: RescueAdministrativeActionId) {
       icon="i-lucide-alert-triangle"
       title="El servicio operativo no está cerrado conforme"
       description="Revisa el estatus operativo antes de continuar con facturación."
-    />
-
-    <UAlert
-      v-if="detail.billing_status === 'paid'"
-      color="success"
-      icon="i-lucide-check-circle"
-      title="Servicio completado y pagado"
-      :description="
-        detail.payment_amount
-          ? `Pago: ${formatRescueCardMoney(detail.payment_amount)} — ${detail.payment_date ?? ''}`
-          : 'Ciclo administrativo cerrado.'
-      "
     />
 
     <UAlert
@@ -209,7 +219,7 @@ function onAction(id: RescueAdministrativeActionId) {
     </UCard>
 
     <UCard
-      v-if="['invoiced', 'paid'].includes(detail.billing_status) && detail.invoice_number"
+      v-if="detail.billing_status === 'invoiced' && detail.invoice_number"
       :ui="{ body: 'space-y-3 p-4' }"
     >
       <p class="text-sm font-medium">
@@ -218,10 +228,7 @@ function onAction(id: RescueAdministrativeActionId) {
       <p class="text-xs text-muted">
         {{ detail.invoice_date }} — {{ formatRescueCardMoney(detail.invoice_amount) }}
       </p>
-      <div
-        v-if="detail.billing_status === 'invoiced'"
-        class="flex flex-wrap gap-2"
-      >
+      <div class="flex flex-wrap gap-2">
         <UButton
           color="neutral"
           icon="i-lucide-file-text"
