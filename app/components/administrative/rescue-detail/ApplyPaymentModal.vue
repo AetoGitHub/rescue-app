@@ -80,23 +80,30 @@ async function uploadFile(file: File) {
       webhookUrl.value,
     );
     uploadedEvidenceUrl.value = url;
+    pendingFile.value = file;
   } catch (error) {
     toast.add({
       title: RESCUE_EVIDENCE_MODAL_COPY.uploadError,
       description: getFetchErrorMessage(error),
       color: 'error',
     });
+    pendingFile.value = null;
   } finally {
     isUploading.value = false;
-    pendingFile.value = null;
   }
 }
 
 async function onPendingFilesChange(value: File | File[] | null | undefined) {
   const file = fileFromUploadValue(value);
-  if (!file || isBusy.value) return;
+  if (!file) {
+    if (!isUploading.value) {
+      uploadedEvidenceUrl.value = '';
+      form.value.payment_evidence_url = '';
+    }
+    return;
+  }
+  if (isUploading.value || props.loading) return;
 
-  pendingFile.value = null;
   await uploadFile(file);
 }
 
@@ -142,7 +149,7 @@ watch(open, (isOpen) => {
           size="lg"
           layout="list"
           :dropzone="true"
-          :preview="false"
+          :preview="true"
           :accept="acceptAttribute"
           :disabled="isBusy"
           :description="uploadDescription"
@@ -157,7 +164,7 @@ watch(open, (isOpen) => {
               : 'Subir comprobante'
           "
           class="w-full"
-          :ui="{ base: 'min-h-40', files: 'hidden' }"
+          :ui="{ base: 'min-h-40' }"
           @update:model-value="onPendingFilesChange"
         />
 
