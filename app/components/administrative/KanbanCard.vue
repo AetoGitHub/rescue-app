@@ -73,7 +73,7 @@ function onCardClick() {
 
     <USeparator />
 
-    <div class="flex items-end justify-between gap-2">
+    <div class="flex items-center justify-between gap-2">
       <UBadge
         :color="supplierBadgeColor as 'neutral'"
         icon="i-lucide-truck"
