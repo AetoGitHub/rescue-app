@@ -37,10 +37,14 @@ export const RESCUE_ADMINISTRATIVE_REVERT_CANCELLATION_PATH = (
   rescueId: number,
 ) => `/api/rescue/administrative/revert_cancellation/${rescueId}/`;
 
+export const RESCUE_UNLOCK_CREATE_PATH = (rescueId: number) =>
+  `/api/rescue/unlock/${rescueId}/create/`;
+
 export const RESCUE_ADMINISTRATIVE_UPDATE_METHOD = 'POST' as const;
 
 export const RESCUE_ADMINISTRATIVE_TOAST = {
   updated: 'Solicitud administrativa actualizada',
+  unlocked: 'Rescate desbloqueado',
   purchaseOrderRequired:
     'Registra la orden de compra del cliente antes de facturar',
   documentComingSoon: 'Envío de documento disponible próximamente',

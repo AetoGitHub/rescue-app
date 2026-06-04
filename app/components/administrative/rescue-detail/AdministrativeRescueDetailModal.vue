@@ -202,29 +202,37 @@ defineExpose({ open: openDetail });
         </div>
 
         <template v-else-if="displayDetail && flowContext">
-          <div class="flex flex-wrap items-center gap-2">
-            <UBadge
-              v-if="serviceTypeBadge"
-              :color="serviceTypeBadge.color as 'info'"
-              variant="subtle"
-              class="uppercase"
-            >
-              <UIcon :name="serviceTypeBadge.icon" class="size-3.5" />
-              {{ serviceTypeBadge.label }}
-            </UBadge>
-            <UBadge color="warning" variant="outline" class="uppercase">
-              <UIcon name="i-lucide-clock" class="size-3.5" />
-              {{ operativeStatusLabel }}
-            </UBadge>
-            <UBadge
-              v-if="billingBadge"
-              :color="billingBadge.color"
-              variant="outline"
-              class="uppercase"
-            >
-              <UIcon name="i-lucide-receipt" class="size-3.5" />
-              {{ billingBadge.label }}
-            </UBadge>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <UBadge
+                v-if="serviceTypeBadge"
+                :color="serviceTypeBadge.color as 'info'"
+                variant="subtle"
+                class="uppercase"
+              >
+                <UIcon :name="serviceTypeBadge.icon" class="size-3.5" />
+                {{ serviceTypeBadge.label }}
+              </UBadge>
+              <UBadge color="warning" variant="outline" class="uppercase">
+                <UIcon name="i-lucide-clock" class="size-3.5" />
+                {{ operativeStatusLabel }}
+              </UBadge>
+              <UBadge
+                v-if="billingBadge"
+                :color="billingBadge.color"
+                variant="outline"
+                class="uppercase"
+              >
+                <UIcon name="i-lucide-receipt" class="size-3.5" />
+                {{ billingBadge.label }}
+              </UBadge>
+            </div>
+            <AdministrativeRescueDetailUnlockRescue
+              v-if="rescueId != null"
+              :rescue-id="rescueId"
+              :unlocked-until="displayDetail.unlocked_until"
+              @success="refresh()"
+            />
           </div>
 
           <LazyAdministrativeRescueDetailManagementSection

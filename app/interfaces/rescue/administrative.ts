@@ -91,6 +91,11 @@ export interface RescueAdministrativeRevertCancellationBody {
   reacceptance_reason: number;
 }
 
+export interface RescueUnlockBody {
+  unlocked_until: string;
+  reason: string;
+}
+
 export interface RescueAdministrativeFlowContext {
   billing_status: AdministrativeBillingStatus;
   operative_status: OperationalRescueStatus;
