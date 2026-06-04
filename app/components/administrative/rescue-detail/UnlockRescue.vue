@@ -16,6 +16,7 @@ const emit = defineEmits<{
 
 const open = ref(false);
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
+const pendingUnlockedUntil = ref<string | null>(null);
 
 function emptyState(): RescueUnlockFormState {
   return {
@@ -33,28 +34,60 @@ const minUnlockDatetimeLocal = computed(() => getRescueUnlockMinDatetimeLocal())
 
 const unlockFormSchema = computed(() => createRescueUnlockFormSchema());
 
-const isCurrentlyUnlocked = computed(() =>
-  isRescueUnlockActive(props.unlockedUntil),
+const resolvedUnlockedUntil = computed(() =>
+  coalesceUnlockUntil(props.unlockedUntil, pendingUnlockedUntil.value),
+);
+
+const { isActive: isCurrentlyUnlocked } = useRescueUnlockCountdown(
+  () => resolvedUnlockedUntil.value,
 );
 
 const unlockedUntilLabel = computed(() => {
-  if (!props.unlockedUntil?.trim()) return '';
-  const date = new Date(props.unlockedUntil);
-  if (Number.isNaN(date.getTime())) return props.unlockedUntil;
+  if (!resolvedUnlockedUntil.value?.trim()) return '';
+  const date = new Date(resolvedUnlockedUntil.value);
+  if (Number.isNaN(date.getTime())) return resolvedUnlockedUntil.value;
   return date.toLocaleString('es-MX');
 });
 
+watch(
+  () => props.unlockedUntil,
+  (value) => {
+    if (value?.trim()) pendingUnlockedUntil.value = null;
+  },
+);
+
+watch(
+  () => props.rescueId,
+  () => {
+    pendingUnlockedUntil.value = null;
+    open.value = false;
+  },
+);
+
 function resetForm() {
   Object.assign(state, emptyState());
+}
+
+function openUnlockModal() {
+  if (isCurrentlyUnlocked.value) return;
+  open.value = true;
 }
 
 watch(open, (isOpen) => {
   if (!isOpen) resetForm();
 });
 
+watch(isCurrentlyUnlocked, (active) => {
+  if (active) open.value = false;
+});
+
 async function onSubmit(event: FormSubmitEvent<RescueUnlockFormState>) {
+  if (isRescueUnlockActive(resolvedUnlockedUntil.value)) return;
+
   try {
-    await unlockRescue(toRescueUnlockApiBody(event.data));
+    const body = toRescueUnlockApiBody(event.data);
+    await unlockRescue(body);
+    pendingUnlockedUntil.value = body.unlocked_until;
     open.value = false;
     emit('success');
   } catch {
@@ -68,30 +101,27 @@ async function requestSubmit() {
 </script>
 
 <template>
-  <UModal
-    v-model:open="open"
-    title="Desbloquear rescate"
-    :ui="{ content: 'max-w-md' }"
+  <UTooltip
+    :disabled="!isCurrentlyUnlocked"
+    :text="`Desbloqueo vigente hasta ${unlockedUntilLabel}`"
   >
     <UButton
       icon="i-lucide-lock-open"
       label="Desbloquear rescate"
       color="neutral"
       variant="outline"
-      @click="open = true"
+      :disabled="isCurrentlyUnlocked"
+      @click="openUnlockModal"
     />
+  </UTooltip>
 
+  <UModal
+    v-model:open="open"
+    title="Desbloquear rescate"
+    :ui="{ content: 'max-w-md' }"
+  >
     <template #body>
       <div class="space-y-4">
-        <UAlert
-          v-if="isCurrentlyUnlocked"
-          color="info"
-          icon="i-lucide-lock-open"
-          title="Rescate desbloqueado"
-          :description="`Vigente hasta ${unlockedUntilLabel}`"
-          variant="subtle"
-        />
-
         <UForm
           ref="formRef"
           :state="state"

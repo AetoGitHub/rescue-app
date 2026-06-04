@@ -40,11 +40,51 @@ export function toRescueUnlockApiBody(
   };
 }
 
+/** First non-empty unlock deadline from administrative detail, list preview, or post-unlock. */
+export function coalesceUnlockUntil(
+  ...values: Array<string | null | undefined>
+): string | null {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+}
+
 export function isRescueUnlockActive(
   unlockedUntil: string | null | undefined,
   now = Date.now(),
 ): boolean {
-  if (!unlockedUntil?.trim()) return false;
-  const date = new Date(unlockedUntil);
-  return !Number.isNaN(date.getTime()) && date.getTime() > now;
+  return getRescueUnlockRemainingMs(unlockedUntil, now) > 0;
+}
+
+export function getRescueUnlockRemainingMs(
+  unlockedUntil: string | null | undefined,
+  now = Date.now(),
+): number {
+  if (!unlockedUntil?.trim()) return 0;
+  const end = new Date(unlockedUntil).getTime();
+  if (Number.isNaN(end)) return 0;
+  return Math.max(0, end - now);
+}
+
+export function formatRescueUnlockRemaining(
+  unlockedUntil: string | null | undefined,
+  now = Date.now(),
+): string {
+  const remainingMs = getRescueUnlockRemainingMs(unlockedUntil, now);
+  if (remainingMs <= 0) return '0s';
+
+  const totalSeconds = Math.ceil(remainingMs / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (totalMinutes < 60) {
+    return seconds > 0 ? `${totalMinutes}m ${seconds}s` : `${totalMinutes}m`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }

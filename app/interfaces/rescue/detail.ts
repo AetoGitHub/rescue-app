@@ -18,6 +18,7 @@ export interface RescueCardDetail {
   admin_status: string;
   created_at: string;
   phase_started_at: string;
+  unlocked_until: string | null;
   client_type: string;
   client_phone: string | null;
   seller_id: number | null;

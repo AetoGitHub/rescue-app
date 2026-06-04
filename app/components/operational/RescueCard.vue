@@ -54,13 +54,6 @@ const approvedAmount = computed(() => {
   return amount ? formatRescueCardMoney(amount) : null;
 });
 
-const collectedTotal = computed(() => {
-  if (props.card.operative_status !== 'closed') return null;
-  const total = (props.card as { total_collected?: string | null })
-    .total_collected;
-  return total ? formatRescueCardMoney(total) : null;
-});
-
 const showQuickChat = computed(
   () => props.card.operative_status !== 'requested',
 );
@@ -133,6 +126,17 @@ function onCardClick() {
       </span>
     </div>
 
+    <div
+      v-if="isRescueUnlockActive(card.unlocked_until)"
+      class="flex justify-start"
+    >
+      <RescueUnlockCountdown
+        :unlocked-until="card.unlocked_until"
+        compact
+        :show-expired-hint="false"
+      />
+    </div>
+
     <div class="flex items-center justify-between gap-2 text-xs text-muted">
       <UTooltip :text="chatBadge.tooltip">
         <UBadge
@@ -172,14 +176,6 @@ function onCardClick() {
     >
       Aprobado:
       <span class="font-medium text-highlighted">{{ approvedAmount }}</span>
-    </div>
-
-    <div
-      v-else-if="card.operative_status === 'closed' && collectedTotal"
-      class="text-xs text-muted"
-    >
-      Total cobrado:
-      <span class="font-medium text-highlighted">{{ collectedTotal }}</span>
     </div>
 
     <USeparator />

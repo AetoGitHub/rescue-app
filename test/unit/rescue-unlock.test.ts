@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { RESCUE_UNLOCK_CREATE_PATH } from '~/constants/rescue-administrative-flow';
 import { createRescueUnlockFormSchema } from '~/utils/rescue-unlock-form';
 import {
+  coalesceUnlockUntil,
+  formatRescueUnlockRemaining,
   getRescueUnlockMinDatetimeLocal,
+  getRescueUnlockRemainingMs,
   isRescueUnlockActive,
   isRescueUnlockDatetimeLocalInPast,
   toDatetimeLocalInputValue,
@@ -113,6 +116,48 @@ describe('toRescueUnlockApiBody', () => {
         now,
       ),
     ).toThrow('La fecha no puede estar en el pasado');
+  });
+});
+
+describe('coalesceUnlockUntil', () => {
+  it('returns first non-empty value', () => {
+    expect(coalesceUnlockUntil(null, '', '2026-06-10T18:00:00Z')).toBe(
+      '2026-06-10T18:00:00Z',
+    );
+    expect(coalesceUnlockUntil('2026-06-11T10:00:00Z', '2026-06-10T18:00:00Z')).toBe(
+      '2026-06-11T10:00:00Z',
+    );
+    expect(coalesceUnlockUntil(null, undefined, '  ')).toBe(null);
+  });
+});
+
+describe('formatRescueUnlockRemaining', () => {
+  const now = Date.parse('2026-06-04T15:00:00.000Z');
+
+  it('returns 0s when expired or null', () => {
+    expect(formatRescueUnlockRemaining(null, now)).toBe('0s');
+    expect(formatRescueUnlockRemaining('2026-06-03T12:00:00.000Z', now)).toBe(
+      '0s',
+    );
+  });
+
+  it('formats seconds and minutes', () => {
+    expect(
+      formatRescueUnlockRemaining('2026-06-04T15:00:45.000Z', now),
+    ).toBe('45s');
+    expect(
+      formatRescueUnlockRemaining('2026-06-04T15:02:30.000Z', now),
+    ).toBe('2m 30s');
+    expect(
+      formatRescueUnlockRemaining('2026-06-04T16:05:00.000Z', now),
+    ).toBe('1h 5m');
+  });
+
+  it('getRescueUnlockRemainingMs clamps at zero', () => {
+    expect(getRescueUnlockRemainingMs('2026-06-03T12:00:00.000Z', now)).toBe(0);
+    expect(getRescueUnlockRemainingMs('2026-06-04T15:01:00.000Z', now)).toBe(
+      60_000,
+    );
   });
 });
 

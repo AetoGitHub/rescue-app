@@ -74,6 +74,13 @@ function readString(raw: Record<string, unknown>, key: string): string | null {
   return String(value);
 }
 
+function readUnlockUntil(raw: Record<string, unknown>): string | null {
+  return (
+    readString(raw, 'unlocked_until')
+    ?? readString(raw, 'unlockedUntil')
+  );
+}
+
 function readNumber(raw: Record<string, unknown>, key: string): number | null {
   const value = raw[key];
   if (value == null || value === '') return null;
@@ -95,7 +102,7 @@ export function unwrapAdministrativeDetailRecord(
 
   const record = payload as Record<string, unknown>;
 
-  for (const key of ['data', 'result', 'card'] as const) {
+  for (const key of ['data', 'result', 'card', 'rescue'] as const) {
     const nested = record[key];
     if (nested != null && typeof nested === 'object' && !Array.isArray(nested)) {
       return nested as Record<string, unknown>;
@@ -136,7 +143,7 @@ export function mapAdministrativeCardFromApi(
     created_at: String(raw.created_at ?? ''),
     phase_started_at: phaseStartedAt,
     last_comment_at: readString(raw, 'last_comment_at'),
-    unlocked_until: readString(raw, 'unlocked_until'),
+    unlocked_until: readUnlockUntil(raw),
     service_date:
       readString(raw, 'service_date')
       ?? readString(raw, 'close_date')
@@ -157,6 +164,7 @@ export function mapAdministrativeDetailFromApi(
 
   return {
     ...card,
+    unlocked_until: readUnlockUntil(raw) ?? card.unlocked_until,
     net_profit:
       readString(raw, 'net_profit') ?? readString(raw, 'provider_profit'),
     sale_price:
@@ -257,6 +265,7 @@ export function administrativeDetailToCardDetail(
     admin_status: 'working',
     created_at: detail.created_at,
     phase_started_at: detail.phase_started_at ?? detail.created_at,
+    unlocked_until: detail.unlocked_until,
     client_type: detail.client_type,
     client_phone: detail.client_phone,
     seller_id: detail.seller_id,

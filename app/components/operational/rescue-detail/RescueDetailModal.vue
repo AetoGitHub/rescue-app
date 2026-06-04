@@ -73,6 +73,21 @@ const adminStatusBadge = computed(() => {
   return getAdminStatusBadge(detail.value.admin_status);
 });
 
+const { capturedUntil, hasEditSession } = useRescueUnlockEditSession(
+  () => detail.value?.unlocked_until,
+  open,
+);
+
+const unlockCountdownUntil = computed(
+  () => capturedUntil.value ?? detail.value?.unlocked_until ?? null,
+);
+
+const showUnlockCountdown = computed(
+  () =>
+    isRescueUnlockActive(detail.value?.unlocked_until)
+    || hasEditSession.value,
+);
+
 function openDetail(id: number) {
   rescueId.value = id;
   activeTab.value = 'general';
@@ -176,6 +191,10 @@ defineExpose({ open: openDetail });
             <UIcon name="i-lucide-alert-circle" class="size-3.5" />
             {{ adminStatusBadge.label }}
           </UBadge>
+          <RescueUnlockCountdown
+            v-if="showUnlockCountdown"
+            :unlocked-until="unlockCountdownUntil"
+          />
         </div>
 
         <div
@@ -241,6 +260,7 @@ defineExpose({ open: openDetail });
               v-if="activeTab === 'quote'"
               :detail="detail"
               :rescue-id="rescueId!"
+              :unlock-session-until="capturedUntil"
               @saved="refresh()"
             />
           </template>

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import {
   canEditRescueQuote,
+  canEditRescueQuoteWithUnlock,
   hasRescueQuoteOnDetail,
 } from '~/utils/rescue-quote-tab';
 
@@ -26,6 +27,7 @@ function minimalDetail(
     admin_status: 'invalid',
     created_at: '2026-01-01T00:00:00Z',
     phase_started_at: '2026-01-01T00:00:00Z',
+    unlocked_until: null,
     client_type: 'CASH',
     client_phone: null,
     seller_id: null,
@@ -77,5 +79,24 @@ describe('rescue quote detail tab helpers', () => {
     });
     expect(hasRescueQuoteOnDetail(detail)).toBe(true);
     expect(canEditRescueQuote(detail)).toBe(true);
+  });
+
+  it('canEditRescueQuoteWithUnlock allows terminal status with unlock session', () => {
+    const detail = minimalDetail({
+      operative_status: 'closed',
+      sub_total: '1500.00',
+    });
+    expect(canEditRescueQuoteWithUnlock(detail, null)).toBe(false);
+    expect(
+      canEditRescueQuoteWithUnlock(detail, '2026-06-10T18:00:00.000Z'),
+    ).toBe(true);
+  });
+
+  it('canEditRescueQuoteWithUnlock keeps non-terminal edit without session', () => {
+    const detail = minimalDetail({
+      operative_status: 'in_progress',
+      sub_total: '1500.00',
+    });
+    expect(canEditRescueQuoteWithUnlock(detail, null)).toBe(true);
   });
 });

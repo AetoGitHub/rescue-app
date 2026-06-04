@@ -19,6 +19,7 @@ export interface RescueCardBase {
   created_at: string;
   phase_started_at: string;
   last_comment_at?: string | null;
+  unlocked_until: string | null;
 }
 
 export interface RescueCardWaitingAdvance extends RescueCardBase {

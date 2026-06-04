@@ -6,12 +6,13 @@ import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import type { RescueQuoteDetail } from '~/interfaces/rescue/quote';
-import { canEditRescueQuote } from '~/utils/rescue-quote-tab';
+import { canEditRescueQuoteWithUnlock } from '~/utils/rescue-quote-tab';
 import { mapRescueQuoteDetailFromApi } from '~/utils/rescue-quote-detail-map';
 
 const props = defineProps<{
   detail: RescueCardDetail;
   rescueId: number;
+  unlockSessionUntil?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -22,7 +23,19 @@ const serviceType = computed(
   () => props.detail.service_type as RescueServiceType,
 );
 
-const editable = computed(() => canEditRescueQuote(props.detail));
+const editable = computed(() =>
+  canEditRescueQuoteWithUnlock(props.detail, props.unlockSessionUntil),
+);
+
+const unlockCountdownUntil = computed(
+  () => props.unlockSessionUntil ?? props.detail.unlocked_until,
+);
+
+const showUnlockCountdown = computed(
+  () =>
+    isRescueUnlockActive(props.detail.unlocked_until)
+    || Boolean(props.unlockSessionUntil?.trim()),
+);
 
 const quoteLines = ref<RescueQuoteLine[]>(
   initialQuoteLinesForServiceType(serviceType.value),
@@ -107,6 +120,12 @@ function formatApiMoney(value: string | number | null | undefined): string {
 
 <template>
   <div class="flex flex-col gap-4">
+    <RescueUnlockCountdown
+      v-if="showUnlockCountdown"
+      :unlocked-until="unlockCountdownUntil"
+      :show-expired-hint="Boolean(unlockSessionUntil?.trim())"
+    />
+
     <div v-if="isPending" class="flex items-center justify-center gap-2 py-12">
       <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-muted" />
       <span class="text-sm text-muted">Cargando cotización…</span>

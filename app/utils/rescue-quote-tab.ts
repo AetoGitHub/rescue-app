@@ -15,6 +15,15 @@ export function canEditRescueQuote(detail: RescueCardDetail): boolean {
   );
 }
 
+/** Allows quote edit in terminal statuses when an unlock edit session is active. */
+export function canEditRescueQuoteWithUnlock(
+  detail: RescueCardDetail,
+  unlockSessionUntil: string | null | undefined,
+): boolean {
+  if (canEditRescueQuote(detail)) return true;
+  return Boolean(unlockSessionUntil?.trim());
+}
+
 /** Fallback hint from card detail before GET quote resolves. */
 export function hasRescueQuoteOnDetail(detail: RescueCardDetail): boolean {
   return hasRescueQuote(rescueDetailToFlowContext(detail));

@@ -33,6 +33,13 @@ const { detail, isInitialLoading, errorMessage, refresh } =
 
 const displayDetail = computed(() => detail.value ?? previewDetail.value);
 
+const effectiveUnlockedUntil = computed(() =>
+  coalesceUnlockUntil(
+    detail.value?.unlocked_until,
+    previewDetail.value?.unlocked_until,
+  ),
+);
+
 const quoteDetail = computed(() =>
   displayDetail.value
     ? administrativeDetailToCardDetail(displayDetail.value)
@@ -230,7 +237,7 @@ defineExpose({ open: openDetail });
             <AdministrativeRescueDetailUnlockRescue
               v-if="rescueId != null"
               :rescue-id="rescueId"
-              :unlocked-until="displayDetail.unlocked_until"
+              :unlocked-until="effectiveUnlockedUntil"
               @success="refresh()"
             />
           </div>

@@ -140,6 +140,18 @@ describe('mapAdministrativeDetailFromApi', () => {
     expect(detail.seller_name).toBe('Osvaldo Valentin Garcia');
     expect(detail.latitude).toBe('19.435861');
     expect(detail.longitude).toBe('-99.143275');
+    expect(detail.unlocked_until).toBeNull();
+  });
+
+  it('maps unlocked_until on detail and administrative card detail bridge', () => {
+    const detail = mapAdministrativeDetailFromApi({
+      ...ADMINISTRATIVE_DETAIL_API_EXAMPLE,
+      unlocked_until: '2026-06-10T18:00:00Z',
+    });
+    expect(detail.unlocked_until).toBe('2026-06-10T18:00:00Z');
+
+    const cardDetail = administrativeDetailToCardDetail(detail);
+    expect(cardDetail.unlocked_until).toBe('2026-06-10T18:00:00Z');
   });
 
   it('maps client_billing_type from API field', () => {
