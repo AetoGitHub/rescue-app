@@ -1,5 +1,6 @@
 import type { AdministrativeBillingStatus } from '~/constants/administrative-kanban';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
+import type { ClientBillingType } from '~/constants/rescue-administrative-flow';
 import type { RescueServiceType } from '~/interfaces/rescue';
 
 export type RescueAdministrativeActionId =
@@ -45,12 +46,15 @@ export interface AdministrativeRescueCard {
 
 export interface AdministrativeRescueDetail extends AdministrativeRescueCard {
   client_type: string;
+  /** API `client_billing_type`; alias `billing_type` on legacy payloads */
+  client_billing_type: ClientBillingType;
+  /** @deprecated Prefer client_billing_type */
   billing_type: string | null;
   client_phone: string | null;
   seller_name: string | null;
   requires_purchase_order: boolean;
   purchase_order_number: string | null;
-  /** Derived until API exposes it */
+  /** Derived from client_billing_type (MANUAL | REMISSION) */
   requires_remision: boolean;
   remittance_number: string | null;
   invoice_number: string | null;
@@ -91,7 +95,7 @@ export interface RescueAdministrativeFlowContext {
   billing_status: AdministrativeBillingStatus;
   operative_status: OperationalRescueStatus;
   client_type: string;
-  billing_type: string | null;
+  client_billing_type: ClientBillingType;
   requires_remision: boolean;
   requires_purchase_order: boolean;
   purchase_order_number: string | null;

@@ -21,7 +21,7 @@ function ctx(
   return {
     operative_status: 'closed',
     client_type: 'CASH',
-    billing_type: 'DIRECT_INVOICE',
+    client_billing_type: 'DIRECT_INVOICE',
     requires_remision: false,
     requires_purchase_order: false,
     purchase_order_number: null,
@@ -32,9 +32,12 @@ function ctx(
 }
 
 describe('getAdministrativeStepperSteps', () => {
-  it('includes remittance for credit clients', () => {
+  it('includes remittance for MANUAL billing', () => {
     const steps = getAdministrativeStepperSteps(
-      ctx({ billing_status: 'unattended', client_type: 'CREDIT' }),
+      ctx({
+        billing_status: 'unattended',
+        client_billing_type: 'MANUAL',
+      }),
     );
     expect(steps).toEqual([
       'unattended',
@@ -44,18 +47,31 @@ describe('getAdministrativeStepperSteps', () => {
     ]);
   });
 
-  it('skips remittance for cash clients', () => {
+  it('includes remittance for REMISSION billing', () => {
     const steps = getAdministrativeStepperSteps(
-      ctx({ billing_status: 'unattended', client_type: 'CASH' }),
+      ctx({
+        billing_status: 'unattended',
+        client_billing_type: 'REMISSION',
+      }),
+    );
+    expect(steps).toHaveLength(4);
+  });
+
+  it('skips remittance for DIRECT_INVOICE billing', () => {
+    const steps = getAdministrativeStepperSteps(
+      ctx({
+        billing_status: 'unattended',
+        client_billing_type: 'DIRECT_INVOICE',
+      }),
     );
     expect(steps).toEqual(['unattended', 'invoiced', 'paid']);
   });
 });
 
 describe('getAdministrativeStepperItems', () => {
-  it('maps credit flow to four stepper items with kanban titles', () => {
+  it('maps MANUAL flow to four stepper items with kanban titles', () => {
     const steps = getAdministrativeStepperSteps(
-      ctx({ billing_status: 'unattended', client_type: 'CREDIT' }),
+      ctx({ billing_status: 'unattended', client_billing_type: 'MANUAL' }),
     );
     const items = getAdministrativeStepperItems(steps);
     expect(items).toHaveLength(4);
@@ -69,9 +85,9 @@ describe('getAdministrativeStepperItems', () => {
     expect(items[0]?.icon).toBe('i-lucide-inbox');
   });
 
-  it('maps cash flow to three stepper items without remittance', () => {
+  it('maps DIRECT_INVOICE flow to three stepper items without remittance', () => {
     const steps = getAdministrativeStepperSteps(
-      ctx({ billing_status: 'unattended', client_type: 'CASH' }),
+      ctx({ billing_status: 'unattended', client_billing_type: 'DIRECT_INVOICE' }),
     );
     const items = getAdministrativeStepperItems(steps);
     expect(items).toHaveLength(3);
@@ -84,21 +100,27 @@ describe('getAdministrativeStepperItems', () => {
 });
 
 describe('getValidAdminBillingTransitions', () => {
-  it('allows invoiced from unattended for credit', () => {
+  it('allows invoiced from unattended for MANUAL', () => {
     expect(
-      getValidAdminBillingTransitions('CREDIT', 'unattended'),
+      getValidAdminBillingTransitions('MANUAL', 'unattended'),
     ).toContain('invoiced');
   });
 
-  it('allows warranty from paid for credit', () => {
+  it('does not allow invoiced from unattended for REMISSION', () => {
     expect(
-      getValidAdminBillingTransitions('CREDIT', 'paid'),
+      getValidAdminBillingTransitions('REMISSION', 'unattended'),
+    ).not.toContain('invoiced');
+  });
+
+  it('allows warranty from paid for MANUAL', () => {
+    expect(
+      getValidAdminBillingTransitions('MANUAL', 'paid'),
     ).toContain('warranty');
   });
 
-  it('does not allow warranty from paid for public', () => {
+  it('does not allow warranty from paid for PUBLIC', () => {
     expect(
-      getValidAdminBillingTransitions('PUBLIC', 'paid'),
+      getValidAdminBillingTransitions('DIRECT_INVOICE', 'paid', 'PUBLIC'),
     ).not.toContain('warranty');
   });
 });
@@ -107,7 +129,11 @@ describe('isAdminActionAllowed', () => {
   it('blocks open_warranty for public clients', () => {
     expect(
       isAdminActionAllowed(
-        ctx({ billing_status: 'paid', client_type: 'PUBLIC' }),
+        ctx({
+          billing_status: 'paid',
+          client_type: 'PUBLIC',
+          client_billing_type: 'DIRECT_INVOICE',
+        }),
         'open_warranty',
       ),
     ).toBe(false);
@@ -131,26 +157,39 @@ describe('isAdminActionAllowed', () => {
     ).toBe(true);
   });
 
-  it('allows skip to invoiced when remision required for credit', () => {
+  it('allows skip to invoiced for MANUAL unattended', () => {
     expect(
       isAdminActionAllowed(
         ctx({
           billing_status: 'unattended',
-          client_type: 'CREDIT',
+          client_billing_type: 'MANUAL',
           requires_remision: true,
         }),
         'skip_to_invoiced',
       ),
     ).toBe(true);
   });
+
+  it('blocks skip to invoiced for REMISSION unattended', () => {
+    expect(
+      isAdminActionAllowed(
+        ctx({
+          billing_status: 'unattended',
+          client_billing_type: 'REMISSION',
+          requires_remision: true,
+        }),
+        'skip_to_invoiced',
+      ),
+    ).toBe(false);
+  });
 });
 
 describe('getAdministrativeFooterActions', () => {
-  it('offers remittance and skip to invoiced when requires_remision', () => {
+  it('offers remittance and skip to invoiced for MANUAL unattended', () => {
     const actions = getAdministrativeFooterActions(
       ctx({
         billing_status: 'unattended',
-        client_type: 'CREDIT',
+        client_billing_type: 'MANUAL',
         requires_remision: true,
       }),
     );
@@ -159,14 +198,29 @@ describe('getAdministrativeFooterActions', () => {
     expect(ids).toContain('skip_to_invoiced');
   });
 
-  it('offers skip to invoiced without remision', () => {
+  it('offers only remittance for REMISSION unattended', () => {
     const actions = getAdministrativeFooterActions(
       ctx({
         billing_status: 'unattended',
+        client_billing_type: 'REMISSION',
+        requires_remision: true,
+      }),
+    );
+    const ids = actions.map((a) => a.id);
+    expect(ids).toContain('issue_remittance');
+    expect(ids).not.toContain('skip_to_invoiced');
+  });
+
+  it('offers only skip to invoiced for DIRECT_INVOICE unattended', () => {
+    const actions = getAdministrativeFooterActions(
+      ctx({
+        billing_status: 'unattended',
+        client_billing_type: 'DIRECT_INVOICE',
         requires_remision: false,
       }),
     );
-    expect(actions[0]?.id).toBe('skip_to_invoiced');
+    const ids = actions.map((a) => a.id);
+    expect(ids).toEqual(['skip_to_invoiced', 'admin_cancel']);
   });
 
   it('disables register invoice when OC missing', () => {
@@ -183,14 +237,22 @@ describe('getAdministrativeFooterActions', () => {
 
   it('offers open warranty only when paid for credit', () => {
     const actions = getAdministrativeFooterActions(
-      ctx({ billing_status: 'paid', client_type: 'CREDIT' }),
+      ctx({
+        billing_status: 'paid',
+        client_type: 'CREDIT',
+        client_billing_type: 'MANUAL',
+      }),
     );
     expect(actions.map((a) => a.id)).toEqual(['open_warranty']);
   });
 
   it('offers no actions when paid for public', () => {
     const actions = getAdministrativeFooterActions(
-      ctx({ billing_status: 'paid', client_type: 'PUBLIC' }),
+      ctx({
+        billing_status: 'paid',
+        client_type: 'PUBLIC',
+        client_billing_type: 'DIRECT_INVOICE',
+      }),
     );
     expect(actions).toEqual([]);
   });
@@ -233,7 +295,7 @@ describe('showOperativeWarningBanner', () => {
 describe('getAdministrativeStepperCurrentIndex', () => {
   it('returns index for current billing status', () => {
     const steps = getAdministrativeStepperSteps(
-      ctx({ billing_status: 'unattended', client_type: 'CREDIT' }),
+      ctx({ billing_status: 'unattended', client_billing_type: 'MANUAL' }),
     );
     expect(
       getAdministrativeStepperCurrentIndex(steps, 'in_remittance'),
@@ -242,36 +304,36 @@ describe('getAdministrativeStepperCurrentIndex', () => {
 });
 
 describe('getAdministrativeRemissionAlert', () => {
-  it('returns alert when unattended and remision required', () => {
+  it('returns manual alert when unattended and MANUAL billing', () => {
     const alert = getAdministrativeRemissionAlert(
       ctx({
         billing_status: 'unattended',
-        requires_remision: true,
+        client_billing_type: 'MANUAL',
       }),
     );
-    expect(alert?.title).toBe('Requiere remisión');
+    expect(alert?.title).toBe('Modo manual');
   });
 
-  it('returns null when remision not required', () => {
+  it('returns null for DIRECT_INVOICE unattended', () => {
     expect(
       getAdministrativeRemissionAlert(
         ctx({
           billing_status: 'unattended',
-          requires_remision: false,
+          client_billing_type: 'DIRECT_INVOICE',
         }),
       ),
     ).toBeNull();
   });
 
-  it('returns alert for credit unattended from context', () => {
+  it('returns strict remission alert for REMISSION unattended', () => {
     const alert = getAdministrativeRemissionAlert(
       ctx({
         billing_status: 'unattended',
-        client_type: 'CREDIT',
-        requires_remision: true,
+        client_billing_type: 'REMISSION',
       }),
     );
     expect(alert?.title).toBe('Requiere remisión');
+    expect(alert?.description).toContain('emitir remisión');
   });
 });
 

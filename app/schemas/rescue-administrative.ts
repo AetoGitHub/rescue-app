@@ -20,7 +20,7 @@ export const rescueAdministrativePaymentSchema = z.object({
   payment_evidence_url: z
     .string()
     .trim()
-    .min(1, 'Sube o ingresa el comprobante de pago'),
+    .min(1, 'Sube el comprobante de pago'),
 });
 
 export const rescueAdminRevertCancelSchema = z.object({

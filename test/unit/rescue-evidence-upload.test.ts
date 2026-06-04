@@ -5,6 +5,7 @@ import {
   RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
 } from '~/constants/rescue-evidence-api';
 import {
+  buildAdministrativePaymentStoragePath,
   buildFirebaseGeneralUploadUrl,
   buildRescueEvidenceStoragePath,
   extractUploadedFileUrl,
@@ -22,6 +23,14 @@ describe('buildRescueEvidenceStoragePath', () => {
     expect(
       buildRescueEvidenceStoragePath(42, RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER),
     ).toBe('rescue-2/rescue/42/payment_provider');
+  });
+});
+
+describe('buildAdministrativePaymentStoragePath', () => {
+  it('builds client payment evidence path for admin flow', () => {
+    expect(buildAdministrativePaymentStoragePath(42)).toBe(
+      'rescue-2/rescue/42/payment_client',
+    );
   });
 });
 

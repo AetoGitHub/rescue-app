@@ -21,7 +21,7 @@ const form = defineModel<RescueAdministrativePaymentFormState>('form', {
   required: true,
 });
 
-const copy = RESCUE_EVIDENCE_MODAL_COPY[RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER];
+const adminCopy = RESCUE_EVIDENCE_MODAL_COPY.admin_payment;
 
 const runtimeConfig = useRuntimeConfig();
 const webhookUrl = computed(
@@ -31,8 +31,10 @@ const webhookUrl = computed(
 );
 
 const toast = useToast();
-const pendingFiles = ref<File[]>([]);
+const pendingFile = ref<File | null>(null);
 const isUploading = ref(false);
+/** URL de Firebase; no se muestra en pantalla, solo se envía al aplicar pago. */
+const uploadedEvidenceUrl = ref('');
 
 const acceptAttribute = computed(() =>
   rescueEvidenceAcceptAttribute(RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER),
@@ -40,33 +42,44 @@ const acceptAttribute = computed(() =>
 
 const isBusy = computed(() => isUploading.value || props.loading);
 
+const hasUploadedEvidence = computed(() =>
+  Boolean(uploadedEvidenceUrl.value.trim()),
+);
+
+const uploadDescription = computed(() => {
+  if (isUploading.value) return RESCUE_EVIDENCE_MODAL_COPY.uploading;
+  if (hasUploadedEvidence.value) return adminCopy.uploadSuccessHint;
+  return adminCopy.dropzoneDescription;
+});
+
+function fileFromUploadValue(
+  value: File | File[] | null | undefined,
+): File | undefined {
+  if (value == null) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
+
 async function uploadFile(file: File) {
-  if (
-    !isRescueEvidenceFileAllowed(file, RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER)
-  ) {
+  if (!isAdministrativePaymentFileAllowed(file)) {
     toast.add({
-      title: copy.invalidFile,
+      title: adminCopy.invalidFile,
       color: 'error',
     });
     return;
   }
 
   isUploading.value = true;
+  uploadedEvidenceUrl.value = '';
+  form.value.payment_evidence_url = '';
+
   try {
-    const storagePath = buildRescueEvidenceStoragePath(
-      props.rescueId,
-      RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
-    );
+    const storagePath = buildAdministrativePaymentStoragePath(props.rescueId);
     const url = await uploadFileToFirebaseGeneral(
       file,
       storagePath,
       webhookUrl.value,
     );
-    form.value.payment_evidence_url = url;
-    toast.add({
-      title: copy.uploadSuccess,
-      color: 'success',
-    });
+    uploadedEvidenceUrl.value = url;
   } catch (error) {
     toast.add({
       title: RESCUE_EVIDENCE_MODAL_COPY.uploadError,
@@ -75,21 +88,33 @@ async function uploadFile(file: File) {
     });
   } finally {
     isUploading.value = false;
+    pendingFile.value = null;
   }
 }
 
-async function onPendingFilesChange(value: File[] | null | undefined) {
-  const files = value?.length ? [...value] : [];
-  const file = files[0];
+async function onPendingFilesChange(value: File | File[] | null | undefined) {
+  const file = fileFromUploadValue(value);
   if (!file || isBusy.value) return;
 
+  pendingFile.value = null;
   await uploadFile(file);
-  pendingFiles.value = [];
+}
+
+function onApplyPayment() {
+  if (!hasUploadedEvidence.value || isBusy.value) return;
+  form.value.payment_evidence_url = uploadedEvidenceUrl.value;
+  emit('submit');
+}
+
+function resetUploadState() {
+  uploadedEvidenceUrl.value = '';
+  form.value.payment_evidence_url = '';
+  pendingFile.value = null;
 }
 
 watch(open, (isOpen) => {
   if (!isOpen) {
-    pendingFiles.value = [];
+    resetUploadState();
   }
 });
 </script>
@@ -102,48 +127,47 @@ watch(open, (isOpen) => {
   >
     <template #body>
       <div class="space-y-4">
-        <UFormField
-          label="Comprobante de pago"
-          name="payment_evidence"
-          required
-        >
-          <UFileUpload
-            v-model="pendingFiles"
-            :accept="acceptAttribute"
-            :disabled="isBusy"
-            :description="
-              isUploading
-                ? RESCUE_EVIDENCE_MODAL_COPY.uploading
-                : 'PDF o imagen del comprobante'
-            "
-            icon="i-lucide-upload"
-            label="Subir comprobante"
-            @update:model-value="onPendingFilesChange"
-          />
-        </UFormField>
+        <UAlert
+          v-if="hasUploadedEvidence && !isUploading"
+          color="success"
+          icon="i-lucide-circle-check"
+          :title="adminCopy.uploadSuccess"
+          :description="adminCopy.uploadSuccessHint"
+          variant="subtle"
+        />
 
-        <UFormField
-          label="URL del comprobante"
-          name="payment_evidence_url"
-          required
-          hint="O pega la URL si ya está alojada"
-        >
-          <UInput
-            v-model="form.payment_evidence_url"
-            class="w-full"
-            type="url"
-            placeholder="https://..."
-            :disabled="isBusy"
-          />
-        </UFormField>
+        <UFileUpload
+          v-model="pendingFile"
+          variant="area"
+          size="lg"
+          layout="list"
+          :dropzone="true"
+          :preview="false"
+          :accept="acceptAttribute"
+          :disabled="isBusy"
+          :description="uploadDescription"
+          :icon="
+            hasUploadedEvidence && !isUploading
+              ? 'i-lucide-circle-check'
+              : 'i-lucide-upload'
+          "
+          :label="
+            hasUploadedEvidence && !isUploading
+              ? 'Cambiar comprobante'
+              : 'Subir comprobante'
+          "
+          class="w-full"
+          :ui="{ base: 'min-h-40', files: 'hidden' }"
+          @update:model-value="onPendingFilesChange"
+        />
 
         <UButton
           block
           color="primary"
           label="Aplicar pago"
-          :disabled="isBusy || !form.payment_evidence_url.trim()"
+          :disabled="isBusy || !hasUploadedEvidence"
           :loading="loading || isUploading"
-          @click="emit('submit')"
+          @click="onApplyPayment"
         />
       </div>
     </template>

@@ -1,7 +1,9 @@
 import {
+  RESCUE_ADMIN_PAYMENT_STORAGE_FOLDER,
   RESCUE_EVIDENCE_PAYMENT_MAX_BYTES,
   RESCUE_EVIDENCE_SERVICE_MAX_BYTES,
   RESCUE_EVIDENCE_STORAGE_PREFIX,
+  RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
   RESCUE_EVIDENCE_TYPE_SERVICE,
 } from '~/constants/rescue-evidence-api';
 import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
@@ -59,6 +61,14 @@ export function buildRescueEvidenceStoragePath(
   const folder =
     type === RESCUE_EVIDENCE_TYPE_SERVICE ? 'services' : 'payment_provider';
   return `${RESCUE_EVIDENCE_STORAGE_PREFIX}/${rescueId}/${folder}`;
+}
+
+export function buildAdministrativePaymentStoragePath(rescueId: number): string {
+  return `${RESCUE_EVIDENCE_STORAGE_PREFIX}/${rescueId}/${RESCUE_ADMIN_PAYMENT_STORAGE_FOLDER}`;
+}
+
+export function isAdministrativePaymentFileAllowed(file: File): boolean {
+  return isRescueEvidenceFileAllowed(file, RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER);
 }
 
 /** Webhook URL with literal slashes in `path` (n8n spec), not %2F from URLSearchParams. */

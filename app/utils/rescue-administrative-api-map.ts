@@ -2,6 +2,10 @@ import {
   ADMINISTRATIVE_KANBAN_COLUMNS,
   type AdministrativeBillingStatus,
 } from '~/constants/administrative-kanban';
+import {
+  normalizeClientBillingType,
+  type ClientBillingType,
+} from '~/constants/rescue-administrative-flow';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type {
@@ -77,8 +81,8 @@ function readNumber(raw: Record<string, unknown>, key: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function deriveRequiresRemision(clientType: string): boolean {
-  return clientType === 'CREDIT';
+function deriveRequiresRemision(billingType: ClientBillingType): boolean {
+  return billingType === 'REMISSION' || billingType === 'MANUAL';
 }
 
 /** Unwrap administrative detail API payloads (flat or nested). */
@@ -145,7 +149,10 @@ export function mapAdministrativeDetailFromApi(
 ): AdministrativeRescueDetail {
   const card = mapAdministrativeCardFromApi(raw);
   const clientType = String(raw.client_type ?? 'CASH');
-  const billingType = readString(raw, 'billing_type');
+  const clientBillingType = normalizeClientBillingType(
+    readString(raw, 'client_billing_type')
+    ?? readString(raw, 'billing_type'),
+  );
 
   return {
     ...card,
@@ -154,7 +161,8 @@ export function mapAdministrativeDetailFromApi(
     sale_price:
       readString(raw, 'sale_price') ?? card.sale_price,
     client_type: clientType,
-    billing_type: billingType,
+    client_billing_type: clientBillingType,
+    billing_type: clientBillingType,
     client_phone: readString(raw, 'client_phone'),
     seller_name: readString(raw, 'seller_name'),
     requires_purchase_order: Boolean(
@@ -166,7 +174,7 @@ export function mapAdministrativeDetailFromApi(
     requires_remision:
       raw.requires_remision != null
         ? Boolean(raw.requires_remision)
-        : deriveRequiresRemision(clientType),
+        : deriveRequiresRemision(clientBillingType),
     remittance_number:
       readString(raw, 'remittance_number')
       ?? readString(raw, 'remittance_folio')
@@ -200,7 +208,8 @@ export function cardToAdministrativePreviewDetail(
   return {
     ...card,
     client_type: 'CASH',
-    billing_type: null,
+    client_billing_type: 'DIRECT_INVOICE',
+    billing_type: 'DIRECT_INVOICE',
     client_phone: null,
     seller_name: null,
     requires_purchase_order: false,

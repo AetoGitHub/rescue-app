@@ -112,7 +112,20 @@ describe('mapAdministrativeDetailFromApi', () => {
     expect(detail.longitude).toBe('-99.143275');
   });
 
-  it('derives requires_remision for credit clients', () => {
+  it('maps client_billing_type from API field', () => {
+    const detail = mapAdministrativeDetailFromApi({
+      id: 3,
+      folio: 'R-003',
+      client_type: 'CREDIT',
+      client_billing_type: 'REMISSION',
+      operative_status: 'closed',
+      admin_status: 'unattended',
+    });
+    expect(detail.client_billing_type).toBe('REMISSION');
+    expect(detail.requires_remision).toBe(true);
+  });
+
+  it('falls back to billing_type when client_billing_type is absent', () => {
     const detail = mapAdministrativeDetailFromApi({
       id: 3,
       folio: 'R-003',
@@ -121,10 +134,11 @@ describe('mapAdministrativeDetailFromApi', () => {
       operative_status: 'closed',
       admin_status: 'unattended',
     });
+    expect(detail.client_billing_type).toBe('MANUAL');
     expect(detail.requires_remision).toBe(true);
   });
 
-  it('derives requires_remision for credit without billing_type', () => {
+  it('defaults to DIRECT_INVOICE and no remision when billing type missing', () => {
     const detail = mapAdministrativeDetailFromApi({
       id: 14,
       folio: 'RES-2026-00014',
@@ -132,7 +146,19 @@ describe('mapAdministrativeDetailFromApi', () => {
       operative_status: 'closed',
       admin_status: 'unattended',
     });
-    expect(detail.requires_remision).toBe(true);
+    expect(detail.client_billing_type).toBe('DIRECT_INVOICE');
+    expect(detail.requires_remision).toBe(false);
+  });
+
+  it('does not require remision for DIRECT_INVOICE billing', () => {
+    const detail = mapAdministrativeDetailFromApi({
+      id: 15,
+      folio: 'R-015',
+      client_billing_type: 'DIRECT_INVOICE',
+      operative_status: 'closed',
+      admin_status: 'unattended',
+    });
+    expect(detail.requires_remision).toBe(false);
   });
 
   it('unwraps nested data envelope', () => {

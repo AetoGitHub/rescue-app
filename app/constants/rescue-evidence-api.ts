@@ -18,6 +18,9 @@ export const RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT =
 
 export const RESCUE_EVIDENCE_STORAGE_PREFIX = 'rescue-2/rescue';
 
+/** Administrative client payment evidence (change_admin_status), not provider evidence. */
+export const RESCUE_ADMIN_PAYMENT_STORAGE_FOLDER = 'payment_client';
+
 export const RESCUE_EVIDENCE_MODAL_COPY = {
   service: {
     title: (folio: string) => `Evidencia del Servicio ${folio}`,
@@ -41,6 +44,12 @@ export const RESCUE_EVIDENCE_MODAL_COPY = {
     fileCountLabel: (count: number) =>
       `${count} comprobante${count === 1 ? '' : 's'}`,
     uploadSuccess: 'Comprobante guardado',
+    invalidFile: 'Solo imágenes o PDF dentro del tamaño máximo',
+  },
+  admin_payment: {
+    dropzoneDescription: 'PDF o imagen del comprobante (máx 25MB)',
+    uploadSuccess: 'Comprobante subido correctamente',
+    uploadSuccessHint: 'Ya puedes aplicar el pago.',
     invalidFile: 'Solo imágenes o PDF dentro del tamaño máximo',
   },
   downloadAll: 'Descargar todo',

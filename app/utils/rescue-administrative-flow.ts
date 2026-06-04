@@ -3,8 +3,10 @@ import {
   ADMIN_BILLING_FLOWS,
   ADMINISTRATIVE_LINEAR_STEPS,
   type AdminClientType,
+  normalizeClientBillingType,
   RESCUE_ADMINISTRATIVE_BUTTON_LABELS,
-  RESCUE_ADMINISTRATIVE_REMISSION_ALERT,
+  RESCUE_ADMINISTRATIVE_MANUAL_BILLING_ALERT,
+  RESCUE_ADMINISTRATIVE_REMISSION_REQUIRED_ALERT,
 } from '~/constants/rescue-administrative-flow';
 import type { AdministrativeBillingStatus } from '~/constants/administrative-kanban';
 import { getBillingStatusLabel } from '~/utils/administrative-rescue-display';
@@ -23,7 +25,7 @@ export function administrativeDetailToFlowContext(
     billing_status: detail.billing_status,
     operative_status: detail.operative_status,
     client_type: detail.client_type,
-    billing_type: detail.billing_type,
+    client_billing_type: detail.client_billing_type,
     requires_remision: detail.requires_remision,
     requires_purchase_order: detail.requires_purchase_order,
     purchase_order_number: detail.purchase_order_number,
@@ -52,19 +54,6 @@ export function getAdministrativeStepperCurrentIndex(
   return index >= 0 ? index : 0;
 }
 
-export function getAdministrativeRemissionAlert(
-  ctx: RescueAdministrativeFlowContext,
-): { title: string; description: string } | null {
-  if (ctx.billing_status !== 'unattended' || !ctx.requires_remision) {
-    return null;
-  }
-
-  return {
-    title: RESCUE_ADMINISTRATIVE_REMISSION_ALERT.title,
-    description: RESCUE_ADMINISTRATIVE_REMISSION_ALERT.description,
-  };
-}
-
 export function normalizeAdminClientType(clientType: string): AdminClientType {
   const upper = clientType.trim().toUpperCase();
   if (upper === 'CREDIT' || upper === 'CASH' || upper === 'PUBLIC') {
@@ -73,18 +62,76 @@ export function normalizeAdminClientType(clientType: string): AdminClientType {
   return 'CASH';
 }
 
+function applyPublicClientTransitionOverrides(
+  clientType: AdminClientType,
+  billingStatus: AdministrativeBillingStatus,
+  transitions: AdministrativeBillingStatus[],
+): AdministrativeBillingStatus[] {
+  if (clientType !== 'PUBLIC') {
+    return transitions;
+  }
+
+  if (billingStatus === 'paid') {
+    return [];
+  }
+
+  return transitions.filter((target) => target !== 'warranty');
+}
+
 export function getAdministrativeStepperSteps(
   ctx: RescueAdministrativeFlowContext,
 ): AdministrativeBillingStatus[] {
-  return ADMINISTRATIVE_LINEAR_STEPS[normalizeAdminClientType(ctx.client_type)];
+  const billingType = normalizeClientBillingType(ctx.client_billing_type);
+  return ADMINISTRATIVE_LINEAR_STEPS[billingType];
 }
 
 export function getValidAdminBillingTransitions(
-  clientType: string,
+  clientBillingType: string,
   billingStatus: AdministrativeBillingStatus,
+  clientType = 'CASH',
 ): AdministrativeBillingStatus[] {
-  const normalized = normalizeAdminClientType(clientType);
-  return ADMIN_BILLING_FLOWS[normalized][billingStatus] ?? [];
+  const billing = normalizeClientBillingType(clientBillingType);
+  const base = ADMIN_BILLING_FLOWS[billing][billingStatus] ?? [];
+  return applyPublicClientTransitionOverrides(
+    normalizeAdminClientType(clientType),
+    billingStatus,
+    base,
+  );
+}
+
+function getValidTransitionsForContext(
+  ctx: RescueAdministrativeFlowContext,
+): AdministrativeBillingStatus[] {
+  return getValidAdminBillingTransitions(
+    ctx.client_billing_type,
+    ctx.billing_status,
+    ctx.client_type,
+  );
+}
+
+export function getAdministrativeRemissionAlert(
+  ctx: RescueAdministrativeFlowContext,
+): { title: string; description: string } | null {
+  if (ctx.billing_status !== 'unattended') {
+    return null;
+  }
+
+  const billingType = normalizeClientBillingType(ctx.client_billing_type);
+  if (billingType === 'MANUAL') {
+    return {
+      title: RESCUE_ADMINISTRATIVE_MANUAL_BILLING_ALERT.title,
+      description: RESCUE_ADMINISTRATIVE_MANUAL_BILLING_ALERT.description,
+    };
+  }
+
+  if (billingType === 'REMISSION') {
+    return {
+      title: RESCUE_ADMINISTRATIVE_REMISSION_REQUIRED_ALERT.title,
+      description: RESCUE_ADMINISTRATIVE_REMISSION_REQUIRED_ALERT.description,
+    };
+  }
+
+  return null;
 }
 
 export function isAdminActionAllowed(
@@ -99,22 +146,19 @@ export function isAdminActionAllowed(
     return ctx.billing_status === 'canceled';
   }
 
+  const transitions = getValidTransitionsForContext(ctx);
+
   if (actionId === 'issue_remittance') {
     return (
       ctx.billing_status === 'unattended'
-      && ctx.requires_remision
-      && getValidAdminBillingTransitions(ctx.client_type, ctx.billing_status).includes(
-        'in_remittance',
-      )
+      && transitions.includes('in_remittance')
     );
   }
 
   if (actionId === 'skip_to_invoiced') {
     return (
       ctx.billing_status === 'unattended'
-      && getValidAdminBillingTransitions(ctx.client_type, ctx.billing_status).includes(
-        'invoiced',
-      )
+      && transitions.includes('invoiced')
     );
   }
 
@@ -123,10 +167,7 @@ export function isAdminActionAllowed(
     return false;
   }
 
-  return getValidAdminBillingTransitions(
-    ctx.client_type,
-    ctx.billing_status,
-  ).includes(target);
+  return transitions.includes(target);
 }
 
 const ADMINISTRATIVE_STEPPER_ICONS: Partial<
@@ -175,6 +216,10 @@ export function getAdministrativeFooterActions(
 ): RescueAdministrativeFooterAction[] {
   const ocBlocked = isPurchaseOrderBlockingInvoice(ctx);
   const actions: RescueAdministrativeFooterAction[] = [];
+  const unattendedTransitions =
+    ctx.billing_status === 'unattended'
+      ? getValidTransitionsForContext(ctx)
+      : [];
 
   const candidates: Array<{
     id: RescueAdministrativeActionId;
@@ -184,10 +229,10 @@ export function getAdministrativeFooterActions(
   }> = [];
 
   if (ctx.billing_status === 'unattended') {
-    if (ctx.requires_remision) {
+    if (unattendedTransitions.includes('in_remittance')) {
       candidates.push({ id: 'issue_remittance', primary: true });
-      candidates.push({ id: 'skip_to_invoiced', primary: true });
-    } else {
+    }
+    if (unattendedTransitions.includes('invoiced')) {
       candidates.push({ id: 'skip_to_invoiced', primary: true });
     }
     candidates.push({ id: 'admin_cancel', color: 'error' });
@@ -233,4 +278,3 @@ export function getAdministrativeFooterActions(
 
   return actions;
 }
-
