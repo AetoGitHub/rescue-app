@@ -46,7 +46,7 @@ defineExpose({
         </span>
         <UBadge
           color="neutral"
-          variant="subtle"
+          variant="soft"
           size="sm"
           :label="String(count)"
         />
