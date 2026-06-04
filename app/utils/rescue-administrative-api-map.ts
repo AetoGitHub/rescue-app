@@ -127,7 +127,8 @@ export function mapAdministrativeCardFromApi(
     multiple_managers: Boolean(raw.multiple_managers),
     sub_total: subTotal,
     sale_price: subTotal,
-    net_profit: null,
+    net_profit:
+      readString(raw, 'net_profit') ?? readString(raw, 'provider_profit'),
     operative_status: String(
       raw.operative_status ?? 'closed',
     ) as OperationalRescueStatus,

@@ -60,6 +60,36 @@ describe('mapAdministrativeCardFromApi', () => {
     });
     expect(card.billing_status).toBe('unattended');
   });
+
+  it('maps net_profit from administrative cards list payload', () => {
+    const card = mapAdministrativeCardFromApi({
+      id: 14,
+      folio: 'RES-2026-00014',
+      service_type: 'rescue',
+      client_id: 2,
+      client_name: 'CLIENTE CON CREDITO',
+      client_billing_type: 'DIRECT_INVOICE',
+      supplier_id: 2,
+      supplier_name: 'REMOLQUES EL MENO',
+      sub_total: '110.00',
+      net_profit: '106.00',
+      created_at: '2026-06-01T20:07:18.033462Z',
+      unlocked_until: null,
+    });
+    expect(card.sub_total).toBe('110.00');
+    expect(card.sale_price).toBe('110.00');
+    expect(card.net_profit).toBe('106.00');
+  });
+
+  it('falls back to provider_profit for net_profit', () => {
+    const card = mapAdministrativeCardFromApi({
+      id: 5,
+      folio: 'R-005',
+      provider_profit: '90.50',
+      operative_status: 'closed',
+    });
+    expect(card.net_profit).toBe('90.50');
+  });
 });
 
 const ADMINISTRATIVE_DETAIL_API_EXAMPLE = {

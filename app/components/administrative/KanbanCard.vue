@@ -71,6 +71,8 @@ function onCardClick() {
       {{ card.client_name }}
     </p>
 
+    <USeparator />
+
     <div class="flex items-end justify-between gap-2">
       <UBadge
         :color="supplierBadgeColor as 'neutral'"
@@ -85,7 +87,7 @@ function onCardClick() {
           {{ salePrice }}
         </p>
         <p
-          class="text-xs tabular-nums"
+          class="text-xs tabular-nums font-mono"
           :class="hasUtil ? 'text-success font-medium' : 'text-muted'"
         >
           {{ utilLabel }}
