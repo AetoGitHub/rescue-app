@@ -10,6 +10,7 @@ const creditSnapshot: ClientCreditSnapshot = {
   client_type: 'CREDIT',
   credit_limit: '3000.00',
   credit_available: 3000,
+  loan_margin_percent: 20,
 };
 
 function filledLine(): RescueQuoteLine {

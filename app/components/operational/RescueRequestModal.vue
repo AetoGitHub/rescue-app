@@ -122,6 +122,7 @@ watch(
         client_type: String(raw.client_type ?? 'CASH'),
         credit_limit: summary.credit_limit,
         credit_available: summary.credit_available,
+        loan_margin_percent: resolveClientLoanMarginPercent(raw),
       };
     } catch {
       if (!active) return;
