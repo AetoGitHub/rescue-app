@@ -18,6 +18,8 @@ import {
 
 const toast = useToast();
 const queryCache = useQueryCache();
+const apiFetch = useApiFetch();
+const { assertClientCreditForQuote } = useCreditCheck();
 
 const open = ref(false);
 const currentStep = ref(0);
@@ -103,7 +105,10 @@ watch(
     });
 
     if (id == null) {
-      if (active) state.clientLabel = '';
+      if (active) {
+        state.clientLabel = '';
+        state.client_credit_snapshot = null;
+      }
       return;
     }
     try {
@@ -111,10 +116,17 @@ watch(
         `/api/catalogue/client/detail/${id}/`,
       );
       if (!active) return;
+      const summary = mapClientCreditSummary(raw);
       state.clientLabel = String(raw.name ?? '').trim() || `Cliente #${id}`;
+      state.client_credit_snapshot = {
+        client_type: String(raw.client_type ?? 'CASH'),
+        credit_limit: summary.credit_limit,
+        credit_available: summary.credit_available,
+      };
     } catch {
       if (!active) return;
       state.clientLabel = `Cliente #${id}`;
+      state.client_credit_snapshot = null;
     }
   },
 );
@@ -171,8 +183,22 @@ const { mutate, asyncStatus } = useMutation({
     form: RescueCreateFormOutput;
     companySettings: RescueRequestFormState['company_settings'];
   }) => {
+    const creditGate = await assertClientCreditForQuote(
+      payload.form.client,
+      payload.form.quote_lines,
+      payload.companySettings,
+    );
+    if (!creditGate.ok) {
+      toast.add({
+        title: 'Crédito insuficiente',
+        description: creditGate.message,
+        color: 'error',
+      });
+      return;
+    }
+
     const rescueBody = rescueFormToCreateBody(payload.form);
-    const rescue = await $fetch<RescueCreateResponse>('/api/rescue/', {
+    const rescue = await apiFetch<RescueCreateResponse>('/api/rescue/', {
       method: 'POST',
       body: rescueBody,
     });
@@ -185,7 +211,7 @@ const { mutate, asyncStatus } = useMutation({
 
     if (quoteBody) {
       try {
-        await $fetch<RescueQuoteCreateResponse>('/api/rescue/quote/create/', {
+        await apiFetch<RescueQuoteCreateResponse>('/api/rescue/quote/create/', {
           method: 'POST',
           body: quoteBody,
         });
@@ -260,6 +286,19 @@ function pickStepPayload(stepIndex: number) {
   }
 }
 
+function validateQuoteCredit(): boolean {
+  const warning = getWizardQuoteCreditWarning(
+    state.client_credit_snapshot,
+    state.quote_lines,
+    state.company_settings,
+  );
+  if (warning) {
+    stepError.value = warning.description;
+    return false;
+  }
+  return true;
+}
+
 function validateCurrentStep(): boolean {
   stepError.value = null;
   const kind = getWizardStepKind(currentStep.value, state.service_type);
@@ -273,6 +312,7 @@ function validateCurrentStep(): boolean {
     stepError.value = first?.message ?? 'Revisa los campos del paso actual';
     return false;
   }
+  if (kind === 'quote' && !validateQuoteCredit()) return false;
   return true;
 }
 
@@ -311,6 +351,7 @@ function cancel() {
 }
 
 async function requestSubmit() {
+  if (!validateQuoteCredit()) return;
   await formRef.value?.submit();
 }
 

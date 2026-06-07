@@ -4,11 +4,20 @@ export const CLIENT_TYPE_OPTIONS = [
   { label: 'Público general', value: 'PUBLIC' },
 ] as const;
 
+export const BILLING_TYPE_VALUES = [
+  'DIRECT_INVOICE',
+  'MANUAL',
+  'REMISSION',
+] as const;
+
 export const BILLING_TYPE_OPTIONS = [
   { label: 'Factura directa', value: 'DIRECT_INVOICE' },
   { label: 'Manual', value: 'MANUAL' },
   { label: 'Remisión', value: 'REMISSION' },
-] as const;
+] as const satisfies ReadonlyArray<{
+  label: string;
+  value: (typeof BILLING_TYPE_VALUES)[number];
+}>;
 
 export const COMMISSION_TYPE_OPTIONS = [
   { label: 'Porcentaje', value: 'PERCENTAGE' },

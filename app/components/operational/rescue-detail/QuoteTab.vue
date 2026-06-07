@@ -97,15 +97,18 @@ function fetchServiceDropdown(
 }
 
 async function onSaveQuote() {
-  const payload = {
+  const basePayload = {
     quoteLines: quoteLines.value,
     companySettings: companySettings.value,
     serviceType: serviceType.value,
   };
 
   const ok = isUpdateMode.value
-    ? await saveUpdate(payload)
-    : await saveCreate(payload);
+    ? await saveUpdate(basePayload)
+    : await saveCreate({
+        ...basePayload,
+        clientId: props.detail.client_id,
+      });
 
   if (ok) {
     await refresh();

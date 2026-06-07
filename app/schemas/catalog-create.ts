@@ -1,5 +1,8 @@
 import * as z from 'zod';
-import { SERVICE_UNIT_VALUES } from '~/constants/catalog-select-options';
+import {
+  BILLING_TYPE_VALUES,
+  SERVICE_UNIT_VALUES,
+} from '~/constants/catalog-select-options';
 import type {
   ContractCreateBody,
   ContractItemCreateBody,
@@ -30,7 +33,7 @@ export const companyCreateSchema = z.object({
   client_type: z.enum(['CASH', 'CREDIT', 'PUBLIC'], {
     error: 'Selecciona un tipo de cliente',
   }),
-  billing_type: z.enum(['DIRECT_INVOICE', 'MANUAL'], {
+  billing_type: z.enum(BILLING_TYPE_VALUES, {
     error: 'Selecciona un tipo de facturación',
   }),
   commission_type: z.enum(['PERCENTAGE', 'FIXED'], {

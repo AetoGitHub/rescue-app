@@ -18,10 +18,14 @@ import {
 } from '~/utils/rescue-quote-create';
 import { isRescueQuoteNotFoundError } from '~/utils/rescue-quote-not-found';
 
-type QuoteSavePayload = {
+type QuoteSaveBasePayload = {
   quoteLines: RescueQuoteLine[];
   companySettings: RescueCompanySettings | null;
   serviceType: RescueServiceType;
+};
+
+type QuoteSaveCreatePayload = QuoteSaveBasePayload & {
+  clientId: number;
 };
 
 export function useRescueQuoteSave(
@@ -30,6 +34,7 @@ export function useRescueQuoteSave(
   const apiFetch = useApiFetch();
   const queryCache = useQueryCache();
   const toast = useToast();
+  const { assertClientCreditForQuote } = useCreditCheck();
   const id = computed(() => toValue(rescueId));
 
   async function invalidateQuoteQueries() {
@@ -72,7 +77,7 @@ export function useRescueQuoteSave(
     () => createStatus.value === 'loading' || updateStatus.value === 'loading',
   );
 
-  function validateQuotePayload(payload: QuoteSavePayload) {
+  function validateQuotePayload(payload: QuoteSaveBasePayload) {
     const currentId = id.value;
     if (currentId == null) return null;
 
@@ -93,7 +98,7 @@ export function useRescueQuoteSave(
     return { currentId, parsed: parsed.data };
   }
 
-  async function saveCreate(payload: QuoteSavePayload) {
+  async function saveCreate(payload: QuoteSaveCreatePayload) {
     const validated = validateQuotePayload(payload);
     if (validated == null) return false;
 
@@ -105,6 +110,20 @@ export function useRescueQuoteSave(
     if (body == null) {
       toast.add({
         title: 'Agrega al menos un servicio con precio',
+        color: 'error',
+      });
+      return false;
+    }
+
+    const creditGate = await assertClientCreditForQuote(
+      payload.clientId,
+      validated.parsed.quote_lines,
+      validated.parsed.company_settings,
+    );
+    if (!creditGate.ok) {
+      toast.add({
+        title: 'Crédito insuficiente',
+        description: creditGate.message,
         color: 'error',
       });
       return false;
@@ -130,7 +149,7 @@ export function useRescueQuoteSave(
     }
   }
 
-  async function saveUpdate(payload: QuoteSavePayload) {
+  async function saveUpdate(payload: QuoteSaveBasePayload) {
     const validated = validateQuotePayload(payload);
     if (validated == null) return false;
 

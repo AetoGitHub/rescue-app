@@ -34,6 +34,14 @@ const locationCoordsLabel = computed(() => {
   if (lat == null || lng == null) return '—';
   return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 });
+
+const quoteCreditWarning = computed(() =>
+  getWizardQuoteCreditWarning(
+    state.value.client_credit_snapshot,
+    state.value.quote_lines,
+    state.value.company_settings,
+  ),
+);
 </script>
 
 <template>
@@ -188,6 +196,15 @@ const locationCoordsLabel = computed(() => {
         </span>
       </div>
     </UCard>
+
+    <UAlert
+      v-if="quoteCreditWarning"
+      color="error"
+      variant="subtle"
+      :title="quoteCreditWarning.title"
+      :description="quoteCreditWarning.description"
+      icon="i-lucide-circle-alert"
+    />
 
     <DevOnly v-if="quotePricing.lines.length > 0">
       <OperationalRescueRequestQuotePricingDevBreakdown

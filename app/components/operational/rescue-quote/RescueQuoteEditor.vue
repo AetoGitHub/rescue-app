@@ -2,6 +2,7 @@
 import type { CatalogDropdownFetcher } from '~/composables/useCatalogDropdown';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
+import type { ClientCreditSnapshot } from '~/schemas/rescue-create';
 import { DEFAULT_IVA_RATE, QUOTE_SUMMARY_LABELS } from '~/constants/quote-pricing';
 import {
   applyContractToLine,
@@ -12,6 +13,7 @@ import {
 
 const props = defineProps<{
   clientId: number | undefined;
+  clientCreditSnapshot?: ClientCreditSnapshot | null;
   serviceType: RescueServiceType;
   fetchServiceDropdown: CatalogDropdownFetcher;
 }>();
@@ -76,6 +78,26 @@ watch(
 const pricing = computed(() =>
   computeQuotePricing(quoteLines.value, settings.value),
 );
+
+const hasFilledLines = computed(() =>
+  quoteLinesHaveFilledEntries(quoteLines.value),
+);
+
+const creditWarning = computed(() =>
+  getClientQuoteCreditWarning(
+    props.clientCreditSnapshot,
+    pricing.value.totalCharged,
+    hasFilledLines.value,
+  ),
+);
+
+const creditAvailableLabel = computed(() => {
+  const snapshot = props.clientCreditSnapshot;
+  if (snapshot?.client_type !== 'CREDIT') return null;
+  const available = snapshot.credit_available;
+  if (available == null || !Number.isFinite(available)) return null;
+  return `Crédito disponible: ${formatClientMoney(available)}`;
+});
 
 function lineRow(line: RescueQuoteLine) {
   return pricing.value.lines.find((row) => row.line.id === line.id);
@@ -355,6 +377,22 @@ watch(
         </span>
       </div>
     </UCard>
+
+    <UAlert
+      v-if="creditWarning"
+      color="error"
+      variant="subtle"
+      :title="creditWarning.title"
+      :description="creditWarning.description"
+      icon="i-lucide-circle-alert"
+    />
+
+    <p
+      v-else-if="creditAvailableLabel && hasFilledLines"
+      class="text-sm text-muted"
+    >
+      {{ creditAvailableLabel }}
+    </p>
 
     <DevOnly>
       <OperationalRescueRequestQuotePricingDevBreakdown

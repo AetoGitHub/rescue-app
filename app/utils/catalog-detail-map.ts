@@ -1,6 +1,12 @@
 import type { CompanyCreateBody } from '~/interfaces/catalogs/company';
 import type { ClientCreateBody } from '~/interfaces/catalogs/client';
-import type { ClientCreditSummary, ClientCreditInvoice, CreditFormState } from '~/interfaces/catalogs/credit';
+import type {
+  ClientCreditSummary,
+  ClientCreditInvoice,
+  CreditFormState,
+  CreditTemporaryUnlock,
+  CreditUnlockMode,
+} from '~/interfaces/catalogs/credit';
 import { SERVICE_UNIT_VALUES } from '~/constants/catalog-select-options';
 import type { ServiceCreateBody, ServiceUnit } from '~/interfaces/catalogs/service';
 import type {
@@ -497,5 +503,30 @@ export function mapContractDetailToForm(
               notes: '',
             },
           ],
+  };
+}
+
+function normalizeCreditUnlockMode(value: unknown): CreditUnlockMode {
+  return String(value ?? '').toLowerCase() === 'days' ? 'days' : 'money';
+}
+
+export function mapCreditTemporaryUnlock(
+  raw: Record<string, unknown>,
+): CreditTemporaryUnlock {
+  const creditId = Number(raw.credit_id ?? raw.credit ?? 0);
+  const expiresAt = raw.expires_at;
+
+  return {
+    id: Number(raw.id ?? 0),
+    credit_id: Number.isFinite(creditId) ? creditId : 0,
+    mode: normalizeCreditUnlockMode(raw.mode),
+    value: String(raw.value ?? '0.00'),
+    remaining: String(raw.remaining ?? raw.value ?? '0.00'),
+    active: Boolean(raw.active),
+    created_at: String(raw.created_at ?? ''),
+    expires_at:
+      expiresAt != null && String(expiresAt).trim() !== ''
+        ? String(expiresAt)
+        : null,
   };
 }

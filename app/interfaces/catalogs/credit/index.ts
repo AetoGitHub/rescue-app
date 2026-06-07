@@ -55,3 +55,32 @@ export interface ClientCreditInvoice {
   days_overdue?: number;
   status?: string;
 }
+
+export interface CreditCheckBody {
+  client: number;
+  amount: string;
+}
+
+export interface CreditCheckResponse {
+  status: boolean;
+  message: string;
+}
+
+export type CreditUnlockMode = 'money' | 'days';
+
+export interface CreditTemporaryUnlock {
+  id: number;
+  credit_id: number;
+  mode: CreditUnlockMode;
+  value: string;
+  remaining: string;
+  active: boolean;
+  created_at: string;
+  expires_at: string | null;
+}
+
+export interface CreditUnlockCreateBody {
+  credit: number;
+  mode: CreditUnlockMode;
+  value: string;
+}

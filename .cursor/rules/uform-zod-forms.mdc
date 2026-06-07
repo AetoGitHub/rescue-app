@@ -1,0 +1,55 @@
+---
+description: Formularios con UForm y validación Zod
+alwaysApply: true
+---
+
+# Formularios: UForm + Zod
+
+Todo formulario de captura o edición usa **Nuxt UI `UForm`** con schema **Zod** y state reactivo.
+
+## Obligatorio
+
+- `:schema` (Zod) + `:state` (reactive) en `UForm`.
+- Schemas en **`app/schemas/`**, nunca inline en el `.vue`.
+- Cada campo en **`UFormField`** con `name` **igual** a la clave del schema.
+- Submit con `formRef.submit()` y `@submit`; tipar con `FormSubmitEvent` / `z.infer<typeof schema>`.
+- Mensajes de error en español dentro del schema.
+- Body API: `*ToCreateBody` / `*ToUpdateBody` junto al schema cuando aplique.
+
+## Prohibido
+
+- Validación manual (`if (!state.x)`) como sustituto del schema.
+- `<form>` nativo o inputs sin `UForm`/`UFormField`.
+- Duplicar reglas fuera de Zod.
+
+## Sub-formularios
+
+Si una sección usa **otro schema** (ej. crédito en cliente), va en su **propio `UForm`** con su state — no mezclar `name` de un schema dentro del `UForm` de otro.
+
+Cliente: `clientCreateSchema` · Crédito: `creditFormSchema` → ambos en `app/schemas/catalog-create.ts`.
+
+## Checklist al agregar un campo
+
+1. Clave y reglas en el schema correcto (`app/schemas/`).
+2. Inicializar en `emptyState()` del componente.
+3. `UFormField` con `name="<clave>"` y `v-model` al mismo path del state.
+4. Mapper/body si va al API.
+
+## Mapa de schemas
+
+| Dominio | Archivo |
+|---------|---------|
+| Catálogo (cliente, compañía, crédito) | `app/schemas/catalog-create.ts` |
+| Rescate | `app/schemas/rescue-create.ts` |
+| Extensión de crédito | `app/schemas/credit-unlock.ts` |
+| Usuarios | `app/schemas/user-create.ts` |
+| Auth | `app/schemas/password-reset.ts` |
+| Admin rescate | `app/schemas/rescue-administrative.ts` |
+
+```vue
+<UForm ref="formRef" :schema="mySchema" :state="state" @submit="onSubmit" @error="onFormError">
+  <UFormField label="Nombre" name="name" required>
+    <UInput v-model="state.name" class="w-full" />
+  </UFormField>
+</UForm>
+```

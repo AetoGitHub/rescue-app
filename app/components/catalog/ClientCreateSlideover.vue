@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
+import type { FormSubmitEvent } from '@nuxt/ui';
 import type { ClientCreateBody } from '~/interfaces/catalogs/client';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
@@ -131,6 +132,10 @@ const creditTabInvoiceBindings = computed(() => ({
   hasMoreInvoices: clientCreditInvoices.hasNextPage.value,
 }));
 
+const formRef = ref<{ submit: () => Promise<void> } | null>(null);
+const creditFormSectionRef = ref<{ submit: () => Promise<void> } | null>(null);
+const pendingClientData = ref<ZodInfer<typeof clientCreateSchema> | null>(null);
+
 function resetForm() {
   Object.assign(state, emptyState());
   Object.assign(creditState, emptyCreditState());
@@ -139,6 +144,7 @@ function resetForm() {
   clientDetailRaw.value = null;
   clientDetailLoaded.value = false;
   editTab.value = 'general';
+  pendingClientData.value = null;
 }
 
 function prepareCreate() {
@@ -351,8 +357,6 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
-const formRef = ref<{ submit: () => Promise<void> } | null>(null);
-
 function buildSubmitBody(data: ZodInfer<typeof clientCreateSchema>): ClientCreateBody {
   return {
     ...data,
@@ -362,16 +366,27 @@ function buildSubmitBody(data: ZodInfer<typeof clientCreateSchema>): ClientCreat
   };
 }
 
-function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
-  let body = buildSubmitBody(payload.data);
-  const creatingCredit =
+function isCreatingCredit(): boolean {
+  return (
     isEdit.value
     && !hasLinkedCredit.value
-    && (parseClientMoney(creditState.limit) ?? 0) > 0;
-  const updatingCredit = isEdit.value && hasLinkedCredit.value;
-  const creditOnCreate = !isEdit.value && body.client_type === 'CREDIT';
+    && (parseClientMoney(creditState.limit) ?? 0) > 0
+  );
+}
 
-  if (creatingCredit || updatingCredit || creditOnCreate) {
+function needsCreditValidation(data: ZodInfer<typeof clientCreateSchema>): boolean {
+  const updatingCredit = isEdit.value && hasLinkedCredit.value;
+  const creditOnCreate = !isEdit.value && data.client_type === 'CREDIT';
+  return isCreatingCredit() || updatingCredit || creditOnCreate;
+}
+
+function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
+  if (!needsCreditValidation(payload.data)) {
+    mutate({ body: buildSubmitBody(payload.data), id: editingId.value });
+    return;
+  }
+
+  if (isEdit.value) {
     const creditResult = creditFormSchema.safeParse(creditState);
     if (!creditResult.success) {
       const issue = creditResult.error.issues[0];
@@ -380,14 +395,15 @@ function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
         description: issue?.message ?? 'Completa los campos de crédito.',
         color: 'error',
       });
-      if (isEdit.value) editTab.value = 'credit';
+      editTab.value = 'credit';
       return;
     }
 
+    let body = buildSubmitBody(payload.data);
+    const creatingCredit = isCreatingCredit();
     if (creatingCredit && body.client_type !== 'CREDIT') {
       body = { ...body, client_type: 'CREDIT' };
     }
-
     mutate({
       body,
       id: editingId.value,
@@ -397,11 +413,50 @@ function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
     return;
   }
 
-  mutate({ body, id: editingId.value });
+  pendingClientData.value = payload.data;
+  void creditFormSectionRef.value?.submit();
+}
+
+function onCreditSubmit(
+  payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>,
+) {
+  const clientData = pendingClientData.value;
+  if (clientData == null) return;
+  pendingClientData.value = null;
+
+  let body = buildSubmitBody(clientData);
+  const creatingCredit = isCreatingCredit();
+  if (creatingCredit && body.client_type !== 'CREDIT') {
+    body = { ...body, client_type: 'CREDIT' };
+  }
+
+  mutate({
+    body,
+    id: editingId.value,
+    credit: payload.data,
+    createCredit: creatingCredit,
+  });
 }
 
 function onFormError() {
-  console.error('Validación de formulario de cliente');
+  const result = clientCreateSchema.safeParse(state);
+  const issue = result.success ? null : result.error.issues[0];
+  toast.add({
+    title: 'Revisa el formulario',
+    description: issue?.message ?? 'Completa los campos requeridos.',
+    color: 'error',
+  });
+}
+
+function onCreditFormError() {
+  const result = creditFormSchema.safeParse(creditState);
+  const issue = result.success ? null : result.error.issues[0];
+  toast.add({
+    title: 'Revisa los datos de crédito',
+    description: issue?.message ?? 'Completa los campos de crédito.',
+    color: 'error',
+  });
+  if (isEdit.value) editTab.value = 'credit';
 }
 
 function cancel() {
@@ -611,12 +666,17 @@ async function requestSubmit() {
             <CatalogClientCreditTabPanel
               v-model:is-active="state.is_active!"
               v-model:credit-state="creditState"
+              :client-id="editingId"
+              :company-id="state.company ?? null"
+              :credit-id="editingCreditId"
               :client-name="state.name"
               :client-type="state.client_type"
               :credit-summary="creditSummary"
               :has-credit-line="hasLinkedCredit"
               v-bind="creditTabInvoiceBindings"
               @load-more-invoices="clientCreditInvoices.loadNextPage()"
+              @credit-submit="onCreditSubmit"
+              @credit-error="onCreditFormError"
             />
           </template>
         </UTabs>
@@ -763,7 +823,10 @@ async function requestSubmit() {
 
         <CatalogClientCreditFormSection
           v-if="showCreateCreditSection"
+          ref="creditFormSectionRef"
           v-model:credit-state="creditState"
+          @submit="onCreditSubmit"
+          @error="onCreditFormError"
         />
 
         <section class="space-y-4">

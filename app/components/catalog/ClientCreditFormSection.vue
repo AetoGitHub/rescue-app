@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import type { FormSubmitEvent } from '@nuxt/ui';
+import type { infer as ZodInfer } from 'zod';
 import type { CreditFormState } from '~/interfaces/catalogs/credit';
+import { creditFormSchema } from '~/schemas/catalog-create';
 
 const props = withDefaults(
   defineProps<{
@@ -12,7 +15,14 @@ const props = withDefaults(
   },
 );
 
+const emit = defineEmits<{
+  submit: [payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>];
+  error: [];
+}>();
+
 const creditState = defineModel<CreditFormState>('creditState', { required: true });
+
+const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 const creditLimitSource = computed({
   get: () => creditState.value.limit,
@@ -45,10 +55,27 @@ const creditExtensionModel = useRequiredIntegerModel(creditExtensionSource);
 const creditRemisionToleranceModel = useRequiredIntegerModel(
   creditRemisionToleranceSource,
 );
+
+function onSubmit(payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>) {
+  emit('submit', payload);
+}
+
+async function submit() {
+  await formRef.value?.submit();
+}
+
+defineExpose({ submit });
 </script>
 
 <template>
-  <section class="space-y-4">
+  <UForm
+    ref="formRef"
+    :schema="creditFormSchema"
+    :state="creditState"
+    class="space-y-4"
+    @submit="onSubmit"
+    @error="emit('error')"
+  >
     <div v-if="props.intro" class="space-y-1 text-center">
       <p class="font-medium text-default">
         {{ props.heading === 'Crédito' ? 'Sin línea de crédito' : props.heading }}
@@ -63,26 +90,26 @@ const creditRemisionToleranceModel = useRequiredIntegerModel(
     >
       {{ props.heading }}
     </h3>
-    <UFormField label="Límite de crédito" required>
+    <UFormField label="Límite de crédito" name="limit" required>
       <UInputNumber
         v-model="creditLimitModel"
         v-bind="catalogCurrencyInputProps"
       />
     </UFormField>
     <div class="grid grid-cols-1 gap-2">
-      <UFormField label="Días de crédito" required>
+      <UFormField label="Días de crédito" name="days" required>
         <UInputNumber
           v-model="creditDaysModel"
           v-bind="catalogIntegerInputProps"
         />
       </UFormField>
-      <UFormField label="Prórroga (días)" required>
+      <UFormField label="Prórroga (días)" name="extension" required>
         <UInputNumber
           v-model="creditExtensionModel"
           v-bind="catalogIntegerInputProps"
         />
       </UFormField>
-      <UFormField label="Tolerancia remisión (días)" required>
+      <UFormField label="Tolerancia remisión (días)" name="remision_tolerance" required>
         <UInputNumber
           v-model="creditRemisionToleranceModel"
           v-bind="catalogIntegerInputProps"
@@ -101,5 +128,5 @@ const creditRemisionToleranceModel = useRequiredIntegerModel(
         label="Bloquear crédito del cliente"
       />
     </UFormField>
-  </section>
+  </UForm>
 </template>

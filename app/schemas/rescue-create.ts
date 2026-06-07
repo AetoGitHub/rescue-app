@@ -315,6 +315,12 @@ export const rescueCreateFormSchema = z
 
 export type RescueCreateFormOutput = z.output<typeof rescueCreateFormSchema>;
 
+export type ClientCreditSnapshot = {
+  client_type: string;
+  credit_limit: string | null;
+  credit_available: number | null;
+};
+
 export type RescueRequestFormState = {
   service_type: RescueServiceType;
   client: number | undefined;
@@ -330,6 +336,7 @@ export type RescueRequestFormState = {
   managerLabel: string;
   internal_notes: string;
   clientLabel: string;
+  client_credit_snapshot: ClientCreditSnapshot | null;
   quote_lines: RescueQuoteLine[];
   company_settings: RescueCompanySettings | null;
 };
@@ -350,6 +357,7 @@ export function emptyRescueRequestState(): RescueRequestFormState {
     managerLabel: '',
     internal_notes: '',
     clientLabel: '',
+    client_credit_snapshot: null,
     quote_lines: initialQuoteLinesForServiceType('rescue'),
     company_settings: null,
   };
