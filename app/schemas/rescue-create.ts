@@ -319,7 +319,6 @@ export type ClientCreditSnapshot = {
   client_type: string;
   credit_limit: string | null;
   credit_available: number | null;
-  loan_margin_percent: number | null;
 };
 
 export type RescueRequestFormState = {

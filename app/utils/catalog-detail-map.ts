@@ -116,37 +116,6 @@ function creditNestedRecord(
   return null;
 }
 
-const LOAN_MARGIN_PERCENT_KEYS = [
-  'loan_margin',
-  'loan_margin_percent',
-  'margin_loan',
-  'prestamo_margin',
-] as const;
-
-function parseLoanMarginPercentValue(value: unknown): number | null {
-  if (value == null || value === '') return null;
-  const normalized = String(value).trim().replace(/%$/, '').replace(/,/g, '');
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-/** Resolves loan margin percent from client detail (top-level or nested `credit`). */
-export function resolveClientLoanMarginPercent(
-  raw: Record<string, unknown>,
-): number | null {
-  const nested = creditNestedRecord(raw);
-  const sources = nested != null ? [raw, nested] : [raw];
-
-  for (const source of sources) {
-    for (const key of LOAN_MARGIN_PERCENT_KEYS) {
-      const parsed = parseLoanMarginPercentValue(source[key]);
-      if (parsed != null) return parsed;
-    }
-  }
-
-  return null;
-}
-
 /** Merges top-level client fields with nested `credit` object for summary mapping. */
 function mergeClientCreditRaw(raw: Record<string, unknown>): Record<string, unknown> {
   const nested = creditNestedRecord(raw);

@@ -10,7 +10,6 @@ const creditSnapshot: ClientCreditSnapshot = {
   client_type: 'CREDIT',
   credit_limit: '3000.00',
   credit_available: 3000,
-  loan_margin_percent: 20,
 };
 
 function filledLine(): RescueQuoteLine {
@@ -40,7 +39,11 @@ describe('getClientQuoteCreditWarning', () => {
   it('returns null for non-credit clients', () => {
     expect(
       getClientQuoteCreditWarning(
-        { ...creditSnapshot, client_type: 'CASH' },
+        {
+          client_type: 'CASH',
+          credit_limit: null,
+          credit_available: null,
+        },
         12500,
         true,
       ),

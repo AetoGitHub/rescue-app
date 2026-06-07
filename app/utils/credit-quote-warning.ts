@@ -1,6 +1,9 @@
 import type { ClientCreditSnapshot } from '~/schemas/rescue-create';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
-import { formatClientMoney } from '~/utils/client-list-display';
+import {
+  formatClientMoney,
+  isWizardCreditClient,
+} from '~/utils/client-list-display';
 import { isFilledQuoteLine } from '~/utils/quote-pricing';
 
 export type ClientQuoteCreditWarning = {
@@ -18,7 +21,7 @@ export function getClientQuoteCreditWarning(
   hasFilledLines: boolean,
 ): ClientQuoteCreditWarning | null {
   if (!hasFilledLines || totalCharged <= 0) return null;
-  if (snapshot?.client_type !== 'CREDIT') return null;
+  if (snapshot == null || !isWizardCreditClient(snapshot)) return null;
 
   const available = snapshot.credit_available;
   if (available == null || !Number.isFinite(available)) return null;

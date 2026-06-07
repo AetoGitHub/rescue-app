@@ -93,7 +93,7 @@ const creditWarning = computed(() =>
 
 const creditAvailableLabel = computed(() => {
   const snapshot = props.clientCreditSnapshot;
-  if (snapshot?.client_type !== 'CREDIT') return null;
+  if (snapshot == null || !isWizardCreditClient(snapshot)) return null;
   const available = snapshot.credit_available;
   if (available == null || !Number.isFinite(available)) return null;
   return `Crédito disponible: ${formatClientMoney(available)}`;

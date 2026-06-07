@@ -47,6 +47,14 @@ const modalContentClass = computed(() =>
   isWideStep.value ? 'max-w-6xl' : 'max-w-2xl',
 );
 
+const showWizardCreditCard = computed(() =>
+  shouldShowWizardCreditCard(state.client, state.client_credit_snapshot),
+);
+
+const clientCreditPending = computed(
+  () => state.client != null && state.client_credit_snapshot == null,
+);
+
 function clearFormState() {
   Object.assign(state, emptyRescueRequestState());
   stepError.value = null;
@@ -112,17 +120,16 @@ watch(
       return;
     }
     try {
-      const raw = await $fetch<Record<string, unknown>>(
+      const raw = await apiFetch<Record<string, unknown>>(
         `/api/catalogue/client/detail/${id}/`,
       );
       if (!active) return;
       const summary = mapClientCreditSummary(raw);
       state.clientLabel = String(raw.name ?? '').trim() || `Cliente #${id}`;
       state.client_credit_snapshot = {
-        client_type: String(raw.client_type ?? 'CASH'),
+        client_type: normalizeClientType(raw.client_type),
         credit_limit: summary.credit_limit,
         credit_available: summary.credit_available,
-        loan_margin_percent: resolveClientLoanMarginPercent(raw),
       };
     } catch {
       if (!active) return;
@@ -389,12 +396,20 @@ function onPrimaryAction() {
           @submit="onSubmit"
           @error="onFormError"
         >
-          <OperationalRescueRequestStepsBasicsStep
-            v-if="currentStepKind === 'basics'"
-            v-model="state"
-            :fetch-client-dropdown="fetchClientDropdown"
-            :fetch-manager-dropdown="fetchManagerDropdown"
-          />
+          <template v-if="currentStepKind === 'basics'">
+            <OperationalRescueRequestStepsBasicsStep
+              v-model="state"
+              :fetch-client-dropdown="fetchClientDropdown"
+              :fetch-manager-dropdown="fetchManagerDropdown"
+            />
+
+            <OperationalRescueRequestClientCreditSelectionCard
+              v-if="showWizardCreditCard"
+              :client-name="state.clientLabel || `Cliente #${state.client}`"
+              :snapshot="state.client_credit_snapshot"
+              :pending="clientCreditPending"
+            />
+          </template>
 
           <LazyOperationalRescueRequestStepsQuoteStep
             v-else-if="currentStepKind === 'quote'"

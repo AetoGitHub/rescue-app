@@ -4,17 +4,6 @@ import type { CatalogDropdownFetcher } from '~/composables/useCatalogDropdown';
 
 const state = defineModel<RescueRequestFormState>({ required: true });
 
-const showClientCreditCard = computed(() => {
-  if (state.value.client == null) return false;
-  if (state.value.client_credit_snapshot == null) return true;
-  return state.value.client_credit_snapshot.client_type === 'CREDIT';
-});
-
-const clientCreditPending = computed(
-  () =>
-    state.value.client != null && state.value.client_credit_snapshot == null,
-);
-
 defineProps<{
   fetchClientDropdown: CatalogDropdownFetcher;
   fetchManagerDropdown: CatalogDropdownFetcher;
@@ -34,13 +23,6 @@ defineProps<{
         :fetcher="fetchClientDropdown"
       />
     </UFormField>
-
-    <OperationalRescueRequestClientCreditSelectionCard
-      v-if="showClientCreditCard"
-      :client-name="state.clientLabel || `Cliente #${state.client}`"
-      :snapshot="state.client_credit_snapshot"
-      :pending="clientCreditPending"
-    />
 
     <UFormField name="general_public">
       <UCheckbox

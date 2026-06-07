@@ -1,4 +1,5 @@
 import type { ClientType } from '~/interfaces/catalogs/client';
+import type { ClientCreditSnapshot } from '~/schemas/rescue-create';
 
 type BadgeColor = 'success' | 'info' | 'neutral' | 'warning' | 'error' | 'primary';
 
@@ -47,8 +48,35 @@ export function clientCreditUsagePercent(
   return Math.min(100, Math.round((usedAmount / limitAmount) * 100));
 }
 
+export function normalizeClientType(raw: unknown): string {
+  if (raw == null || raw === '') return 'CASH';
+  if (typeof raw === 'string') return raw.trim().toUpperCase();
+  if (typeof raw === 'object' && raw !== null && 'value' in raw) {
+    const value = (raw as { value: unknown }).value;
+    return typeof value === 'string' ? value.trim().toUpperCase() : 'CASH';
+  }
+  return String(raw).trim().toUpperCase();
+}
+
 export function isCreditClientType(type: string | null | undefined): boolean {
-  return type === 'CREDIT';
+  if (type == null || type === '') return false;
+  return type.trim().toUpperCase() === 'CREDIT';
+}
+
+export function isWizardCreditClient(snapshot: ClientCreditSnapshot): boolean {
+  if (isCreditClientType(snapshot.client_type)) return true;
+  if (snapshot.credit_available != null) return true;
+  const limit = parseClientMoney(snapshot.credit_limit);
+  return limit != null && limit > 0;
+}
+
+export function shouldShowWizardCreditCard(
+  clientId: number | undefined | null,
+  snapshot: ClientCreditSnapshot | null | undefined,
+): boolean {
+  if (clientId == null) return false;
+  if (snapshot == null) return true;
+  return isWizardCreditClient(snapshot);
 }
 
 export type ClientListTypeFilter = 'all' | ClientType;

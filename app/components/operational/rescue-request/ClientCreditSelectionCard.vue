@@ -7,14 +7,12 @@ const props = defineProps<{
   pending?: boolean;
 }>();
 
-const typeBadge = computed(() =>
-  clientTypeBadgeProps(props.snapshot?.client_type ?? 'CREDIT'),
-);
-
-const loanMarginLabel = computed(() => {
-  const percent = props.snapshot?.loan_margin_percent;
-  if (percent == null || !Number.isFinite(percent)) return '—';
-  return `${percent}%`;
+const typeBadge = computed(() => {
+  const snapshot = props.snapshot;
+  if (snapshot != null && isWizardCreditClient(snapshot)) {
+    return clientTypeBadgeProps('CREDIT');
+  }
+  return clientTypeBadgeProps(snapshot?.client_type);
 });
 
 const creditAvailableLabel = computed(() =>
@@ -47,11 +45,6 @@ const creditAvailableLabel = computed(() =>
         :label="typeBadge.label"
       />
     </div>
-
-    <p class="text-muted">
-      Margen de préstamo:
-      <span class="font-semibold text-highlighted">{{ loanMarginLabel }}</span>
-    </p>
 
     <p class="text-muted">
       Crédito disponible:
