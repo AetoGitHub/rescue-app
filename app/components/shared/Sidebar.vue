@@ -115,7 +115,7 @@ const { mutate: logout, asyncStatus: logoutStatus } = useMutation({
           :description="collapsed ? undefined : user?.role"
           :avatar="{
             loading: 'lazy',
-            src: 'https://github.com/benjamincanac.png',
+            alt: user?.name
           }"
           :ui="{
             name: 'capitalize',
