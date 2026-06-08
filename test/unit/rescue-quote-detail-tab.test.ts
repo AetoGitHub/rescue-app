@@ -15,7 +15,6 @@ function minimalDetail(
     service_type: 'rescue',
     client_id: 10,
     client_name: 'Cliente',
-    description: '',
     service_description: '',
     location_description: '',
     sale_price: null,

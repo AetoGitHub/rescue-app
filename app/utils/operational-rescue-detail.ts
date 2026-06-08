@@ -89,11 +89,11 @@ export function mapRescueCardDetailFromApi(
   return {
     ...raw,
     service_description:
-      readDetailString(record, 'service_description')
+      readDetailString(record, 'service_description') ?? '',
+    location_description:
+      readDetailString(record, 'location_description')
       ?? readDetailString(record, 'description')
       ?? '',
-    location_description:
-      readDetailString(record, 'location_description') ?? '',
   };
 }
 

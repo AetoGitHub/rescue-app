@@ -29,9 +29,8 @@ describe('mapAdministrativeCardFromApi', () => {
     expect(card.sub_total).toBe('1500.00');
     expect(card.net_profit).toBeNull();
     expect(card.service_date).toBe('2026-06-02T08:00:00Z');
-    expect(card.description).toBe('Ubicación');
-    expect(card.service_description).toBe('Ubicación');
-    expect(card.location_description).toBe('');
+    expect(card.service_description).toBe('');
+    expect(card.location_description).toBe('Ubicación');
   });
 
   it('maps service and location descriptions separately', () => {
@@ -112,7 +111,7 @@ const ADMINISTRATIVE_DETAIL_API_EXAMPLE = {
   service_type: 'rescue',
   client_id: 2,
   client_name: 'CLIENTE CON CREDITO',
-  description: 'xxx',
+  location_description: 'xxx',
   sale_price: null,
   operative_status: 'closed',
   admin_status: 'unattended',

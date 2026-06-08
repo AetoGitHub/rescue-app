@@ -8,7 +8,6 @@ const baseDetail: RescueCardDetail = {
   service_type: 'rescue',
   client_id: 10,
   client_name: 'Cliente',
-  description: 'Falla de batería',
   service_description: '',
   location_description: '',
   sale_price: null,
@@ -46,12 +45,12 @@ describe('mapRescueCardDetailFromApi', () => {
     expect(mapped.location_description).toBe('Periférico Sur');
   });
 
-  it('falls back description to service_description', () => {
+  it('falls back legacy description to location_description', () => {
     const mapped = mapRescueCardDetailFromApi({
       ...baseDetail,
-      description: 'Falla de batería',
+      ...({ description: 'Av. Reforma 123' } as Record<string, unknown>),
     });
-    expect(mapped.service_description).toBe('Falla de batería');
-    expect(mapped.location_description).toBe('');
+    expect(mapped.service_description).toBe('');
+    expect(mapped.location_description).toBe('Av. Reforma 123');
   });
 });

@@ -6,7 +6,8 @@ export interface RescueCardBase {
   service_type?: string | null;
   client_id: number;
   client_name: string;
-  description: string;
+  service_description: string;
+  location_description: string;
   total: string | null;
   operative_status: OperationalRescueStatus;
   operator_id: number | null;

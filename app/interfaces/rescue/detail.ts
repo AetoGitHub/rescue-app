@@ -6,8 +6,6 @@ export interface RescueCardDetail {
   service_type: string;
   client_id: number;
   client_name: string;
-  /** @deprecated Prefer service_description / location_description */
-  description: string;
   service_description: string;
   location_description: string;
   sale_price: string | null;

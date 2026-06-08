@@ -80,6 +80,24 @@ const primaryButtonLabel = computed(() => {
 });
 
 const toast = useToast();
+const panelRef = ref<HTMLElement | null>(null);
+
+function scrollPanelIntoView() {
+  nextTick(() => {
+    panelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  });
+}
+
+watch(
+  () => open.value,
+  (isOpen) => {
+    if (isOpen) scrollPanelIntoView();
+  },
+);
+
+onMounted(() => {
+  if (open.value) scrollPanelIntoView();
+});
 
 function applyPercent(percent: number) {
   if (props.quoteTotal <= 0) return;
@@ -109,7 +127,10 @@ function onSubmit() {
 </script>
 
 <template>
-  <section class="space-y-4 rounded-lg border border-default bg-default p-4">
+  <section
+    ref="panelRef"
+    class="space-y-4 rounded-lg border border-default bg-default p-4"
+  >
     <div class="flex items-center gap-2">
       <UIcon
         v-if="isAmountMode"
