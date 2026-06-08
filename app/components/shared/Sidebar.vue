@@ -4,11 +4,11 @@ import type { NavigationMenuItem } from '@nuxt/ui';
 const items = computed<NavigationMenuItem[][]>(() => [
   [
     { label: 'Administración', type: 'label' },
-    {
-      label: 'Dashboard',
-      icon: 'i-lucide-layout-dashboard',
-      to: '/admin/dashboard',
-    },
+    // {
+    //   label: 'Dashboard',
+    //   icon: 'i-lucide-layout-dashboard',
+    //   to: '/admin/dashboard',
+    // },
     {
       label: 'Operacional',
       to: '/admin/operational',
