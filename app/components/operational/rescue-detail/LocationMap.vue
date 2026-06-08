@@ -21,7 +21,7 @@ const coordinatesLabel = computed(() => {
 });
 
 const locationDescription = computed(() =>
-  formatDetailDescription(props.detail.description),
+  formatDetailDescription(props.detail.location_description),
 );
 </script>
 
@@ -76,9 +76,14 @@ const locationDescription = computed(() =>
       </ClientOnly>
     </div>
 
-    <p class="text-xs text-muted line-clamp-2">
-      {{ locationDescription }}
-    </p>
+    <div class="space-y-0.5">
+      <p class="text-xs font-medium uppercase text-muted">
+        Descripción del lugar
+      </p>
+      <p class="text-xs text-highlighted line-clamp-2">
+        {{ locationDescription }}
+      </p>
+    </div>
     <p class="text-xs font-mono text-muted">
       {{ coordinatesLabel }}
     </p>

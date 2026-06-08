@@ -70,6 +70,33 @@ export function formatDetailDescription(
   return trimmed ? trimmed : RESCUE_DETAIL_PLACEHOLDER_NO_DESCRIPTION;
 }
 
+function readDetailString(
+  raw: Record<string, unknown>,
+  key: string,
+): string | null {
+  const value = raw[key];
+  if (value == null) return null;
+  const trimmed = String(value).trim();
+  return trimmed || null;
+}
+
+/** Normalizes card detail descriptions from API (service vs location). */
+export function mapRescueCardDetailFromApi(
+  raw: RescueCardDetail,
+): RescueCardDetail {
+  const record = raw as RescueCardDetail & Record<string, unknown>;
+
+  return {
+    ...raw,
+    service_description:
+      readDetailString(record, 'service_description')
+      ?? readDetailString(record, 'description')
+      ?? '',
+    location_description:
+      readDetailString(record, 'location_description') ?? '',
+  };
+}
+
 export function formatDetailNotes(value: string | null | undefined): string {
   const trimmed = value?.trim();
   return trimmed ? trimmed : RESCUE_DETAIL_PLACEHOLDER_NO_NOTES;

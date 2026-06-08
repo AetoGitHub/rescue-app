@@ -127,6 +127,11 @@ export function mapAdministrativeCardFromApi(
     client_id: Number(raw.client_id ?? raw.client ?? 0),
     client_name: String(raw.client_name ?? ''),
     description: String(raw.description ?? ''),
+    service_description:
+      readString(raw, 'service_description')
+      ?? readString(raw, 'description')
+      ?? '',
+    location_description: readString(raw, 'location_description') ?? '',
     operator_id: readNumber(raw, 'operator_id') ?? readNumber(raw, 'operator'),
     operator_name: readString(raw, 'operator_name'),
     supplier_id: readNumber(raw, 'supplier_id') ?? readNumber(raw, 'supplier'),
@@ -254,6 +259,8 @@ export function administrativeDetailToCardDetail(
     client_id: detail.client_id,
     client_name: detail.client_name,
     description: detail.description,
+    service_description: detail.service_description,
+    location_description: detail.location_description,
     sale_price: detail.sale_price,
     operative_status: detail.operative_status,
     operator_id: detail.operator_id,

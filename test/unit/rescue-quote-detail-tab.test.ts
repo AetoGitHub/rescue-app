@@ -16,6 +16,8 @@ function minimalDetail(
     client_id: 10,
     client_name: 'Cliente',
     description: '',
+    service_description: '',
+    location_description: '',
     sale_price: null,
     operative_status: partial.operative_status,
     operator_id: null,

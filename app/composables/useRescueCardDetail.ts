@@ -9,10 +9,12 @@ export function useRescueCardDetail(rescueId: MaybeRefOrGetter<number | null>) {
   const { data, asyncStatus, error, refresh } = useQuery({
     key: () => ['rescue-card-detail', id.value ?? ''],
     enabled: () => id.value != null,
-    query: ({ signal }) =>
-      apiFetch<RescueCardDetail>(`/api/rescue/cards/${id.value}/`, {
+    query: async ({ signal }) => {
+      const raw = await apiFetch<RescueCardDetail>(`/api/rescue/cards/${id.value}/`, {
         signal,
-      }),
+      });
+      return mapRescueCardDetailFromApi(raw);
+    },
     refetchOnWindowFocus: false,
   });
 

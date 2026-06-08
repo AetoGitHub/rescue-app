@@ -24,6 +24,8 @@ export interface AdministrativeRescueCard {
   client_id: number;
   client_name: string;
   description: string;
+  service_description: string;
+  location_description: string;
   operator_id: number | null;
   operator_name: string | null;
   supplier_id: number | null;

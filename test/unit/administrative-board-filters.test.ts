@@ -16,6 +16,8 @@ function card(
     client_id: 1,
     client_name: 'Acme',
     description: '',
+    service_description: '',
+    location_description: '',
     operator_id: 10,
     operator_name: 'Gestor',
     supplier_id: null,

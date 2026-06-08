@@ -30,6 +30,20 @@ describe('mapAdministrativeCardFromApi', () => {
     expect(card.net_profit).toBeNull();
     expect(card.service_date).toBe('2026-06-02T08:00:00Z');
     expect(card.description).toBe('Ubicación');
+    expect(card.service_description).toBe('Ubicación');
+    expect(card.location_description).toBe('');
+  });
+
+  it('maps service and location descriptions separately', () => {
+    const card = mapAdministrativeCardFromApi({
+      id: 5,
+      folio: 'R-005',
+      operative_status: 'closed',
+      service_description: 'Grúa en banqueta',
+      location_description: 'Av. Reforma 123',
+    });
+    expect(card.service_description).toBe('Grúa en banqueta');
+    expect(card.location_description).toBe('Av. Reforma 123');
   });
 
   it('maps legacy admin_canceled to canceled', () => {

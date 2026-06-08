@@ -106,9 +106,9 @@ const hasSupplier = computed(() =>
             </p>
           </div>
           <div class="sm:col-span-2">
-            <p class="font-medium uppercase text-muted">Descripción</p>
+            <p class="font-medium uppercase text-muted">Descripción del servicio</p>
             <p class="text-highlighted">
-              {{ formatDetailDescription(detail.description) }}
+              {{ formatDetailDescription(detail.service_description) }}
             </p>
           </div>
           <div class="sm:col-span-2">
