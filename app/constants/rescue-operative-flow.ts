@@ -15,12 +15,8 @@ export const RESCUE_OPERATIVE_UPDATE_PATH = RESCUE_CHANGE_PHASE_PATH;
 export const RESCUE_OPERATIVE_TOAST = {
   quoteRequired:
     'Debes crear una cotización antes de enviar a autorización',
-  evidenceRequired:
-    'Sube evidencia de servicio y de pago a proveedor antes de cerrar',
   evidenceServiceRequired:
     'Sube evidencia del servicio antes de cerrar',
-  evidencePaymentRequired:
-    'Sube el comprobante de pago a proveedor antes de cerrar',
   advanceAmountRequired: 'El monto del anticipo debe ser mayor a $0',
   advanceConfirmRequired:
     'Completa monto, fecha, forma de pago y referencia del anticipo',

@@ -36,7 +36,7 @@ export const RESCUE_EVIDENCE_MODAL_COPY = {
   payment_provider: {
     title: (folio: string) => `Pago a Proveedor – ${folio}`,
     subtitle:
-      'Comprobante de transferencia (imágenes o PDF, máx 25MB c/u). Requerido para cerrar.',
+      'Comprobante de transferencia (imágenes o PDF, máx 25MB c/u).',
     dropzoneLabel:
       'Arrastra el comprobante aquí o haz clic para seleccionar',
     empty:

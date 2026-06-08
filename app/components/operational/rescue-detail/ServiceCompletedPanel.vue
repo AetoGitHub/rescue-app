@@ -99,13 +99,9 @@ function onSubmit() {
                 @click="setRating(index, star)"
               >
                 <UIcon
-                  name="i-lucide-star"
+                  :name="row.score >= star ? 'i-heroicons-star-solid' : 'i-heroicons-star'"
                   class="size-5"
-                  :class="
-                    row.score >= star
-                      ? 'fill-current stroke-current text-warning'
-                      : 'fill-none stroke-current text-muted opacity-60'
-                  "
+                  :class="row.score >= star ? 'text-warning' : 'text-muted opacity-60'"
                 />
               </button>
             </div>

@@ -29,8 +29,8 @@ describe('hasRequiredCloseEvidences', () => {
     expect(hasRequiredCloseEvidences([])).toBe(false);
   });
 
-  it('returns false with only service evidence', () => {
-    expect(hasRequiredCloseEvidences([serviceEvidence])).toBe(false);
+  it('returns true with only service evidence', () => {
+    expect(hasRequiredCloseEvidences([serviceEvidence])).toBe(true);
   });
 
   it('returns false with only payment evidence', () => {
@@ -45,17 +45,14 @@ describe('hasRequiredCloseEvidences', () => {
 });
 
 describe('getMissingCloseEvidenceTypes', () => {
-  it('lists both types when empty', () => {
+  it('lists service when empty', () => {
     expect(getMissingCloseEvidenceTypes([])).toEqual([
       RESCUE_EVIDENCE_TYPE_SERVICE,
-      RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
     ]);
   });
 
-  it('lists only payment when service exists', () => {
-    expect(getMissingCloseEvidenceTypes([serviceEvidence])).toEqual([
-      RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
-    ]);
+  it('lists nothing when service exists', () => {
+    expect(getMissingCloseEvidenceTypes([serviceEvidence])).toEqual([]);
   });
 });
 
@@ -98,7 +95,7 @@ describe('applyCloseEvidenceGuard', () => {
           primary: true,
         },
       ],
-      [serviceEvidence, paymentEvidence],
+      [serviceEvidence],
     );
 
     expect(actions[0]?.disabled).toBeUndefined();

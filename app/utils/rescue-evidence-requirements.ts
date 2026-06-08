@@ -22,7 +22,6 @@ export type CloseOperativeActionId = (typeof CLOSE_OPERATIVE_ACTIONS)[number];
 
 const REQUIRED_CLOSE_EVIDENCE_TYPES: RescueEvidenceType[] = [
   RESCUE_EVIDENCE_TYPE_SERVICE,
-  RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
 ];
 
 export function isCloseOperativeAction(
@@ -48,15 +47,9 @@ export function getMissingCloseEvidenceTypes(
 }
 
 export function getEvidenceRequiredToastMessage(
-  missing: RescueEvidenceType[],
+  _missing: RescueEvidenceType[],
 ): string {
-  if (missing.length === 2) {
-    return RESCUE_OPERATIVE_TOAST.evidenceRequired;
-  }
-  if (missing.includes(RESCUE_EVIDENCE_TYPE_SERVICE)) {
-    return RESCUE_OPERATIVE_TOAST.evidenceServiceRequired;
-  }
-  return RESCUE_OPERATIVE_TOAST.evidencePaymentRequired;
+  return RESCUE_OPERATIVE_TOAST.evidenceServiceRequired;
 }
 
 export function getEvidenceTabForMissingType(

@@ -42,13 +42,8 @@ const iconSize = computed(() => (props.size === 'xs' ? 'size-3' : 'size-3.5'));
       <UIcon
         v-for="index in starCount"
         :key="index"
-        name="i-lucide-star"
-        :class="[
-          iconSize,
-          index <= filledStars
-            ? 'fill-current stroke-current'
-            : 'fill-none stroke-current opacity-40',
-        ]"
+        :name="index <= filledStars ? 'i-heroicons-star-solid' : 'i-heroicons-star'"
+        :class="[iconSize, index > filledStars ? 'opacity-40' : '']"
       />
     </span>
     <span class="text-xs font-medium">{{ displayValue }}</span>
