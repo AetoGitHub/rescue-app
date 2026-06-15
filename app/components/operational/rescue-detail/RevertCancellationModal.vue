@@ -39,6 +39,7 @@ function onSubmit() {
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     title="Revertir cancelación"
     :ui="{ content: 'max-w-md' }"
   >

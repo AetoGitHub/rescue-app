@@ -39,6 +39,7 @@ function onSubmit() {
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     title="Cancelar servicio"
     :ui="{ content: 'max-w-md' }"
   >

@@ -375,6 +375,7 @@ function onPrimaryAction() {
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     scrollable
     title="Nueva solicitud"
     :ui="{ content: modalContentClass }"

@@ -35,6 +35,7 @@ const fetchReacceptanceReasonDropdown: CatalogDropdownFetcher = (
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     title="Revertir cancelación administrativa"
     :ui="{ content: 'max-w-md' }"
   >

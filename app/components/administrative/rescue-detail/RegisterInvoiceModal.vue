@@ -35,6 +35,7 @@ const invoiceAmountModel = useStringNumberModel(
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     :title="props.title"
     :ui="{ content: 'max-w-md' }"
   >

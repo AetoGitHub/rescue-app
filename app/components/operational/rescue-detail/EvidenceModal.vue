@@ -137,6 +137,7 @@ function fileLabel(url: string, index: number) {
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     :title="modalTitle"
     :description="copy.subtitle"
     :ui="{ content: 'max-w-2xl' }"

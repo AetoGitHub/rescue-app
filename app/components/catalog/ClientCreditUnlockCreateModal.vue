@@ -70,6 +70,7 @@ defineExpose({ requestSubmit });
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     title="Crear extensión de crédito"
     :ui="{ content: 'max-w-md' }"
   >

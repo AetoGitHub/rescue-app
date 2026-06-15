@@ -139,6 +139,7 @@ async function requestSubmit() {
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     scrollable
     :title="isEdit ? 'Editar proveedor' : 'Nuevo proveedor'"
     :description="

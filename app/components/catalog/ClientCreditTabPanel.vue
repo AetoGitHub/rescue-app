@@ -549,6 +549,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
 
     <UModal
       v-model:open="cancelUnlockOpen"
+      :dismissible="false"
       title="Cancelar extensión"
       :ui="{ content: 'max-w-md' }"
     >

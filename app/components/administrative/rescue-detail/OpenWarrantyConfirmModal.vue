@@ -13,6 +13,7 @@ const emit = defineEmits<{
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     title="Abrir garantía"
     :ui="{ content: 'max-w-md' }"
   >

@@ -179,6 +179,7 @@ defineExpose({ open: openDetail });
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     scrollable
     :title="modalTitle"
     :ui="{ content: 'max-w-6xl' }"

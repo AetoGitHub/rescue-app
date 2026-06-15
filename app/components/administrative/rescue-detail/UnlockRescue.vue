@@ -117,6 +117,7 @@ async function requestSubmit() {
 
   <UModal
     v-model:open="open"
+    :dismissible="false"
     title="Desbloquear rescate"
     :ui="{ content: 'max-w-md' }"
   >

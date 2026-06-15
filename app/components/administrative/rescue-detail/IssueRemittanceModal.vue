@@ -18,6 +18,7 @@ const form = defineModel<RescueRemittanceFormState>('form', { required: true });
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     title="Emitir remisión"
     :ui="{ content: 'max-w-md' }"
   >

@@ -129,6 +129,7 @@ watch(open, (isOpen) => {
 <template>
   <UModal
     v-model:open="open"
+    :dismissible="false"
     title="Aplicar pago"
     :ui="{ content: 'max-w-md' }"
   >
