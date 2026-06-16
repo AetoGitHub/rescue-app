@@ -22,7 +22,7 @@ const webhookUrl = computed(
 
 const inputMode = ref<'text' | 'image'>('text');
 const promptText = ref('');
-const pendingFiles = ref<File[]>([]);
+const pendingFile = ref<File | null>(null);
 const isBusy = ref(false);
 const lastNotes = ref<string[]>([]);
 const lastNotesHasUnmatched = ref(false);
@@ -89,18 +89,24 @@ async function onSubmitText() {
   await classifyInput(input, 'text');
 }
 
-async function onPendingFilesChange(value: File[] | null | undefined) {
-  const files = value?.length ? [...value] : [];
-  if (!files.length || isBusy.value) return;
+function fileFromUploadValue(
+  value: File | File[] | null | undefined,
+): File | undefined {
+  if (value == null) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
 
-  const file = files[0]!;
+async function onPendingFilesChange(value: File | File[] | null | undefined) {
+  const file = fileFromUploadValue(value);
+  if (!file || isBusy.value) return;
+
   if (!isQuoteClassifierImageAllowed(file)) {
     toast.add({
       title: 'Archivo no válido',
       description: 'Solo imágenes JPG, PNG, WEBP o GIF de hasta 10 MB.',
       color: 'error',
     });
-    pendingFiles.value = [];
+    pendingFile.value = null;
     return;
   }
 
@@ -121,7 +127,7 @@ async function onPendingFilesChange(value: File[] | null | undefined) {
     });
     isBusy.value = false;
   } finally {
-    pendingFiles.value = [];
+    pendingFile.value = null;
   }
 }
 </script>
@@ -154,6 +160,7 @@ async function onPendingFilesChange(value: File[] | null | undefined) {
             color="primary"
             icon="i-lucide-sparkles"
             label="Generar renglones"
+            block
             :loading="isBusy"
             :disabled="!canSubmitText"
             @click="onSubmitText"
@@ -164,7 +171,7 @@ async function onPendingFilesChange(value: File[] | null | undefined) {
       <template #image>
         <div class="pt-2">
           <UFileUpload
-            v-model="pendingFiles"
+            v-model="pendingFile"
             variant="area"
             size="lg"
             icon="i-lucide-upload"
