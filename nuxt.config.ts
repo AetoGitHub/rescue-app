@@ -52,6 +52,7 @@ export default defineNuxtConfig({
     apiUrl: '',
     n8nCoordsToAddressUrl: '',
     n8nLinkToCoordsUrl: '',
+    n8nRescueClassifierUrl: '',
     session: {
       maxAge: SESSION_MAX_AGE,
     },
