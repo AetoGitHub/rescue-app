@@ -62,8 +62,13 @@ export function buildRescueQuoteCreateBody(
     return null;
   }
 
-  const commissionFixedPool =
-    settings?.commissions?.commission_fixed ?? 0;
+  const commissions = settings?.commissions ?? {
+    commission_type: 'PERCENTAGE' as const,
+    commission_value: 0,
+    commission_fixed: 0,
+    price_multiplier: 1,
+  };
+  const commissionFixedPool = commissions.commission_fixed;
   const ivaRate = options.ivaRate ?? DEFAULT_IVA_RATE;
   const ivaPercent = Math.round(ivaRate * 100);
 
@@ -72,6 +77,9 @@ export function buildRescueQuoteCreateBody(
     technical_cost: formatQuoteDecimal(pricing.costSubtotal),
     sub_total: formatQuoteDecimal(pricing.totalBeforeTax),
     total: formatQuoteDecimal(pricing.totalCharged),
+    seller_commission_type: commissions.commission_type,
+    seller_commission_value: formatQuoteDecimal(commissions.commission_value),
+    seller_commission_fixed: formatQuoteDecimal(pricing.sellerCommission),
     iva: ivaPercent === 8 || ivaPercent === 16 ? ivaPercent : 16,
     services: filledRows.map((row) =>
       mapServiceLine(row, commissionFixedPool),

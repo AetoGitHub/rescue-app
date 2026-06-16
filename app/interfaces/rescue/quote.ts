@@ -1,3 +1,5 @@
+import type { RescueCommissionType } from '~/interfaces/rescue/company-settings';
+
 export interface RescueQuoteServiceCreateBody {
   service: number;
   quantity: number;
@@ -14,6 +16,9 @@ export interface RescueQuoteCreateBody {
   technical_cost: string;
   sub_total: string;
   total: string;
+  seller_commission_type: RescueCommissionType;
+  seller_commission_value: string;
+  seller_commission_fixed: string;
   comissions_apply?: string;
   /** IVA percent: 8 or 16 */
   iva?: number;

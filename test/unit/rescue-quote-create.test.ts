@@ -87,6 +87,9 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.sub_total).toBe('1600.00');
     expect(body!.total).toBe('1600.00');
     expect(body!.iva).toBe(16);
+    expect(body!.seller_commission_type).toBe('PERCENTAGE');
+    expect(body!.seller_commission_value).toBe('5.00');
+    expect(body!.seller_commission_fixed).toBe('30.00');
     expect(body!.comissions_apply).toBe('30.00');
     expect(body!.services).toHaveLength(3);
 
@@ -121,6 +124,8 @@ describe('buildRescueQuoteCreateBody', () => {
     });
 
     expect(body!.services).toHaveLength(2);
+    expect(body!.seller_commission_type).toBe('PERCENTAGE');
+    expect(body!.seller_commission_value).toBe('5.00');
     expect(body!.services[0]!.amount_applied).toBe('0.00');
     expect(body!.services[0]!.percenaje_apply).toBe('0.00');
     expect(body!.services[0]!.total).toBe('1500.00');
@@ -145,6 +150,9 @@ describe('buildRescueQuoteCreateBody', () => {
     );
 
     expect(body!.comissions_apply).toBeUndefined();
+    expect(body!.seller_commission_type).toBe('PERCENTAGE');
+    expect(body!.seller_commission_value).toBe('0.00');
+    expect(body!.seller_commission_fixed).toBe('0.00');
     expect(body!.sub_total).toBe('100.00');
   });
 
@@ -166,6 +174,9 @@ describe('buildRescueQuoteCreateBody', () => {
     );
 
     expect(body!.comissions_apply).toBe('100.00');
+    expect(body!.seller_commission_type).toBe('FIXED');
+    expect(body!.seller_commission_value).toBe('100.00');
+    expect(body!.seller_commission_fixed).toBe('100.00');
     expect(body!.sub_total).toBe('1100.00');
     expect(body!.total).toBe('1100.00');
   });
@@ -183,6 +194,9 @@ describe('buildRescueQuoteUpdateBody', () => {
 
     expect(updateBody).not.toBeNull();
     expect(updateBody).not.toHaveProperty('rescue');
+    expect(updateBody!.seller_commission_type).toBe('PERCENTAGE');
+    expect(updateBody!.seller_commission_value).toBe('5.00');
+    expect(updateBody!.seller_commission_fixed).toBe('27.50');
     expect(updateBody!.technical_cost).toBe('500.00');
     expect(updateBody!.services).toHaveLength(1);
   });
