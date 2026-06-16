@@ -79,7 +79,7 @@ export function buildRescueQuoteCreateBody(
     total: formatQuoteDecimal(pricing.totalCharged),
     seller_commission_type: commissions.commission_type,
     seller_commission_value: formatQuoteDecimal(commissions.commission_value),
-    seller_commission_fixed: formatQuoteDecimal(pricing.sellerCommission),
+    seller_commission_fixed: formatQuoteDecimal(commissions.commission_fixed),
     iva: ivaPercent === 8 || ivaPercent === 16 ? ivaPercent : 16,
     services: filledRows.map((row) =>
       mapServiceLine(row, commissionFixedPool),

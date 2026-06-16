@@ -89,7 +89,7 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.iva).toBe(16);
     expect(body!.seller_commission_type).toBe('PERCENTAGE');
     expect(body!.seller_commission_value).toBe('5.00');
-    expect(body!.seller_commission_fixed).toBe('30.00');
+    expect(body!.seller_commission_fixed).toBe('500.00');
     expect(body!.comissions_apply).toBe('30.00');
     expect(body!.services).toHaveLength(3);
 
@@ -176,7 +176,7 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.comissions_apply).toBe('100.00');
     expect(body!.seller_commission_type).toBe('FIXED');
     expect(body!.seller_commission_value).toBe('100.00');
-    expect(body!.seller_commission_fixed).toBe('100.00');
+    expect(body!.seller_commission_fixed).toBe('0.00');
     expect(body!.sub_total).toBe('1100.00');
     expect(body!.total).toBe('1100.00');
   });
@@ -196,7 +196,7 @@ describe('buildRescueQuoteUpdateBody', () => {
     expect(updateBody).not.toHaveProperty('rescue');
     expect(updateBody!.seller_commission_type).toBe('PERCENTAGE');
     expect(updateBody!.seller_commission_value).toBe('5.00');
-    expect(updateBody!.seller_commission_fixed).toBe('27.50');
+    expect(updateBody!.seller_commission_fixed).toBe('500.00');
     expect(updateBody!.technical_cost).toBe('500.00');
     expect(updateBody!.services).toHaveLength(1);
   });
