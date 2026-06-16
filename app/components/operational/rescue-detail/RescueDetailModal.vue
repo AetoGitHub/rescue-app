@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type { RescueDetailTabValue } from '~/constants/operational-rescue-detail';
 import { RESCUE_DETAIL_TAB_ITEMS } from '~/constants/operational-rescue-detail';
 import {
@@ -53,6 +54,18 @@ const {
 const detailForFooter = computed(
   () => detailForActions.value ?? detail.value,
 );
+
+const modalFooterDetail = computed((): RescueCardDetail | null => {
+  if (
+    detailForFooter.value == null
+    || isPending.value
+    || errorMessage.value
+    || activeTab.value === 'quote'
+  ) {
+    return null;
+  }
+  return detailForFooter.value;
+});
 
 const isUpdatingOperative = computed(() => isUpdating.value);
 
@@ -230,9 +243,9 @@ defineExpose({ open: openDetail });
           v-else-if="detail"
           :model-value="activeTab"
           :items="[...RESCUE_DETAIL_TAB_ITEMS]"
-          @update:model-value="onActiveTabChange"
           class="flex flex-col gap-4"
           :ui="{ list: 'shrink-0 flex-wrap' }"
+          @update:model-value="onActiveTabChange"
         >
           <template #general>
             <OperationalRescueDetailGeneralTab :detail="detail">
@@ -276,11 +289,11 @@ defineExpose({ open: openDetail });
     </template>
 
     <template
-      v-if="detailForFooter && !isPending && !errorMessage"
+      v-if="modalFooterDetail"
       #footer
     >
       <OperationalRescueDetailFooterActions
-        :detail="detailForFooter"
+        :detail="modalFooterDetail"
         :evidences="evidences"
         :loading="isUpdatingOperative"
         @action="handleAction"
