@@ -6,6 +6,7 @@ import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import type { RescueQuoteDetail } from '~/interfaces/rescue/quote';
+import type { ClientCreditSnapshot } from '~/schemas/rescue-create';
 import { canEditRescueQuoteWithUnlock } from '~/utils/rescue-quote-tab';
 import { mapRescueQuoteDetailFromApi } from '~/utils/rescue-quote-detail-map';
 
@@ -36,6 +37,15 @@ const showUnlockCountdown = computed(
     isRescueUnlockActive(props.detail.unlocked_until)
     || Boolean(props.unlockSessionUntil?.trim()),
 );
+
+const clientCreditSnapshot = computed<ClientCreditSnapshot>(() => ({
+  client_type: props.detail.client_type,
+  credit_limit:
+    props.detail.credit_limit != null
+      ? String(props.detail.credit_limit)
+      : null,
+  credit_available: props.detail.credit_available ?? null,
+}));
 
 const quoteLines = ref<RescueQuoteLine[]>(
   initialQuoteLinesForServiceType(serviceType.value),
@@ -207,6 +217,8 @@ function formatApiMoney(value: string | number | null | undefined): string {
         v-model:quote-lines="quoteLines"
         v-model:company-settings="companySettings"
         :client-id="detail.client_id"
+        :client-name="detail.client_name"
+        :client-credit-snapshot="clientCreditSnapshot"
         :service-type="serviceType"
         :fetch-service-dropdown="fetchServiceDropdown"
       />
