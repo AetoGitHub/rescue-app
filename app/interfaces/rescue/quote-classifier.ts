@@ -1,7 +1,5 @@
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 
-export type QuoteEditorTabValue = 'lines' | 'ai';
-
 export type QuoteClassifierInputType = 'text' | 'image';
 
 export interface QuoteClassifierRequestBody {
