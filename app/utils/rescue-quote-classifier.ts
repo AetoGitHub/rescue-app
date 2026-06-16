@@ -1,6 +1,8 @@
 import {
   QUOTE_CLASSIFIER_IMAGE_MAX_BYTES,
   QUOTE_CLASSIFIER_STORAGE_PREFIX,
+  QUOTE_CLASSIFIER_VOICE_FILENAME_PREFIX,
+  QUOTE_CLASSIFIER_VOICE_MAX_BYTES,
 } from '~/constants/quote-classifier-api';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 import type {
@@ -19,7 +21,7 @@ export function parseQuoteClassifierRequestBody(
   if (input.length === 0) return null;
 
   const type = record.type;
-  if (type !== 'text' && type !== 'image') return null;
+  if (type !== 'text' && type !== 'image' && type !== 'voice') return null;
 
   return { input, type };
 }
@@ -76,10 +78,27 @@ export function buildQuoteClassifierStoragePath(filename: string): string {
   return `${QUOTE_CLASSIFIER_STORAGE_PREFIX}/${crypto.randomUUID()}/${safeName}`;
 }
 
+function quoteClassifierFileExtension(name: string): string {
+  const parts = name.split('.');
+  if (parts.length < 2) return '';
+  return (parts.at(-1) ?? '').toLowerCase();
+}
+
 export function isQuoteClassifierImageAllowed(file: File): boolean {
   const allowed = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
-  const parts = file.name.split('.');
-  const ext = parts.length >= 2 ? (parts.at(-1) ?? '').toLowerCase() : '';
+  const ext = quoteClassifierFileExtension(file.name);
   if (!ext || !allowed.has(ext)) return false;
   return file.size <= QUOTE_CLASSIFIER_IMAGE_MAX_BYTES;
+}
+
+export function isQuoteClassifierVoiceAllowed(file: File): boolean {
+  const allowed = new Set(['webm', 'ogg', 'mp4', 'mpeg', 'mp3']);
+  const ext = quoteClassifierFileExtension(file.name);
+  if (!ext || !allowed.has(ext)) return false;
+  return file.size <= QUOTE_CLASSIFIER_VOICE_MAX_BYTES;
+}
+
+export function buildQuoteClassifierVoiceFilename(extension = 'webm'): string {
+  const safeExt = extension.replace(/[^\w]+/g, '') || 'webm';
+  return `${QUOTE_CLASSIFIER_VOICE_FILENAME_PREFIX}-${Date.now()}.${safeExt}`;
 }

@@ -14,7 +14,7 @@ export function readQuoteClassifierRequestBody(
   if (parsed == null) {
     throw createError({
       statusCode: 400,
-      message: 'Indica un texto o imagen válidos para clasificar',
+      message: 'Indica un texto, imagen o nota de voz válidos para clasificar',
     });
   }
   return parsed;

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { QuoteClassifierResponse } from '~/interfaces/rescue/quote-classifier';
 import {
   buildQuoteClassifierStoragePath,
+  buildQuoteClassifierVoiceFilename,
   classifierResponseHasUnmatchedLines,
   isQuoteClassifierImageAllowed,
+  isQuoteClassifierVoiceAllowed,
   mapClassifierLineToQuoteLine,
   mapClassifierResponseToQuoteLines,
   normalizeClassifierNotes,
@@ -29,6 +31,18 @@ describe('parseQuoteClassifierRequestBody', () => {
     ).toEqual({
       input: 'https://cdn.example.com/quote.jpg',
       type: 'image',
+    });
+  });
+
+  it('accepts valid voice payload', () => {
+    expect(
+      parseQuoteClassifierRequestBody({
+        input: 'https://cdn.example.com/voice-note.webm',
+        type: 'voice',
+      }),
+    ).toEqual({
+      input: 'https://cdn.example.com/voice-note.webm',
+      type: 'voice',
     });
   });
 
@@ -185,7 +199,7 @@ describe('classifierResponseHasUnmatchedLines', () => {
 describe('buildQuoteClassifierStoragePath', () => {
   it('includes storage prefix and sanitized filename', () => {
     const path = buildQuoteClassifierStoragePath('cotizacion #1.jpg');
-    expect(path).toMatch(/^rescue-2\/quote-classifier\/.+\/cotizacion_1\.jpg$/);
+    expect(path).toMatch(/^rescue-2\/n8n\/.+\/cotizacion_1\.jpg$/);
   });
 });
 
@@ -206,5 +220,33 @@ describe('isQuoteClassifierImageAllowed', () => {
     const file = new File(['x'], 'big.png', { type: 'image/png' });
     Object.defineProperty(file, 'size', { value: 11 * 1024 * 1024 });
     expect(isQuoteClassifierImageAllowed(file)).toBe(false);
+  });
+});
+
+describe('isQuoteClassifierVoiceAllowed', () => {
+  it('allows webm under size limit', () => {
+    const file = new File(['x'], 'voice-note.webm', { type: 'audio/webm' });
+    Object.defineProperty(file, 'size', { value: 1024 });
+    expect(isQuoteClassifierVoiceAllowed(file)).toBe(true);
+  });
+
+  it('rejects pdf files', () => {
+    const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' });
+    Object.defineProperty(file, 'size', { value: 1024 });
+    expect(isQuoteClassifierVoiceAllowed(file)).toBe(false);
+  });
+
+  it('rejects oversized recordings', () => {
+    const file = new File(['x'], 'long.webm', { type: 'audio/webm' });
+    Object.defineProperty(file, 'size', { value: 11 * 1024 * 1024 });
+    expect(isQuoteClassifierVoiceAllowed(file)).toBe(false);
+  });
+});
+
+describe('buildQuoteClassifierVoiceFilename', () => {
+  it('builds voice note filename with extension', () => {
+    expect(buildQuoteClassifierVoiceFilename('webm')).toMatch(
+      /^voice-note-\d+\.webm$/,
+    );
   });
 });

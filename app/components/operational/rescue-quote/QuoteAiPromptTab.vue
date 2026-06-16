@@ -4,7 +4,11 @@ import {
   QUOTE_CLASSIFY_PATH,
 } from '~/constants/quote-classifier-api';
 import { RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT } from '~/constants/rescue-evidence-api';
-import type { QuoteClassifierApplyPayload, QuoteClassifierResponse } from '~/interfaces/rescue/quote-classifier';
+import type {
+  QuoteClassifierApplyPayload,
+  QuoteClassifierInputType,
+  QuoteClassifierResponse,
+} from '~/interfaces/rescue/quote-classifier';
 
 const emit = defineEmits<{
   applyLines: [payload: QuoteClassifierApplyPayload];
@@ -20,12 +24,21 @@ const webhookUrl = computed(
     RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
 );
 
-const inputMode = ref<'text' | 'image'>('text');
+const inputMode = ref<QuoteClassifierInputType>('text');
 const promptText = ref('');
 const pendingFile = ref<File | null>(null);
 const isBusy = ref(false);
 const lastNotes = ref<string[]>([]);
 const lastNotesHasUnmatched = ref(false);
+
+const voiceRecorder = useBrowserVoiceRecorder();
+const isVoiceSupported = voiceRecorder.isSupported;
+const isVoiceRecording = voiceRecorder.isRecording;
+const voiceRecorderError = voiceRecorder.error;
+const voiceDurationMs = voiceRecorder.durationMs;
+const voiceRecordedBlob = voiceRecorder.recordedBlob;
+const voicePreviewUrl = voiceRecorder.previewUrl;
+const voiceRecordedExtension = voiceRecorder.recordedExtension;
 
 const inputModeItems = [
   {
@@ -40,13 +53,42 @@ const inputModeItems = [
     slot: 'image' as const,
     value: 'image',
   },
+  {
+    label: 'Voz',
+    icon: 'i-lucide-mic',
+    slot: 'voice' as const,
+    value: 'voice',
+  },
 ];
 
 const canSubmitText = computed(
   () => promptText.value.trim().length > 0 && !isBusy.value,
 );
 
-async function classifyInput(input: string, type: 'text' | 'image') {
+const canSubmitVoice = computed(
+  () =>
+    voiceRecordedBlob.value != null
+    && !isBusy.value
+    && !isVoiceRecording.value,
+);
+
+function formatRecordingDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+watch(voiceRecorderError, (message) => {
+  if (!message) return;
+  toast.add({
+    title: 'No se pudo grabar',
+    description: message,
+    color: 'error',
+  });
+});
+
+async function classifyInput(input: string, type: QuoteClassifierInputType) {
   isBusy.value = true;
   lastNotes.value = [];
   lastNotesHasUnmatched.value = false;
@@ -130,13 +172,62 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
     pendingFile.value = null;
   }
 }
+
+async function onSubmitVoice() {
+  const blob = voiceRecordedBlob.value;
+  if (!blob || isBusy.value || isVoiceRecording.value) return;
+
+  const filename = buildQuoteClassifierVoiceFilename(voiceRecordedExtension.value);
+  const file = new File([blob], filename, {
+    type: blob.type || 'audio/webm',
+  });
+
+  if (!isQuoteClassifierVoiceAllowed(file)) {
+    toast.add({
+      title: 'Nota de voz no válida',
+      description: 'La grabación supera 10 MB o tiene un formato no soportado.',
+      color: 'error',
+    });
+    return;
+  }
+
+  isBusy.value = true;
+  try {
+    const storagePath = buildQuoteClassifierStoragePath(file.name);
+    const voiceUrl = await uploadFileToFirebaseGeneral(
+      file,
+      storagePath,
+      webhookUrl.value,
+    );
+    await classifyInput(voiceUrl, 'voice');
+  } catch (error) {
+    toast.add({
+      title: 'No se pudo procesar la nota de voz',
+      description: getFetchErrorMessage(error),
+      color: 'error',
+    });
+    isBusy.value = false;
+  } finally {
+    voiceRecorder.resetRecording();
+  }
+}
+
+function onToggleRecording() {
+  if (isBusy.value) return;
+  if (isVoiceRecording.value) {
+    voiceRecorder.stopRecording();
+    return;
+  }
+  voiceRecorder.resetRecording();
+  void voiceRecorder.startRecording();
+}
 </script>
 
 <template>
   <div class="space-y-4">
     <p class="text-sm text-muted">
-      Describe el servicio en texto o sube una captura de cotización. La IA
-      sugerirá renglones que se agregarán al final de la cotización actual.
+      Describe el servicio en texto, sube una captura o graba una nota de voz.
+      La IA sugerirá renglones que se agregarán al final de la cotización actual.
     </p>
 
     <UTabs
@@ -189,6 +280,68 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
             :ui="{ base: 'min-h-40' }"
             @update:model-value="onPendingFilesChange"
           />
+        </div>
+      </template>
+
+      <template #voice>
+        <div class="flex flex-col gap-3 pt-2">
+          <div
+            v-if="!isVoiceSupported"
+            class="rounded-lg border border-dashed border-default px-4 py-6 text-center text-sm text-muted"
+          >
+            Tu navegador no soporta grabación de voz.
+          </div>
+
+          <template v-else>
+            <div class="flex flex-wrap items-center gap-3">
+              <UButton
+                type="button"
+                :color="isVoiceRecording ? 'error' : 'primary'"
+                :variant="isVoiceRecording ? 'solid' : 'soft'"
+                :icon="isVoiceRecording ? 'i-lucide-square' : 'i-lucide-mic'"
+                :label="isVoiceRecording ? 'Detener' : 'Grabar'"
+                :disabled="isBusy"
+                @click="onToggleRecording"
+              />
+
+              <span
+                v-if="isVoiceRecording"
+                class="text-sm font-medium tabular-nums text-error"
+              >
+                {{ formatRecordingDuration(voiceDurationMs) }}
+              </span>
+
+              <span
+                v-else-if="voiceRecordedBlob"
+                class="text-sm text-muted tabular-nums"
+              >
+                Duración:
+                {{ formatRecordingDuration(voiceDurationMs) }}
+              </span>
+            </div>
+
+            <audio
+              v-if="voicePreviewUrl"
+              :src="voicePreviewUrl"
+              controls
+              class="w-full"
+            />
+
+            <p class="text-xs text-muted">
+              Graba tu solicitud y escúchala antes de enviarla (máx. 10 MB).
+            </p>
+
+            <UButton
+              type="button"
+              color="primary"
+              icon="i-lucide-sparkles"
+              label="Generar renglones"
+              block
+              :loading="isBusy"
+              :disabled="!canSubmitVoice"
+              @click="onSubmitVoice"
+            />
+          </template>
         </div>
       </template>
     </UTabs>

@@ -1,6 +1,6 @@
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 
-export type QuoteClassifierInputType = 'text' | 'image';
+export type QuoteClassifierInputType = 'text' | 'image' | 'voice';
 
 export interface QuoteClassifierRequestBody {
   input: string;
