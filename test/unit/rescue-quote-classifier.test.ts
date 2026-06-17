@@ -9,6 +9,7 @@ import {
   mapClassifierLineToQuoteLine,
   mapClassifierResponseToQuoteLines,
   normalizeClassifierNotes,
+  normalizeQuoteClassifierResponse,
   parseQuoteClassifierRequestBody,
 } from '~/utils/rescue-quote-classifier';
 
@@ -102,6 +103,17 @@ describe('mapClassifierLineToQuoteLine', () => {
     expect(line.service_id).toBeNull();
     expect(line.service_label).toBe('MANIOBRAS EN COCHERA');
   });
+
+  it('defaults unit_cost to 0 when omitted', () => {
+    const line = mapClassifierLineToQuoteLine({
+      service_id: 2,
+      service_label: 'REMOLQUE',
+      quantity: 1,
+    });
+
+    expect(line.service_id).toBe(2);
+    expect(line.unit_cost).toBe(0);
+  });
 });
 
 describe('mapClassifierResponseToQuoteLines', () => {
@@ -135,10 +147,31 @@ describe('mapClassifierResponseToQuoteLines', () => {
     expect(() =>
       mapClassifierResponseToQuoteLines({
         success: false,
-        quote_lines: [],
+        quote_lines: [
+          { service_id: 1, service_label: 'X', quantity: 1 },
+        ],
         notes: [],
       }),
     ).toThrow('El clasificador no pudo generar renglones');
+  });
+
+  it('maps response without success field', () => {
+    const lines = mapClassifierResponseToQuoteLines({
+      quote_lines: [
+        {
+          service_id: 2,
+          service_label: 'REMOLQUE',
+          quantity: 1,
+        },
+      ],
+      notes: ['1 línea emparejada con catálogo'],
+    });
+
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.service_id).toBe(2);
+    expect(lines[0]?.service_label).toBe('REMOLQUE');
+    expect(lines[0]?.quantity).toBe(1);
+    expect(lines[0]?.unit_cost).toBe(0);
   });
 
   it('throws when quote_lines is empty', () => {
@@ -149,6 +182,48 @@ describe('mapClassifierResponseToQuoteLines', () => {
         notes: [],
       }),
     ).toThrow('El clasificador no devolvió renglones');
+  });
+});
+
+describe('normalizeQuoteClassifierResponse', () => {
+  it('normalizes n8n response without success or unit_cost', () => {
+    const normalized = normalizeQuoteClassifierResponse({
+      quote_lines: [
+        {
+          service_id: 2,
+          service_label: 'REMOLQUE',
+          quantity: 1,
+        },
+      ],
+      notes: ['1 línea emparejada con catálogo'],
+    });
+
+    expect(normalized).toEqual({
+      success: undefined,
+      quote_lines: [
+        {
+          service_id: 2,
+          service_label: 'REMOLQUE',
+          quantity: 1,
+          unit_cost: undefined,
+        },
+      ],
+      notes: ['1 línea emparejada con catálogo'],
+    });
+  });
+
+  it('returns null for empty quote_lines', () => {
+    expect(
+      normalizeQuoteClassifierResponse({
+        quote_lines: [],
+        notes: [],
+      }),
+    ).toBeNull();
+  });
+
+  it('returns null for non-object body', () => {
+    expect(normalizeQuoteClassifierResponse(null)).toBeNull();
+    expect(normalizeQuoteClassifierResponse('invalid')).toBeNull();
   });
 });
 

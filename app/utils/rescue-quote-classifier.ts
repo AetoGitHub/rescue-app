@@ -26,6 +26,60 @@ export function parseQuoteClassifierRequestBody(
   return { input, type };
 }
 
+function parseClassifierLineRaw(item: unknown): QuoteClassifierLineRaw | null {
+  if (item == null || typeof item !== 'object') return null;
+
+  const record = item as Record<string, unknown>;
+  const serviceId =
+    record.service_id == null
+      ? null
+      : Number.isFinite(Number(record.service_id))
+        ? Number(record.service_id)
+        : null;
+
+  const unitCostRaw = record.unit_cost;
+  const unit_cost =
+    unitCostRaw != null && Number.isFinite(Number(unitCostRaw))
+      ? Number(unitCostRaw)
+      : undefined;
+
+  return {
+    service_id: serviceId,
+    service_label: String(record.service_label ?? '').trim(),
+    quantity: Number.isFinite(Number(record.quantity)) ? Number(record.quantity) : 0,
+    unit_cost,
+  };
+}
+
+export function normalizeQuoteClassifierResponse(
+  body: unknown,
+): QuoteClassifierResponse | null {
+  if (body == null || typeof body !== 'object') return null;
+
+  const record = body as Record<string, unknown>;
+  if (!Array.isArray(record.quote_lines) || record.quote_lines.length === 0) {
+    return null;
+  }
+
+  const quote_lines = record.quote_lines
+    .map(parseClassifierLineRaw)
+    .filter((line): line is QuoteClassifierLineRaw => line != null);
+
+  if (quote_lines.length === 0) return null;
+
+  const success =
+    typeof record.success === 'boolean' ? record.success : undefined;
+
+  const notes = Array.isArray(record.notes)
+    ? record.notes
+        .filter((note): note is string => typeof note === 'string')
+        .map((note) => note.trim())
+        .filter(Boolean)
+    : [];
+
+  return { success, quote_lines, notes };
+}
+
 export function mapClassifierLineToQuoteLine(
   raw: QuoteClassifierLineRaw,
 ): RescueQuoteLine {
@@ -47,7 +101,7 @@ export function mapClassifierLineToQuoteLine(
 export function mapClassifierResponseToQuoteLines(
   response: QuoteClassifierResponse,
 ): RescueQuoteLine[] {
-  if (!response.success) {
+  if (response.success === false) {
     throw new Error('El clasificador no pudo generar renglones');
   }
 

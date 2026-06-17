@@ -1,4 +1,4 @@
-import type { QuoteClassifierResponse } from '~/interfaces/rescue/quote-classifier';
+import { normalizeQuoteClassifierResponse } from '~/utils/rescue-quote-classifier';
 import { forwardFetchError } from '../../utils/forward-fetch-error';
 import {
   readQuoteClassifierRequestBody,
@@ -12,13 +12,20 @@ export default defineEventHandler(async (event) => {
   const payload = readQuoteClassifierRequestBody(body);
 
   try {
-    return await $fetch<QuoteClassifierResponse>(
-      resolveN8nRescueClassifierUrl(),
-      {
-        method: 'POST',
-        body: payload,
-      },
-    );
+    const raw = await $fetch<unknown>(resolveN8nRescueClassifierUrl(), {
+      method: 'POST',
+      body: payload,
+    });
+
+    const normalized = normalizeQuoteClassifierResponse(raw);
+    if (normalized == null) {
+      throw createError({
+        statusCode: 502,
+        message: 'Respuesta inválida del clasificador',
+      });
+    }
+
+    return normalized;
   } catch (error) {
     forwardFetchError(error);
   }

@@ -11,11 +11,11 @@ export interface QuoteClassifierLineRaw {
   service_id: number | null;
   service_label: string;
   quantity: number;
-  unit_cost: number;
+  unit_cost?: number;
 }
 
 export interface QuoteClassifierResponse {
-  success: boolean;
+  success?: boolean;
   quote_lines: QuoteClassifierLineRaw[];
   notes: string[];
 }
