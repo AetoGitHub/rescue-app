@@ -4,6 +4,8 @@ interface Props<T> {
   items: T[];
   /** Hex color for the column header top border. */
   accentColor: string;
+  subtotalLabel?: string;
+  isSubtotalLoading?: boolean;
   isInitialLoading?: boolean;
   isLoadingMore?: boolean;
   isError?: boolean;
@@ -12,6 +14,8 @@ interface Props<T> {
 }
 
 withDefaults(defineProps<Props<T>>(), {
+  subtotalLabel: '',
+  isSubtotalLoading: false,
   isInitialLoading: false,
   isLoadingMore: false,
   isError: false,
@@ -38,11 +42,21 @@ defineExpose({
       class="sticky top-0 z-10 shrink-0 px-3 py-2.5 rounded-t-lg bg-default border-t-2"
       :style="{ borderTopColor: accentColor }"
     >
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-2">
         <span
           class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted truncate"
         >
           {{ title }}
+        </span>
+        <USkeleton
+          v-if="isSubtotalLoading"
+          class="h-4 w-16 shrink-0"
+        />
+        <span
+          v-else-if="subtotalLabel"
+          class="shrink-0 text-xs font-semibold tabular-nums text-highlighted"
+        >
+          {{ subtotalLabel }}
         </span>
       </div>
     </div>

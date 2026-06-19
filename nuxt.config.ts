@@ -19,6 +19,7 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@pinia/nuxt',
     'nuxt-auth-utils',
+    'nuxt-authorization',
     '@pinia/colada-nuxt',
     '@nuxt/test-utils/module',
   ],

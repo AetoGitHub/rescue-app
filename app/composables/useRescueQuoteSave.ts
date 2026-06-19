@@ -50,6 +50,9 @@ export function useRescueQuoteSave(
     await queryCache.invalidateQueries({
       key: ['operational-rescue-cards'],
     });
+    await queryCache.invalidateQueries({
+      key: ['operational-rescue-cards-summary'],
+    });
   }
 
   const { mutateAsync: createQuote, asyncStatus: createStatus } = useMutation({

@@ -44,7 +44,8 @@ const { mutate, asyncStatus } = useMutation({
   onSuccess: async () => {
     loginErrorMessage.value = null;
     await fetchUserSession();
-    await navigateTo('/admin/operational');
+    const { user } = useUserSession();
+    await navigateTo(defaultHomeForRole(user.value?.role));
   },
   onError: (e) => {
     console.error(e);

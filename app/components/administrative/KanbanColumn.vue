@@ -4,6 +4,8 @@ interface Props<T> {
   items: T[];
   accentColor: string;
   count: number;
+  subtotalLabel?: string;
+  isSubtotalLoading?: boolean;
   isInitialLoading?: boolean;
   isLoadingMore?: boolean;
   isError?: boolean;
@@ -12,6 +14,8 @@ interface Props<T> {
 }
 
 withDefaults(defineProps<Props<T>>(), {
+  subtotalLabel: '',
+  isSubtotalLoading: false,
   isInitialLoading: false,
   isLoadingMore: false,
   isError: false,
@@ -44,12 +48,24 @@ defineExpose({
         >
           {{ title }}
         </span>
-        <UBadge
-          color="neutral"
-          variant="soft"
-          size="sm"
-          :label="String(count)"
-        />
+        <div class="flex shrink-0 items-center gap-1.5">
+          <USkeleton
+            v-if="isSubtotalLoading"
+            class="h-4 w-16"
+          />
+          <span
+            v-else-if="subtotalLabel"
+            class="text-xs font-semibold tabular-nums text-highlighted"
+          >
+            {{ subtotalLabel }}
+          </span>
+          <UBadge
+            color="neutral"
+            variant="soft"
+            size="sm"
+            :label="String(count)"
+          />
+        </div>
       </div>
     </div>
 

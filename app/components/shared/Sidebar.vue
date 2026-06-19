@@ -1,79 +1,144 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
+import type { AdminAbility } from '~~/shared/abilities';
+import {
+  accessAdministrative,
+  accessCatalogs,
+  accessConfig,
+  accessMyBalance,
+  accessOperational,
+  accessUsers,
+} from '~~/shared/abilities';
 
-const items = computed<NavigationMenuItem[][]>(() => [
-  [
-    { label: 'Administración', type: 'label' },
-    // {
-    //   label: 'Dashboard',
-    //   icon: 'i-lucide-layout-dashboard',
-    //   to: '/admin/dashboard',
-    // },
-    {
-      label: 'Operacional',
-      to: '/admin/operational',
-      icon: 'i-lucide-file-text',
-    },
-    {
-      label: 'Administrativo',
-      to: '/admin/administrativo',
-      icon: 'i-lucide-receipt',
-    },
-    {
-      label: 'Mi saldo',
-      to: '/admin/my-balance',
-      icon: 'i-lucide-wallet',
-    },
-  ],
-  [
-    { label: 'Catálogos', type: 'label' },
-    {
-      label: 'Compañías',
-      to: '/admin/catalogs/companies',
-      icon: 'i-lucide-building',
-    },
-    {
-      label: 'Clientes',
-      to: '/admin/catalogs/clients',
-      icon: 'i-lucide-users',
-    },
-    {
-      label: 'Contratos',
-      to: '/admin/catalogs/contracts',
-      icon: 'i-lucide-file-text',
-    },
-    {
-      label: 'Servicios',
-      to: '/admin/catalogs/services',
-      icon: 'i-lucide-wrench',
-    },
-    {
-      label: 'Cancelación',
-      to: '/admin/catalogs/cancellation-reasons',
-      icon: 'i-lucide-ban',
-    },
-    {
-      label: 'Proveedores',
-      to: '/admin/catalogs/suppliers',
-      icon: 'i-lucide-truck',
-    },
-  ],
-  [
-    { label: 'Configuración', type: 'label' },
-    {
-      label: 'Usuarios',
-      to: '/admin/users',
-      icon: 'i-lucide-users-round',
-    },
-    {
-      label: 'Configuración SLA',
-      to: '/admin/configuracion/sla',
-      icon: 'i-lucide-timer',
-    },
-  ],
-]);
+type NavLinkItem = NavigationMenuItem & {
+  ability: AdminAbility;
+};
+
+const NAV_SECTIONS: Array<{
+  label: string;
+  items: NavLinkItem[];
+}> = [
+  {
+    label: 'Administración',
+    items: [
+      {
+        label: 'Operacional',
+        to: '/admin/operational',
+        icon: 'i-lucide-file-text',
+        ability: accessOperational,
+      },
+      {
+        label: 'Administrativo',
+        to: '/admin/administrativo',
+        icon: 'i-lucide-receipt',
+        ability: accessAdministrative,
+      },
+      {
+        label: 'Mi saldo',
+        to: '/admin/my-balance',
+        icon: 'i-lucide-wallet',
+        ability: accessMyBalance,
+      },
+    ],
+  },
+  {
+    label: 'Catálogos',
+    items: [
+      {
+        label: 'Compañías',
+        to: '/admin/catalogs/companies',
+        icon: 'i-lucide-building',
+        ability: accessCatalogs,
+      },
+      {
+        label: 'Clientes',
+        to: '/admin/catalogs/clients',
+        icon: 'i-lucide-users',
+        ability: accessCatalogs,
+      },
+      {
+        label: 'Contratos',
+        to: '/admin/catalogs/contracts',
+        icon: 'i-lucide-file-text',
+        ability: accessCatalogs,
+      },
+      {
+        label: 'Servicios',
+        to: '/admin/catalogs/services',
+        icon: 'i-lucide-wrench',
+        ability: accessCatalogs,
+      },
+      {
+        label: 'Cancelación',
+        to: '/admin/catalogs/cancellation-reasons',
+        icon: 'i-lucide-ban',
+        ability: accessCatalogs,
+      },
+      {
+        label: 'Proveedores',
+        to: '/admin/catalogs/suppliers',
+        icon: 'i-lucide-truck',
+        ability: accessCatalogs,
+      },
+    ],
+  },
+  {
+    label: 'Configuración',
+    items: [
+      {
+        label: 'Usuarios',
+        to: '/admin/users',
+        icon: 'i-lucide-users-round',
+        ability: accessUsers,
+      },
+      {
+        label: 'Configuración SLA',
+        to: '/admin/configuracion/sla',
+        icon: 'i-lucide-timer',
+        ability: accessConfig,
+      },
+    ],
+  },
+];
+
+const items = ref<NavigationMenuItem[][]>([]);
 
 const { user, clear: clearUserSession } = useUserSession();
+
+async function rebuildNavItems() {
+  const sections: NavigationMenuItem[][] = [];
+
+  for (const section of NAV_SECTIONS) {
+    const visibleLinks: NavigationMenuItem[] = [];
+
+    for (const item of section.items) {
+      if (await allows(item.ability)) {
+        visibleLinks.push({
+          label: item.label,
+          to: item.to,
+          icon: item.icon,
+        });
+      }
+    }
+
+    if (visibleLinks.length > 0) {
+      sections.push([
+        { label: section.label, type: 'label' },
+        ...visibleLinks,
+      ]);
+    }
+  }
+
+  items.value = sections;
+}
+
+watch(
+  () => user.value?.role,
+  () => {
+    void rebuildNavItems();
+  },
+  { immediate: true },
+);
 
 const { mutate: logout, asyncStatus: logoutStatus } = useMutation({
   mutation: async () => {

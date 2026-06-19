@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware(() => {
-  const { loggedIn } = useUserSession();
+  const { loggedIn, user } = useUserSession();
 
   if (loggedIn.value) {
-    return navigateTo('/admin/operational');
+    return navigateTo(defaultHomeForRole(user.value?.role));
   }
 });

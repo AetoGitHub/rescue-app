@@ -26,6 +26,12 @@ const {
   refresh,
 } = useOperationalRescueCards(() => props.status, () => props.filters);
 
+const {
+  subtotalLabel,
+  isLoading: isSubtotalLoading,
+  refresh: refreshSummary,
+} = useOperationalRescueCardsSummary(() => props.status, () => props.filters);
+
 const renderError = ref<string | null>(null);
 
 onErrorCaptured((err) => {
@@ -62,7 +68,7 @@ useScrollContainerInfiniteLoad({
 
 function retryColumn() {
   renderError.value = null;
-  void refresh();
+  void Promise.all([refresh(), refreshSummary()]);
 }
 </script>
 
@@ -71,6 +77,8 @@ function retryColumn() {
     ref="columnRef"
     :title="title"
     :accent-color="accentColor"
+    :subtotal-label="subtotalLabel"
+    :is-subtotal-loading="isSubtotalLoading"
     :items="rows"
     :is-initial-loading="isInitialLoading"
     :is-loading-more="isLoadingMore"

@@ -25,6 +25,7 @@
     "eslint": "^10.3.0",
     "nuxt": "^4.4.4",
     "nuxt-auth-utils": "0.5.29",
+    "nuxt-authorization": "^0.3.5",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",

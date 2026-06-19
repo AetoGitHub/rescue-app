@@ -33,6 +33,9 @@ export function useRescueRevertCancellation(
       await queryCache.invalidateQueries({
         key: ['operational-rescue-cards'],
       });
+      await queryCache.invalidateQueries({
+        key: ['operational-rescue-cards-summary'],
+      });
     },
     onError: (error) => {
       toast.add({

@@ -27,6 +27,12 @@ const {
   refresh,
 } = useAdministrativeRescueCards(() => props.status, () => props.filters);
 
+const {
+  subtotalLabel,
+  isLoading: isSubtotalLoading,
+  refresh: refreshSummary,
+} = useAdministrativeRescueCardsSummary(() => props.status, () => props.filters);
+
 const displayRows = computed(() =>
   filterAdministrativeCardsLocally(rows.value, props.filters),
 );
@@ -71,7 +77,7 @@ useScrollContainerInfiniteLoad({
 
 function retryColumn() {
   renderError.value = null;
-  void refresh();
+  void Promise.all([refresh(), refreshSummary()]);
 }
 </script>
 
@@ -80,6 +86,8 @@ function retryColumn() {
     ref="columnRef"
     :title="title"
     :accent-color="accentColor"
+    :subtotal-label="subtotalLabel"
+    :is-subtotal-loading="isSubtotalLoading"
     :items="displayRows"
     :count="displayRows.length"
     :is-initial-loading="isInitialLoading"

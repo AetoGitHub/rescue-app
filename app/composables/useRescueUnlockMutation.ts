@@ -22,6 +22,9 @@ async function invalidateAdministrativeQueries(
     key: ['administrative-rescue-cards'],
   });
   await queryCache.invalidateQueries({
+    key: ['administrative-rescue-cards-summary'],
+  });
+  await queryCache.invalidateQueries({
     key: ['administrative-rescue-list'],
   });
 }

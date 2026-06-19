@@ -37,6 +37,9 @@ export function useRescueOperativeMutation(
       await queryCache.invalidateQueries({
         key: ['operational-rescue-cards'],
       });
+      await queryCache.invalidateQueries({
+        key: ['operational-rescue-cards-summary'],
+      });
     },
     onError: (error) => {
       toast.add({
