@@ -91,7 +91,7 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.seller_commission_value).toBe('5.00');
     expect(body!.seller_commission_fixed).toBe('500.00');
     expect(body!.seller_commission_amount).toBe('30.00');
-    expect(body!.comissions_apply).toBe('30.00');
+    expect(body!.comissions_apply).toBe('530.00');
     expect(body!.services).toHaveLength(3);
 
     const [s0, s1, s2] = body!.services;
@@ -156,6 +156,27 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.seller_commission_value).toBe('0.00');
     expect(body!.seller_commission_fixed).toBe('0.00');
     expect(body!.sub_total).toBe('100.00');
+  });
+
+  it('includes commission_fixed in comissions_apply when seller commission is zero', () => {
+    const settings: RescueCompanySettings = {
+      commissions: {
+        commission_type: 'PERCENTAGE',
+        commission_value: 0,
+        commission_fixed: 500,
+        price_multiplier: 1,
+      },
+      contract: null,
+    };
+    const body = buildRescueQuoteCreateBody(
+      1,
+      [line({ quantity: 1, unit_cost: 100 })],
+      settings,
+      { ivaRate: 0, roundToTen: false },
+    );
+
+    expect(body!.seller_commission_amount).toBe('0.00');
+    expect(body!.comissions_apply).toBe('500.00');
   });
 
   it('includes fixed seller commission in comissions_apply and sub_total', () => {
