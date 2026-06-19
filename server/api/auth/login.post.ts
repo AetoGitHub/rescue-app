@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     event,
     {
       user: {
-        name: body.username,
+        name: response.name,
         id: response.id,
         role: response.role,
       },
