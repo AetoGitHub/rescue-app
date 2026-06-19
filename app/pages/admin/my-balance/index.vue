@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
+import type { BalanceProfile } from '~/constants/payment-api';
 import type { OperativeBalanceVoucher } from '~/interfaces/payment/balance-operative';
+import type { BalanceVoucher } from '~/interfaces/payment/balance';
 import { adminListTableClass } from '~/constants/admin-list-layout';
 
 useHead({
@@ -10,7 +12,16 @@ useHead({
 
 const UBadge = resolveComponent('UBadge');
 
-const { vouchers, total, isPending, hasBalanceProfile, errorMessage } = useMyBalance();
+const {
+  vouchers,
+  total,
+  isPending,
+  hasBalanceProfile,
+  balanceProfile,
+  errorMessage,
+} = useMyBalance();
+
+const isOperativeProfile = computed(() => balanceProfile.value === 'operative');
 
 function formatCommissionPercent(value: string | null | undefined): string {
   const parsed = parseRescueCardMoney(value);
@@ -38,12 +49,37 @@ function formatVoucherDate(iso: string | null | undefined): string {
   });
 }
 
+function renderCommissionAmount(voucher: OperativeBalanceVoucher) {
+  if (!voucher.is_penalty) {
+    return h(
+      'span',
+      { class: 'tabular-nums' },
+      formatRescueCardMoney(voucher.amount),
+    );
+  }
+
+  return h('div', { class: 'flex flex-col items-start gap-0.5' }, [
+    h(
+      'span',
+      { class: 'tabular-nums text-sm text-error line-through' },
+      formatRescueCardMoney(voucher.amount),
+    ),
+    h(
+      'span',
+      { class: 'tabular-nums font-medium' },
+      formatRescueCardMoney(voucher.penalty_amount),
+    ),
+  ]);
+}
+
 const voucherCountLabel = computed(() => {
   const count = vouchers.value.length;
   return `${count} voucher${count === 1 ? '' : 's'} pendiente${count === 1 ? '' : 's'}`;
 });
 
-const columns: TableColumn<OperativeBalanceVoucher>[] = [
+const sharedColumns = (
+  profile: BalanceProfile,
+): TableColumn<BalanceVoucher>[] => [
   {
     accessorKey: 'rescue_folio',
     header: 'Folio',
@@ -71,46 +107,25 @@ const columns: TableColumn<OperativeBalanceVoucher>[] = [
   },
   {
     id: 'commission',
-    header: 'Comisión',
-    cell: ({ row }) =>
-      h('span', { class: 'tabular-nums' }, formatCommissionPercent(row.original.operator_commission)),
-  },
-  {
-    id: 'amount',
-    header: 'Monto comisión',
+    header: profile === 'operative' ? 'Comisión operador' : 'Comisión',
     cell: ({ row }) =>
       h(
         'span',
         { class: 'tabular-nums' },
-        formatRescueCardMoney(row.original.amount),
+        formatCommissionPercent(row.original.operator_commission),
       ),
   },
   {
-    id: 'penalty',
-    header: 'Penalización',
+    id: 'amount',
+    header: 'Monto comisión',
     cell: ({ row }) => {
-      if (!row.original.is_penalty) {
-        return h('span', { class: 'text-muted' }, '—');
-      }
-      return h(UBadge, {
-        color: 'warning',
-        variant: 'subtle',
-        size: 'sm',
-        label: formatPenaltyPercent(row.original.penalty_applied),
-      });
-    },
-  },
-  {
-    id: 'penalty_amount',
-    header: 'Monto con penalización',
-    cell: ({ row }) => {
-      if (!row.original.is_penalty) {
-        return h('span', { class: 'text-muted' }, '—');
+      if (profile === 'operative') {
+        return renderCommissionAmount(row.original as OperativeBalanceVoucher);
       }
       return h(
         'span',
-        { class: 'tabular-nums text-warning' },
-        formatRescueCardMoney(row.original.penalty_amount),
+        { class: 'tabular-nums' },
+        formatRescueCardMoney(row.original.amount),
       );
     },
   },
@@ -121,6 +136,44 @@ const columns: TableColumn<OperativeBalanceVoucher>[] = [
       h('span', { class: 'text-muted' }, formatVoucherDate(row.original.created_at)),
   },
 ];
+
+const operativePenaltyColumn: TableColumn<BalanceVoucher> = {
+  id: 'penalty',
+  header: 'Penalización',
+  cell: ({ row }) => {
+    const voucher = row.original as OperativeBalanceVoucher;
+    if (!voucher.is_penalty) {
+      return h('span', { class: 'text-muted' }, '—');
+    }
+    return h(UBadge, {
+      color: 'warning',
+      variant: 'subtle',
+      size: 'sm',
+      label: formatPenaltyPercent(voucher.penalty_applied),
+    });
+  },
+};
+
+const columns = computed((): TableColumn<BalanceVoucher>[] => {
+  const profile = balanceProfile.value;
+  if (profile == null) return [];
+
+  const base = sharedColumns(profile);
+  if (!isOperativeProfile.value) {
+    return base;
+  }
+
+  const amountIndex = base.findIndex((column) => column.id === 'amount');
+  if (amountIndex === -1) {
+    return [...base, operativePenaltyColumn];
+  }
+
+  return [
+    ...base.slice(0, amountIndex + 1),
+    operativePenaltyColumn,
+    ...base.slice(amountIndex + 1),
+  ];
+});
 </script>
 
 <template>
@@ -182,7 +235,7 @@ const columns: TableColumn<OperativeBalanceVoucher>[] = [
         :class="adminListTableClass"
         :columns="columns"
         :data="vouchers"
-        :get-row-id="(row: OperativeBalanceVoucher) => String(row.id)"
+        :get-row-id="(row: BalanceVoucher) => String(row.id)"
       />
     </div>
   </AdminListPageShell>

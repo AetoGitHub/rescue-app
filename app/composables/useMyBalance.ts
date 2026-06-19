@@ -7,8 +7,11 @@ import {
 } from '~/constants/payment-api';
 import type {
   OperativeBalanceResponse,
-  OperativeBalanceVoucher,
 } from '~/interfaces/payment/balance-operative';
+import type {
+  SellerBalanceResponse,
+} from '~/interfaces/payment/balance-seller';
+import type { BalanceVoucher } from '~/interfaces/payment/balance';
 
 export function useMyBalance(
   userId: MaybeRefOrGetter<number | null | undefined> = undefined,
@@ -38,7 +41,7 @@ export function useMyBalance(
       const profile = balanceProfile.value!;
 
       if (profile === 'seller') {
-        return apiFetch<OperativeBalanceResponse>(SELLER_BALANCE_PATH, {
+        return apiFetch<SellerBalanceResponse>(SELLER_BALANCE_PATH, {
           query: { seller: id },
           signal,
         });
@@ -52,7 +55,7 @@ export function useMyBalance(
     refetchOnWindowFocus: false,
   });
 
-  const vouchers = computed((): OperativeBalanceVoucher[] => data.value?.results ?? []);
+  const vouchers = computed((): BalanceVoucher[] => data.value?.results ?? []);
   const total = computed(() => data.value?.total ?? '0');
   const isPending = computed(() => asyncStatus.value === 'loading');
   const hasBalanceProfile = computed(() => balanceProfile.value != null);
