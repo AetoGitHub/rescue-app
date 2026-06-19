@@ -71,6 +71,7 @@ export function buildRescueQuoteCreateBody(
   const commissionFixedPool = commissions.commission_fixed;
   const ivaRate = options.ivaRate ?? DEFAULT_IVA_RATE;
   const ivaPercent = Math.round(ivaRate * 100);
+  const sellerCommissionAmount = formatQuoteDecimal(pricing.sellerCommission);
 
   const body: RescueQuoteCreateBody = {
     rescue: rescueId,
@@ -80,6 +81,7 @@ export function buildRescueQuoteCreateBody(
     seller_commission_type: commissions.commission_type,
     seller_commission_value: formatQuoteDecimal(commissions.commission_value),
     seller_commission_fixed: formatQuoteDecimal(commissions.commission_fixed),
+    seller_commission_amount: sellerCommissionAmount,
     iva: ivaPercent === 8 || ivaPercent === 16 ? ivaPercent : 16,
     services: filledRows.map((row) =>
       mapServiceLine(row, commissionFixedPool),
@@ -87,7 +89,7 @@ export function buildRescueQuoteCreateBody(
   };
 
   if (pricing.sellerCommission > 0.001) {
-    body.comissions_apply = formatQuoteDecimal(pricing.sellerCommission);
+    body.comissions_apply = sellerCommissionAmount;
   }
 
   return body;

@@ -31,9 +31,7 @@ const { isBusy, lastNotes, lastNotesHasUnmatched, classifyInput } =
 
 const canSubmitVoice = computed(
   () =>
-    voiceRecordedBlob.value != null
-    && !isBusy.value
-    && !isVoiceRecording.value,
+    voiceRecordedBlob.value != null && !isBusy.value && !isVoiceRecording.value,
 );
 
 function formatRecordingDuration(ms: number): string {
@@ -56,7 +54,9 @@ async function onSubmitVoice() {
   const blob = voiceRecordedBlob.value;
   if (!blob || isBusy.value || isVoiceRecording.value) return;
 
-  const filename = buildQuoteClassifierVoiceFilename(voiceRecordedExtension.value);
+  const filename = buildQuoteClassifierVoiceFilename(
+    voiceRecordedExtension.value,
+  );
   const file = new File([blob], filename, {
     type: blob.type || 'audio/webm',
   });
@@ -104,9 +104,7 @@ function onToggleRecording() {
 
 <template>
   <div class="space-y-3">
-    <div
-      class="rounded-lg border border-default bg-elevated/20 p-4 space-y-4"
-    >
+    <div class="rounded-lg border border-default bg-elevated/20 p-4 space-y-4">
       <div
         v-if="!isVoiceSupported"
         class="rounded-lg border border-dashed border-default px-4 py-6 text-center text-sm text-muted"

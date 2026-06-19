@@ -19,6 +19,7 @@ export interface UserFormState {
   email: string;
   role: UserRole;
   phone: string;
+  commission: string;
   password: string;
   is_active: boolean;
 }
@@ -36,6 +37,7 @@ export function mapUserDetail(raw: Record<string, unknown>): UserFormState {
     email: String(raw.email ?? ''),
     role,
     phone: formatMexicoPhoneInput(String(raw.phone ?? '')),
+    commission: String(raw.commission ?? '0.00'),
     password: '',
     is_active: Boolean(raw.is_active ?? true),
   };

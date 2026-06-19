@@ -1,0 +1,189 @@
+<script setup lang="ts">
+import { h, resolveComponent } from 'vue';
+import type { TableColumn } from '@nuxt/ui';
+import type { OperativeBalanceVoucher } from '~/interfaces/payment/balance-operative';
+import { adminListTableClass } from '~/constants/admin-list-layout';
+
+useHead({
+  title: 'Mi saldo',
+});
+
+const UBadge = resolveComponent('UBadge');
+
+const { vouchers, total, isPending, hasBalanceProfile, errorMessage } = useMyBalance();
+
+function formatCommissionPercent(value: string | null | undefined): string {
+  const parsed = parseRescueCardMoney(value);
+  if (parsed === 0) return '0%';
+  return `${parsed % 1 === 0 ? parsed.toFixed(0) : parsed.toFixed(2).replace(/\.?0+$/, '')}%`;
+}
+
+function formatPenaltyPercent(value: string | null | undefined): string {
+  const parsed = parseRescueCardMoney(value);
+  if (parsed === 0) return '—';
+  const percent = parsed <= 1 ? parsed * 100 : parsed;
+  return `${percent.toFixed(0)}%`;
+}
+
+function formatVoucherDate(iso: string | null | undefined): string {
+  if (!iso?.trim()) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+const voucherCountLabel = computed(() => {
+  const count = vouchers.value.length;
+  return `${count} voucher${count === 1 ? '' : 's'} pendiente${count === 1 ? '' : 's'}`;
+});
+
+const columns: TableColumn<OperativeBalanceVoucher>[] = [
+  {
+    accessorKey: 'rescue_folio',
+    header: 'Folio',
+    cell: ({ row }) =>
+      h('span', { class: 'font-medium' }, row.original.rescue_folio),
+  },
+  {
+    id: 'operative_status',
+    header: 'Estado operativo',
+    cell: ({ row }) =>
+      getAdministrativeOperativeStatusLabel(row.original.rescue_operative_status),
+  },
+  {
+    id: 'admin_status',
+    header: 'Estado admin',
+    cell: ({ row }) => {
+      const badge = getBillingStatusBadge(row.original.rescue_admin_status);
+      return h(UBadge, {
+        color: badge.color,
+        variant: 'subtle',
+        size: 'sm',
+        label: badge.label,
+      });
+    },
+  },
+  {
+    id: 'commission',
+    header: 'Comisión',
+    cell: ({ row }) =>
+      h('span', { class: 'tabular-nums' }, formatCommissionPercent(row.original.operator_commission)),
+  },
+  {
+    id: 'amount',
+    header: 'Monto comisión',
+    cell: ({ row }) =>
+      h(
+        'span',
+        { class: 'tabular-nums' },
+        formatRescueCardMoney(row.original.amount),
+      ),
+  },
+  {
+    id: 'penalty',
+    header: 'Penalización',
+    cell: ({ row }) => {
+      if (!row.original.is_penalty) {
+        return h('span', { class: 'text-muted' }, '—');
+      }
+      return h(UBadge, {
+        color: 'warning',
+        variant: 'subtle',
+        size: 'sm',
+        label: formatPenaltyPercent(row.original.penalty_applied),
+      });
+    },
+  },
+  {
+    id: 'penalty_amount',
+    header: 'Monto con penalización',
+    cell: ({ row }) => {
+      if (!row.original.is_penalty) {
+        return h('span', { class: 'text-muted' }, '—');
+      }
+      return h(
+        'span',
+        { class: 'tabular-nums text-warning' },
+        formatRescueCardMoney(row.original.penalty_amount),
+      );
+    },
+  },
+  {
+    id: 'created_at',
+    header: 'Fecha',
+    cell: ({ row }) =>
+      h('span', { class: 'text-muted' }, formatVoucherDate(row.original.created_at)),
+  },
+];
+</script>
+
+<template>
+  <AdminListPageShell
+    navbar-title="Mi saldo"
+    title="Mi saldo"
+    description="Vouchers pendientes de pago y comisiones acumuladas"
+  >
+    <div v-if="!hasBalanceProfile" class="flex flex-1 items-center justify-center py-16">
+      <UPageCard class="max-w-md text-center">
+        <p class="font-medium">Saldo no disponible</p>
+        <p class="mt-1 text-sm text-muted">
+          Tu rol no tiene comisiones pendientes de pago en esta pantalla.
+        </p>
+      </UPageCard>
+    </div>
+
+    <div v-else-if="isPending" class="flex flex-1 items-center justify-center py-16">
+      <UIcon
+        name="i-lucide-loader-circle"
+        class="size-8 animate-spin text-muted"
+      />
+    </div>
+
+    <UAlert
+      v-else-if="errorMessage"
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      title="No se pudo cargar el saldo"
+      :description="errorMessage"
+    />
+
+    <div v-else class="flex min-h-0 flex-1 flex-col gap-4">
+      <UPageCard class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted">
+            Total a pagar
+          </p>
+          <p class="mt-1 text-3xl font-bold tabular-nums tracking-tight">
+            {{ formatRescueCardMoney(total) }}
+          </p>
+        </div>
+        <p class="text-sm text-muted">
+          {{ voucherCountLabel }}
+        </p>
+      </UPageCard>
+
+      <div
+        v-if="vouchers.length === 0"
+        class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-default py-16 text-center text-sm text-muted"
+      >
+        No tienes vouchers pendientes de pago.
+      </div>
+
+      <UTable
+        v-else
+        sticky
+        :class="adminListTableClass"
+        :columns="columns"
+        :data="vouchers"
+        :get-row-id="(row: OperativeBalanceVoucher) => String(row.id)"
+      />
+    </div>
+  </AdminListPageShell>
+</template>

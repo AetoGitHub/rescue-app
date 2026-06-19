@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQuoteClassifierApply } from '~/composables/useQuoteClassifierApply';
 import { QUOTE_CLASSIFIER_IMAGE_ACCEPT } from '~/constants/quote-classifier-api';
 import { RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT } from '~/constants/rescue-evidence-api';
 import type { QuoteClassifierApplyPayload } from '~/interfaces/rescue/quote-classifier';
@@ -79,13 +80,15 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
 
 <template>
   <div class="space-y-3">
-    <div
-      class="rounded-lg border border-default bg-elevated/20 p-4 space-y-4"
-    >
+    <div class="rounded-lg border border-default bg-elevated/20 p-4 space-y-4">
       <div class="flex items-start gap-2 text-sm text-muted">
-        <UIcon name="i-lucide-sparkles" class="mt-0.5 size-4 shrink-0 text-primary" />
+        <UIcon
+          name="i-lucide-sparkles"
+          class="mt-0.5 size-4 shrink-0 text-primary"
+        />
         <p>
-          Describe los conceptos en lenguaje natural y la IA los mapeará al catálogo.
+          Describe los conceptos en lenguaje natural y la IA los mapeará al
+          catálogo.
         </p>
       </div>
 
@@ -109,9 +112,7 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
         layout="list"
         label="Subir captura de cotización"
         :description="
-          isBusy
-            ? 'Procesando imagen…'
-            : 'JPG, PNG, WEBP o GIF (máx. 10 MB)'
+          isBusy ? 'Procesando imagen…' : 'JPG, PNG, WEBP o GIF (máx. 10 MB)'
         "
         class="w-full"
         @update:model-value="onPendingFilesChange"

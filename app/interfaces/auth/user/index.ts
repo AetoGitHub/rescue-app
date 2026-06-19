@@ -8,6 +8,7 @@ export interface User {
   email: string;
   role: UserRole;
   phone: string;
+  commission: string;
   is_active: boolean;
 }
 
@@ -18,6 +19,7 @@ export interface UserCreateBody {
   email: string;
   role: UserRole;
   phone: string;
+  commission: string;
   password: string;
 }
 
@@ -28,6 +30,7 @@ export interface UserUpdateBody {
   email: string;
   role: UserRole;
   phone: string;
+  commission: string;
   is_active: boolean;
   password?: string;
 }

@@ -19,6 +19,7 @@ export interface RescueQuoteCreateBody {
   seller_commission_type: RescueCommissionType;
   seller_commission_value: string;
   seller_commission_fixed: string;
+  seller_commission_amount: string;
   comissions_apply?: string;
   /** IVA percent: 8 or 16 */
   iva?: number;

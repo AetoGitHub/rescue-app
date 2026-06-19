@@ -19,6 +19,11 @@ const items = computed<NavigationMenuItem[][]>(() => [
       to: '/admin/administrativo',
       icon: 'i-lucide-receipt',
     },
+    {
+      label: 'Mi saldo',
+      to: '/admin/my-balance',
+      icon: 'i-lucide-wallet',
+    },
   ],
   [
     { label: 'Catálogos', type: 'label' },

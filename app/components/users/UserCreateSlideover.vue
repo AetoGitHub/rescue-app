@@ -4,7 +4,9 @@ import type { UserCreateBody, UserUpdateBody } from '~/interfaces/auth/user';
 import { USER_ROLE_OPTIONS } from '~/constants/user-select-options';
 import {
   userCreateSchema,
+  userCreateToCreateBody,
   userUpdateSchema,
+  userUpdateToUpdateBody,
   type UserFormOutputCreate,
   type UserFormOutputUpdate,
 } from '~/schemas/user-create';
@@ -29,12 +31,14 @@ function emptyState(): UserFormState {
     email: '',
     role: 'seller',
     phone: '',
+    commission: '0.00',
     password: '',
     is_active: true,
   };
 }
 
 const state = reactive(emptyState());
+const commissionModel = usePercentStringNumberModel(toRef(state, 'commission'));
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -128,34 +132,17 @@ function onSubmit(payload: {
   const id = editingId.value;
 
   if (id != null) {
-    const u = d as UserFormOutputUpdate;
-    const updateBody: UserUpdateBody = {
-      username: u.username,
-      first_name: u.first_name,
-      last_name: u.last_name,
-      email: u.email,
-      role: u.role,
-      phone: u.phone,
-      is_active: u.is_active,
-    };
-    if (u.password.trim() !== '') {
-      updateBody.password = u.password.trim();
-    }
-    mutate({ id, updateBody });
+    mutate({
+      id,
+      updateBody: userUpdateToUpdateBody(d as UserFormOutputUpdate),
+    });
     return;
   }
 
-  const c = d as UserFormOutputCreate;
-  const createBody: UserCreateBody = {
-    username: c.username,
-    first_name: c.first_name,
-    last_name: c.last_name,
-    email: c.email,
-    role: c.role,
-    phone: c.phone,
-    password: c.password,
-  };
-  mutate({ id: null, createBody });
+  mutate({
+    id: null,
+    createBody: userCreateToCreateBody(d as UserFormOutputCreate),
+  });
 }
 
 function onFormError() {
@@ -220,6 +207,13 @@ async function requestSubmit() {
             value-key="value"
             class="w-full"
             variant="subtle"
+          />
+        </UFormField>
+        <UFormField label="Comisión" name="commission" required>
+          <UInputNumber
+            v-model="commissionModel"
+            v-bind="catalogPercentInputProps"
+            placeholder="0.00"
           />
         </UFormField>
         <UFormField label="Teléfono" name="phone">
