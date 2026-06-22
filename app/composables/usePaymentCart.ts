@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada';
-import { PAYMENT_CART_PATH } from '~/constants/payment-api';
+import type { MaybeRefOrGetter } from 'vue';
+import {
+  PAYMENT_CART_PATH,
+  PAYMENT_CART_PAY_PATH,
+} from '~/constants/payment-api';
+import type { PaymentCartPayBody } from '~/interfaces/payment/cart-pay';
 import type {
   PaymentCartAddOperativeBody,
   PaymentCartAddSellerBody,
@@ -11,6 +16,7 @@ import {
   paymentListQueryKey,
   type PaymentListFilterInput,
 } from '~/utils/payment-list-query';
+import { buildPaymentCartQuery } from '~/utils/payment-cart-query';
 
 export interface PaymentCartAddSelectedPayload {
   type: PaymentRecipientType;
@@ -20,10 +26,22 @@ export interface PaymentCartAddSelectedPayload {
   userName?: string | null;
 }
 
-export function usePaymentCart() {
+export function usePaymentCart(
+  testDays: MaybeRefOrGetter<number | null | undefined> = undefined,
+) {
   const apiFetch = useApiFetch();
   const queryCache = useQueryCache();
   const toast = useToast();
+
+  const resolvedTestDays = computed(() => {
+    if (!import.meta.dev) return null;
+    const value = testDays != null ? toValue(testDays) : null;
+    return value ?? null;
+  });
+
+  const cartQuery = computed(() =>
+    buildPaymentCartQuery({ testDays: resolvedTestDays.value }),
+  );
 
   const {
     data: cart,
@@ -31,9 +49,12 @@ export function usePaymentCart() {
     error,
     refresh,
   } = useQuery({
-    key: () => ['payment-cart'],
+    key: () => ['payment-cart', resolvedTestDays.value ?? ''],
     query: ({ signal }) =>
-      apiFetch<PaymentCartResponse>(PAYMENT_CART_PATH, { signal }),
+      apiFetch<PaymentCartResponse>(PAYMENT_CART_PATH, {
+        query: cartQuery.value,
+        signal,
+      }),
     refetchOnWindowFocus: false,
   });
 
@@ -51,6 +72,7 @@ export function usePaymentCart() {
 
   async function invalidateCartAndList(filters?: PaymentListFilterInput) {
     await queryCache.invalidateQueries({ key: ['payment-cart'] });
+    await queryCache.invalidateQueries({ key: ['payment-debt'] });
     if (filters?.userId != null) {
       await queryCache.invalidateQueries({
         key: paymentListQueryKey(filters),
@@ -159,6 +181,40 @@ export function usePaymentCart() {
     },
   });
 
+  const { mutateAsync: payCart, asyncStatus: payStatus } = useMutation({
+    mutation: (body: PaymentCartPayBody) => {
+      const payload: PaymentCartPayBody = {};
+
+      if (body.forgiven != null && body.forgiven.length > 0) {
+        payload.forgiven = body.forgiven;
+      }
+
+      if (body.forgiven_debt != null && body.forgiven_debt.length > 0) {
+        payload.forgiven_debt = body.forgiven_debt;
+      }
+
+      return apiFetch(PAYMENT_CART_PAY_PATH, {
+        method: 'POST',
+        body: payload,
+      });
+    },
+    onSuccess: async () => {
+      await invalidateCartAndList();
+      usePaymentCheckoutRecipient().clearRecipient();
+      toast.add({
+        title: 'Pago registrado',
+        color: 'success',
+      });
+    },
+    onError: (error) => {
+      toast.add({
+        title: 'No se pudo completar el pago',
+        description: getFetchErrorMessage(error),
+        color: 'error',
+      });
+    },
+  });
+
   const isAdding = computed(
     () =>
       addSelectedStatus.value === 'loading'
@@ -166,6 +222,7 @@ export function usePaymentCart() {
   );
 
   const isClearing = computed(() => clearStatus.value === 'loading');
+  const isPaying = computed(() => payStatus.value === 'loading');
 
   return {
     cart,
@@ -174,10 +231,12 @@ export function usePaymentCart() {
     isLoading,
     isAdding,
     isClearing,
+    isPaying,
     refresh,
     cartItemIds,
     addSelected,
     addAll,
     clearCart,
+    payCart,
   };
 }

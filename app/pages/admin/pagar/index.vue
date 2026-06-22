@@ -11,6 +11,7 @@ useHead({
   title: 'Pagar',
 });
 
+const isDev = import.meta.dev;
 const maxSelectableDate = today(getLocalTimeZone());
 
 function minCalendarDate(a: CalendarDate, b: CalendarDate): CalendarDate {
@@ -50,6 +51,13 @@ const {
 } = usePaymentList();
 
 const {
+  testDaysInput,
+  appliedTestDays,
+  applyTestDaysSimulation,
+  clearTestDaysSimulation,
+} = usePaymentCartTestDays();
+
+const {
   cart,
   isLoading: cartLoading,
   isAdding,
@@ -58,7 +66,12 @@ const {
   addSelected,
   addAll,
   clearCart,
-} = usePaymentCart();
+  refresh: refreshCart,
+} = usePaymentCart(appliedTestDays);
+
+watch(appliedTestDays, () => {
+  void refreshCart();
+});
 
 usePaginatedTableInfiniteScroll({
   tableRef,
@@ -492,7 +505,51 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
         />
       </div>
 
-      <div class="w-full shrink-0 lg:w-80">
+      <div class="w-full shrink-0 lg:w-80 space-y-4">
+        <UPageCard
+          v-if="isDev"
+          variant="subtle"
+          :ui="{ body: 'flex flex-wrap items-end gap-3' }"
+        >
+          <div class="min-w-40 flex-1">
+            <p
+              class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted"
+            >
+              Simular días de penalización (dev)
+            </p>
+            <UInputNumber
+              v-model="testDaysInput"
+              inputmode="numeric"
+              placeholder="Ej. 8"
+              class="w-full"
+              @keyup.enter="applyTestDaysSimulation"
+            />
+          </div>
+          <UButton
+            color="primary"
+            icon="i-lucide-flask-conical"
+            label="Simular"
+            :loading="cartLoading"
+            @click="applyTestDaysSimulation"
+          />
+          <UButton
+            v-if="appliedTestDays != null"
+            color="neutral"
+            variant="ghost"
+            label="Quitar simulación"
+            @click="clearTestDaysSimulation"
+          />
+        </UPageCard>
+
+        <UAlert
+          v-if="isDev && appliedTestDays != null"
+          color="warning"
+          variant="subtle"
+          icon="i-lucide-flask-conical"
+          title="Modo prueba (dev)"
+          :description="`Simulando ${appliedTestDays} día${appliedTestDays === 1 ? '' : 's'} de penalización en el carrito.`"
+        />
+
         <PaymentCartSummaryPanel
           :cart="cart"
           :loading="cartLoading"

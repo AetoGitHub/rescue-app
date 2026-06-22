@@ -3,6 +3,7 @@ import { defineConfig, defineProject } from 'vitest/config';
 import { defineVitestProject } from '@nuxt/test-utils/config';
 
 const appDir = fileURLToPath(new URL('./app', import.meta.url));
+const rootDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   test: {
@@ -11,6 +12,7 @@ export default defineConfig({
         resolve: {
           alias: {
             '~': appDir,
+            '~~': rootDir,
           },
         },
         test: {
