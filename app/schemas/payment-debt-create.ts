@@ -9,10 +9,6 @@ const paymentDebtSourceValues = [
 ] as const satisfies readonly PaymentDebtSource[];
 
 export const paymentDebtCreateSchema = z.object({
-  rescue: z
-    .number({ error: 'Ingresa el ID del rescate' })
-    .int('Ingresa el ID del rescate')
-    .positive('Ingresa el ID del rescate'),
   source: z.enum(paymentDebtSourceValues, {
     error: 'Selecciona un origen de deuda',
   }),
@@ -32,7 +28,6 @@ export function paymentDebtCreateToBody(
 
   return {
     user: userId,
-    rescue: data.rescue,
     source: data.source,
     amount: data.amount,
     ...(comment ? { comment } : {}),

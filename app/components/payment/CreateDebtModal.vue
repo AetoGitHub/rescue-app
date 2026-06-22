@@ -8,8 +8,6 @@ import {
 } from '~/schemas/payment-debt-create';
 import {
   catalogCurrencyInputProps,
-  catalogIntegerInputProps,
-  useRequiredIntegerModel,
   useStringNumberModel,
 } from '~/utils/catalog-form';
 
@@ -28,7 +26,6 @@ const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function emptyState(): PaymentDebtCreateFormState {
   return {
-    rescue: 0,
     source: 'in_moment',
     amount: 0,
     comment: '',
@@ -37,13 +34,6 @@ function emptyState(): PaymentDebtCreateFormState {
 
 const state = reactive<PaymentDebtCreateFormState>(emptyState());
 
-const rescueSource = computed({
-  get: () => state.rescue,
-  set: (value: number) => {
-    state.rescue = value;
-  },
-});
-
 const amountSource = computed({
   get: () => String(state.amount || ''),
   set: (value: string) => {
@@ -51,7 +41,6 @@ const amountSource = computed({
   },
 });
 
-const rescueModel = useRequiredIntegerModel(rescueSource);
 const amountModel = useStringNumberModel(amountSource);
 
 watch(open, (isOpen) => {
@@ -84,14 +73,6 @@ defineExpose({ requestSubmit });
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="ID del rescate" name="rescue" required>
-          <UInputNumber
-            v-model="rescueModel"
-            v-bind="catalogIntegerInputProps"
-            class="w-full"
-          />
-        </UFormField>
-
         <UFormField label="Origen" name="source" required>
           <USelect
             v-model="state.source"

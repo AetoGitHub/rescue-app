@@ -6,6 +6,10 @@ import type { OperativeBalanceVoucher } from '~/interfaces/payment/balance-opera
 import type { BalanceVoucher } from '~/interfaces/payment/balance';
 import { adminListTableClass } from '~/constants/admin-list-layout';
 import { parsePositiveIntQuery } from '~~/shared/utils/payment-balance-query';
+import {
+  renderOperativePenaltyAmount,
+  renderOperativePenaltyStatus,
+} from '~/utils/payment-penalty-display';
 
 useHead({
   title: 'Mi saldo',
@@ -45,13 +49,6 @@ function formatCommissionPercent(value: string | null | undefined): string {
   return `${parsed % 1 === 0 ? parsed.toFixed(0) : parsed.toFixed(2).replace(/\.?0+$/, '')}%`;
 }
 
-function formatPenaltyPercent(value: string | null | undefined): string {
-  const parsed = parseRescueCardMoney(value);
-  if (parsed === 0) return '—';
-  const percent = parsed <= 1 ? parsed * 100 : parsed;
-  return `${percent.toFixed(0)}%`;
-}
-
 function formatVoucherDate(iso: string | null | undefined): string {
   if (!iso?.trim()) return '—';
   const date = new Date(iso);
@@ -63,29 +60,6 @@ function formatVoucherDate(iso: string | null | undefined): string {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function renderCommissionAmount(voucher: OperativeBalanceVoucher) {
-  if (!voucher.is_penalty) {
-    return h(
-      'span',
-      { class: 'tabular-nums' },
-      formatRescueCardMoney(voucher.amount),
-    );
-  }
-
-  return h('div', { class: 'flex flex-col items-start gap-0.5' }, [
-    h(
-      'span',
-      { class: 'tabular-nums text-sm text-error line-through' },
-      formatRescueCardMoney(voucher.amount),
-    ),
-    h(
-      'span',
-      { class: 'tabular-nums font-medium' },
-      formatRescueCardMoney(voucher.penalty_amount),
-    ),
-  ]);
 }
 
 const voucherCountLabel = computed(() => {
@@ -138,7 +112,10 @@ const sharedColumns = (
     header: 'Monto comisión',
     cell: ({ row }) => {
       if (profile === 'operative') {
-        return renderCommissionAmount(row.original as OperativeBalanceVoucher);
+        return renderOperativePenaltyAmount(
+          row.original as OperativeBalanceVoucher,
+          false,
+        );
       }
       return h(
         'span',
@@ -159,38 +136,14 @@ const sharedColumns = (
   },
 ];
 
-function renderPenaltyStatus(voucher: OperativeBalanceVoucher) {
-  if (!voucher.is_penalty) {
-    return h('div', { class: 'flex items-center gap-2' }, [
-      h(UIcon, {
-        name: 'i-lucide-check',
-        class: 'size-4 text-success shrink-0',
-      }),
-      h('span', { class: 'text-sm text-muted' }, 'No'),
-    ]);
-  }
-
-  return h('div', { class: 'flex flex-col gap-0.5' }, [
-    h('div', { class: 'flex items-center gap-2' }, [
-      h(UIcon, {
-        name: 'i-lucide-x',
-        class: 'size-4 text-error shrink-0',
-      }),
-      h('span', { class: 'text-sm font-medium text-error' }, 'Sí'),
-    ]),
-    h(
-      'span',
-      { class: 'text-xs tabular-nums text-muted' },
-      formatPenaltyPercent(voucher.penalty_applied),
-    ),
-  ]);
-}
-
 const operativePenaltyColumn: TableColumn<BalanceVoucher> = {
   id: 'penalty',
   header: '¿Penalizado?',
   cell: ({ row }) =>
-    renderPenaltyStatus(row.original as OperativeBalanceVoucher),
+    renderOperativePenaltyStatus(
+      row.original as OperativeBalanceVoucher,
+      UIcon,
+    ),
 };
 
 const columns = computed((): TableColumn<BalanceVoucher>[] => {

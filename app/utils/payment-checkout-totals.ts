@@ -15,12 +15,15 @@ export function computeCheckoutCartLineAmount(
 ): number {
   const amount = parseRescueCardMoney(item.amount);
 
-  if (!item.is_penalty || !forgivenPenalty) {
+  if (!item.is_penalty) {
     return amount;
   }
 
-  const penaltyAmount = parseRescueCardMoney(item.penalty_amount);
-  return Math.max(0, amount - penaltyAmount);
+  if (forgivenPenalty) {
+    return amount;
+  }
+
+  return parseRescueCardMoney(item.penalty_amount);
 }
 
 export function computeCheckoutCartSubtotal(input: CheckoutTotalsInput): number {

@@ -6,8 +6,15 @@ import {
   paymentCartGrandTotal,
   paymentCartItemCount,
   resolveActivePaymentCart,
+  resolveCartDebtVoucherItems,
   resolvePaymentCartRecipientSummary,
 } from '../../app/utils/payment-cart-display';
+
+const emptyDebtVoucher = {
+  count: 0,
+  total_amount: '0',
+  items: [],
+} as const;
 
 function buildOperativeCart(
   overrides: Partial<PaymentCartResponse> = {},
@@ -36,6 +43,7 @@ function buildOperativeCart(
       total_amount: '0',
       items: [],
     },
+    debt_voucher: emptyDebtVoucher,
     ...overrides,
   };
 }
@@ -77,6 +85,7 @@ function buildInvalidMixedCart(): PaymentCartResponse {
         },
       ],
     },
+    debt_voucher: emptyDebtVoucher,
   };
 }
 
@@ -170,5 +179,37 @@ describe('payment-cart-display', () => {
     expect(
       resolvePaymentCartRecipientSummary(buildInvalidMixedCart()),
     ).toBeNull();
+  });
+
+  it('resolveCartDebtVoucherItems returns debt_voucher items from cart', () => {
+    const cart = buildOperativeCart({
+      debt_voucher: {
+        count: 1,
+        total_amount: '100.00',
+        items: [
+          {
+            id: 2,
+            rescue_folio: null,
+            user_id: 5,
+            user_name: 'Operador A',
+            amount: '100.00',
+            payment: false,
+            source: 'cancelled',
+            comment: null,
+            created_at: '2026-06-22T21:58:47Z',
+          },
+        ],
+      },
+    });
+
+    expect(resolveCartDebtVoucherItems(cart)).toHaveLength(1);
+    expect(resolveCartDebtVoucherItems(cart)[0]?.id).toBe(2);
+  });
+
+  it('resolveCartDebtVoucherItems returns empty array when debt_voucher is missing', () => {
+    const cart = buildOperativeCart();
+    delete cart.debt_voucher;
+
+    expect(resolveCartDebtVoucherItems(cart)).toEqual([]);
   });
 });

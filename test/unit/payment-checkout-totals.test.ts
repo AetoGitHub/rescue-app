@@ -38,15 +38,15 @@ function debtItem(overrides: Partial<PaymentDebtItem> = {}): PaymentDebtItem {
 }
 
 describe('payment-checkout-totals', () => {
-  it('computeCheckoutCartLineAmount subtracts penalty when forgiven', () => {
+  it('computeCheckoutCartLineAmount uses penalty_amount when penalized and amount when forgiven', () => {
     const item = cartItem({
       is_penalty: true,
       amount: '270.00',
-      penalty_amount: '70.00',
+      penalty_amount: '200.00',
     });
 
-    expect(computeCheckoutCartLineAmount(item, false)).toBe(270);
-    expect(computeCheckoutCartLineAmount(item, true)).toBe(200);
+    expect(computeCheckoutCartLineAmount(item, false)).toBe(200);
+    expect(computeCheckoutCartLineAmount(item, true)).toBe(270);
   });
 
   it('computeCheckoutGrandTotal subtracts non-forgiven debts from cart subtotal', () => {

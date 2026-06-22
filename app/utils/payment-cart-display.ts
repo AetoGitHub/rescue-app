@@ -1,5 +1,6 @@
 import type { PaymentCartSection } from '~/interfaces/payment/cart';
 import type { PaymentCartResponse } from '~/interfaces/payment/cart';
+import type { PaymentDebtItem } from '~/interfaces/payment/debt';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 import type { PaymentRecipientType } from '~/constants/payment-api';
 import { parseRescueCardMoney } from '~/utils/operational-rescue-card';
@@ -112,4 +113,10 @@ export function flattenPaymentCartItems(
     ...item,
     recipientType: active.type,
   }));
+}
+
+export function resolveCartDebtVoucherItems(
+  cart: PaymentCartResponse,
+): PaymentDebtItem[] {
+  return cart.debt_voucher?.items ?? [];
 }

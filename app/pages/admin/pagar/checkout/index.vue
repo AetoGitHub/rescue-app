@@ -79,15 +79,13 @@ const checkoutRecipient = computed(() => {
 
 const checkoutUserId = computed(() => checkoutRecipient.value?.userId ?? null);
 
-const {
-  rows: debtRows,
-  isInitialLoading: debtLoading,
-  errorMessage: debtErrorMessage,
-  refresh: refreshDebts,
-} = usePaymentDebtList(checkoutUserId, {
-  payment: false,
-  enabled: computed(() => checkoutUserId.value != null),
-});
+const isOperativeCheckout = computed(
+  () => activeRecipientType.value === 'operative',
+);
+
+const debtRows = computed(() =>
+  cart.value != null ? resolveCartDebtVoucherItems(cart.value) : [],
+);
 
 watch(cartRecipientSummary, (summary) => {
   if (summary != null) {
@@ -226,7 +224,7 @@ async function onCreateDebtSubmit(
 ) {
   await createDebt(body);
   createDebtModalOpen.value = false;
-  await Promise.all([refresh(), refreshDebts()]);
+  await refresh();
 }
 
 function onCancel() {
@@ -247,115 +245,136 @@ async function onPay() {
   }
 }
 
-const rescueColumns = computed((): TableColumn<PaymentCartCheckoutRow>[] => [
-  {
-    id: 'rescue',
-    header: 'Rescate',
-    cell: ({ row }) => {
-      const tooltipParts = [
-        recipientTypeLabel(row.original.recipientType),
-        recipientName(row.original),
-      ];
-      if (row.original.client_name?.trim()) {
-        tooltipParts.push(row.original.client_name.trim());
-      }
+const rescueColumns = computed((): TableColumn<PaymentCartCheckoutRow>[] => {
+  const columns: TableColumn<PaymentCartCheckoutRow>[] = [
+    {
+      id: 'rescue',
+      header: 'Rescate',
+      cell: ({ row }) => {
+        const tooltipParts = [
+          recipientTypeLabel(row.original.recipientType),
+          recipientName(row.original),
+        ];
+        if (row.original.client_name?.trim()) {
+          tooltipParts.push(row.original.client_name.trim());
+        }
 
-      return h(
-        UTooltip,
-        { text: tooltipParts.join(' · ') },
-        () =>
-          h(UIcon, {
-            name: 'i-lucide-info',
-            class: 'size-4 text-muted',
-          }),
-      );
-    },
-    meta: {
-      class: {
-        th: 'w-16 text-center',
-        td: 'w-16 text-center',
+        return h(
+          UTooltip,
+          { text: tooltipParts.join(' · ') },
+          () =>
+            h(UIcon, {
+              name: 'i-lucide-info',
+              class: 'size-4 text-muted',
+            }),
+        );
+      },
+      meta: {
+        class: {
+          th: 'w-16 text-center',
+          td: 'w-16 text-center',
+        },
       },
     },
-  },
-  {
-    accessorKey: 'rescue_folio',
-    header: 'Folio',
-    cell: ({ row }) =>
-      h('span', { class: 'font-medium' }, row.original.rescue_folio),
-  },
-  {
-    id: 'date',
-    header: 'Fecha',
-    cell: ({ row }) =>
-      h('span', { class: 'text-muted' }, rescueRowDate(row.original)),
-  },
-  {
-    id: 'forgive',
-    header: 'Perdonar',
-    cell: ({ row }) => {
-      if (!row.original.is_penalty) {
-        return h('span', { class: 'text-muted' }, '—');
-      }
-
-      return h(UCheckbox, {
-        modelValue: forgivenCartIds.value.has(row.original.id),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          toggleForgivenCart(row.original.id, value === true),
-        ariaLabel: `Perdonar penalización ${row.original.rescue_folio}`,
-      });
+    {
+      accessorKey: 'rescue_folio',
+      header: 'Folio',
+      cell: ({ row }) =>
+        h('span', { class: 'font-medium' }, row.original.rescue_folio),
     },
-    meta: {
-      class: {
-        th: 'w-24 text-center',
-        td: 'w-24 text-center',
+    {
+      id: 'date',
+      header: 'Fecha',
+      cell: ({ row }) =>
+        h('span', { class: 'text-muted' }, rescueRowDate(row.original)),
+    },
+  ];
+
+  if (isOperativeCheckout.value) {
+    columns.push({
+      id: 'penalty',
+      header: '¿Penalizado?',
+      cell: ({ row }) =>
+        renderOperativePenaltyStatus(row.original, UIcon),
+    });
+  }
+
+  columns.push(
+    {
+      id: 'forgive',
+      header: 'Perdonar',
+      cell: ({ row }) => {
+        if (!row.original.is_penalty) {
+          return h('span', { class: 'text-muted' }, '—');
+        }
+
+        return h(UCheckbox, {
+          modelValue: forgivenCartIds.value.has(row.original.id),
+          'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+            toggleForgivenCart(row.original.id, value === true),
+          ariaLabel: `Perdonar penalización ${row.original.rescue_folio}`,
+        });
+      },
+      meta: {
+        class: {
+          th: 'w-24 text-center',
+          td: 'w-24 text-center',
+        },
       },
     },
-  },
-  {
-    id: 'amount',
-    header: 'Cantidad',
-    cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'tabular-nums' },
-        formatRescueCardMoney(
-          computeCheckoutCartLineAmount(
+    {
+      id: 'amount',
+      header: 'Cantidad',
+      cell: ({ row }) => {
+        if (isOperativeCheckout.value) {
+          return renderOperativePenaltyAmount(
             row.original,
             forgivenCartIds.value.has(row.original.id),
-          ),
-        ),
-      ),
-    meta: {
-      class: {
-        th: 'text-right',
-        td: 'text-right',
+          );
+        }
+
+        return h(
+          'span',
+          { class: 'tabular-nums' },
+          formatRescueCardMoney(row.original.amount),
+        );
+      },
+      meta: {
+        class: {
+          th: 'text-right',
+          td: 'text-right',
+        },
       },
     },
-  },
-]);
+  );
+
+  return columns;
+});
 
 const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
   {
-    id: 'actions',
-    header: 'Acciones',
+    id: 'forgive',
+    header: 'Perdonar deuda',
     cell: ({ row }) =>
       h(UCheckbox, {
         modelValue: forgivenDebtIds.value.has(row.original.id),
         'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
           toggleForgivenDebt(row.original.id, value === true),
-        ariaLabel: `Perdonar deuda ${row.original.rescue_folio}`,
+        label: 'Perdonar deuda',
+        ariaLabel: `Perdonar deuda ${formatOptionalCell(row.original.rescue_folio)}`,
       }),
     meta: {
       class: {
-        th: 'w-28 text-center',
-        td: 'w-28 text-center',
+        th: 'w-40',
+        td: 'w-40',
       },
     },
   },
   {
     accessorKey: 'rescue_folio',
     header: 'Folio',
-    cell: ({ row }) => h('span', row.original.rescue_folio),
+    cell: ({ row }) =>
+      h('span', formatOptionalCell(row.original.rescue_folio)),
   },
   {
     id: 'date',
@@ -571,9 +590,13 @@ const itemCountLabel = computed(() => {
                     "
                   />
                   <div
-                    class="grid grid-cols-5 border-t border-default px-4 py-3 text-sm"
+                    class="grid border-t border-default px-4 py-3 text-sm"
+                    :class="isOperativeCheckout ? 'grid-cols-6' : 'grid-cols-5'"
                   >
-                    <div class="col-span-3 text-center font-semibold">
+                    <div
+                      class="text-center font-semibold"
+                      :class="isOperativeCheckout ? 'col-span-4' : 'col-span-3'"
+                    >
                       Subtotal
                     </div>
                     <div class="col-span-2 text-right tabular-nums font-semibold">
@@ -598,21 +621,11 @@ const itemCountLabel = computed(() => {
                   />
                 </div>
 
-                <UAlert
-                  v-if="debtErrorMessage"
-                  color="error"
-                  variant="subtle"
-                  icon="i-lucide-circle-alert"
-                  title="No se pudieron cargar las deudas"
-                  :description="debtErrorMessage"
-                />
-
                 <div class="overflow-hidden rounded-lg border border-default">
                   <UTable
                     class="w-full"
                     :columns="debtColumns"
                     :data="debtRows"
-                    :loading="debtLoading"
                     :get-row-id="(row: PaymentCheckoutDebtRow) => String(row.id)"
                   >
                     <template #empty>
