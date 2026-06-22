@@ -26,6 +26,7 @@ export function usePaymentCart() {
   const {
     data: cart,
     asyncStatus,
+    error,
     refresh,
   } = useQuery({
     key: () => ['payment-cart'],
@@ -35,6 +36,10 @@ export function usePaymentCart() {
   });
 
   const isLoading = computed(() => asyncStatus.value === 'loading');
+
+  const errorMessage = computed(() =>
+    error.value != null ? getFetchErrorMessage(error.value) : '',
+  );
 
   function cartItemIds(type: PaymentRecipientType): Set<number> {
     const section =
@@ -141,6 +146,8 @@ export function usePaymentCart() {
 
   return {
     cart,
+    asyncStatus,
+    errorMessage,
     isLoading,
     isAdding,
     isClearing,

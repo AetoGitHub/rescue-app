@@ -225,11 +225,7 @@ watch(
 );
 
 function onCheckout() {
-  toast.add({
-    title: 'Próximamente',
-    description: 'El flujo de pago estará disponible pronto.',
-    color: 'info',
-  });
+  void navigateTo('/admin/pagar/checkout');
 }
 
 const operationalDetailModalMounted = ref(false);
