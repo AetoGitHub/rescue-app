@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
+import { today, getLocalTimeZone } from '@internationalized/date';
+import type { CalendarDate } from '@internationalized/date';
 import { PAYMENT_RECIPIENT_TYPE_OPTIONS } from '~/constants/payment-api';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 import { adminListTableClass } from '~/constants/admin-list-layout';
@@ -8,6 +10,12 @@ import { adminListTableClass } from '~/constants/admin-list-layout';
 useHead({
   title: 'Pagar',
 });
+
+const maxSelectableDate = today(getLocalTimeZone());
+
+function minCalendarDate(a: CalendarDate, b: CalendarDate): CalendarDate {
+  return a.compare(b) <= 0 ? a : b;
+}
 
 const UBadge = resolveComponent('UBadge');
 const UButton = resolveComponent('UButton');
@@ -76,6 +84,36 @@ const userPlaceholder = computed(() =>
 const userFieldLabel = computed(() =>
   recipientType.value === 'operative' ? 'Operador' : 'Vendedor',
 );
+
+const fromDateMax = computed(() =>
+  toDate.value != null
+    ? minCalendarDate(toDate.value, maxSelectableDate)
+    : maxSelectableDate,
+);
+
+const toDateMin = computed(() => fromDate.value ?? undefined);
+
+watch(fromDate, (from) => {
+  if (from == null) return;
+  if (from.compare(maxSelectableDate) > 0) {
+    fromDate.value = maxSelectableDate;
+    return;
+  }
+  if (toDate.value != null && from.compare(toDate.value) > 0) {
+    toDate.value = from;
+  }
+});
+
+watch(toDate, (to) => {
+  if (to == null) return;
+  if (to.compare(maxSelectableDate) > 0) {
+    toDate.value = maxSelectableDate;
+    return;
+  }
+  if (fromDate.value != null && to.compare(fromDate.value) < 0) {
+    fromDate.value = to;
+  }
+});
 
 function formatPaymentDate(iso: string | null | undefined): string {
   if (!iso?.trim()) return '—';
@@ -433,11 +471,15 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
         </UFormField>
 
         <UFormField label="Desde">
-          <SharedDateInput v-model="fromDate" />
+          <SharedDateInput v-model="fromDate" :max-value="fromDateMax" />
         </UFormField>
 
         <UFormField label="Hasta">
-          <SharedDateInput v-model="toDate" />
+          <SharedDateInput
+            v-model="toDate"
+            :min-value="toDateMin"
+            :max-value="maxSelectableDate"
+          />
         </UFormField>
       </div>
     </template>
