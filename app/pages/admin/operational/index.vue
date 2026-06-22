@@ -22,7 +22,19 @@ const rescueRequestModalRef = ref<{
 
 const rescueDetailModalRef = ref<{
   open: (id: number) => void;
+  close: () => void;
 } | null>(null);
+
+function ensureDetailModalMounted() {
+  detailModalMounted.value = true;
+}
+
+const { openRescue, onModalClosed } = useRescueDetailRouteQuery({
+  getModalRef: () => rescueDetailModalRef.value,
+  ensureMounted: ensureDetailModalMounted,
+  openModal: (id) => rescueDetailModalRef.value?.open(id),
+  pendingId: pendingDetailId,
+});
 
 function openCreateRequest() {
   if (requestModalMounted.value) {
@@ -31,15 +43,6 @@ function openCreateRequest() {
   }
   pendingOpenCreate.value = true;
   requestModalMounted.value = true;
-}
-
-function openRescueDetail(id: number) {
-  if (detailModalMounted.value) {
-    rescueDetailModalRef.value?.open(id);
-    return;
-  }
-  pendingDetailId.value = id;
-  detailModalMounted.value = true;
 }
 
 watch(rescueRequestModalRef, (modal) => {
@@ -284,6 +287,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
         <LazyOperationalRescueDetailModal
           v-if="detailModalMounted"
           ref="rescueDetailModalRef"
+          @closed="onModalClosed"
         />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -297,7 +301,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 :title="column.title"
                 :accent-color="column.accentColor"
                 :filters="boardFilters"
-                @select="openRescueDetail"
+                @select="openRescue"
               />
             </div>
           </div>

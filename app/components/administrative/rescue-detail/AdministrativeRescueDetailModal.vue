@@ -24,6 +24,10 @@ const evidenceModalOpen = ref(false);
 const evidenceModalType = ref<RescueEvidenceType>(RESCUE_EVIDENCE_TYPE_SERVICE);
 const ignoreEvidenceTabSelection = ref(false);
 
+const emit = defineEmits<{
+  closed: [];
+}>();
+
 function isEvidenceTab(tab: RescueDetailTabValue): boolean {
   return tab === 'evidence' || tab === 'supplier_payment';
 }
@@ -154,6 +158,7 @@ watch(evidenceModalOpen, (isOpen, wasOpen) => {
 });
 
 function openDetail(id: number, preview?: AdministrativeRescueCard) {
+  if (rescueId.value === id && open.value) return;
   rescueId.value = id;
   previewDetail.value = preview
     ? cardToAdministrativePreviewDetail(preview)
@@ -163,8 +168,13 @@ function openDetail(id: number, preview?: AdministrativeRescueCard) {
   open.value = true;
 }
 
+function closeDetail() {
+  open.value = false;
+}
+
 watch(open, (isOpen) => {
   if (!isOpen) {
+    emit('closed');
     rescueId.value = null;
     previewDetail.value = null;
     activeTab.value = 'general';
@@ -173,7 +183,7 @@ watch(open, (isOpen) => {
   }
 });
 
-defineExpose({ open: openDetail });
+defineExpose({ open: openDetail, close: closeDetail });
 </script>
 
 <template>

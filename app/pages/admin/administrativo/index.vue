@@ -22,20 +22,36 @@ const filtersExpanded = ref(false);
 const detailModalMounted = ref(false);
 const pendingDetailOpen = ref<{
   id: number;
-  preview: AdministrativeRescueCard;
+  preview?: AdministrativeRescueCard;
 } | null>(null);
 
 const detailModalRef = ref<{
   open: (id: number, preview?: AdministrativeRescueCard) => void;
+  close: () => void;
 } | null>(null);
 
-function openRescueDetail(card: AdministrativeRescueCard) {
-  if (detailModalMounted.value) {
-    detailModalRef.value?.open(card.id, card);
-    return;
-  }
-  pendingDetailOpen.value = { id: card.id, preview: card };
+function ensureDetailModalMounted() {
   detailModalMounted.value = true;
+}
+
+const { openRescue, onModalClosed } = useRescueDetailRouteQuery({
+  getModalRef: () => detailModalRef.value,
+  ensureMounted: ensureDetailModalMounted,
+  openModal: (id) => detailModalRef.value?.open(id),
+  onPendingOpen: (id) => {
+    pendingDetailOpen.value = { id };
+    ensureDetailModalMounted();
+  },
+});
+
+function openRescueDetail(card: AdministrativeRescueCard) {
+  ensureDetailModalMounted();
+  if (detailModalRef.value) {
+    detailModalRef.value.open(card.id, card);
+  } else {
+    pendingDetailOpen.value = { id: card.id, preview: card };
+  }
+  openRescue(card.id, { skipModal: true });
 }
 
 watch(detailModalRef, (modal) => {
@@ -423,6 +439,7 @@ const {
         <LazyAdministrativeRescueDetailModal
           v-if="detailModalMounted"
           ref="detailModalRef"
+          @closed="onModalClosed"
         />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">

@@ -17,6 +17,10 @@ const evidenceModalType = ref<RescueEvidenceType>(RESCUE_EVIDENCE_TYPE_SERVICE);
 /** Blocks UTabs from re-opening the evidence modal after close (tab sync). */
 const ignoreEvidenceTabSelection = ref(false);
 
+const emit = defineEmits<{
+  closed: [];
+}>();
+
 function isEvidenceTab(tab: RescueDetailTabValue): boolean {
   return tab === 'evidence' || tab === 'supplier_payment';
 }
@@ -102,13 +106,19 @@ const showUnlockCountdown = computed(
 );
 
 function openDetail(id: number) {
+  if (rescueId.value === id && open.value) return;
   rescueId.value = id;
   activeTab.value = 'general';
   open.value = true;
 }
 
+function closeDetail() {
+  open.value = false;
+}
+
 watch(open, (isOpen) => {
   if (!isOpen) {
+    emit('closed');
     rescueId.value = null;
     activeTab.value = 'general';
     previousTab.value = 'general';
@@ -162,7 +172,7 @@ watch(evidenceModalOpen, (isOpen, wasOpen) => {
   }
 });
 
-defineExpose({ open: openDetail });
+defineExpose({ open: openDetail, close: closeDetail });
 </script>
 
 <template>
