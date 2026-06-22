@@ -5,6 +5,7 @@ import {
   accessConfig,
   accessMyBalance,
   accessOperational,
+  accessPayments,
   accessUsers,
 } from '../../shared/abilities';
 import type { AuthUser } from '../../shared/types/user';
@@ -72,6 +73,7 @@ describe('abilityForAdminPath', () => {
     expect(abilityForAdminPath('/admin/administrativo')).toBe(accessAdministrative);
     expect(abilityForAdminPath('/admin/catalogs/clients')).toBe(accessCatalogs);
     expect(abilityForAdminPath('/admin/users')).toBe(accessUsers);
+    expect(abilityForAdminPath('/admin/pagar')).toBe(accessPayments);
   });
 });
 
@@ -83,6 +85,8 @@ describe('abilityForApiPath', () => {
     );
     expect(abilityForApiPath('/api/catalogue/client/list/')).toBe(accessCatalogs);
     expect(abilityForApiPath('/api/payment/balance/operative/')).toBe(accessMyBalance);
+    expect(abilityForApiPath('/api/payment/operative/')).toBe(accessPayments);
+    expect(abilityForApiPath('/api/payment/cart/')).toBe(accessPayments);
     expect(abilityForApiPath('/api/sla/list/')).toBe(accessConfig);
   });
 });
@@ -96,6 +100,8 @@ describe('abilities', () => {
     expect(await canAccess(accessAdministrative, 'seller')).toBe(false);
     expect(await canAccess(accessAdministrative, 'Admin')).toBe(true);
     expect(await canAccess(accessConfig, 'administrator')).toBe(true);
+    expect(await canAccess(accessPayments, 'admin')).toBe(true);
+    expect(await canAccess(accessPayments, 'operator')).toBe(false);
     expect(await canAccess(accessAdministrative, 'operator')).toBe(false);
   });
 });

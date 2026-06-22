@@ -47,6 +47,7 @@ watch(
       clear
       class="w-full"
       variant="subtle"
+      :ui="{ base: 'bg-default' }"
     />
     <p
       v-if="errorMessage"

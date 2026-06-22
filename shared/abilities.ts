@@ -34,6 +34,10 @@ export const accessConfig = defineAbility(
   withAdminBypass((user: AuthUser) => isAdminRole(user.role)),
 );
 
+export const accessPayments = defineAbility(
+  withAdminBypass((user: AuthUser) => isAdminRole(user.role)),
+);
+
 export type AdminAbility =
   | typeof accessAdminApp
   | typeof accessOperational
@@ -41,4 +45,5 @@ export type AdminAbility =
   | typeof accessAdministrative
   | typeof accessCatalogs
   | typeof accessUsers
-  | typeof accessConfig;
+  | typeof accessConfig
+  | typeof accessPayments;

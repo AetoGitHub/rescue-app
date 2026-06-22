@@ -41,7 +41,7 @@ defineProps<{
 
         <div
           v-if="$slots.filters"
-          class="flex shrink-0 flex-row flex-wrap gap-2"
+          class="flex w-full shrink-0 flex-row flex-wrap gap-2"
         >
           <slot name="filters" />
         </div>

@@ -7,6 +7,7 @@ import {
   accessConfig,
   accessMyBalance,
   accessOperational,
+  accessPayments,
   accessUsers,
 } from '~~/shared/abilities';
 
@@ -38,6 +39,12 @@ const NAV_SECTIONS: Array<{
         to: '/admin/my-balance',
         icon: 'i-lucide-wallet',
         ability: accessMyBalance,
+      },
+      {
+        label: 'Pagar',
+        to: '/admin/pagar',
+        icon: 'i-lucide-banknote',
+        ability: accessPayments,
       },
     ],
   },
