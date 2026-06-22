@@ -18,9 +18,7 @@ function minCalendarDate(a: CalendarDate, b: CalendarDate): CalendarDate {
 }
 
 const UBadge = resolveComponent('UBadge');
-const UButton = resolveComponent('UButton');
 const UCheckbox = resolveComponent('UCheckbox');
-const UTooltip = resolveComponent('UTooltip');
 
 const tableRef = useTemplateRef('table');
 const toast = useToast();
@@ -280,198 +278,126 @@ function onCheckout() {
   void navigateTo('/admin/pagar/checkout');
 }
 
-const operationalDetailModalMounted = ref(false);
-const administrativeDetailModalMounted = ref(false);
-const operationalDetailModalRef = ref<{ open: (id: number) => void } | null>(
-  null,
-);
-const administrativeDetailModalRef = ref<{
-  open: (id: number) => void;
-} | null>(null);
-const pendingDetailOpen = ref<{
-  id: number;
-  type: 'operative' | 'seller';
-} | null>(null);
-
-function openRescueDetail(row: PaymentListItem) {
-  if (row.rescue_id == null) return;
-
-  if (recipientType.value === 'operative') {
-    if (operationalDetailModalMounted.value) {
-      operationalDetailModalRef.value?.open(row.rescue_id);
-      return;
-    }
-    pendingDetailOpen.value = { id: row.rescue_id, type: 'operative' };
-    operationalDetailModalMounted.value = true;
-    return;
-  }
-
-  if (administrativeDetailModalMounted.value) {
-    administrativeDetailModalRef.value?.open(row.rescue_id);
-    return;
-  }
-  pendingDetailOpen.value = { id: row.rescue_id, type: 'seller' };
-  administrativeDetailModalMounted.value = true;
-}
-
-watch(operationalDetailModalRef, (modal) => {
-  if (
-    modal
-    && pendingDetailOpen.value?.type === 'operative'
-  ) {
-    modal.open(pendingDetailOpen.value.id);
-    pendingDetailOpen.value = null;
-  }
-});
-
-watch(administrativeDetailModalRef, (modal) => {
-  if (
-    modal
-    && pendingDetailOpen.value?.type === 'seller'
-  ) {
-    modal.open(pendingDetailOpen.value.id);
-    pendingDetailOpen.value = null;
-  }
-});
-
 const columns = computed((): TableColumn<PaymentListItem>[] => {
   const adding = isAdding.value;
+  const profileType = recipientType.value;
 
   return [
-  {
-    id: 'select',
-    header: () =>
-      h(UCheckbox, {
-        modelValue: allVisibleSelected.value
-          ? true
-          : someVisibleSelected.value
-            ? 'indeterminate'
-            : false,
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          void onToggleAllVisible(value === true),
-        disabled: adding,
-        ariaLabel: 'Seleccionar todas las filas visibles',
-      }),
-    cell: ({ row }) =>
-      h(UCheckbox, {
-        modelValue: isRowSelected(row.original.id),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          void onRowCheck(row.original.id, value === true),
-        disabled: adding,
-        ariaLabel: `Seleccionar deuda ${row.original.rescue_folio}`,
-      }),
-    meta: {
-      class: {
-        th: 'w-10',
-        td: 'w-10',
+    {
+      id: 'select',
+      header: () =>
+        h(UCheckbox, {
+          modelValue: allVisibleSelected.value
+            ? true
+            : someVisibleSelected.value
+              ? 'indeterminate'
+              : false,
+          'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+            void onToggleAllVisible(value === true),
+          disabled: adding,
+          ariaLabel: 'Seleccionar todas las filas visibles',
+        }),
+      cell: ({ row }) =>
+        h(UCheckbox, {
+          modelValue: isRowSelected(row.original.id),
+          'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+            void onRowCheck(row.original.id, value === true),
+          disabled: adding,
+          ariaLabel: `Seleccionar deuda ${row.original.rescue_folio}`,
+        }),
+      meta: {
+        class: {
+          th: 'w-10',
+          td: 'w-10',
+        },
       },
     },
-  },
-  {
-    accessorKey: 'rescue_folio',
-    header: 'Folio',
-    cell: ({ row }) =>
-      h('span', { class: 'font-medium' }, row.original.rescue_folio),
-  },
-  {
-    id: 'name',
-    header: recipientType.value === 'operative' ? 'Operador' : 'Vendedor',
-    cell: ({ row }) => h('span', recipientName(row.original)),
-  },
-  {
-    id: 'awn_date',
-    header: 'Activo sin cotizar',
-    cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'text-muted' },
-        row.original.awn_date != null
-          ? formatPaymentDate(row.original.awn_date)
-          : '—',
-      ),
-  },
-  {
-    id: 'debt_created_at',
-    header: 'Fecha creación deuda',
-    cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'text-muted' },
-        row.original.debt_created_at != null
-          ? formatPaymentDate(row.original.debt_created_at)
-          : formatPaymentDate(row.original.created_at),
-      ),
-  },
-  {
-    id: 'paid_at',
-    header: 'Fecha de pago',
-    cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'text-muted' },
-        row.original.paid_at != null
-          ? formatPaymentDate(row.original.paid_at)
-          : '—',
-      ),
-  },
-  {
-    id: 'client_name',
-    header: 'Compañía',
-    cell: ({ row }) =>
-      h(
-        'span',
-        row.original.client_name != null
-          ? formatOptionalCell(row.original.client_name)
-          : '—',
-      ),
-  },
-  {
-    id: 'amount',
-    header: 'Cantidad',
-    cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'tabular-nums' },
-        formatRescueCardMoney(row.original.amount),
-      ),
-  },
-  {
-    id: 'payment',
-    header: '¿Pagado?',
-    cell: ({ row }) =>
-      h(UBadge, {
-        color: row.original.payment ? 'success' : 'neutral',
-        variant: 'subtle',
-        size: 'sm',
-        label: row.original.payment ? 'Sí' : 'No',
-      }),
-  },
-  {
-    id: 'rescue',
-    header: 'Rescate',
-    cell: ({ row }) => {
-      const hasRescue = row.original.rescue_id != null;
-
-      const button = h(UButton, {
-        size: 'xs',
-        color: 'primary',
-        variant: 'ghost',
-        label: 'Ver',
-        icon: 'i-lucide-external-link',
-        disabled: !hasRescue,
-        onClick: () => openRescueDetail(row.original),
-      });
-
-      if (hasRescue) return button;
-
-      return h(
-        UTooltip,
-        { text: 'Próximamente' },
-        () => button,
-      );
+    {
+      id: 'name',
+      header: profileType === 'operative' ? 'Operador' : 'Vendedor',
+      cell: ({ row }) => h('span', recipientName(row.original)),
     },
-  },
-];
+    {
+      accessorKey: 'rescue_folio',
+      header: 'Folio',
+      cell: ({ row }) =>
+        h(
+          'span',
+          { class: 'font-medium text-primary' },
+          row.original.rescue_folio,
+        ),
+    },
+    {
+      id: 'client_name',
+      header: 'Cliente',
+      cell: ({ row }) =>
+        h('span', formatOptionalCell(row.original.client_name)),
+    },
+    {
+      id: 'service_type',
+      header: 'Tipo',
+      cell: ({ row }) => {
+        const badge = getRescueServiceTypeBadge(row.original.service_type);
+        return h(UBadge, {
+          color: badge.color,
+          variant: 'subtle',
+          size: 'sm',
+          label: badge.label,
+        });
+      },
+    },
+    {
+      id: 'created_at',
+      header: 'Cierre',
+      cell: ({ row }) =>
+        h(
+          'span',
+          { class: 'text-muted' },
+          formatPaymentDate(row.original.created_at),
+        ),
+    },
+    {
+      id: 'profit',
+      header: 'Utilidad',
+      cell: ({ row }) =>
+        h(
+          'span',
+          { class: 'tabular-nums text-primary' },
+          formatRescueCardMoney(row.original.profit),
+        ),
+    },
+    {
+      id: 'commission_rate',
+      header: 'Tasa',
+      cell: ({ row }) =>
+        h(
+          'span',
+          { class: 'tabular-nums' },
+          paymentListCommissionRate(row.original, profileType),
+        ),
+    },
+    {
+      id: 'amount',
+      header: 'Comisión',
+      cell: ({ row }) =>
+        h(
+          'span',
+          { class: 'tabular-nums text-primary' },
+          formatRescueCardMoney(row.original.amount),
+        ),
+    },
+    {
+      id: 'payment',
+      header: 'Estatus',
+      cell: ({ row }) =>
+        h(UBadge, {
+          color: row.original.payment ? 'success' : 'warning',
+          variant: 'subtle',
+          size: 'sm',
+          label: row.original.payment ? 'Pagado' : 'Pendiente',
+        }),
+    },
+  ];
 });
 </script>
 
@@ -576,14 +502,5 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
         />
       </div>
     </div>
-
-    <LazyOperationalRescueDetailModal
-      v-if="operationalDetailModalMounted"
-      ref="operationalDetailModalRef"
-    />
-    <LazyAdministrativeRescueDetailModal
-      v-if="administrativeDetailModalMounted"
-      ref="administrativeDetailModalRef"
-    />
   </AdminListPageShell>
 </template>
