@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui';
-import { PAYMENT_DEBT_SOURCE_OPTIONS } from '~/constants/payment-api';
 import {
   paymentDebtCreateSchema,
   paymentDebtCreateToBody,
@@ -26,7 +25,6 @@ const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function emptyState(): PaymentDebtCreateFormState {
   return {
-    source: 'in_moment',
     amount: 0,
     comment: '',
   };
@@ -73,15 +71,9 @@ defineExpose({ requestSubmit });
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Origen" name="source" required>
-          <USelect
-            v-model="state.source"
-            :items="PAYMENT_DEBT_SOURCE_OPTIONS"
-            value-key="value"
-            label-key="label"
-            class="w-full"
-          />
-        </UFormField>
+        <p class="text-sm text-muted">
+          Deuda en el momento para el beneficiario del pago.
+        </p>
 
         <UFormField label="Monto" name="amount" required>
           <UInputNumber

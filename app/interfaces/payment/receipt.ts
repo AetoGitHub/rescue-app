@@ -9,6 +9,17 @@ export interface PaymentReceiptSummary {
   created_at: string;
 }
 
+export interface PaymentReceiptListItem {
+  id: number;
+  payment_type: PaymentRecipientType;
+  total_amount: string;
+  operative_count: number;
+  seller_count: number;
+  debt_count: number;
+  created_by: string;
+  created_at: string;
+}
+
 export interface PaymentReceiptOperativeItem {
   id: number;
   rescue_folio: string;

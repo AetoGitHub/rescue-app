@@ -5,6 +5,7 @@ const props = defineProps<{
   modelValue?: number | null;
   placeholder?: string;
   fetcher: CatalogDropdownFetcher;
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -44,6 +45,7 @@ watch(
       :items="items"
       :loading="loading"
       :placeholder="placeholder"
+      :disabled="disabled"
       clear
       class="w-full"
       variant="subtle"

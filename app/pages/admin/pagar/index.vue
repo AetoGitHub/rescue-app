@@ -3,7 +3,7 @@ import { h, resolveComponent } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
 import { today, getLocalTimeZone } from '@internationalized/date';
 import type { CalendarDate } from '@internationalized/date';
-import { PAYMENT_RECIPIENT_TYPE_OPTIONS } from '~/constants/payment-api';
+import { PAYMENT_RECIPIENT_TYPE_OPTIONS, PAYMENT_LIST_PAYMENT_OPTIONS } from '~/constants/payment-api';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 import { adminListTableClass } from '~/constants/admin-list-layout';
 
@@ -32,6 +32,7 @@ const {
   folio,
   fromDate,
   toDate,
+  paymentStatus,
   appliedFilters,
   rows,
   asyncStatus,
@@ -478,7 +479,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
     description="Consulta deudas de operadores y vendedores, agrégalas al carrito y prepara el pago"
   >
     <template #filters>
-      <div class="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div class="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <UFormField label="Tipo">
           <USelect
             v-model="recipientType"
@@ -500,6 +501,18 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
             class="w-full"
             :placeholder="userPlaceholder"
             :fetcher="userDropdownFetcher"
+          />
+        </UFormField>
+
+        <UFormField label="Estatus pago">
+          <USelect
+            v-model="paymentStatus"
+            :items="PAYMENT_LIST_PAYMENT_OPTIONS"
+            value-key="value"
+            label-key="label"
+            class="w-full"
+            variant="subtle"
+            :ui="{ base: 'bg-default' }"
           />
         </UFormField>
 

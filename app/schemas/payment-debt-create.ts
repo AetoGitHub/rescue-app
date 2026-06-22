@@ -1,17 +1,7 @@
 import { z } from 'zod';
 import type { PaymentDebtCreateBody } from '~/interfaces/payment/debt';
-import type { PaymentDebtSource } from '~/constants/payment-api';
-
-const paymentDebtSourceValues = [
-  'cancelled',
-  'warranty',
-  'in_moment',
-] as const satisfies readonly PaymentDebtSource[];
 
 export const paymentDebtCreateSchema = z.object({
-  source: z.enum(paymentDebtSourceValues, {
-    error: 'Selecciona un origen de deuda',
-  }),
   amount: z
     .number({ error: 'Ingresa el monto de la deuda' })
     .positive('El monto debe ser mayor a cero'),
@@ -28,7 +18,7 @@ export function paymentDebtCreateToBody(
 
   return {
     user: userId,
-    source: data.source,
+    source: 'in_moment',
     amount: data.amount,
     ...(comment ? { comment } : {}),
   };

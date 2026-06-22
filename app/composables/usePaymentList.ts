@@ -4,6 +4,7 @@ import type { CalendarDate } from '@internationalized/date';
 import {
   PAYMENT_OPERATIVE_LIST_PATH,
   PAYMENT_SELLER_LIST_PATH,
+  type PaymentListPaymentStatus,
   type PaymentRecipientType,
 } from '~/constants/payment-api';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
@@ -11,6 +12,7 @@ import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface
 import {
   buildPaymentListQuery,
   paymentListQueryKey,
+  paymentStatusToFilterValue,
   type PaymentListFilterInput,
 } from '~/utils/payment-list-query';
 
@@ -21,6 +23,7 @@ function emptyAppliedFilters(): PaymentListFilterInput {
     folio: '',
     fromDate: null,
     toDate: null,
+    payment: null,
   };
 }
 
@@ -33,6 +36,7 @@ export function usePaymentList() {
   const debouncedFolio = refDebounced(folio, 300);
   const fromDate = ref<CalendarDate | null>(null);
   const toDate = ref<CalendarDate | null>(null);
+  const paymentStatus = ref<PaymentListPaymentStatus>('all');
   const appliedFilters = ref<PaymentListFilterInput>(emptyAppliedFilters());
   const selectedIds = ref<Set<number>>(new Set());
 
@@ -92,6 +96,7 @@ export function usePaymentList() {
         ...emptyAppliedFilters(),
         type: recipientType.value,
         folio: folioValue,
+        payment: paymentStatusToFilterValue(paymentStatus.value),
       };
       clearSelection();
       return;
@@ -103,6 +108,7 @@ export function usePaymentList() {
       folio: folioValue,
       fromDate: fromDate.value,
       toDate: toDate.value,
+      payment: paymentStatusToFilterValue(paymentStatus.value),
     };
     clearSelection();
   }
@@ -151,11 +157,17 @@ export function usePaymentList() {
     syncAppliedFilters();
   });
 
+  watch(paymentStatus, () => {
+    if (userId.value == null) return;
+    syncAppliedFilters();
+  });
+
   watch(recipientType, () => {
     userId.value = null;
     folio.value = '';
     fromDate.value = null;
     toDate.value = null;
+    paymentStatus.value = 'all';
   });
 
   return {
@@ -164,6 +176,7 @@ export function usePaymentList() {
     folio,
     fromDate,
     toDate,
+    paymentStatus,
     appliedFilters,
     rows,
     asyncStatus,

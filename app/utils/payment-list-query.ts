@@ -1,5 +1,9 @@
 import type { CalendarDate } from '@internationalized/date';
-import type { PaymentRecipientType } from '~/constants/payment-api';
+import type {
+  PaymentListPaymentStatus,
+  PaymentRecipientType,
+} from '~/constants/payment-api';
+import { resolvePaymentListPaymentFilter } from '~/constants/payment-api';
 
 export type CalendarDateParts = Pick<CalendarDate, 'year' | 'month' | 'day'>;
 
@@ -9,6 +13,8 @@ export interface PaymentListFilterInput {
   folio?: string;
   fromDate?: CalendarDateParts | null;
   toDate?: CalendarDateParts | null;
+  /** null = todos (no enviar qp); true/false = payment en query */
+  payment?: boolean | null;
 }
 
 export function calendarDateToApiDate(
@@ -39,6 +45,12 @@ export function buildPaymentListQuery(
   const toDate = calendarDateToApiDate(input.toDate);
   if (toDate) query.to_date = toDate;
 
+  if (input.payment === true) {
+    query.payment = 'true';
+  } else if (input.payment === false) {
+    query.payment = 'false';
+  }
+
   return query;
 }
 
@@ -53,6 +65,13 @@ export function buildPaymentCartAddAllQuery(
 export function paymentListQueryKey(
   filters: PaymentListFilterInput,
 ): (string | number)[] {
+  const paymentKey =
+    filters.payment === true
+      ? 'true'
+      : filters.payment === false
+        ? 'false'
+        : 'all';
+
   return [
     'payment-list',
     filters.type,
@@ -60,5 +79,20 @@ export function paymentListQueryKey(
     filters.folio?.trim() ?? '',
     calendarDateToApiDate(filters.fromDate) ?? '',
     calendarDateToApiDate(filters.toDate) ?? '',
+    paymentKey,
   ];
+}
+
+export function paymentStatusToFilterValue(
+  status: PaymentListPaymentStatus,
+): boolean | null {
+  return resolvePaymentListPaymentFilter(status);
+}
+
+export function paymentFilterToStatus(
+  payment: boolean | null | undefined,
+): PaymentListPaymentStatus {
+  if (payment === true) return 'paid';
+  if (payment === false) return 'pending';
+  return 'all';
 }

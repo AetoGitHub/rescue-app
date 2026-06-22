@@ -5,6 +5,7 @@ import {
   accessConfig,
   accessMyBalance,
   accessOperational,
+  accessPaymentReceipts,
   accessPayments,
   accessUsers,
 } from '../../shared/abilities';
@@ -74,6 +75,8 @@ describe('abilityForAdminPath', () => {
     expect(abilityForAdminPath('/admin/catalogs/clients')).toBe(accessCatalogs);
     expect(abilityForAdminPath('/admin/users')).toBe(accessUsers);
     expect(abilityForAdminPath('/admin/pagar')).toBe(accessPayments);
+    expect(abilityForAdminPath('/admin/pagar/recibos')).toBe(accessPaymentReceipts);
+    expect(abilityForAdminPath('/admin/pagar/recibo/42')).toBe(accessPaymentReceipts);
   });
 });
 
@@ -87,6 +90,8 @@ describe('abilityForApiPath', () => {
     expect(abilityForApiPath('/api/payment/balance/operative/')).toBe(accessMyBalance);
     expect(abilityForApiPath('/api/payment/operative/')).toBe(accessPayments);
     expect(abilityForApiPath('/api/payment/cart/')).toBe(accessPayments);
+    expect(abilityForApiPath('/api/payment/receipt/')).toBe(accessPaymentReceipts);
+    expect(abilityForApiPath('/api/payment/receipt/42/')).toBe(accessPaymentReceipts);
     expect(abilityForApiPath('/api/sla/list/')).toBe(accessConfig);
   });
 });
@@ -102,6 +107,9 @@ describe('abilities', () => {
     expect(await canAccess(accessConfig, 'administrator')).toBe(true);
     expect(await canAccess(accessPayments, 'admin')).toBe(true);
     expect(await canAccess(accessPayments, 'operator')).toBe(false);
+    expect(await canAccess(accessPaymentReceipts, 'admin')).toBe(true);
+    expect(await canAccess(accessPaymentReceipts, 'operator')).toBe(false);
+    expect(await canAccess(accessPaymentReceipts, 'seller')).toBe(false);
     expect(await canAccess(accessAdministrative, 'operator')).toBe(false);
   });
 });

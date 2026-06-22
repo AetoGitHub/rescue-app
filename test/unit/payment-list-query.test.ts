@@ -3,6 +3,8 @@ import {
   buildPaymentCartAddAllQuery,
   buildPaymentListQuery,
   calendarDateToApiDate,
+  paymentFilterToStatus,
+  paymentStatusToFilterValue,
 } from '../../app/utils/payment-list-query';
 
 function date(year: number, month: number, day: number) {
@@ -21,7 +23,7 @@ describe('payment-list-query', () => {
     ).toBeNull();
   });
 
-  it('buildPaymentListQuery maps operative filters', () => {
+  it('buildPaymentListQuery omits payment by default (todos)', () => {
     expect(
       buildPaymentListQuery({
         type: 'operative',
@@ -38,7 +40,7 @@ describe('payment-list-query', () => {
     });
   });
 
-  it('buildPaymentListQuery maps seller filters', () => {
+  it('buildPaymentListQuery maps seller filters without payment', () => {
     expect(
       buildPaymentListQuery({
         type: 'seller',
@@ -49,16 +51,51 @@ describe('payment-list-query', () => {
     });
   });
 
+  it('buildPaymentListQuery maps payment true and false', () => {
+    expect(
+      buildPaymentListQuery({
+        type: 'operative',
+        userId: 3,
+        payment: true,
+      }),
+    ).toEqual({
+      operator: '3',
+      payment: 'true',
+    });
+
+    expect(
+      buildPaymentListQuery({
+        type: 'operative',
+        userId: 3,
+        payment: false,
+      }),
+    ).toEqual({
+      operator: '3',
+      payment: 'false',
+    });
+  });
+
+  it('payment status helpers map UI values to query filter', () => {
+    expect(paymentStatusToFilterValue('all')).toBeNull();
+    expect(paymentStatusToFilterValue('paid')).toBe(true);
+    expect(paymentStatusToFilterValue('pending')).toBe(false);
+    expect(paymentFilterToStatus(null)).toBe('all');
+    expect(paymentFilterToStatus(true)).toBe('paid');
+    expect(paymentFilterToStatus(false)).toBe('pending');
+  });
+
   it('buildPaymentCartAddAllQuery adds all=true', () => {
     expect(
       buildPaymentCartAddAllQuery({
         type: 'seller',
         userId: 2,
         folio: 'ABC',
+        payment: false,
       }),
     ).toEqual({
       seller: '2',
       folio: 'ABC',
+      payment: 'false',
       all: 'true',
     });
   });

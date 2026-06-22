@@ -24,6 +24,25 @@ export const PAYMENT_RECIPIENT_TYPE_OPTIONS: {
   { label: 'Vendedores', value: 'seller' },
 ];
 
+export type PaymentListPaymentStatus = 'all' | 'paid' | 'pending';
+
+export const PAYMENT_LIST_PAYMENT_OPTIONS: {
+  label: string;
+  value: PaymentListPaymentStatus;
+}[] = [
+  { label: 'Todos', value: 'all' },
+  { label: 'Pagado', value: 'paid' },
+  { label: 'Pendiente', value: 'pending' },
+];
+
+export function resolvePaymentListPaymentFilter(
+  status: PaymentListPaymentStatus | undefined,
+): boolean | null {
+  if (status === 'paid') return true;
+  if (status === 'pending') return false;
+  return null;
+}
+
 export const PAYMENT_DEBT_SOURCE_OPTIONS: {
   label: string;
   value: PaymentDebtSource;

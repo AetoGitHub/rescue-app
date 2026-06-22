@@ -7,6 +7,7 @@ import {
   accessConfig,
   accessMyBalance,
   accessOperational,
+  accessPaymentReceipts,
   accessPayments,
   accessUsers,
 } from '~~/shared/abilities';
@@ -45,6 +46,12 @@ const NAV_SECTIONS: Array<{
         to: '/admin/pagar',
         icon: 'i-lucide-banknote',
         ability: accessPayments,
+      },
+      {
+        label: 'Comprobantes',
+        to: '/admin/pagar/recibos',
+        icon: 'i-lucide-file-check-2',
+        ability: accessPaymentReceipts,
       },
     ],
   },

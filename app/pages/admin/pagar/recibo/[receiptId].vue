@@ -231,6 +231,16 @@ const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
             </div>
 
             <template v-else>
+              <div class="flex shrink-0 flex-wrap items-center justify-between gap-3">
+                <UButton
+                  to="/admin/pagar/recibos"
+                  icon="i-lucide-arrow-left"
+                  label="Ver comprobantes"
+                  color="neutral"
+                  variant="ghost"
+                />
+              </div>
+
               <div class="space-y-1">
                 <h1 class="text-3xl font-bold tracking-tight">
                   Comprobante de pago
