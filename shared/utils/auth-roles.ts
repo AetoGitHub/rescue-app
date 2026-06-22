@@ -1,15 +1,38 @@
 import type { AuthUserRole } from '../types/user';
+import type { AuthUser } from '../types/user';
+
+const AUTH_ROLE_ALIASES: Record<string, AuthUserRole> = {
+  administrator: 'admin',
+};
+
+export function normalizeAuthRole(
+  role: string | null | undefined,
+): AuthUserRole | string | null {
+  if (role == null) return null;
+
+  const trimmed = role.trim();
+  if (!trimmed) return null;
+
+  const lower = trimmed.toLowerCase();
+  const aliased = AUTH_ROLE_ALIASES[lower];
+  if (aliased) return aliased;
+
+  return parseAuthUserRole(lower) ?? lower;
+}
 
 export function isAdminRole(role: string | null | undefined): boolean {
-  return role === 'admin';
+  return normalizeAuthRole(role) === 'admin';
 }
 
 export function isStaffRole(role: string | null | undefined): boolean {
-  return role === 'admin' || role === 'operator' || role === 'seller';
+  const normalized = normalizeAuthRole(role);
+  return normalized === 'admin'
+    || normalized === 'operator'
+    || normalized === 'seller';
 }
 
 export function isUnauthorizedRole(role: string | null | undefined): boolean {
-  return role === 'client';
+  return normalizeAuthRole(role) === 'client';
 }
 
 export function defaultHomeForRole(role: string | null | undefined): string {
@@ -22,4 +45,21 @@ export function parseAuthUserRole(role: string | null | undefined): AuthUserRole
     return role;
   }
   return null;
+}
+
+export function normalizeAuthUserRoleForSession(
+  role: string | null | undefined,
+): string {
+  return normalizeAuthRole(role) ?? role?.trim() ?? '';
+}
+
+export function normalizeAuthSessionUser(
+  user: AuthUser | null | undefined,
+): AuthUser | null {
+  if (!user) return null;
+
+  return {
+    ...user,
+    role: normalizeAuthUserRoleForSession(user.role),
+  };
 }

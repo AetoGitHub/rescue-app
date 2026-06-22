@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   accessAdministrative,
   accessCatalogs,
+  accessConfig,
   accessMyBalance,
   accessOperational,
   accessUsers,
@@ -13,6 +14,8 @@ import {
   isAdminRole,
   isStaffRole,
   isUnauthorizedRole,
+  normalizeAuthRole,
+  normalizeAuthSessionUser,
 } from '../../shared/utils/auth-roles';
 import { abilityForApiPath } from '../../shared/utils/admin-api-access';
 
@@ -35,6 +38,24 @@ describe('auth-roles', () => {
     expect(isStaffRole('seller')).toBe(true);
     expect(isUnauthorizedRole('client')).toBe(true);
     expect(isStaffRole('client')).toBe(false);
+  });
+
+  it('normalizes role casing, spacing, and aliases', () => {
+    expect(normalizeAuthRole(' Admin ')).toBe('admin');
+    expect(normalizeAuthRole('ADMINISTRATOR')).toBe('admin');
+    expect(isAdminRole('Admin')).toBe(true);
+    expect(isAdminRole(' administrator ')).toBe(true);
+    expect(isStaffRole(' Operator ')).toBe(true);
+  });
+
+  it('normalizes session user role for authorization resolvers', () => {
+    expect(
+      normalizeAuthSessionUser({ id: 1, name: 'Admin User', role: ' Admin ' }),
+    ).toEqual({
+      id: 1,
+      name: 'Admin User',
+      role: 'admin',
+    });
   });
 
   it('returns role-based home paths', () => {
@@ -62,6 +83,7 @@ describe('abilityForApiPath', () => {
     );
     expect(abilityForApiPath('/api/catalogue/client/list/')).toBe(accessCatalogs);
     expect(abilityForApiPath('/api/payment/balance/operative/')).toBe(accessMyBalance);
+    expect(abilityForApiPath('/api/sla/list/')).toBe(accessConfig);
   });
 });
 
@@ -72,5 +94,8 @@ describe('abilities', () => {
     expect(await canAccess(accessOperational, 'operator')).toBe(true);
     expect(await canAccess(accessOperational, 'client')).toBe(false);
     expect(await canAccess(accessAdministrative, 'seller')).toBe(false);
+    expect(await canAccess(accessAdministrative, 'Admin')).toBe(true);
+    expect(await canAccess(accessConfig, 'administrator')).toBe(true);
+    expect(await canAccess(accessAdministrative, 'operator')).toBe(false);
   });
 });

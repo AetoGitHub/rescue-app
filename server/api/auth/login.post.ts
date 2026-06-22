@@ -1,5 +1,6 @@
 import { joinURL } from 'ufo';
 import { SESSION_MAX_AGE } from '../../../shared/constants/session';
+import { normalizeAuthUserRoleForSession } from '../../../shared/utils/auth-roles';
 
 interface Response {
   token: string;
@@ -28,7 +29,7 @@ export default defineEventHandler(async (event) => {
       user: {
         name: response.name,
         id: response.id,
-        role: response.role,
+        role: normalizeAuthUserRoleForSession(response.role),
       },
       token: response.token,
     },

@@ -2,19 +2,37 @@ import { defineAbility } from 'nuxt-authorization/utils';
 import type { AuthUser } from './types/user';
 import { isAdminRole, isStaffRole } from './utils/auth-roles';
 
-export const accessAdminApp = defineAbility((user: AuthUser) => isStaffRole(user.role));
+function withAdminBypass(check: (user: AuthUser) => boolean) {
+  return (user: AuthUser) => isAdminRole(user.role) || check(user);
+}
 
-export const accessOperational = defineAbility((user: AuthUser) => isStaffRole(user.role));
+export const accessAdminApp = defineAbility(
+  withAdminBypass((user: AuthUser) => isStaffRole(user.role)),
+);
 
-export const accessMyBalance = defineAbility((user: AuthUser) => isStaffRole(user.role));
+export const accessOperational = defineAbility(
+  withAdminBypass((user: AuthUser) => isStaffRole(user.role)),
+);
 
-export const accessAdministrative = defineAbility((user: AuthUser) => isAdminRole(user.role));
+export const accessMyBalance = defineAbility(
+  withAdminBypass((user: AuthUser) => isStaffRole(user.role)),
+);
 
-export const accessCatalogs = defineAbility((user: AuthUser) => isAdminRole(user.role));
+export const accessAdministrative = defineAbility(
+  withAdminBypass((user: AuthUser) => isAdminRole(user.role)),
+);
 
-export const accessUsers = defineAbility((user: AuthUser) => isAdminRole(user.role));
+export const accessCatalogs = defineAbility(
+  withAdminBypass((user: AuthUser) => isAdminRole(user.role)),
+);
 
-export const accessConfig = defineAbility((user: AuthUser) => isAdminRole(user.role));
+export const accessUsers = defineAbility(
+  withAdminBypass((user: AuthUser) => isAdminRole(user.role)),
+);
+
+export const accessConfig = defineAbility(
+  withAdminBypass((user: AuthUser) => isAdminRole(user.role)),
+);
 
 export type AdminAbility =
   | typeof accessAdminApp

@@ -1,3 +1,5 @@
+import { normalizeAuthSessionUser } from '../../shared/utils/auth-roles';
+
 export default defineNuxtPlugin({
   name: 'authorization-resolver',
   parallel: true,
@@ -5,7 +7,8 @@ export default defineNuxtPlugin({
     return {
       provide: {
         authorization: {
-          resolveClientUser: () => useUserSession().user.value,
+          resolveClientUser: () =>
+            normalizeAuthSessionUser(useUserSession().user.value ?? null),
         },
       },
     };

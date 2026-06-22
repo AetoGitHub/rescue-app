@@ -3,6 +3,7 @@ import type { H3Event } from 'h3';
 import type { UserSession } from '#auth-utils';
 import type { AuthRefreshResponse } from '../../shared/types/auth';
 import { SESSION_MAX_AGE } from '../../shared/constants/session';
+import { normalizeAuthUserRoleForSession } from '../../shared/utils/auth-roles';
 
 function getFetchStatusCode(error: unknown): number | null {
   if (error == null || typeof error !== 'object') return null;
@@ -33,7 +34,7 @@ export async function refreshAuthSession(
     const user = {
       id: response.id,
       name: response.name,
-      role: response.role,
+      role: normalizeAuthUserRoleForSession(response.role),
     };
 
     await setUserSession(
@@ -51,10 +52,9 @@ export async function refreshAuthSession(
     const statusCode = getFetchStatusCode(error);
     if (statusCode === 401 || statusCode === 403) {
       await clearUserSession(event);
-      throw createError({
-        statusCode: 401,
-        message: 'Sesión expirada',
-      });
+      session.user = undefined;
+      session.token = undefined;
+      return;
     }
   }
 }
