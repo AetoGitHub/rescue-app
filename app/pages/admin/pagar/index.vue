@@ -133,10 +133,17 @@ function formatOptionalCell(value: string | null | undefined): string {
 }
 
 function recipientName(row: PaymentListItem): string {
-  if (recipientType.value === 'operative') {
+  if (appliedFilters.value.type === 'operative') {
     return formatOptionalCell(row.operator_name);
   }
   return formatOptionalCell(row.seller_name ?? row.operator_name);
+}
+
+function paymentUserNameFromRow(row: PaymentListItem): string | null {
+  if (appliedFilters.value.type === 'operative') {
+    return row.operator_name?.trim() || null;
+  }
+  return row.seller_name?.trim() || row.operator_name?.trim() || null;
 }
 
 async function onRowCheck(id: number, checked: boolean) {
@@ -145,10 +152,15 @@ async function onRowCheck(id: number, checked: boolean) {
     return;
   }
 
+  const row = rows.value.find((item) => item.id === id);
+  if (row == null) return;
+
   try {
     await addSelected({
       type: appliedFilters.value.type,
       ids: [id],
+      userId: appliedFilters.value.userId,
+      userName: paymentUserNameFromRow(row),
     });
     toggleRow(id, true);
   } catch {
@@ -170,6 +182,8 @@ async function onToggleAllVisible(checked: boolean) {
       type: appliedFilters.value.type,
       ids,
       quiet: true,
+      userId: appliedFilters.value.userId,
+      userName: rows.value[0] ? paymentUserNameFromRow(rows.value[0]) : null,
     });
     selectAllVisible();
     toast.add({
@@ -225,6 +239,44 @@ watch(
 );
 
 function onCheckout() {
+  if (cart.value == null || paymentCartItemCount(cart.value) === 0) {
+    toast.add({
+      title: 'Carrito vacío',
+      description: 'Agrega deudas al carrito antes de proceder con el pago.',
+      color: 'warning',
+    });
+    return;
+  }
+
+  const activeCart = resolveActivePaymentCart(cart.value);
+  if (activeCart != null && isInvalidPaymentCart(activeCart)) {
+    toast.add({
+      title: 'Respuesta inválida del carrito',
+      description:
+        'El carrito devolvió operadores y vendedores a la vez. Vacía el carrito e inténtalo de nuevo.',
+      color: 'error',
+    });
+    return;
+  }
+
+  const summary = resolvePaymentCartRecipientSummary(cart.value);
+  const { recipient, setRecipient } = usePaymentCheckoutRecipient();
+
+  if (summary != null) {
+    const userId =
+      recipient.value?.type === summary.type
+        ? recipient.value.userId
+        : appliedFilters.value.userId;
+
+    if (userId != null) {
+      setRecipient({
+        type: summary.type,
+        userId,
+        userName: summary.userName,
+      });
+    }
+  }
+
   void navigateTo('/admin/pagar/checkout');
 }
 

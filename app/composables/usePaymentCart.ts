@@ -16,6 +16,8 @@ export interface PaymentCartAddSelectedPayload {
   type: PaymentRecipientType;
   ids: number[];
   quiet?: boolean;
+  userId?: number | null;
+  userName?: string | null;
 }
 
 export function usePaymentCart() {
@@ -71,6 +73,16 @@ export function usePaymentCart() {
       },
       onSuccess: async (_data, payload) => {
         await invalidateCartAndList();
+
+        if (payload.userId != null) {
+          const { setRecipient } = usePaymentCheckoutRecipient();
+          setRecipient({
+            type: payload.type,
+            userId: payload.userId,
+            userName: payload.userName?.trim() || null,
+          });
+        }
+
         if (!payload.quiet) {
           toast.add({
             title: 'Agregado al carrito',
@@ -101,6 +113,16 @@ export function usePaymentCart() {
     },
     onSuccess: async (_data, filters) => {
       await invalidateCartAndList(filters);
+
+      if (filters.userId != null) {
+        const { setRecipient } = usePaymentCheckoutRecipient();
+        setRecipient({
+          type: filters.type,
+          userId: filters.userId,
+          userName: null,
+        });
+      }
+
       toast.add({
         title: 'Deudas agregadas al carrito',
         color: 'success',
@@ -122,6 +144,7 @@ export function usePaymentCart() {
       }),
     onSuccess: async () => {
       await invalidateCartAndList();
+      usePaymentCheckoutRecipient().clearRecipient();
       toast.add({
         title: 'Carrito vaciado',
         color: 'success',

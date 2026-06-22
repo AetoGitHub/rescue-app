@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h } from 'vue';
+import { h, resolveComponent } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
 import type { PaymentCheckoutDebtRow } from '~/interfaces/payment/checkout-debt';
 import type { PaymentCartCheckoutRow } from '~/utils/payment-cart-display';
@@ -9,6 +9,9 @@ const checkoutPanelUi = {
   body: 'flex min-h-0 flex-1 flex-col overflow-hidden',
 } as const;
 
+const UIcon = resolveComponent('UIcon');
+const UTooltip = resolveComponent('UTooltip');
+
 useHead({
   title: 'Checkout de pago',
 });
@@ -16,9 +19,46 @@ useHead({
 const toast = useToast();
 
 const { cart, isLoading, errorMessage, refresh } = usePaymentCart();
+const { recipient, syncRecipientUserName } = usePaymentCheckoutRecipient();
 
 onMounted(() => {
   void refresh();
+});
+
+const cartRecipientSummary = computed(() =>
+  cart.value != null ? resolvePaymentCartRecipientSummary(cart.value) : null,
+);
+
+const isInvalidCart = computed(() => {
+  if (cart.value == null) return false;
+  const active = resolveActivePaymentCart(cart.value);
+  return active != null && isInvalidPaymentCart(active);
+});
+
+const activeRecipientType = computed(
+  () => recipient.value?.type ?? cartRecipientSummary.value?.type ?? null,
+);
+
+const checkoutRecipient = computed(() => {
+  if (activeRecipientType.value == null) return null;
+
+  const userName =
+    recipient.value?.userName
+    ?? cartRecipientSummary.value?.userName
+    ?? paymentCheckoutRecipientLabel(activeRecipientType.value);
+
+  return {
+    type: activeRecipientType.value,
+    userId: recipient.value?.userId ?? null,
+    userName,
+    profileLabel: paymentCheckoutRecipientLabel(activeRecipientType.value),
+  };
+});
+
+watch(cartRecipientSummary, (summary) => {
+  if (summary != null) {
+    syncRecipientUserName(summary.userName);
+  }
 });
 
 const cartRows = computed((): PaymentCartCheckoutRow[] =>
@@ -33,7 +73,17 @@ const itemCount = computed(() =>
   cart.value != null ? paymentCartItemCount(cart.value) : 0,
 );
 
-const hasCartItems = computed(() => itemCount.value > 0);
+const hasCartItems = computed(
+  () =>
+    cart.value != null
+    && paymentCartItemCount(cart.value) > 0
+    && !isInvalidCart.value
+    && activeRecipientType.value != null,
+);
+
+const missingRecipientUser = computed(
+  () => hasCartItems.value && checkoutRecipient.value?.userId == null,
+);
 
 const emptyCartRedirected = ref(false);
 
@@ -79,7 +129,7 @@ function formatOptionalCell(value: string | null | undefined): string {
 function recipientTypeLabel(
   type: PaymentCartCheckoutRow['recipientType'],
 ): string {
-  return type === 'operative' ? 'Operador' : 'Vendedor';
+  return paymentCheckoutRecipientLabel(type);
 }
 
 function recipientName(row: PaymentCartCheckoutRow): string {
@@ -88,6 +138,17 @@ function recipientName(row: PaymentCartCheckoutRow): string {
   }
   return formatOptionalCell(row.seller_name ?? row.operator_name);
 }
+
+function rescueRowDate(row: PaymentCartCheckoutRow): string {
+  return formatPaymentDate(row.debt_created_at ?? row.created_at);
+}
+
+function sumRowAmounts<T extends { amount: string }>(rows: T[]): number {
+  return rows.reduce((sum, row) => sum + parseRescueCardMoney(row.amount), 0);
+}
+
+const rescueSubtotal = computed(() => sumRowAmounts(cartRows.value));
+const debtSubtotal = computed(() => sumRowAmounts(debtRows.value));
 
 function onAddDebt() {
   toast.add({
@@ -111,50 +172,45 @@ function onPay() {
 
 const rescueColumns = computed((): TableColumn<PaymentCartCheckoutRow>[] => [
   {
+    id: 'rescue',
+    header: 'Rescate',
+    cell: ({ row }) => {
+      const tooltipParts = [
+        recipientTypeLabel(row.original.recipientType),
+        recipientName(row.original),
+      ];
+      if (row.original.client_name?.trim()) {
+        tooltipParts.push(row.original.client_name.trim());
+      }
+
+      return h(
+        UTooltip,
+        { text: tooltipParts.join(' · ') },
+        () =>
+          h(UIcon, {
+            name: 'i-lucide-info',
+            class: 'size-4 text-muted',
+          }),
+      );
+    },
+    meta: {
+      class: {
+        th: 'w-16 text-center',
+        td: 'w-16 text-center',
+      },
+    },
+  },
+  {
     accessorKey: 'rescue_folio',
     header: 'Folio',
     cell: ({ row }) =>
       h('span', { class: 'font-medium' }, row.original.rescue_folio),
   },
   {
-    id: 'recipient_type',
-    header: 'Tipo',
+    id: 'date',
+    header: 'Fecha',
     cell: ({ row }) =>
-      h('span', recipientTypeLabel(row.original.recipientType)),
-  },
-  {
-    id: 'name',
-    header: 'Beneficiario',
-    cell: ({ row }) => h('span', recipientName(row.original)),
-  },
-  {
-    id: 'client_name',
-    header: 'Compañía',
-    cell: ({ row }) => h('span', formatOptionalCell(row.original.client_name)),
-  },
-  {
-    id: 'awn_date',
-    header: 'Activo sin cotizar',
-    cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'text-muted' },
-        row.original.awn_date != null
-          ? formatPaymentDate(row.original.awn_date)
-          : '—',
-      ),
-  },
-  {
-    id: 'debt_created_at',
-    header: 'Fecha creación deuda',
-    cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'text-muted' },
-        row.original.debt_created_at != null
-          ? formatPaymentDate(row.original.debt_created_at)
-          : formatPaymentDate(row.original.created_at),
-      ),
+      h('span', { class: 'text-muted' }, rescueRowDate(row.original)),
   },
   {
     id: 'amount',
@@ -165,29 +221,53 @@ const rescueColumns = computed((): TableColumn<PaymentCartCheckoutRow>[] => [
         { class: 'tabular-nums' },
         formatRescueCardMoney(row.original.amount),
       ),
+    meta: {
+      class: {
+        th: 'text-right',
+        td: 'text-right',
+      },
+    },
   },
 ]);
 
 const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
   {
-    accessorKey: 'concept',
-    header: 'Concepto',
-    cell: ({ row }) => h('span', row.original.concept),
+    id: 'actions',
+    header: 'Acciones',
+    cell: () => h('span', { class: 'text-muted' }, '—'),
+    meta: {
+      class: {
+        th: 'w-28',
+        td: 'w-28',
+      },
+    },
+  },
+  {
+    accessorKey: 'folio',
+    header: 'Folio',
+    cell: ({ row }) => h('span', row.original.folio),
+  },
+  {
+    id: 'date',
+    header: 'Fecha',
+    cell: ({ row }) =>
+      h('span', { class: 'text-muted' }, formatPaymentDate(row.original.date)),
   },
   {
     id: 'amount',
-    header: 'Monto',
+    header: 'Cantidad',
     cell: ({ row }) =>
       h(
         'span',
         { class: 'tabular-nums' },
         formatRescueCardMoney(row.original.amount),
       ),
-  },
-  {
-    id: 'actions',
-    header: 'Acciones',
-    cell: () => h('span', { class: 'text-muted' }, '—'),
+    meta: {
+      class: {
+        th: 'text-right',
+        td: 'text-right',
+      },
+    },
   },
 ]);
 
@@ -245,10 +325,46 @@ const itemCountLabel = computed(() => {
               :description="errorMessage"
             />
 
+            <UAlert
+              v-else-if="isInvalidCart"
+              color="error"
+              variant="subtle"
+              icon="i-lucide-circle-alert"
+              title="Respuesta inválida del carrito"
+              description="El carrito devolvió operadores y vendedores a la vez. Vacía el carrito en Pagar e inténtalo de nuevo."
+            />
+
             <div
               v-else-if="hasCartItems"
               class="flex flex-col gap-6"
             >
+              <UPageCard class="flex flex-wrap items-center justify-between gap-4">
+                <div class="space-y-2">
+                  <p
+                    class="text-xs font-semibold uppercase tracking-wider text-muted"
+                  >
+                    Pagando a
+                  </p>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <UBadge color="primary" variant="subtle">
+                      {{ checkoutRecipient?.profileLabel }}
+                    </UBadge>
+                    <p class="text-xl font-semibold tracking-tight">
+                      {{ checkoutRecipient?.userName }}
+                    </p>
+                  </div>
+                </div>
+              </UPageCard>
+
+              <UAlert
+                v-if="missingRecipientUser"
+                color="warning"
+                variant="subtle"
+                icon="i-lucide-triangle-alert"
+                title="Usuario de pago no identificado"
+                description="Regresa a Pagar y vuelve a agregar las deudas seleccionando el operador o vendedor."
+              />
+
               <UPageCard class="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p
@@ -265,9 +381,8 @@ const itemCountLabel = computed(() => {
                 </p>
               </UPageCard>
 
-              <section class="space-y-3">
-                <h2 class="text-lg font-semibold">Rescates a pagar</h2>
-                <div class="overflow-x-auto rounded-lg border border-default">
+              <section>
+                <div class="overflow-hidden rounded-lg border border-default">
                   <UTable
                     class="w-full"
                     :columns="rescueColumns"
@@ -277,38 +392,59 @@ const itemCountLabel = computed(() => {
                         `${row.recipientType}-${row.id}`
                     "
                   />
+                  <div
+                    class="grid grid-cols-4 border-t border-default px-4 py-3 text-sm"
+                  >
+                    <div />
+                    <div class="col-span-2 text-center font-semibold">
+                      Subtotal
+                    </div>
+                    <div class="text-right tabular-nums font-semibold">
+                      {{ formatRescueCardMoney(rescueSubtotal) }}
+                    </div>
+                  </div>
                 </div>
               </section>
 
               <section class="space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                  <h2 class="text-lg font-semibold">Deuda</h2>
+                  <h2 class="text-lg font-semibold">
+                    Deudas en el momento
+                  </h2>
                   <UButton
                     label="Agregar deuda"
                     icon="i-lucide-plus"
-                    color="primary"
+                    color="neutral"
                     variant="outline"
                     @click="onAddDebt"
                   />
                 </div>
 
-                <div
-                  v-if="debtRows.length === 0"
-                  class="flex items-center justify-center rounded-lg border border-dashed border-default py-12 text-center text-sm text-muted"
-                >
-                  No hay deudas agregadas.
-                </div>
-
-                <div
-                  v-else
-                  class="overflow-x-auto rounded-lg border border-default"
-                >
+                <div class="overflow-hidden rounded-lg border border-default">
                   <UTable
                     class="w-full"
                     :columns="debtColumns"
                     :data="debtRows"
                     :get-row-id="(row: PaymentCheckoutDebtRow) => row.id"
-                  />
+                  >
+                    <template #empty>
+                      <div class="py-8 text-center text-sm text-muted">
+                        Sin datos
+                      </div>
+                    </template>
+                  </UTable>
+                  <div
+                    class="grid grid-cols-4 border-t border-default px-4 py-3 text-sm"
+                  >
+                    <div />
+                    <div />
+                    <div class="text-center font-semibold">
+                      Subtotal
+                    </div>
+                    <div class="text-right tabular-nums font-semibold">
+                      {{ formatRescueCardMoney(debtSubtotal) }}
+                    </div>
+                  </div>
                 </div>
               </section>
             </div>
@@ -330,7 +466,7 @@ const itemCountLabel = computed(() => {
               label="Pagar"
               color="primary"
               icon="i-lucide-credit-card"
-              :disabled="isLoading"
+              :disabled="isLoading || missingRecipientUser || isInvalidCart"
               @click="onPay"
             />
           </UContainer>

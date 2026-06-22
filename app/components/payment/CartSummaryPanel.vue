@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PaymentCartResponse } from '~/interfaces/payment/cart';
 
-defineProps<{
+const props = defineProps<{
   cart: PaymentCartResponse | null | undefined;
   loading?: boolean;
   clearing?: boolean;
@@ -12,6 +12,32 @@ const emit = defineEmits<{
   clear: [];
   checkout: [];
 }>();
+
+const activeCart = computed(() =>
+  props.cart != null ? resolveActivePaymentCart(props.cart) : null,
+);
+
+const isInvalidCart = computed(() =>
+  activeCart.value != null && isInvalidPaymentCart(activeCart.value),
+);
+
+const sectionLabel = computed(() => {
+  if (activeCart.value == null || isInvalidPaymentCart(activeCart.value)) {
+    return null;
+  }
+
+  return paymentCheckoutRecipientSectionLabel(activeCart.value.type);
+});
+
+const itemCount = computed(() =>
+  props.cart != null ? paymentCartItemCount(props.cart) : 0,
+);
+
+const grandTotal = computed(() =>
+  props.cart != null ? paymentCartGrandTotal(props.cart) : 0,
+);
+
+const hasItems = computed(() => itemCount.value > 0 && !isInvalidCart.value);
 </script>
 
 <template>
@@ -22,11 +48,11 @@ const emit = defineEmits<{
           Carrito de pago
         </h2>
         <UBadge
-          v-if="cart"
+          v-if="hasItems"
           color="primary"
           variant="subtle"
         >
-          {{ cart.operative.count + cart.seller.count }} items
+          {{ itemCount }} items
         </UBadge>
       </div>
     </template>
@@ -38,45 +64,40 @@ const emit = defineEmits<{
     </div>
 
     <div v-else-if="cart" class="space-y-4">
-      <div class="space-y-1">
+      <UAlert
+        v-if="isInvalidCart"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        title="Respuesta inválida del carrito"
+        description="El carrito devolvió operadores y vendedores a la vez. Vacía el carrito e inténtalo de nuevo."
+      />
+
+      <div
+        v-else-if="hasItems && sectionLabel"
+        class="space-y-1"
+      >
         <p class="text-sm font-medium text-muted">
-          Operadores
+          {{ sectionLabel }}
         </p>
         <p class="text-sm">
-          {{ cart.operative.count }} deuda{{ cart.operative.count === 1 ? '' : 's' }}
+          {{ itemCount }} deuda{{ itemCount === 1 ? '' : 's' }}
           ·
           <span class="tabular-nums font-medium">
-            {{ formatRescueCardMoney(cart.operative.total_amount) }}
+            {{ formatRescueCardMoney(grandTotal) }}
           </span>
         </p>
       </div>
 
-      <div class="space-y-1">
-        <p class="text-sm font-medium text-muted">
-          Vendedores
-        </p>
-        <p class="text-sm">
-          {{ cart.seller.count }} deuda{{ cart.seller.count === 1 ? '' : 's' }}
-          ·
-          <span class="tabular-nums font-medium">
-            {{ formatRescueCardMoney(cart.seller.total_amount) }}
-          </span>
-        </p>
-      </div>
+      <USeparator v-if="hasItems" />
 
-      <USeparator />
-
-      <div class="flex items-center justify-between gap-2 text-sm">
+      <div
+        v-if="hasItems"
+        class="flex items-center justify-between gap-2 text-sm"
+      >
         <span class="font-medium">Total</span>
         <span class="tabular-nums text-base font-semibold">
-          {{
-            formatRescueCardMoney(
-              String(
-                parseRescueCardMoney(cart.operative.total_amount)
-                  + parseRescueCardMoney(cart.seller.total_amount),
-              ),
-            )
-          }}
+          {{ formatRescueCardMoney(grandTotal) }}
         </span>
       </div>
     </div>
@@ -90,7 +111,7 @@ const emit = defineEmits<{
           icon="i-lucide-trash-2"
           block
           :loading="clearing"
-          :disabled="loading || clearing || !cart || (cart.operative.count + cart.seller.count === 0)"
+          :disabled="loading || clearing || !cart || !hasItems"
           @click="emit('clear')"
         />
         <UButton
@@ -98,7 +119,7 @@ const emit = defineEmits<{
           color="primary"
           icon="i-lucide-credit-card"
           block
-          :disabled="checkoutDisabled || loading || !cart || (cart.operative.count + cart.seller.count === 0)"
+          :disabled="checkoutDisabled || loading || !hasItems"
           @click="emit('checkout')"
         />
       </div>
