@@ -5,12 +5,18 @@ import type { BalanceProfile } from '~/constants/payment-api';
 import type { OperativeBalanceVoucher } from '~/interfaces/payment/balance-operative';
 import type { BalanceVoucher } from '~/interfaces/payment/balance';
 import { adminListTableClass } from '~/constants/admin-list-layout';
+import { parsePositiveIntQuery } from '~~/shared/utils/payment-balance-query';
 
 useHead({
   title: 'Mi saldo',
 });
 
+const isDev = import.meta.dev;
+const testDaysInput = ref<number | null>(null);
+const appliedTestDays = ref<number | null>(null);
+
 const UBadge = resolveComponent('UBadge');
+const UIcon = resolveComponent('UIcon');
 
 const {
   vouchers,
@@ -19,9 +25,19 @@ const {
   hasBalanceProfile,
   balanceProfile,
   errorMessage,
-} = useMyBalance();
+  testDays,
+} = useMyBalance(undefined, appliedTestDays);
 
 const isOperativeProfile = computed(() => balanceProfile.value === 'operative');
+
+function applyTestDaysSimulation() {
+  appliedTestDays.value = parsePositiveIntQuery(testDaysInput.value?.toString().trim());
+}
+
+function clearTestDaysSimulation() {
+  testDaysInput.value = null;
+  appliedTestDays.value = null;
+}
 
 function formatCommissionPercent(value: string | null | undefined): string {
   const parsed = parseRescueCardMoney(value);
@@ -90,7 +106,9 @@ const sharedColumns = (
     id: 'operative_status',
     header: 'Estado operativo',
     cell: ({ row }) =>
-      getAdministrativeOperativeStatusLabel(row.original.rescue_operative_status),
+      getAdministrativeOperativeStatusLabel(
+        row.original.rescue_operative_status,
+      ),
   },
   {
     id: 'admin_status',
@@ -133,25 +151,46 @@ const sharedColumns = (
     id: 'created_at',
     header: 'Fecha',
     cell: ({ row }) =>
-      h('span', { class: 'text-muted' }, formatVoucherDate(row.original.created_at)),
+      h(
+        'span',
+        { class: 'text-muted' },
+        formatVoucherDate(row.original.created_at),
+      ),
   },
 ];
 
+function renderPenaltyStatus(voucher: OperativeBalanceVoucher) {
+  if (!voucher.is_penalty) {
+    return h('div', { class: 'flex items-center gap-2' }, [
+      h(UIcon, {
+        name: 'i-lucide-check',
+        class: 'size-4 text-success shrink-0',
+      }),
+      h('span', { class: 'text-sm text-muted' }, 'No'),
+    ]);
+  }
+
+  return h('div', { class: 'flex flex-col gap-0.5' }, [
+    h('div', { class: 'flex items-center gap-2' }, [
+      h(UIcon, {
+        name: 'i-lucide-x',
+        class: 'size-4 text-error shrink-0',
+      }),
+      h('span', { class: 'text-sm font-medium text-error' }, 'Sí'),
+    ]),
+    h(
+      'span',
+      { class: 'text-xs tabular-nums text-muted' },
+      formatPenaltyPercent(voucher.penalty_applied),
+    ),
+  ]);
+}
+
 const operativePenaltyColumn: TableColumn<BalanceVoucher> = {
   id: 'penalty',
-  header: 'Penalización',
-  cell: ({ row }) => {
-    const voucher = row.original as OperativeBalanceVoucher;
-    if (!voucher.is_penalty) {
-      return h('span', { class: 'text-muted' }, '—');
-    }
-    return h(UBadge, {
-      color: 'warning',
-      variant: 'subtle',
-      size: 'sm',
-      label: formatPenaltyPercent(voucher.penalty_applied),
-    });
-  },
+  header: '¿Penalizado?',
+  cell: ({ row }) =>
+    renderPenaltyStatus(row.original as OperativeBalanceVoucher),
 };
 
 const columns = computed((): TableColumn<BalanceVoucher>[] => {
@@ -182,7 +221,46 @@ const columns = computed((): TableColumn<BalanceVoucher>[] => {
     title="Mi saldo"
     description="Vouchers pendientes de pago y comisiones acumuladas"
   >
-    <div v-if="!hasBalanceProfile" class="flex flex-1 items-center justify-center py-16">
+    <UPageCard
+      v-if="isDev && hasBalanceProfile && isOperativeProfile"
+      variant="subtle"
+      :ui="{ body: 'flex flex-wrap items-end gap-3' }"
+      class="mb-4"
+    >
+      <div class="min-w-40 flex-1">
+        <p
+          class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted"
+        >
+          Simular días de penalización (dev)
+        </p>
+        <UInputNumber
+          v-model="testDaysInput"
+          inputmode="numeric"
+          placeholder="Ej. 8"
+          class="w-full"
+          @keyup.enter="applyTestDaysSimulation"
+        />
+      </div>
+      <UButton
+        color="primary"
+        icon="i-lucide-flask-conical"
+        label="Simular"
+        :loading="isPending"
+        @click="applyTestDaysSimulation"
+      />
+      <UButton
+        v-if="appliedTestDays != null"
+        color="neutral"
+        variant="ghost"
+        label="Quitar simulación"
+        @click="clearTestDaysSimulation"
+      />
+    </UPageCard>
+
+    <div
+      v-if="!hasBalanceProfile"
+      class="flex flex-1 items-center justify-center py-16"
+    >
       <UPageCard class="max-w-md text-center">
         <p class="font-medium">Saldo no disponible</p>
         <p class="mt-1 text-sm text-muted">
@@ -191,7 +269,10 @@ const columns = computed((): TableColumn<BalanceVoucher>[] => {
       </UPageCard>
     </div>
 
-    <div v-else-if="isPending" class="flex flex-1 items-center justify-center py-16">
+    <div
+      v-else-if="isPending"
+      class="flex flex-1 items-center justify-center py-16"
+    >
       <UIcon
         name="i-lucide-loader-circle"
         class="size-8 animate-spin text-muted"
@@ -221,6 +302,15 @@ const columns = computed((): TableColumn<BalanceVoucher>[] => {
           {{ voucherCountLabel }}
         </p>
       </UPageCard>
+
+      <UAlert
+        v-if="testDays != null && isOperativeProfile"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-flask-conical"
+        title="Modo prueba (dev)"
+        :description="`Simulando ${testDays} día${testDays === 1 ? '' : 's'} de penalización.`"
+      />
 
       <div
         v-if="vouchers.length === 0"

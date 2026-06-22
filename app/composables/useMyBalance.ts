@@ -12,9 +12,11 @@ import type {
   SellerBalanceResponse,
 } from '~/interfaces/payment/balance-seller';
 import type { BalanceVoucher } from '~/interfaces/payment/balance';
+import { parsePositiveIntQuery } from '~~/shared/utils/payment-balance-query';
 
 export function useMyBalance(
   userId: MaybeRefOrGetter<number | null | undefined> = undefined,
+  testDays: MaybeRefOrGetter<number | null | undefined> = undefined,
 ) {
   const apiFetch = useApiFetch();
   const { user } = useUserSession();
@@ -28,11 +30,19 @@ export function useMyBalance(
     resolveBalanceProfile(user.value?.role),
   );
 
+  const resolvedTestDays = computed(() => {
+    if (!import.meta.dev) return null;
+    const value = testDays != null ? toValue(testDays) : null;
+    if (value == null) return null;
+    return parsePositiveIntQuery(value);
+  });
+
   const { data, asyncStatus, error, refresh } = useQuery({
     key: () => [
       'my-balance',
       balanceProfile.value ?? 'none',
       resolvedUserId.value ?? '',
+      resolvedTestDays.value ?? '',
     ],
     enabled: () =>
       resolvedUserId.value != null && balanceProfile.value != null,
@@ -47,8 +57,13 @@ export function useMyBalance(
         });
       }
 
+      const operativeQuery: Record<string, string | number> = { operator: id };
+      if (resolvedTestDays.value != null) {
+        operativeQuery.test_days = resolvedTestDays.value;
+      }
+
       return apiFetch<OperativeBalanceResponse>(OPERATIVE_BALANCE_PATH, {
-        query: { operator: id },
+        query: operativeQuery,
         signal,
       });
     },
@@ -70,6 +85,7 @@ export function useMyBalance(
     hasBalanceProfile,
     balanceProfile,
     errorMessage,
+    testDays: resolvedTestDays,
     refresh,
   };
 }
