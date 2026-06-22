@@ -27,7 +27,7 @@ describe('server quote-pdf-api helpers', () => {
     });
   });
 
-  it('quotePdfAuthorizationHeader uses Bearer scheme', () => {
-    expect(quotePdfAuthorizationHeader('abc123')).toBe('Bearer abc123');
+  it('quotePdfAuthorizationHeader uses Token scheme', () => {
+    expect(quotePdfAuthorizationHeader('abc123')).toBe('Token abc123');
   });
 });

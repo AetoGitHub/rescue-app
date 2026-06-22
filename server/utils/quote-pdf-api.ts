@@ -6,7 +6,7 @@ export function resolveQuotePdfApiUrl(): string {
 }
 
 export function quotePdfAuthorizationHeader(token: string): string {
-  return `Bearer ${token}`;
+  return `Token ${token}`;
 }
 
 export function parseQuotePdfRescueId(raw: string | undefined): number | null {
