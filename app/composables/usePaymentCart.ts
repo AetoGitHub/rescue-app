@@ -208,10 +208,6 @@ export function usePaymentCart(
     onSuccess: async () => {
       await invalidateCartAndList();
       usePaymentCheckoutRecipient().clearRecipient();
-      toast.add({
-        title: 'Pago registrado',
-        color: 'success',
-      });
     },
     onError: (error) => {
       toast.add({

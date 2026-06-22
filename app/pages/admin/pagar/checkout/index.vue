@@ -137,11 +137,17 @@ const missingRecipientUser = computed(
 );
 
 const emptyCartRedirected = ref(false);
+const paymentCompleted = ref(false);
 
 watch(
   [cart, isLoading, errorMessage],
   () => {
-    if (isLoading.value || errorMessage.value || emptyCartRedirected.value) {
+    if (
+      paymentCompleted.value
+      || isLoading.value
+      || errorMessage.value
+      || emptyCartRedirected.value
+    ) {
       return;
     }
 
@@ -235,12 +241,27 @@ async function onPay() {
   if (missingRecipientUser.value || isInvalidCart.value) return;
 
   try {
+    paymentCompleted.value = true;
     const receipt = await payCart({
       forgiven: [...forgivenCartIds.value],
       forgiven_debt: [...forgivenDebtIds.value],
     });
-    await navigateTo(`/admin/pagar/recibo/${receipt.id}`);
+
+    if (receipt?.id == null) {
+      paymentCompleted.value = false;
+      toast.add({
+        title: 'Pago registrado sin comprobante',
+        description:
+          'El pago se completó pero no se recibió el identificador del comprobante.',
+        color: 'warning',
+      });
+      await navigateTo('/admin/pagar');
+      return;
+    }
+
+    await navigateTo(`/admin/pagar/recibo/${receipt.id}`, { replace: true });
   } catch {
+    paymentCompleted.value = false;
     // El toast de error lo muestra usePaymentCart.
   }
 }
