@@ -6,6 +6,11 @@ export const PAYMENT_CART_PATH = '/api/payment/cart/';
 export const PAYMENT_CART_PAY_PATH = '/api/payment/cart/pay/';
 export const PAYMENT_DEBT_PATH = '/api/payment/debt/';
 export const PAYMENT_DEBT_CREATE_PATH = '/api/payment/debt/create/';
+export const PAYMENT_RECEIPT_PATH = '/api/payment/receipt/';
+
+export function paymentReceiptDetailPath(id: number): string {
+  return `${PAYMENT_RECEIPT_PATH}${id}/`;
+}
 
 export type BalanceProfile = 'operative' | 'seller';
 export type PaymentRecipientType = 'operative' | 'seller';

@@ -69,8 +69,65 @@ const {
   refresh: refreshCart,
 } = usePaymentCart(appliedTestDays);
 
+const { recipient, clearRecipient } = usePaymentCheckoutRecipient();
+
 watch(appliedTestDays, () => {
   void refreshCart();
+});
+
+function cartHasItems(): boolean {
+  return cart.value != null && paymentCartItemCount(cart.value) > 0;
+}
+
+function selectionMatchesCart(): boolean {
+  if (!cartHasItems()) return true;
+  if (userId.value == null) return true;
+
+  const active = resolveActivePaymentCart(cart.value!);
+  if (active == null || isInvalidPaymentCart(active)) return false;
+
+  return (
+    active.type === recipientType.value
+    && recipient.value?.userId === userId.value
+  );
+}
+
+async function resetCartForContextChange() {
+  clearSelection();
+
+  if (cartHasItems()) {
+    try {
+      await clearCart({ quiet: true });
+    } catch {
+      // El toast de error lo muestra usePaymentCart.
+    }
+    return;
+  }
+
+  clearRecipient();
+}
+
+watch(recipientType, async (_newType, oldType) => {
+  if (oldType === undefined) return;
+  if (!cartHasItems()) {
+    clearRecipient();
+    clearSelection();
+    return;
+  }
+  await resetCartForContextChange();
+});
+
+watch(userId, async (newId, oldId) => {
+  if (oldId === undefined) return;
+  if (newId === oldId) return;
+
+  if (newId == null && oldId != null) {
+    await resetCartForContextChange();
+    return;
+  }
+
+  if (selectionMatchesCart()) return;
+  await resetCartForContextChange();
 });
 
 usePaginatedTableInfiniteScroll({
@@ -224,7 +281,7 @@ async function onAddAll() {
 }
 
 async function onClearCart() {
-  await clearCart();
+  await clearCart({});
   clearSelection();
 }
 

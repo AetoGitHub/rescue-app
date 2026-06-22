@@ -235,11 +235,11 @@ async function onPay() {
   if (missingRecipientUser.value || isInvalidCart.value) return;
 
   try {
-    await payCart({
+    const receipt = await payCart({
       forgiven: [...forgivenCartIds.value],
       forgiven_debt: [...forgivenDebtIds.value],
     });
-    void navigateTo('/admin/pagar');
+    await navigateTo(`/admin/pagar/recibo/${receipt.id}`);
   } catch {
     // El toast de error lo muestra usePaymentCart.
   }

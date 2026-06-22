@@ -5,6 +5,7 @@ import {
   PAYMENT_CART_PAY_PATH,
 } from '~/constants/payment-api';
 import type { PaymentCartPayBody } from '~/interfaces/payment/cart-pay';
+import type { PaymentReceiptSummary } from '~/interfaces/payment/receipt';
 import type {
   PaymentCartAddOperativeBody,
   PaymentCartAddSellerBody,
@@ -24,6 +25,10 @@ export interface PaymentCartAddSelectedPayload {
   quiet?: boolean;
   userId?: number | null;
   userName?: string | null;
+}
+
+export interface PaymentCartClearOptions {
+  quiet?: boolean;
 }
 
 export function usePaymentCart(
@@ -160,17 +165,19 @@ export function usePaymentCart(
   });
 
   const { mutateAsync: clearCart, asyncStatus: clearStatus } = useMutation({
-    mutation: () =>
+    mutation: (options: PaymentCartClearOptions = {}) =>
       apiFetch<void>(PAYMENT_CART_PATH, {
         method: 'DELETE',
       }),
-    onSuccess: async () => {
+    onSuccess: async (_data, options) => {
       await invalidateCartAndList();
       usePaymentCheckoutRecipient().clearRecipient();
-      toast.add({
-        title: 'Carrito vaciado',
-        color: 'success',
-      });
+      if (!options?.quiet) {
+        toast.add({
+          title: 'Carrito vaciado',
+          color: 'success',
+        });
+      }
     },
     onError: (error) => {
       toast.add({
@@ -193,7 +200,7 @@ export function usePaymentCart(
         payload.forgiven_debt = body.forgiven_debt;
       }
 
-      return apiFetch(PAYMENT_CART_PAY_PATH, {
+      return apiFetch<PaymentReceiptSummary>(PAYMENT_CART_PAY_PATH, {
         method: 'POST',
         body: payload,
       });
