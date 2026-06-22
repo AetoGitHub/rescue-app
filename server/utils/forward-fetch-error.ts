@@ -30,6 +30,7 @@ export function forwardFetchError(error: unknown): never {
   const detail =
     data && typeof data === 'object' && !Array.isArray(data)
       ? stringifyDetail((data as Record<string, unknown>).detail)
+        ?? stringifyDetail((data as Record<string, unknown>).message)
       : null;
 
   throw createError({

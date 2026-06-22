@@ -67,6 +67,17 @@ const saveLabel = computed(() =>
   isUpdateMode.value ? 'Actualizar cotización' : 'Guardar cotización',
 );
 
+const showPdfActions = computed(
+  () => quoteDetail.value != null || hasRescueQuoteOnDetail(props.detail),
+);
+
+const {
+  isViewingPdf,
+  isDownloadingPdf,
+  viewQuotePdf,
+  downloadQuotePdf,
+} = useRescueQuotePdf(() => props.rescueId);
+
 function hydrateQuoteLines(detail: RescueQuoteDetail | null) {
   if (detail == null) {
     quoteLines.value = initialQuoteLinesForServiceType(serviceType.value);
@@ -153,8 +164,34 @@ function formatApiMoney(value: string | number | null | undefined): string {
       :description="errorMessage"
     />
 
-    <template v-else-if="quoteDetail && !editable">
-      <UCard variant="subtle" :ui="{ body: 'space-y-4 text-sm' }">
+    <div
+      v-if="showPdfActions && !isPending && !errorMessage"
+      class="flex flex-wrap justify-end gap-2"
+    >
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-file-text"
+        label="Ver PDF"
+        :loading="isViewingPdf"
+        @click="viewQuotePdf()"
+      />
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-download"
+        label="Descargar PDF"
+        :loading="isDownloadingPdf"
+        @click="downloadQuotePdf()"
+      />
+    </div>
+
+    <template v-if="!isPending && !errorMessage">
+      <UCard
+        v-if="quoteDetail && !editable"
+        variant="subtle"
+        :ui="{ body: 'space-y-4 text-sm' }"
+      >
         <div class="space-y-2">
           <h3 class="text-sm font-semibold text-highlighted">
             Cotización registrada
@@ -210,10 +247,9 @@ function formatApiMoney(value: string | number | null | undefined): string {
           </li>
         </ul>
       </UCard>
-    </template>
 
-    <template v-else-if="linesHydrated && editable">
       <OperationalRescueQuoteEditor
+        v-else-if="linesHydrated && editable"
         v-model:quote-lines="quoteLines"
         v-model:company-settings="companySettings"
         :client-id="detail.client_id"
@@ -223,7 +259,10 @@ function formatApiMoney(value: string | number | null | undefined): string {
         :fetch-service-dropdown="fetchServiceDropdown"
       />
 
-      <div class="flex justify-end border-t border-default pt-4">
+      <div
+        v-if="linesHydrated && editable"
+        class="flex justify-end border-t border-default pt-4"
+      >
         <UButton
           color="primary"
           icon="i-lucide-save"

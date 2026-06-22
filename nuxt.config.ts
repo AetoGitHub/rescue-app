@@ -54,6 +54,7 @@ export default defineNuxtConfig({
     n8nCoordsToAddressUrl: '',
     n8nLinkToCoordsUrl: '',
     n8nRescueClassifierUrl: '',
+    quotePdfApiUrl: '',
     session: {
       maxAge: SESSION_MAX_AGE,
     },
