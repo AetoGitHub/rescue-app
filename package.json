@@ -45,10 +45,5 @@
     "happy-dom": "^20.9.0",
     "playwright-core": "^1.60.0",
     "vitest": "^3.2.4"
-  },
-  "pnpm": {
-    "overrides": {
-      "@internationalized/date": "3.12.1"
-    }
   }
 }
