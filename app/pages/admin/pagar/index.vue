@@ -40,6 +40,7 @@ const {
   loadNextPage,
   isInitialLoading,
   hasSearched,
+  selectableRows,
   selectedIdList,
   allVisibleSelected,
   someVisibleSelected,
@@ -222,7 +223,7 @@ async function onRowCheck(id: number, checked: boolean) {
   }
 
   const row = rows.value.find((item) => item.id === id);
-  if (row == null) return;
+  if (row == null || !isPaymentListRowSelectable(row)) return;
 
   try {
     await addSelected({
@@ -243,7 +244,9 @@ async function onToggleAllVisible(checked: boolean) {
     return;
   }
 
-  const ids = rows.value.map((row) => row.id);
+  const ids = rows.value
+    .filter((row) => isPaymentListRowSelectable(row))
+    .map((row) => row.id);
   if (ids.length === 0) return;
 
   try {
@@ -274,7 +277,10 @@ async function onAddAll() {
   }
 
   try {
-    await addAll(appliedFilters.value);
+    await addAll({
+      ...appliedFilters.value,
+      payment: appliedFilters.value.payment ?? false,
+    });
     selectAllVisible();
   } catch {
     // El toast de error lo muestra usePaymentCart.
@@ -297,7 +303,7 @@ watch(
 
     const inCart = cartItemIds(appliedFilters.value.type);
     const visibleInCart = rows.value
-      .filter((row) => inCart.has(row.id))
+      .filter((row) => inCart.has(row.id) && isPaymentListRowSelectable(row))
       .map((row) => row.id);
 
     if (visibleInCart.length > 0) {
@@ -352,6 +358,7 @@ function onCheckout() {
 const columns = computed((): TableColumn<PaymentListItem>[] => {
   const adding = isAdding.value;
   const profileType = recipientType.value;
+  const hasSelectableRows = selectableRows.value.length > 0;
 
   return [
     {
@@ -365,7 +372,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
               : false,
           'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
             void onToggleAllVisible(value === true),
-          disabled: adding,
+          disabled: adding || !hasSelectableRows,
           ariaLabel: 'Seleccionar todas las filas visibles',
         }),
       cell: ({ row }) =>
@@ -373,7 +380,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
           modelValue: isRowSelected(row.original.id),
           'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
             void onRowCheck(row.original.id, value === true),
-          disabled: adding,
+          disabled: adding || row.original.payment,
           ariaLabel: `Seleccionar deuda ${row.original.rescue_folio}`,
         }),
       meta: {

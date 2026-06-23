@@ -4,6 +4,7 @@ import type {
   PaymentRecipientType,
 } from '~/constants/payment-api';
 import { resolvePaymentListPaymentFilter } from '~/constants/payment-api';
+import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 
 export type CalendarDateParts = Pick<CalendarDate, 'year' | 'month' | 'day'>;
 
@@ -95,4 +96,8 @@ export function paymentFilterToStatus(
   if (payment === true) return 'paid';
   if (payment === false) return 'pending';
   return 'all';
+}
+
+export function isPaymentListRowSelectable(row: PaymentListItem): boolean {
+  return !row.payment;
 }

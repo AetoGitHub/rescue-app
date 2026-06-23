@@ -11,6 +11,7 @@ import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import {
   buildPaymentListQuery,
+  isPaymentListRowSelectable,
   paymentListQueryKey,
   paymentStatusToFilterValue,
   type PaymentListFilterInput,
@@ -75,13 +76,17 @@ export function usePaymentList() {
 
   const hasSearched = computed(() => appliedFilters.value.userId != null);
 
+  const selectableRows = computed(() =>
+    rows.value.filter(isPaymentListRowSelectable),
+  );
+
   const allVisibleSelected = computed(() => {
-    if (rows.value.length === 0) return false;
-    return rows.value.every((row) => selectedIds.value.has(row.id));
+    if (selectableRows.value.length === 0) return false;
+    return selectableRows.value.every((row) => selectedIds.value.has(row.id));
   });
 
   const someVisibleSelected = computed(() =>
-    rows.value.some((row) => selectedIds.value.has(row.id)),
+    selectableRows.value.some((row) => selectedIds.value.has(row.id)),
   );
 
   function clearSelection() {
@@ -114,7 +119,7 @@ export function usePaymentList() {
   }
 
   function selectAllVisible() {
-    selectedIds.value = new Set(rows.value.map((row) => row.id));
+    selectedIds.value = new Set(selectableRows.value.map((row) => row.id));
   }
 
   function deselectAllVisible() {
@@ -185,6 +190,7 @@ export function usePaymentList() {
     isPending,
     isInitialLoading,
     hasSearched,
+    selectableRows,
     selectedIds,
     selectedIdList,
     allVisibleSelected,
