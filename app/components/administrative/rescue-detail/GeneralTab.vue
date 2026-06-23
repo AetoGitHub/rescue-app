@@ -13,5 +13,6 @@ const cardDetail = computed(() => administrativeDetailToCardDetail(props.detail)
     :detail="cardDetail"
     hide-client-authorization
     hide-chat
+    :editable="false"
   />
 </template>

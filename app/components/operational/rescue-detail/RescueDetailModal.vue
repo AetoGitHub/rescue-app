@@ -14,6 +14,7 @@ const activeTab = ref<RescueDetailTabValue>('general');
 const previousTab = ref<RescueDetailTabValue>('general');
 const evidenceModalOpen = ref(false);
 const evidenceModalType = ref<RescueEvidenceType>(RESCUE_EVIDENCE_TYPE_SERVICE);
+const assignSupplierModalOpen = ref(false);
 /** Blocks UTabs from re-opening the evidence modal after close (tab sync). */
 const ignoreEvidenceTabSelection = ref(false);
 
@@ -258,7 +259,10 @@ defineExpose({ open: openDetail, close: closeDetail });
           @update:model-value="onActiveTabChange"
         >
           <template #general>
-            <OperationalRescueDetailGeneralTab :detail="detail">
+            <OperationalRescueDetailGeneralTab
+              :detail="detail"
+              @assign-supplier="assignSupplierModalOpen = true"
+            >
               <template #afterChat>
                 <OperationalRescueDetailAdvancePanel
                   v-if="advancePanelOpen"
@@ -342,5 +346,16 @@ defineExpose({ open: openDetail, close: closeDetail });
     :type="evidenceModalType"
     :rescue-id="rescueId"
     :folio="detail.folio"
+  />
+
+  <LazyOperationalRescueDetailAssignSupplierModal
+    v-if="detail && rescueId != null && assignSupplierModalOpen"
+    v-model:open="assignSupplierModalOpen"
+    :rescue-id="rescueId"
+    :latitude="detail.latitude"
+    :longitude="detail.longitude"
+    :current-supplier-id="detail.supplier_id"
+    :current-supplier-name="detail.supplier_name"
+    @saved="refresh()"
   />
 </template>

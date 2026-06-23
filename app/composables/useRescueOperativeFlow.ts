@@ -32,6 +32,9 @@ import {
   hasRequiredCloseEvidences,
   MARK_AS_CLOSED_ACTION,
 } from '~/utils/rescue-evidence-requirements';
+import {
+  hasRescueSupplierAssigned,
+} from '~/utils/rescue-supplier-assign';
 
 export function useRescueOperativeFlow(options: {
   rescueId: MaybeRefOrGetter<number | null>;
@@ -159,6 +162,18 @@ export function useRescueOperativeFlow(options: {
     return false;
   }
 
+  function ensureSupplierBeforeCloseOrRedirect(): boolean {
+    const d = detail.value;
+    if (d == null || hasRescueSupplierAssigned(d)) return true;
+
+    toast.add({
+      title: RESCUE_OPERATIVE_TOAST.supplierRequiredBeforeClose,
+      color: 'error',
+    });
+    options.setActiveTab('general');
+    return false;
+  }
+
   function getOperativeSuccessToast(action: RescueOperativeActionId): string {
     switch (action) {
       case 'request_advance':
@@ -275,12 +290,14 @@ export function useRescueOperativeFlow(options: {
       || actionId === 'complete_project'
     ) {
       if (!ensureCloseEvidencesOrRedirect()) return;
+      if (!ensureSupplierBeforeCloseOrRedirect()) return;
       openCompletedPanel();
       return;
     }
 
     if (actionId === MARK_AS_CLOSED_ACTION) {
       if (!ensureCloseEvidencesOrRedirect()) return;
+      if (!ensureSupplierBeforeCloseOrRedirect()) return;
       await runUpdate(MARK_AS_CLOSED_ACTION);
       return;
     }
@@ -391,6 +408,7 @@ export function useRescueOperativeFlow(options: {
           : 'complete_service';
 
     if (!ensureCloseEvidencesOrRedirect()) return;
+    if (!ensureSupplierBeforeCloseOrRedirect()) return;
 
     await runUpdate(action, { completed: { ...completedForm, ...parsed.data } });
     completedPanelOpen.value = false;

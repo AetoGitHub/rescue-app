@@ -6,12 +6,18 @@ const props = withDefaults(
     detail: RescueCardDetail;
     hideClientAuthorization?: boolean;
     hideChat?: boolean;
+    editable?: boolean;
   }>(),
   {
     hideClientAuthorization: false,
     hideChat: false,
+    editable: true,
   },
 );
+
+const emit = defineEmits<{
+  'assign-supplier': [];
+}>();
 
 const serviceTypeBadge = computed(() =>
   getRescueServiceTypeBadge(props.detail.service_type),
@@ -31,7 +37,11 @@ const fromQuote = computed(() =>
 );
 
 const hasSupplier = computed(() =>
-  hasRescueCardSupplier(props.detail.supplier_name),
+  hasRescueSupplierAssigned(props.detail),
+);
+
+const showSupplierActions = computed(
+  () => props.editable && canAssignRescueSupplier(props.detail),
 );
 </script>
 
@@ -209,15 +219,20 @@ const hasSupplier = computed(() =>
           :class="hasSupplier ? 'border-default bg-muted/20' : 'border-warning/30 bg-warning/5 '"
         >
           <span :class="hasSupplier ? 'text-highlighted' : 'text-warning'">
-            {{ hasSupplier ? detail.supplier_name : 'Sin proveedor asignado' }}
+            {{
+              hasSupplier
+                ? (detail.supplier_name?.trim() || `Proveedor #${detail.supplier_id}`)
+                : 'Sin proveedor asignado'
+            }}
           </span>
           <UButton
-            v-if="!hasSupplier"
+            v-if="showSupplierActions"
             color="neutral"
-            label="Asignar"
+            :label="hasSupplier ? 'Cambiar' : 'Asignar'"
             size="xs"
             trailing-icon="i-lucide-chevron-right"
             variant="link"
+            @click="emit('assign-supplier')"
           />
         </div>
         <div class="flex items-center justify-between text-xs text-muted">

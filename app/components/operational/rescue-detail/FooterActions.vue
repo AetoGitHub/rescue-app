@@ -3,6 +3,7 @@ import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type { RescueEvidence } from '~/interfaces/rescue/evidence';
 import type { RescueOperativeActionId } from '~/interfaces/rescue/operative';
 import { applyCloseEvidenceGuard } from '~/utils/rescue-evidence-requirements';
+import { applyCloseSupplierGuard } from '~/utils/rescue-supplier-assign';
 import {
   getMoreOptionsActions,
   getRescueDetailFooterActions,
@@ -23,9 +24,12 @@ const emit = defineEmits<{
 const flowContext = computed(() => rescueDetailToFlowContext(props.detail));
 
 const footerActions = computed(() =>
-  applyCloseEvidenceGuard(
-    getRescueDetailFooterActions(flowContext.value),
-    props.evidences ?? [],
+  applyCloseSupplierGuard(
+    applyCloseEvidenceGuard(
+      getRescueDetailFooterActions(flowContext.value),
+      props.evidences ?? [],
+    ),
+    props.detail,
   ),
 );
 
