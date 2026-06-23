@@ -3,7 +3,7 @@ import { PAYMENT_RECEIPT_PATH } from '~/constants/payment-api';
 import type { PaymentRecipientType } from '~/constants/payment-api';
 import type { PaymentReceiptListItem } from '~/interfaces/payment/receipt';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
-import { isAdminRole } from '~~/shared/utils/auth-roles';
+import { isAdminRole } from '#shared/utils/auth-roles';
 import {
   buildPaymentReceiptListQuery,
   paymentReceiptListQueryKey,

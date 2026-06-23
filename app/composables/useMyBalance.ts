@@ -12,7 +12,7 @@ import type {
   SellerBalanceResponse,
 } from '~/interfaces/payment/balance-seller';
 import type { BalanceVoucher } from '~/interfaces/payment/balance';
-import { parsePositiveIntQuery } from '~~/shared/utils/payment-balance-query';
+import { parsePositiveIntQuery } from '#shared/utils/payment-balance-query';
 
 export function useMyBalance(
   userId: MaybeRefOrGetter<number | null | undefined> = undefined,

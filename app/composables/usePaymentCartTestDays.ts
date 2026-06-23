@@ -1,4 +1,4 @@
-import { parsePositiveIntQuery } from '~~/shared/utils/payment-balance-query';
+import { parsePositiveIntQuery } from '#shared/utils/payment-balance-query';
 
 const STORAGE_KEY = 'payment-cart-test-days';
 

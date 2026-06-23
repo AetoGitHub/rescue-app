@@ -10,7 +10,7 @@ import type { OperativeBalanceVoucher } from '~/interfaces/payment/balance-opera
 import type { BalanceVoucher } from '~/interfaces/payment/balance';
 import type { PaymentDebtItem } from '~/interfaces/payment/debt';
 import { adminListTableClass } from '~/constants/admin-list-layout';
-import { parsePositiveIntQuery } from '~~/shared/utils/payment-balance-query';
+import { parsePositiveIntQuery } from '#shared/utils/payment-balance-query';
 import {
   renderOperativePenaltyAmount,
   renderOperativePenaltyStatus,

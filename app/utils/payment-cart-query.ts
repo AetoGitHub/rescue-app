@@ -1,4 +1,4 @@
-import { parsePositiveIntQuery } from '~~/shared/utils/payment-balance-query';
+import { parsePositiveIntQuery } from '#shared/utils/payment-balance-query';
 
 export interface PaymentCartQueryInput {
   testDays?: number | null;
