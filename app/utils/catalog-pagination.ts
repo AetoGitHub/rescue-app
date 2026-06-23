@@ -1,7 +1,5 @@
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
-import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
-
 /**
  * `next` is always a full URL from the API, e.g.
  * `http://localhost:8010/api/rescue/cards/?status=requested&cursor=abc123`

@@ -1,37 +1,62 @@
 <script setup lang="ts">
-import type { CalendarDate } from '@internationalized/date';
+import { CalendarDate, type DateValue } from '@internationalized/date';
+import type { CalendarDateParts } from '~/utils/payment-list-query';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     disabled?: boolean;
-    minValue?: CalendarDate;
-    maxValue?: CalendarDate;
+    minValue?: CalendarDateParts;
+    maxValue?: CalendarDateParts;
   }>(),
   {
     disabled: false,
+    minValue: undefined,
+    maxValue: undefined,
   },
 );
 
-const model = defineModel<CalendarDate | null>({ default: null });
+const model = defineModel<CalendarDateParts | null>({ default: null });
 
 const open = ref(false);
 
+function toDateValue(
+  parts: CalendarDateParts | null | undefined,
+): DateValue | undefined {
+  if (parts == null) return undefined;
+  return new CalendarDate(parts.year, parts.month, parts.day);
+}
+
+function fromDateValue(value: DateValue | null | undefined): CalendarDateParts | null {
+  if (value == null) return null;
+  return { year: value.year, month: value.month, day: value.day };
+}
+
+const inputModel = computed({
+  get: () => toDateValue(model.value) ?? undefined,
+  set: (value: DateValue | undefined) => {
+    model.value = fromDateValue(value);
+  },
+});
+
 const calendarValue = computed({
-  get: () => model.value ?? undefined,
-  set: (value: CalendarDate | undefined) => {
-    model.value = value ?? null;
+  get: () => toDateValue(model.value),
+  set: (value: DateValue | undefined) => {
+    model.value = fromDateValue(value);
     open.value = false;
   },
 });
+
+const minDateValue = computed(() => toDateValue(props.minValue));
+const maxDateValue = computed(() => toDateValue(props.maxValue));
 </script>
 
 <template>
   <UPopover v-model:open="open" class="w-full">
     <UInputDate
-      v-model="model"
+      v-model="inputModel"
       :disabled="disabled"
-      :min-value="minValue"
-      :max-value="maxValue"
+      :min-value="minDateValue"
+      :max-value="maxDateValue"
       icon="i-lucide-calendar"
       variant="subtle"
       class="w-full"
@@ -41,8 +66,8 @@ const calendarValue = computed({
     <template #content>
       <UCalendar
         v-model="calendarValue"
-        :min-value="minValue"
-        :max-value="maxValue"
+        :min-value="minDateValue"
+        :max-value="maxDateValue"
         class="p-2"
       />
     </template>

@@ -14,7 +14,7 @@ const emptyDebtVoucher = {
   count: 0,
   total_amount: '0',
   items: [],
-} as const;
+};
 
 function buildOperativeCart(
   overrides: Partial<PaymentCartResponse> = {},

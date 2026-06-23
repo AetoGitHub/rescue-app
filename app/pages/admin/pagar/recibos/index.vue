@@ -1,26 +1,31 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue';
 import type { TableColumn, TableRow } from '@nuxt/ui';
-import { today, getLocalTimeZone } from '@internationalized/date';
-import type { CalendarDate } from '@internationalized/date';
 import type { PaymentRecipientType } from '~/constants/payment-api';
 import { PAYMENT_RECIPIENT_TYPE_OPTIONS } from '~/constants/payment-api';
 import type { PaymentReceiptListItem } from '~/interfaces/payment/receipt';
 import { adminListTableClass } from '~/constants/admin-list-layout';
+import {
+  compareCalendarDateParts,
+  minCalendarDateParts,
+  todayCalendarDateParts,
+} from '~/utils/payment-list-query';
 
 useHead({
   title: 'Comprobantes de pago',
 });
 
-const maxSelectableDate = today(getLocalTimeZone());
+const maxSelectableDate = todayCalendarDateParts();
 
 const UBadge = resolveComponent('UBadge');
 
 const tableRef = useTemplateRef('table');
 
-const { fetchOperativeDropdown, fetchSellerDropdown } = usePaymentBoardFetchers();
+const { fetchOperativeDropdown, fetchSellerDropdown } =
+  usePaymentBoardFetchers();
 
 const {
+  canFilterByRecipient,
   paymentType,
   userId,
   fromDate,
@@ -42,10 +47,7 @@ usePaginatedTableInfiniteScroll({
 const receiptTypeOptions: {
   label: string;
   value: PaymentRecipientType | null;
-}[] = [
-  { label: 'Todos', value: null },
-  ...PAYMENT_RECIPIENT_TYPE_OPTIONS,
-];
+}[] = [{ label: 'Todos', value: null }, ...PAYMENT_RECIPIENT_TYPE_OPTIONS];
 
 const userDropdownFetcher = computed(() => {
   if (paymentType.value === 'seller') return fetchSellerDropdown;
@@ -66,13 +68,9 @@ const userPlaceholder = computed(() => {
 
 const userFilterDisabled = computed(() => paymentType.value == null);
 
-function minCalendarDate(a: CalendarDate, b: CalendarDate): CalendarDate {
-  return a.compare(b) <= 0 ? a : b;
-}
-
 const fromDateMax = computed(() =>
   toDate.value != null
-    ? minCalendarDate(toDate.value, maxSelectableDate)
+    ? minCalendarDateParts(toDate.value, maxSelectableDate)
     : maxSelectableDate,
 );
 
@@ -80,22 +78,22 @@ const toDateMin = computed(() => fromDate.value ?? undefined);
 
 watch(fromDate, (from) => {
   if (from == null) return;
-  if (from.compare(maxSelectableDate) > 0) {
+  if (compareCalendarDateParts(from, maxSelectableDate) > 0) {
     fromDate.value = maxSelectableDate;
     return;
   }
-  if (toDate.value != null && from.compare(toDate.value) > 0) {
+  if (toDate.value != null && compareCalendarDateParts(from, toDate.value) > 0) {
     toDate.value = from;
   }
 });
 
 watch(toDate, (to) => {
   if (to == null) return;
-  if (to.compare(maxSelectableDate) > 0) {
+  if (compareCalendarDateParts(to, maxSelectableDate) > 0) {
     toDate.value = maxSelectableDate;
     return;
   }
-  if (fromDate.value != null && to.compare(fromDate.value) < 0) {
+  if (fromDate.value != null && compareCalendarDateParts(to, fromDate.value) < 0) {
     fromDate.value = to;
   }
 });
@@ -127,11 +125,7 @@ const columns: TableColumn<PaymentReceiptListItem>[] = [
     accessorKey: 'id',
     header: '#',
     cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'font-medium text-primary' },
-        `#${row.original.id}`,
-      ),
+      h('span', { class: 'font-medium text-primary' }, `#${row.original.id}`),
   },
   {
     id: 'payment_type',
@@ -187,11 +181,18 @@ const columns: TableColumn<PaymentReceiptListItem>[] = [
   <AdminListPageShell
     navbar-title="Comprobantes"
     title="Comprobantes de pago"
-    description="Historial de pagos registrados a operadores y vendedores"
+    description="Historial de comprobantes de pago registrados"
   >
     <template #filters>
-      <div class="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <UFormField label="Tipo">
+      <div
+        class="grid w-full gap-3 sm:grid-cols-2"
+        :class="
+          canFilterByRecipient
+            ? 'lg:grid-cols-3 xl:grid-cols-5'
+            : 'lg:grid-cols-2'
+        "
+      >
+        <UFormField v-if="canFilterByRecipient" label="Tipo">
           <USelect
             v-model="paymentType"
             :items="receiptTypeOptions"
@@ -204,6 +205,7 @@ const columns: TableColumn<PaymentReceiptListItem>[] = [
         </UFormField>
 
         <UFormField
+          v-if="canFilterByRecipient"
           :label="userFieldLabel"
           class="sm:col-span-2"
         >

@@ -1,5 +1,6 @@
 import type { PaymentDebtItem } from '~/interfaces/payment/debt';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
+import type { OperativePenaltyDisplayItem } from '~/utils/payment-penalty-display';
 import { parseRescueCardMoney } from '~/utils/operational-rescue-card';
 
 export interface CheckoutTotalsInput {
@@ -10,7 +11,7 @@ export interface CheckoutTotalsInput {
 }
 
 export function computeCheckoutCartLineAmount(
-  item: PaymentListItem,
+  item: OperativePenaltyDisplayItem,
   forgivenPenalty: boolean,
 ): number {
   const amount = parseRescueCardMoney(item.amount);

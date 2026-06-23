@@ -1,5 +1,4 @@
-import type { PaymentCartSection } from '~/interfaces/payment/cart';
-import type { PaymentCartResponse } from '~/interfaces/payment/cart';
+import type { PaymentCartResponse, PaymentCartSection } from '~/interfaces/payment/cart';
 import type { PaymentDebtItem } from '~/interfaces/payment/debt';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 import type { PaymentRecipientType } from '~/constants/payment-api';

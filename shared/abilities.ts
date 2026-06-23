@@ -39,7 +39,7 @@ export const accessPayments = defineAbility(
 );
 
 export const accessPaymentReceipts = defineAbility(
-  withAdminBypass((user: AuthUser) => isAdminRole(user.role)),
+  withAdminBypass((user: AuthUser) => isStaffRole(user.role)),
 );
 
 export type AdminAbility =

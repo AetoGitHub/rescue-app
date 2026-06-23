@@ -1,22 +1,21 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
-import { today, getLocalTimeZone } from '@internationalized/date';
-import type { CalendarDate } from '@internationalized/date';
 import { PAYMENT_RECIPIENT_TYPE_OPTIONS, PAYMENT_LIST_PAYMENT_OPTIONS } from '~/constants/payment-api';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 import { adminListTableClass } from '~/constants/admin-list-layout';
+import {
+  compareCalendarDateParts,
+  minCalendarDateParts,
+  todayCalendarDateParts,
+} from '~/utils/payment-list-query';
 
 useHead({
   title: 'Pagar',
 });
 
 const isDev = import.meta.dev;
-const maxSelectableDate = today(getLocalTimeZone());
-
-function minCalendarDate(a: CalendarDate, b: CalendarDate): CalendarDate {
-  return a.compare(b) <= 0 ? a : b;
-}
+const maxSelectableDate = todayCalendarDateParts();
 
 const UBadge = resolveComponent('UBadge');
 const UCheckbox = resolveComponent('UCheckbox');
@@ -157,7 +156,7 @@ const userFieldLabel = computed(() =>
 
 const fromDateMax = computed(() =>
   toDate.value != null
-    ? minCalendarDate(toDate.value, maxSelectableDate)
+    ? minCalendarDateParts(toDate.value, maxSelectableDate)
     : maxSelectableDate,
 );
 
@@ -165,22 +164,22 @@ const toDateMin = computed(() => fromDate.value ?? undefined);
 
 watch(fromDate, (from) => {
   if (from == null) return;
-  if (from.compare(maxSelectableDate) > 0) {
+  if (compareCalendarDateParts(from, maxSelectableDate) > 0) {
     fromDate.value = maxSelectableDate;
     return;
   }
-  if (toDate.value != null && from.compare(toDate.value) > 0) {
+  if (toDate.value != null && compareCalendarDateParts(from, toDate.value) > 0) {
     toDate.value = from;
   }
 });
 
 watch(toDate, (to) => {
   if (to == null) return;
-  if (to.compare(maxSelectableDate) > 0) {
+  if (compareCalendarDateParts(to, maxSelectableDate) > 0) {
     toDate.value = maxSelectableDate;
     return;
   }
-  if (fromDate.value != null && to.compare(fromDate.value) < 0) {
+  if (fromDate.value != null && compareCalendarDateParts(to, fromDate.value) < 0) {
     fromDate.value = to;
   }
 });

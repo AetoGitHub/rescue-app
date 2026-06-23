@@ -1,6 +1,5 @@
 import { refDebounced } from '@vueuse/core';
 import { useInfiniteQuery } from '@pinia/colada';
-import type { CalendarDate } from '@internationalized/date';
 import {
   PAYMENT_OPERATIVE_LIST_PATH,
   PAYMENT_SELLER_LIST_PATH,
@@ -14,6 +13,7 @@ import {
   isPaymentListRowSelectable,
   paymentListQueryKey,
   paymentStatusToFilterValue,
+  type CalendarDateParts,
   type PaymentListFilterInput,
 } from '~/utils/payment-list-query';
 
@@ -35,8 +35,8 @@ export function usePaymentList() {
   const userId = ref<number | null>(null);
   const folio = ref('');
   const debouncedFolio = refDebounced(folio, 300);
-  const fromDate = ref<CalendarDate | null>(null);
-  const toDate = ref<CalendarDate | null>(null);
+  const fromDate = ref<CalendarDateParts | null>(null);
+  const toDate = ref<CalendarDateParts | null>(null);
   const paymentStatus = ref<PaymentListPaymentStatus>('all');
   const appliedFilters = ref<PaymentListFilterInput>(emptyAppliedFilters());
   const selectedIds = ref<Set<number>>(new Set());

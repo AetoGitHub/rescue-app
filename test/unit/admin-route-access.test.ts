@@ -30,7 +30,15 @@ async function canAccess(
   role: AuthUser['role'],
 ): Promise<boolean> {
   const result = await ability.execute(user(role));
-  return result === true || (typeof result === 'object' && result.authorized === true);
+  if (result === true) return true;
+  if (
+    result != null
+    && typeof result === 'object'
+    && 'authorized' in result
+  ) {
+    return (result as { authorized: boolean }).authorized === true;
+  }
+  return false;
 }
 
 describe('auth-roles', () => {
@@ -108,8 +116,9 @@ describe('abilities', () => {
     expect(await canAccess(accessPayments, 'admin')).toBe(true);
     expect(await canAccess(accessPayments, 'operator')).toBe(false);
     expect(await canAccess(accessPaymentReceipts, 'admin')).toBe(true);
-    expect(await canAccess(accessPaymentReceipts, 'operator')).toBe(false);
-    expect(await canAccess(accessPaymentReceipts, 'seller')).toBe(false);
+    expect(await canAccess(accessPaymentReceipts, 'operator')).toBe(true);
+    expect(await canAccess(accessPaymentReceipts, 'seller')).toBe(true);
+    expect(await canAccess(accessPaymentReceipts, 'client')).toBe(false);
     expect(await canAccess(accessAdministrative, 'operator')).toBe(false);
   });
 });

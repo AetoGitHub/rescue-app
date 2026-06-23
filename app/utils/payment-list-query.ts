@@ -1,4 +1,4 @@
-import type { CalendarDate } from '@internationalized/date';
+import { getLocalTimeZone, today, type CalendarDate } from '@internationalized/date';
 import type {
   PaymentListPaymentStatus,
   PaymentRecipientType,
@@ -7,6 +7,27 @@ import { resolvePaymentListPaymentFilter } from '~/constants/payment-api';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 
 export type CalendarDateParts = Pick<CalendarDate, 'year' | 'month' | 'day'>;
+
+export function compareCalendarDateParts(
+  a: CalendarDateParts,
+  b: CalendarDateParts,
+): number {
+  if (a.year !== b.year) return a.year - b.year;
+  if (a.month !== b.month) return a.month - b.month;
+  return a.day - b.day;
+}
+
+export function minCalendarDateParts(
+  a: CalendarDateParts,
+  b: CalendarDateParts,
+): CalendarDateParts {
+  return compareCalendarDateParts(a, b) <= 0 ? a : b;
+}
+
+export function todayCalendarDateParts(): CalendarDateParts {
+  const value = today(getLocalTimeZone());
+  return { year: value.year, month: value.month, day: value.day };
+}
 
 export interface PaymentListFilterInput {
   type: PaymentRecipientType;
