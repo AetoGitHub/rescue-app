@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { PaymentListItem } from '../../app/interfaces/payment/payment-list';
-import { isPaymentListRowSelectable } from '../../app/utils/payment-list-query';
+import {
+  isPaymentListItemPaid,
+  isPaymentListRowSelectable,
+  normalizePaymentListItem,
+} from '../../app/utils/payment-list-query';
 
 function paymentListItem(
   overrides: Partial<PaymentListItem> = {},
@@ -18,6 +22,36 @@ function paymentListItem(
   };
 }
 
+describe('isPaymentListItemPaid', () => {
+  it('detects boolean and string payment flags', () => {
+    expect(isPaymentListItemPaid(paymentListItem({ payment: true }))).toBe(true);
+    expect(isPaymentListItemPaid(paymentListItem({ payment: false }))).toBe(
+      false,
+    );
+    expect(
+      isPaymentListItemPaid(
+        paymentListItem({ payment: 'true' as unknown as boolean }),
+      ),
+    ).toBe(true);
+    expect(
+      isPaymentListItemPaid(
+        paymentListItem({ payment: 'false' as unknown as boolean }),
+      ),
+    ).toBe(false);
+  });
+
+  it('uses paid_at when payment flag is missing', () => {
+    expect(
+      isPaymentListItemPaid(
+        paymentListItem({
+          payment: null as unknown as boolean,
+          paid_at: '2026-06-20T12:00:00Z',
+        }),
+      ),
+    ).toBe(true);
+  });
+});
+
 describe('isPaymentListRowSelectable', () => {
   it('returns true for pending items', () => {
     expect(isPaymentListRowSelectable(paymentListItem({ payment: false }))).toBe(
@@ -29,5 +63,18 @@ describe('isPaymentListRowSelectable', () => {
     expect(isPaymentListRowSelectable(paymentListItem({ payment: true }))).toBe(
       false,
     );
+  });
+});
+
+describe('normalizePaymentListItem', () => {
+  it('normalizes payment to boolean using paid_at fallback', () => {
+    expect(
+      normalizePaymentListItem(
+        paymentListItem({
+          payment: null as unknown as boolean,
+          paid_at: '2026-06-20T12:00:00Z',
+        }),
+      ).payment,
+    ).toBe(true);
   });
 });

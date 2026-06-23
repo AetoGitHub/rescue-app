@@ -11,6 +11,7 @@ import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface
 import {
   buildPaymentListQuery,
   isPaymentListRowSelectable,
+  normalizePaymentListItem,
   paymentListQueryKey,
   paymentStatusToFilterValue,
   type CalendarDateParts,
@@ -67,7 +68,9 @@ export function usePaymentList() {
   });
 
   const rows = computed(() =>
-    flattenPaginatedPages<PaymentListItem>(data.value?.pages),
+    flattenPaginatedPages<PaymentListItem>(data.value?.pages).map(
+      normalizePaymentListItem,
+    ),
   );
 
   const isInitialLoading = computed(
@@ -130,12 +133,20 @@ export function usePaymentList() {
   }
 
   function selectIds(ids: number[]) {
+    const selectableIds = new Set(selectableRows.value.map((row) => row.id));
     const next = new Set(selectedIds.value);
-    for (const id of ids) next.add(id);
+    for (const id of ids) {
+      if (selectableIds.has(id)) next.add(id);
+    }
     selectedIds.value = next;
   }
 
   function toggleRow(id: number, checked: boolean) {
+    if (checked) {
+      const row = rows.value.find((item) => item.id === id);
+      if (row != null && !isPaymentListRowSelectable(row)) return;
+    }
+
     const next = new Set(selectedIds.value);
     if (checked) next.add(id);
     else next.delete(id);
@@ -174,6 +185,24 @@ export function usePaymentList() {
     toDate.value = null;
     paymentStatus.value = 'all';
   });
+
+  watch(
+    rows,
+    (nextRows) => {
+      const paidIds = new Set(
+        nextRows.filter((row) => row.payment).map((row) => row.id),
+      );
+      if (paidIds.size === 0) return;
+
+      const nextSelected = new Set(selectedIds.value);
+      let changed = false;
+      for (const id of paidIds) {
+        if (nextSelected.delete(id)) changed = true;
+      }
+      if (changed) selectedIds.value = nextSelected;
+    },
+    { deep: true },
+  );
 
   return {
     recipientType,

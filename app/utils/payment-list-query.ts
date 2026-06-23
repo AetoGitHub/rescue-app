@@ -119,6 +119,36 @@ export function paymentFilterToStatus(
   return 'all';
 }
 
+function parsePaymentStatusFlag(value: unknown): boolean | null {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0) return false;
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
+      return true;
+    }
+    if (normalized === 'false' || normalized === '0' || normalized === 'no') {
+      return false;
+    }
+  }
+
+  return null;
+}
+
+export function isPaymentListItemPaid(row: PaymentListItem): boolean {
+  const parsed = parsePaymentStatusFlag(row.payment);
+  if (parsed != null) return parsed;
+  return Boolean(row.paid_at?.trim());
+}
+
+export function normalizePaymentListItem(row: PaymentListItem): PaymentListItem {
+  return {
+    ...row,
+    payment: isPaymentListItemPaid(row),
+  };
+}
+
 export function isPaymentListRowSelectable(row: PaymentListItem): boolean {
-  return !row.payment;
+  return !isPaymentListItemPaid(row);
 }

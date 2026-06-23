@@ -6,6 +6,7 @@ import type { PaymentListItem } from '~/interfaces/payment/payment-list';
 import { adminListTableClass } from '~/constants/admin-list-layout';
 import {
   compareCalendarDateParts,
+  isPaymentListRowSelectable,
   minCalendarDateParts,
   todayCalendarDateParts,
 } from '~/utils/payment-list-query';
@@ -374,14 +375,19 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
           disabled: adding || !hasSelectableRows,
           ariaLabel: 'Seleccionar todas las filas visibles',
         }),
-      cell: ({ row }) =>
-        h(UCheckbox, {
-          modelValue: isRowSelected(row.original.id),
-          'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-            void onRowCheck(row.original.id, value === true),
-          disabled: adding || row.original.payment,
+      cell: ({ row }) => {
+        const selectable = isPaymentListRowSelectable(row.original);
+
+        return h(UCheckbox, {
+          modelValue: selectable && isRowSelected(row.original.id),
+          'onUpdate:modelValue': (value: boolean | 'indeterminate') => {
+            if (!selectable) return;
+            void onRowCheck(row.original.id, value === true);
+          },
+          disabled: adding || !selectable,
           ariaLabel: `Seleccionar deuda ${row.original.rescue_folio}`,
-        }),
+        });
+      },
       meta: {
         class: {
           th: 'w-10',
