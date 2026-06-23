@@ -21,13 +21,9 @@ const isInvalidCart = computed(() =>
   activeCart.value != null && isInvalidPaymentCart(activeCart.value),
 );
 
-const sectionLabel = computed(() => {
-  if (activeCart.value == null || isInvalidPaymentCart(activeCart.value)) {
-    return null;
-  }
-
-  return paymentCheckoutRecipientSectionLabel(activeCart.value.type);
-});
+const recipientSummary = computed(() =>
+  props.cart != null ? resolvePaymentCartRecipientSummary(props.cart) : null,
+);
 
 const itemCount = computed(() =>
   props.cart != null ? paymentCartItemCount(props.cart) : 0,
@@ -74,16 +70,27 @@ const hasItems = computed(() => itemCount.value > 0 && !isInvalidCart.value);
       />
 
       <div
-        v-else-if="hasItems && sectionLabel"
-        class="space-y-1"
+        v-else-if="hasItems && recipientSummary"
+        class="space-y-3"
       >
-        <p class="text-sm font-medium text-muted">
-          {{ sectionLabel }}
-        </p>
-        <p class="text-sm">
+        <div class="space-y-2">
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted">
+            Pagando a
+          </p>
+          <div class="flex flex-wrap items-center gap-2">
+            <UBadge color="primary" variant="subtle">
+              {{ paymentCheckoutRecipientLabel(recipientSummary.type) }}
+            </UBadge>
+            <p class="text-base font-semibold tracking-tight">
+              {{ recipientSummary.userName }}
+            </p>
+          </div>
+        </div>
+
+        <p class="text-sm text-muted">
           {{ itemCount }} deuda{{ itemCount === 1 ? '' : 's' }}
           ·
-          <span class="tabular-nums font-medium">
+          <span class="tabular-nums font-medium text-default">
             {{ formatRescueCardMoney(grandTotal) }}
           </span>
         </p>

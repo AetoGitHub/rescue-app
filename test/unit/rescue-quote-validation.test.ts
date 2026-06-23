@@ -3,6 +3,7 @@ import {
   getRescueStepQuoteSchema,
   getRescueStepQuoteWithSettingsSchema,
   rescueCreateFormSchema,
+  rescueStepSupplierSchema,
 } from '~/schemas/rescue-create';
 
 const emptyQuoteLine = {
@@ -98,6 +99,13 @@ describe('getRescueStepQuoteWithSettingsSchema', () => {
       company_settings: null,
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('rescueStepSupplierSchema', () => {
+  it('allows null or omitted supplier on the optional step', () => {
+    expect(rescueStepSupplierSchema.safeParse({ supplier: null }).success).toBe(true);
+    expect(rescueStepSupplierSchema.safeParse({}).success).toBe(true);
   });
 });
 
