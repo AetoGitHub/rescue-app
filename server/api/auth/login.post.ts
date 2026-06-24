@@ -1,6 +1,6 @@
 import { joinURL } from 'ufo';
-import { SESSION_MAX_AGE } from '../../../shared/constants/session';
-import { normalizeAuthUserRoleForSession } from '../../../shared/utils/auth-roles';
+import { SESSION_MAX_AGE } from '#shared/constants/session';
+import { normalizeAuthUserRoleForSession } from '#shared/utils/auth-roles';
 
 interface Response {
   token: string;

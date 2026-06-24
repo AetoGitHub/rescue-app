@@ -1,5 +1,5 @@
 import { joinURL } from 'ufo';
-import { abilityForApiPath } from '~~/shared/utils/admin-api-access';
+import { abilityForApiPath } from '#shared/utils/admin-api-access';
 
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);

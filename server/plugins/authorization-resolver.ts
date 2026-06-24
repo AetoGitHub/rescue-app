@@ -1,4 +1,4 @@
-import { normalizeAuthSessionUser } from '../../shared/utils/auth-roles';
+import { normalizeAuthSessionUser } from '#shared/utils/auth-roles';
 
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('request', async (event) => {

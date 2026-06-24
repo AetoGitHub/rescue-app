@@ -4,6 +4,7 @@ import { defineVitestProject } from '@nuxt/test-utils/config';
 
 const appDir = fileURLToPath(new URL('./app', import.meta.url));
 const rootDir = fileURLToPath(new URL('.', import.meta.url));
+const sharedDir = fileURLToPath(new URL('./shared', import.meta.url));
 
 export default defineConfig({
   test: {
@@ -13,6 +14,7 @@ export default defineConfig({
           alias: {
             '~': appDir,
             '~~': rootDir,
+            '#shared': sharedDir,
           },
         },
         test: {

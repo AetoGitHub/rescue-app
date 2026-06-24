@@ -1,8 +1,14 @@
+import { fileURLToPath } from 'node:url';
 import { SESSION_MAX_AGE } from './shared/constants/session';
+
+const sharedDir = fileURLToPath(new URL('./shared', import.meta.url));
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  alias: {
+    '#shared': sharedDir,
+  },
   devtools: {
     enabled: true,
 

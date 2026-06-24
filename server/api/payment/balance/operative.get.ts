@@ -1,6 +1,6 @@
 import { joinURL, withQuery } from 'ufo';
-import { accessMyBalance } from '~~/shared/abilities';
-import { buildOperativeBalanceQuery } from '~~/shared/utils/payment-balance-query';
+import { accessMyBalance } from '#shared/abilities';
+import { buildOperativeBalanceQuery } from '#shared/utils/payment-balance-query';
 
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
