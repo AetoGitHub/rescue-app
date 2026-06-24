@@ -12,6 +12,7 @@ import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
 import type { AdministrativeBoardFilters } from '~/interfaces/administrative/board-filters';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import type { RescueServiceType } from '~/interfaces/rescue';
+import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
 
 useHead({
   title: 'Administrativo',
@@ -24,6 +25,18 @@ const pendingDetailOpen = ref<{
   id: number;
   preview?: AdministrativeRescueCard;
 } | null>(null);
+
+const sendAdminDocModalOpen = ref(false);
+const pendingAdminDoc = ref<{
+  rescueId: number;
+  clientId: number;
+  remittance_folio: string;
+  invoice_folio: string;
+} | null>(null);
+
+const adminDocRescueId = computed(() => pendingAdminDoc.value?.rescueId ?? null);
+const { save: saveAdminDoc, isSaving: isSavingAdminDoc } =
+  useRescueAdminDoc(adminDocRescueId);
 
 const detailModalRef = ref<{
   open: (id: number, preview?: AdministrativeRescueCard) => void;
@@ -52,6 +65,28 @@ function openRescueDetail(card: AdministrativeRescueCard) {
     pendingDetailOpen.value = { id: card.id, preview: card };
   }
   openRescue(card.id, { skipModal: true });
+}
+
+function onAdminDocSend(payload: {
+  card: AdministrativeRescueCard;
+  remittance_folio: string;
+  invoice_folio: string;
+}) {
+  pendingAdminDoc.value = {
+    rescueId: payload.card.id,
+    clientId: payload.card.client_id,
+    remittance_folio: payload.remittance_folio,
+    invoice_folio: payload.invoice_folio,
+  };
+  sendAdminDocModalOpen.value = true;
+}
+
+async function onSendAdminDocSubmit(body: RescueAdminDocBody) {
+  const ok = await saveAdminDoc(body);
+  if (ok) {
+    sendAdminDocModalOpen.value = false;
+    pendingAdminDoc.value = null;
+  }
 }
 
 watch(detailModalRef, (modal) => {
@@ -442,6 +477,17 @@ const {
           @closed="onModalClosed"
         />
 
+        <LazyAdministrativeSendAdminDocModal
+          v-if="sendAdminDocModalOpen && pendingAdminDoc"
+          v-model:open="sendAdminDocModalOpen"
+          :source-rescue-id="pendingAdminDoc.rescueId"
+          :client-id="pendingAdminDoc.clientId"
+          :remittance-folio="pendingAdminDoc.remittance_folio"
+          :invoice-folio="pendingAdminDoc.invoice_folio"
+          :loading="isSavingAdminDoc"
+          @submit="onSendAdminDocSubmit"
+        />
+
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div
             v-if="viewMode === 'kanban'"
@@ -458,6 +504,7 @@ const {
                 :filters="boardFilters"
                 @count="onColumnCount"
                 @select="openRescueDetail"
+                @admin-doc-send="onAdminDocSend"
               />
             </div>
           </div>

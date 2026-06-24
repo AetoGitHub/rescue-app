@@ -33,6 +33,8 @@ function card(
     unlocked_until: null,
     service_date: '2026-06-01',
     seller_id: null,
+    remittance_folio: null,
+    invoice_folio: null,
     ...partial,
   };
 }

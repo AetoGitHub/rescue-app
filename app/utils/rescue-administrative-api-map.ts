@@ -153,6 +153,12 @@ export function mapAdministrativeCardFromApi(
       ?? readString(raw, 'close_date')
       ?? phaseStartedAt,
     seller_id: readNumber(raw, 'seller_id'),
+    remittance_folio:
+      readString(raw, 'remittance_folio')
+      ?? readString(raw, 'remittance_number'),
+    invoice_folio:
+      readString(raw, 'invoice_folio')
+      ?? readString(raw, 'invoice_number'),
   };
 }
 
@@ -228,8 +234,8 @@ export function cardToAdministrativePreviewDetail(
     requires_purchase_order: false,
     purchase_order_number: null,
     requires_remision: false,
-    remittance_number: null,
-    invoice_number: null,
+    remittance_number: card.remittance_folio,
+    invoice_number: card.invoice_folio,
     invoice_date: null,
     invoice_amount: null,
     payment_amount: null,

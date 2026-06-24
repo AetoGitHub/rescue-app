@@ -43,6 +43,8 @@ export interface AdministrativeRescueCard {
   /** List column "Fecha" — from phase_started_at when no service_date on API */
   service_date: string | null;
   seller_id: number | null;
+  remittance_folio: string | null;
+  invoice_folio: string | null;
 }
 
 export interface AdministrativeRescueDetail extends AdministrativeRescueCard {

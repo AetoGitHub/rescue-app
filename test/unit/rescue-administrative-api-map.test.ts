@@ -103,6 +103,30 @@ describe('mapAdministrativeCardFromApi', () => {
     });
     expect(card.net_profit).toBe('90.50');
   });
+
+  it('maps remittance_folio and invoice_folio from cards list', () => {
+    const card = mapAdministrativeCardFromApi({
+      id: 12,
+      folio: 'RES-2026-00012',
+      operative_status: 'closed',
+      invoice_folio: 'A-823584',
+      remittance_folio: 'REM-2026-82388',
+    });
+    expect(card.invoice_folio).toBe('A-823584');
+    expect(card.remittance_folio).toBe('REM-2026-82388');
+  });
+
+  it('maps null remittance_folio when absent', () => {
+    const card = mapAdministrativeCardFromApi({
+      id: 18,
+      folio: 'PROY-2026-00018',
+      operative_status: 'closed',
+      invoice_folio: 'A-239873',
+      remittance_folio: null,
+    });
+    expect(card.invoice_folio).toBe('A-239873');
+    expect(card.remittance_folio).toBeNull();
+  });
 });
 
 const ADMINISTRATIVE_DETAIL_API_EXAMPLE = {
