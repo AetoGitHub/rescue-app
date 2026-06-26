@@ -5,4 +5,7 @@ export interface OperationalBoardFilters {
   serviceTypes: RescueServiceType[];
   companyId: number | null;
   managerId: number | null;
+  pendingAdvance: boolean;
+  slaAlert: boolean;
+  commentAlert: boolean;
 }

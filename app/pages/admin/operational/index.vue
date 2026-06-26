@@ -97,13 +97,29 @@ const debouncedFolio = refDebounced(folioSearch, 300);
 const selectedServiceTypes = ref<RescueServiceType[]>([]);
 const companyId = ref<number | null>(null);
 const managerId = ref<number | null>(null);
+const pendingAdvance = ref(false);
+const slaAlert = ref(false);
+const commentAlert = ref(false);
 
 const boardFilters = computed<OperationalBoardFilters>(() => ({
   folio: debouncedFolio.value,
   serviceTypes: selectedServiceTypes.value,
   companyId: companyId.value,
   managerId: managerId.value,
+  pendingAdvance: pendingAdvance.value,
+  slaAlert: slaAlert.value,
+  commentAlert: commentAlert.value,
 }));
+
+function clearBoardFilters() {
+  folioSearch.value = '';
+  selectedServiceTypes.value = [];
+  companyId.value = null;
+  managerId.value = null;
+  pendingAdvance.value = false;
+  slaAlert.value = false;
+  commentAlert.value = false;
+}
 
 function clearServiceTypeFilters() {
   selectedServiceTypes.value = [];
@@ -146,6 +162,13 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 class="min-w-80"
               />
 
+              <UButton
+                color="neutral"
+                label="Limpiar filtros"
+                variant="link"
+                @click="clearBoardFilters"
+              />
+
               <UFieldGroup>
                 <UButton
                   :color="
@@ -173,20 +196,25 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
               </UFieldGroup>
 
               <UButton
-                color="neutral"
+                :color="pendingAdvance ? 'primary' : 'neutral'"
                 label="Con anticipo pendiente"
-                variant="subtle"
+                :variant="pendingAdvance ? 'solid' : 'subtle'"
+                @click="pendingAdvance = !pendingAdvance"
               />
 
               <UFieldGroup>
-                <UButton color="neutral" label="Sin filtro" variant="solid" />
-
-                <UButton color="neutral" label="Alerta SLA" variant="subtle" />
+                <UButton
+                  :color="slaAlert ? 'primary' : 'neutral'"
+                  label="Alerta SLA"
+                  :variant="slaAlert ? 'solid' : 'subtle'"
+                  @click="slaAlert = !slaAlert"
+                />
 
                 <UButton
-                  color="neutral"
+                  :color="commentAlert ? 'primary' : 'neutral'"
                   label="Alerta actualización"
-                  variant="subtle"
+                  :variant="commentAlert ? 'solid' : 'subtle'"
+                  @click="commentAlert = !commentAlert"
                 />
               </UFieldGroup>
 

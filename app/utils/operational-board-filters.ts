@@ -8,6 +8,9 @@ export function emptyOperationalBoardFilters(): OperationalBoardFilters {
     serviceTypes: [],
     companyId: null,
     managerId: null,
+    pendingAdvance: false,
+    slaAlert: false,
+    commentAlert: false,
   };
 }
 
@@ -34,12 +37,24 @@ export function buildOperationalCardsQuery(
     query.manager = String(filters.managerId);
   }
 
+  if (filters.pendingAdvance) {
+    query.pending_advance = 'true';
+  }
+
+  if (filters.slaAlert) {
+    query.sla_alert = 'true';
+  }
+
+  if (filters.commentAlert) {
+    query.comment_alert = 'true';
+  }
+
   return query;
 }
 
 export function operationalBoardFiltersKey(
   filters: OperationalBoardFilters,
-): [string, string, string, string] {
+): [string, string, string, string, string, string, string] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
 
   return [
@@ -47,6 +62,9 @@ export function operationalBoardFiltersKey(
     serviceTypes,
     filters.companyId != null ? String(filters.companyId) : '',
     filters.managerId != null ? String(filters.managerId) : '',
+    filters.pendingAdvance ? '1' : '0',
+    filters.slaAlert ? '1' : '0',
+    filters.commentAlert ? '1' : '0',
   ];
 }
 
