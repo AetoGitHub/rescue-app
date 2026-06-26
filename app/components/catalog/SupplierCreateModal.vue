@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
-import type { SupplierCreateBody } from '~/interfaces/catalogs/supplier';
+import type { SupplierCreateBody, SupplierRankingSummary } from '~/interfaces/catalogs/supplier';
 import { supplierCreateSchema } from '~/schemas/catalog-create';
 
 const toast = useToast();
@@ -8,6 +8,7 @@ const toast = useToast();
 const open = ref(false);
 const editingId = ref<number | null>(null);
 const detailPending = ref(false);
+const rankingSummary = ref<SupplierRankingSummary>({ score: 0, rescues_count: 0 });
 
 const isEdit = computed(() => editingId.value != null);
 
@@ -29,6 +30,7 @@ const state = reactive(emptyState());
 
 function resetForm() {
   Object.assign(state, emptyState());
+  rankingSummary.value = { score: 0, rescues_count: 0 };
 }
 
 function prepareCreate() {
@@ -44,6 +46,7 @@ async function loadDetail(id: number) {
       `/api/supplier/detail/${id}/`,
     );
     Object.assign(state, mapSupplierDetail(raw));
+    rankingSummary.value = mapSupplierRankingSummary(raw);
   } catch (e) {
     console.error(e);
     toast.add({
@@ -131,6 +134,12 @@ function cancel() {
   open.value = false;
 }
 
+async function onReviewSubmitted() {
+  const id = editingId.value;
+  if (id == null) return;
+  await loadDetail(id);
+}
+
 async function requestSubmit() {
   await formRef.value?.submit();
 }
@@ -163,20 +172,29 @@ async function requestSubmit() {
           class="size-8 animate-spin text-muted"
         />
       </div>
-      <UForm
-        v-show="!detailPending || !isEdit"
-        ref="formRef"
-        :schema="supplierCreateSchema"
-        :state="state"
-        class="space-y-4"
-        @submit="onSubmit"
-        @error="onFormError"
-      >
-        <CatalogSupplierFormFields
-          v-model:state="state"
-          :map-layout-key="mapLayoutKey"
+      <div v-show="!detailPending || !isEdit" class="space-y-8">
+        <UForm
+          ref="formRef"
+          :schema="supplierCreateSchema"
+          :state="state"
+          class="space-y-4"
+          @submit="onSubmit"
+          @error="onFormError"
+        >
+          <CatalogSupplierFormFields
+            v-model:state="state"
+            :map-layout-key="mapLayoutKey"
+          />
+        </UForm>
+
+        <CatalogSupplierRankingSection
+          v-if="isEdit && editingId != null"
+          :summary="rankingSummary"
+          :supplier-id="editingId"
+          :loading="detailPending"
+          @submitted="onReviewSubmitted"
         />
-      </UForm>
+      </div>
     </template>
 
     <template #footer>

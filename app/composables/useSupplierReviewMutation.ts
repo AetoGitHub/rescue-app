@@ -1,14 +1,16 @@
-import { useMutation } from '@pinia/colada';
+import { useMutation, useQueryCache } from '@pinia/colada';
 import type { SupplierReviewCreateBody } from '~/interfaces/catalogs/supplier';
 import type { RescueSupplierRatingRow } from '~/interfaces/rescue/operative';
 import { SUPPLIER_REVIEW_CREATE_PATH } from '~/constants/rescue-api';
 import {
   getRatedSuppliers,
+  toStandaloneSupplierReviewBody,
   toSupplierReviewCreateBody,
 } from '~/utils/supplier-review-api-map';
 
 export function useSupplierReviewMutation() {
   const apiFetch = useApiFetch();
+  const queryCache = useQueryCache();
   const toast = useToast();
 
   const { mutateAsync, asyncStatus } = useMutation({
@@ -23,6 +25,9 @@ export function useSupplierReviewMutation() {
         method: 'POST',
         body,
       }),
+    onSuccess: async () => {
+      await queryCache.invalidateQueries({ key: ['suppliers'] });
+    },
     onError: (error) => {
       toast.add({
         title: 'No se pudo guardar la calificación del proveedor',
@@ -31,6 +36,20 @@ export function useSupplierReviewMutation() {
       });
     },
   });
+
+  async function createReview(
+    supplierId: number,
+    input: { rating: number; comment: string },
+  ) {
+    await mutateAsync({
+      supplierId,
+      body: toStandaloneSupplierReviewBody(input.rating, input.comment),
+    });
+    toast.add({
+      title: 'Calificación guardada',
+      color: 'success',
+    });
+  }
 
   async function createReviewsForRescue(
     ratings: RescueSupplierRatingRow[],
@@ -50,6 +69,7 @@ export function useSupplierReviewMutation() {
   const isCreating = computed(() => asyncStatus.value === 'loading');
 
   return {
+    createReview,
     createReviewsForRescue,
     isCreating,
   };

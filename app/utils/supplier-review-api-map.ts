@@ -7,13 +7,26 @@ export function getRatedSuppliers(
   return rows.filter((r) => r.score >= 1);
 }
 
-export function toSupplierReviewCreateBody(
-  row: RescueSupplierRatingRow,
-  rescueId: number,
+export function toStandaloneSupplierReviewBody(
+  rating: number,
+  comment: string,
 ): SupplierReviewCreateBody {
   return {
+    rating,
+    comment: comment.trim() || undefined,
+  };
+}
+
+export function toSupplierReviewCreateBody(
+  row: RescueSupplierRatingRow,
+  rescueId?: number,
+): SupplierReviewCreateBody {
+  const body: SupplierReviewCreateBody = {
     rating: row.score,
     comment: row.comment.trim() || undefined,
-    rescue_id: rescueId,
   };
+  if (rescueId != null) {
+    body.rescue_id = rescueId;
+  }
+  return body;
 }

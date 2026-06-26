@@ -11,6 +11,7 @@ import { SERVICE_UNIT_VALUES } from '~/constants/catalog-select-options';
 import type { ServiceCreateBody, ServiceUnit } from '~/interfaces/catalogs/service';
 import type {
   SupplierCreateBody,
+  SupplierRankingSummary,
   SupplierServiceType,
 } from '~/interfaces/catalogs/supplier';
 
@@ -428,6 +429,15 @@ export function mapSupplierDetail(
     notes: String(raw.notes ?? ''),
     latitude: raw.latitude != null ? String(raw.latitude) : '',
     longitude: raw.longitude != null ? String(raw.longitude) : '',
+  };
+}
+
+export function mapSupplierRankingSummary(
+  raw: Record<string, unknown>,
+): SupplierRankingSummary {
+  return {
+    score: Number(raw.score) || 0,
+    rescues_count: Number(raw.rescues_count) || 0,
   };
 }
 

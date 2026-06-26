@@ -34,18 +34,18 @@ const iconSize = computed(() => (props.size === 'xs' ? 'size-3' : 'size-3.5'));
 </script>
 
 <template>
-  <span
-    class="inline-flex items-center gap-1.5 tabular-nums"
-    :class="toneClass"
-  >
+  <span class="inline-flex items-center gap-1.5 tabular-nums">
     <span class="inline-flex items-center gap-0.5" aria-hidden="true">
       <UIcon
         v-for="index in starCount"
         :key="index"
         :name="index <= filledStars ? 'i-heroicons-star-solid' : 'i-heroicons-star'"
-        :class="[iconSize, index > filledStars ? 'opacity-40' : '']"
+        :class="[
+          iconSize,
+          index <= filledStars ? 'text-warning' : 'text-muted opacity-40',
+        ]"
       />
     </span>
-    <span class="text-xs font-medium">{{ displayValue }}</span>
+    <span class="text-xs font-medium" :class="toneClass">{{ displayValue }}</span>
   </span>
 </template>

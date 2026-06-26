@@ -156,6 +156,11 @@ export const supplierCreateSchema = z
     }
   });
 
+export const supplierReviewSchema = z.object({
+  rating: z.number().min(1, 'Selecciona una calificación').max(5),
+  comment: z.string(),
+});
+
 export const contractItemFormSchema = z.object({
   service: z.number().int().positive({ error: 'Selecciona un servicio' }),
   price: z

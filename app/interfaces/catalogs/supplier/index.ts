@@ -49,6 +49,16 @@ export interface SupplierReviewCreateBody {
   rescue_id?: number;
 }
 
+export interface SupplierRankingSummary {
+  score: number;
+  rescues_count: number;
+}
+
+export interface SupplierReviewFormState {
+  rating: number;
+  comment: string;
+}
+
 export interface SupplierCreateBody {
   name: string;
   description: string;

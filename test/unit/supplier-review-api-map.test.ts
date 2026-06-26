@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RescueSupplierRatingRow } from '~/interfaces/rescue/operative';
 import {
   getRatedSuppliers,
+  toStandaloneSupplierReviewBody,
   toSupplierReviewCreateBody,
 } from '~/utils/supplier-review-api-map';
 
@@ -29,6 +30,18 @@ describe('getRatedSuppliers', () => {
       rows[0],
       rows[2],
     ]);
+  });
+});
+
+describe('toStandaloneSupplierReviewBody', () => {
+  it('maps rating and comment without rescue_id', () => {
+    expect(toStandaloneSupplierReviewBody(5, 'Excelente servicio')).toEqual({
+      rating: 5,
+      comment: 'Excelente servicio',
+    });
+    expect(toStandaloneSupplierReviewBody(4, '   ')).toEqual({
+      rating: 4,
+    });
   });
 });
 
