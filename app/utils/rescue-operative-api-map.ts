@@ -28,9 +28,6 @@ export function mapOperativeUpdateToApi(
   if (body.disbursement_payment_method) {
     mapped.disbursement_payment_method = body.disbursement_payment_method;
   }
-  if (body.supplier_ratings?.length) {
-    mapped.supplier_ratings = body.supplier_ratings;
-  }
   return mapped;
 }
 
@@ -103,13 +100,6 @@ function buildClosePayload(
   const payload: RescueChangePhaseBody = {
     to: 'closed_unpaid',
     close_date: completed?.close_date,
-    supplier_ratings: completed?.ratings
-      .filter((r) => r.score >= 1)
-      .map((r) => ({
-        supplier_id: r.supplier_id,
-        score: r.score,
-        comment: r.comment.trim() || undefined,
-      })),
   };
 
   if (completed) {

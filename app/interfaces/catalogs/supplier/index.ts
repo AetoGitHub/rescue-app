@@ -42,6 +42,13 @@ export interface SupplierListResponse {
   previous?: string | null;
 }
 
+/** POST /api/supplier/{id}/review/create/ */
+export interface SupplierReviewCreateBody {
+  rating: number;
+  comment?: string;
+  rescue_id?: number;
+}
+
 export interface SupplierCreateBody {
   name: string;
   description: string;

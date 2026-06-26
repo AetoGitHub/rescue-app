@@ -47,6 +47,8 @@ export function useRescueOperativeFlow(options: {
   const detail = computed(() => toValue(options.detail));
 
   const { updateOperative, isUpdating } = useRescueOperativeMutation(rescueId);
+  const { createReviewsForRescue, isCreating: isCreatingReviews } =
+    useSupplierReviewMutation();
   const { revertCancellation, isReverting } = useRescueRevertCancellation(rescueId);
   const { evidences } = useRescueEvidenceList(rescueId);
 
@@ -384,6 +386,20 @@ export function useRescueOperativeFlow(options: {
     }
   }
 
+  async function submitCloseWithReviews(
+    action: RescueOperativeActionId,
+    completed: RescueServiceCompletedFormState,
+  ) {
+    const id = rescueId.value;
+    if (id == null) return;
+
+    if (completed.ratings.length > 0) {
+      await createReviewsForRescue(completed.ratings, id);
+    }
+
+    await runUpdate(action, { completed });
+  }
+
   async function submitCompletedPanel() {
     const d = detail.value;
     if (!d) return;
@@ -410,8 +426,15 @@ export function useRescueOperativeFlow(options: {
     if (!ensureCloseEvidencesOrRedirect()) return;
     if (!ensureSupplierBeforeCloseOrRedirect()) return;
 
-    await runUpdate(action, { completed: { ...completedForm, ...parsed.data } });
-    completedPanelOpen.value = false;
+    try {
+      await submitCloseWithReviews(action, {
+        ...completedForm,
+        ...parsed.data,
+      });
+      completedPanelOpen.value = false;
+    } catch {
+      // Error API: el panel permanece abierto para reintentar
+    }
   }
 
   async function submitCancelService() {
@@ -461,7 +484,7 @@ export function useRescueOperativeFlow(options: {
   }
 
   const isUpdatingOperative = computed(
-    () => isUpdating.value || isReverting.value,
+    () => isUpdating.value || isReverting.value || isCreatingReviews.value,
   );
 
   const quoteTotalForAdvance = computed(() => {

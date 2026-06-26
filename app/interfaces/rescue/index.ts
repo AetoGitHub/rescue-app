@@ -22,7 +22,6 @@ export type {
   RescueOperativeFlowContext,
   RescueOperativeUpdateBody,
   RescueServiceCompletedFormState,
-  RescueSupplierRatingPayload,
   RescueSupplierRatingRow,
 } from './operative';
 

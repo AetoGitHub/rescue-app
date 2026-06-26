@@ -30,3 +30,49 @@ describe('toOperativeUpdatePayload cancel_service', () => {
     expect(payload).not.toHaveProperty('cancel_reason');
   });
 });
+
+describe('toOperativeUpdatePayload close actions', () => {
+  const completedForm = {
+    close_date: '2026-06-26',
+    disbursement_date: '2026-06-26',
+    disbursement_payment_method: 'transfer' as const,
+    ratings: [
+      {
+        supplier_id: 10,
+        supplier_name: 'Proveedor A',
+        score: 5,
+        comment: 'Excelente',
+      },
+    ],
+  };
+
+  it('complete_service sends close fields without supplier_ratings', () => {
+    const payload = toOperativeUpdatePayload('complete_service', minimalDetail(), {
+      completed: completedForm,
+    });
+
+    expect(payload).toEqual({
+      to: 'closed_unpaid',
+      close_date: '2026-06-26',
+      disbursement_date: '2026-06-26',
+      disbursement_payment_method: 'transfer',
+    });
+    expect(payload).not.toHaveProperty('supplier_ratings');
+  });
+
+  it('confirm_disbursement sends close fields without supplier_ratings', () => {
+    const payload = toOperativeUpdatePayload(
+      'confirm_disbursement',
+      minimalDetail({ service_type: 'loan' }),
+      { completed: completedForm },
+    );
+
+    expect(payload).toEqual({
+      to: 'closed_unpaid',
+      close_date: '2026-06-26',
+      disbursement_date: '2026-06-26',
+      disbursement_payment_method: 'transfer',
+    });
+    expect(payload).not.toHaveProperty('supplier_ratings');
+  });
+});

@@ -36,7 +36,6 @@ export interface RescueChangePhaseBody {
   disbursement_date?: string;
   disbursement_payment_method?: string;
   cancellation_reason?: number;
-  supplier_ratings?: RescueSupplierRatingPayload[];
 }
 
 /** POST /api/rescue/revert_cancellation/{rescue_pk}/ */
@@ -46,12 +45,6 @@ export interface RescueRevertCancellationBody {
 
 /** @deprecated Use RescueChangePhaseBody */
 export type RescueOperativeUpdateBody = RescueChangePhaseBody;
-
-export interface RescueSupplierRatingPayload {
-  supplier_id: number;
-  score: number;
-  comment?: string;
-}
 
 export interface RescueSupplierRatingRow {
   supplier_id: number;
