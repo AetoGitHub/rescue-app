@@ -1,11 +1,31 @@
 <script setup lang="ts">
 import type { RescueChatMessage } from '~/interfaces/rescue';
 
-const props = defineProps<{
-  rescueId: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    rescueId: number;
+    layout?: 'inline' | 'sidebar';
+  }>(),
+  {
+    layout: 'inline',
+  },
+);
 
 const messageText = ref('');
+
+const isSidebar = computed(() => props.layout === 'sidebar');
+
+const scrollAreaClass = computed(() =>
+  isSidebar.value
+    ? 'flex-1 min-h-0 max-h-none'
+    : 'max-h-56 min-h-40',
+);
+
+const sectionClass = computed(() =>
+  isSidebar.value
+    ? 'flex h-full min-h-[min(50vh,420px)] flex-col space-y-3'
+    : 'space-y-3',
+);
 
 const { user } = useUserSession();
 const currentUserId = computed(() => user.value?.id ?? null);
@@ -80,7 +100,10 @@ async function submitMessage() {
 </script>
 
 <template>
-  <section class="space-y-3 rounded-lg border border-default bg-default p-4">
+  <section
+    class="rounded-lg border border-default bg-default p-4"
+    :class="sectionClass"
+  >
     <div class="flex items-center justify-between gap-2">
       <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
         Actividad y chat
@@ -90,7 +113,8 @@ async function submitMessage() {
 
     <div
       ref="scrollContainerRef"
-      class="max-h-56 min-h-40 space-y-3 overflow-y-auto rounded-lg border border-default bg-muted/20 p-3"
+      class="space-y-3 overflow-y-auto rounded-lg border border-default bg-muted/20 p-3"
+      :class="scrollAreaClass"
     >
       <div
         v-if="isInitialLoading"
@@ -202,9 +226,5 @@ async function submitMessage() {
         @click="submitMessage"
       />
     </div>
-
-    <p class="text-[10px] leading-snug text-muted">
-      Los gestores que participen en el chat recibirán comisión proporcional al cierre.
-    </p>
   </section>
 </template>

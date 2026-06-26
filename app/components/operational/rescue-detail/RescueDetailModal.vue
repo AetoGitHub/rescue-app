@@ -182,7 +182,7 @@ defineExpose({ open: openDetail, close: closeDetail });
     :dismissible="false"
     scrollable
     :title="modalTitle"
-    :ui="{ content: 'max-w-6xl' }"
+    :ui="{ content: 'max-w-7xl' }"
   >
     <template #body>
       <div v-if="open && rescueId != null" class="space-y-4">

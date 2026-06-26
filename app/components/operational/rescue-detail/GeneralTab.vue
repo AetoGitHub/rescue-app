@@ -46,8 +46,24 @@ const showSupplierActions = computed(
 </script>
 
 <template>
-  <div class="grid gap-6 lg:grid-cols-2">
-    <div class="space-y-4">
+  <div
+    class="grid gap-6"
+    :class="
+      hideChat
+        ? 'lg:grid-cols-1'
+        : 'lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)]'
+    "
+  >
+    <OperationalRescueDetailChat
+      v-if="!hideChat"
+      :rescue-id="detail.id"
+      layout="sidebar"
+      class="lg:sticky lg:top-0 lg:self-start"
+    />
+
+    <div class="min-w-0 space-y-6">
+      <div class="grid gap-6 lg:grid-cols-2">
+        <div class="space-y-4">
       <section
         class="space-y-3 rounded-lg border border-default bg-default p-4"
       >
@@ -245,18 +261,12 @@ const showSupplierActions = computed(
         hydrate-on-visible
         :detail="detail"
       />
-    </div>
+        </div>
+      </div>
 
-    <OperationalRescueDetailChat
-      v-if="!hideChat"
-      :rescue-id="detail.id"
-      class="col-span-2"
-    />
-    <div
-      v-if="$slots.afterChat"
-      class="col-span-2"
-    >
-      <slot name="afterChat" />
+      <div v-if="$slots.afterChat">
+        <slot name="afterChat" />
+      </div>
     </div>
   </div>
 </template>
