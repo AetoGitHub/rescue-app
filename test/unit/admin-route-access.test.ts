@@ -85,6 +85,7 @@ describe('abilityForAdminPath', () => {
     expect(abilityForAdminPath('/admin/pagar')).toBe(accessPayments);
     expect(abilityForAdminPath('/admin/pagar/recibos')).toBe(accessPaymentReceipts);
     expect(abilityForAdminPath('/admin/pagar/recibo/42')).toBe(accessPaymentReceipts);
+    expect(abilityForAdminPath('/admin/configuracion/comisiones')).toBe(accessConfig);
   });
 });
 
@@ -101,6 +102,8 @@ describe('abilityForApiPath', () => {
     expect(abilityForApiPath('/api/payment/receipt/')).toBe(accessPaymentReceipts);
     expect(abilityForApiPath('/api/payment/receipt/42/')).toBe(accessPaymentReceipts);
     expect(abilityForApiPath('/api/sla/list/')).toBe(accessConfig);
+    expect(abilityForApiPath('/api/auth/operative/commission/')).toBe(accessConfig);
+    expect(abilityForApiPath('/api/auth/user/list/')).toBe(accessUsers);
   });
 });
 

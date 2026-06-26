@@ -38,13 +38,13 @@ type StringNumberModelOptions = {
   emptyValue?: string;
 };
 
-function formatStringNumber(value: number, decimals: number): string {
+export function formatStringNumber(value: number, decimals: number): string {
   if (!Number.isFinite(value)) return '';
   if (decimals === 0) return String(Math.trunc(value));
   return value.toFixed(decimals);
 }
 
-function parseStringNumber(value: string): number | undefined {
+export function parseStringNumber(value: string): number | undefined {
   const trimmed = value.trim();
   if (trimmed === '') return undefined;
   const parsed = Number(trimmed.replace(/,/g, ''));

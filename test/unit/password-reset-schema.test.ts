@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  adminUserPasswordResetSchema,
   passwordResetConfirmSchema,
   passwordResetRequestSchema,
 } from '../../app/schemas/password-reset';
@@ -45,6 +46,32 @@ describe('passwordResetConfirmSchema', () => {
       code: 'tu-codigo-aqui',
       password: 'nueva_password',
       password2: 'nueva_password',
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('adminUserPasswordResetSchema', () => {
+  it('requires at least 8 characters', () => {
+    const result = adminUserPasswordResetSchema.safeParse({
+      new_password: 'short',
+      new_password2: 'short',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects mismatched passwords', () => {
+    const result = adminUserPasswordResetSchema.safeParse({
+      new_password: 'password1',
+      new_password2: 'password2',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts valid payload', () => {
+    const result = adminUserPasswordResetSchema.safeParse({
+      new_password: 'NuevaPass123!',
+      new_password2: 'NuevaPass123!',
     });
     expect(result.success).toBe(true);
   });

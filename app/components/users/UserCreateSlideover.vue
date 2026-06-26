@@ -3,6 +3,11 @@ import { useMutation, useQueryCache } from '@pinia/colada';
 import type { UserCreateBody, UserUpdateBody } from '~/interfaces/auth/user';
 import { USER_ROLE_OPTIONS } from '~/constants/user-select-options';
 import {
+  adminUserPasswordResetSchema,
+  type AdminUserPasswordResetOutput,
+} from '~/schemas/password-reset';
+import { USER_PASSWORD_RESET_PATH } from '~/constants/user-api';
+import {
   userCreateSchema,
   userCreateToCreateBody,
   userUpdateSchema,
@@ -77,10 +82,25 @@ async function openEdit(id: number) {
 
 defineExpose({ openEdit });
 
+function emptyPasswordResetState() {
+  return {
+    new_password: '',
+    new_password2: '',
+  };
+}
+
+const passwordResetState = reactive(emptyPasswordResetState());
+const passwordResetFormRef = ref<{ submit: () => Promise<void> } | null>(null);
+
+function resetPasswordResetForm() {
+  Object.assign(passwordResetState, emptyPasswordResetState());
+}
+
 watch(open, (v) => {
   if (!v) {
     editingId.value = null;
     resetForm();
+    resetPasswordResetForm();
   }
 });
 
@@ -156,6 +176,57 @@ function cancel() {
 async function requestSubmit() {
   await formRef.value?.submit();
 }
+
+const { mutateAsync: resetPasswordAsync, asyncStatus: passwordResetStatus } =
+  useMutation({
+    mutation: ({
+      userId,
+      new_password,
+    }: {
+      userId: number;
+      new_password: string;
+    }) =>
+      $fetch(USER_PASSWORD_RESET_PATH(userId), {
+        method: 'POST',
+        body: { new_password },
+      }),
+    onError: (e) => {
+      toast.add({
+        title: 'No se pudo restablecer la contraseña',
+        description: getFetchErrorMessage(e),
+        color: 'error',
+      });
+    },
+  });
+
+const isResettingPassword = computed(
+  () => passwordResetStatus.value === 'loading',
+);
+
+async function onPasswordResetSubmit(payload: {
+  data: AdminUserPasswordResetOutput;
+}) {
+  const userId = editingId.value;
+  if (userId == null) return;
+
+  try {
+    await resetPasswordAsync({
+      userId,
+      new_password: payload.data.new_password,
+    });
+    toast.add({
+      title: 'Contraseña restablecida',
+      color: 'success',
+    });
+    resetPasswordResetForm();
+  } catch {
+    // Error toast handled in mutation
+  }
+}
+
+async function requestPasswordResetSubmit() {
+  await passwordResetFormRef.value?.submit();
+}
 </script>
 
 <template>
@@ -228,10 +299,10 @@ async function requestSubmit() {
           />
         </UFormField>
         <UFormField
-          :label="isEdit ? 'Nueva contraseña' : 'Contraseña'"
+          v-if="!isEdit"
+          label="Contraseña"
           name="password"
-          :required="!isEdit"
-          :description="isEdit ? 'Dejar vacío para no cambiar la contraseña' : undefined"
+          required
         >
           <UInput
             v-model="state.password"
@@ -244,6 +315,60 @@ async function requestSubmit() {
           <UCheckbox v-model="state.is_active" label="Usuario activo" />
         </UFormField>
       </UForm>
+
+      <section
+        v-if="isEdit && editingId != null && !detailPending"
+        class="mt-6 space-y-4 border-t border-default pt-6"
+      >
+        <div>
+          <h3 class="text-sm font-semibold text-highlighted">
+            Restablecer contraseña
+          </h3>
+          <p class="mt-1 text-xs text-muted">
+            Define una nueva contraseña para este usuario.
+          </p>
+        </div>
+
+        <UForm
+          ref="passwordResetFormRef"
+          :schema="adminUserPasswordResetSchema"
+          :state="passwordResetState"
+          class="space-y-4"
+          @submit="onPasswordResetSubmit"
+        >
+          <UFormField label="Nueva contraseña" name="new_password" required>
+            <UInput
+              v-model="passwordResetState.new_password"
+              class="w-full"
+              type="password"
+              autocomplete="new-password"
+            />
+          </UFormField>
+          <UFormField
+            label="Confirmar contraseña"
+            name="new_password2"
+            required
+          >
+            <UInput
+              v-model="passwordResetState.new_password2"
+              class="w-full"
+              type="password"
+              autocomplete="new-password"
+            />
+          </UFormField>
+          <div class="flex justify-end">
+            <UButton
+              type="button"
+              color="primary"
+              label="Restablecer contraseña"
+              icon="i-lucide-key-round"
+              :loading="isResettingPassword"
+              :disabled="isResettingPassword"
+              @click="requestPasswordResetSubmit"
+            />
+          </div>
+        </UForm>
+      </section>
     </template>
 
     <template #footer>

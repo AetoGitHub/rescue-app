@@ -112,6 +112,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         icon: 'i-lucide-timer',
         ability: accessConfig,
       },
+      {
+        label: 'Comisiones',
+        to: '/admin/configuracion/comisiones',
+        icon: 'i-lucide-percent',
+        ability: accessConfig,
+      },
     ],
   },
 ];

@@ -26,7 +26,18 @@ export const passwordResetConfirmSchema = z
     path: ['password2'],
   });
 
+export const adminUserPasswordResetSchema = z
+  .object({
+    new_password: passwordField,
+    new_password2: passwordField,
+  })
+  .refine((data) => data.new_password === data.new_password2, {
+    message: 'Las contraseñas no coinciden',
+    path: ['new_password2'],
+  });
+
 export type PasswordResetRequestInput = z.input<typeof passwordResetRequestSchema>;
 export type PasswordResetRequestOutput = z.output<typeof passwordResetRequestSchema>;
 export type PasswordResetConfirmInput = z.input<typeof passwordResetConfirmSchema>;
 export type PasswordResetConfirmOutput = z.output<typeof passwordResetConfirmSchema>;
+export type AdminUserPasswordResetOutput = z.output<typeof adminUserPasswordResetSchema>;
