@@ -218,21 +218,44 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 />
               </UFieldGroup>
 
-              <UFieldGroup>
-                <UButton
-                  color="neutral"
-                  label="Agente: todos"
-                  variant="solid"
-                />
+              <div class="relative inline-flex">
+                <UFieldGroup
+                  class="pointer-events-none select-none blur-[2px] opacity-60"
+                  aria-hidden="true"
+                >
+                  <UButton
+                    color="neutral"
+                    label="Agente: todos"
+                    variant="solid"
+                    tabindex="-1"
+                  />
 
-                <UButton color="neutral" label="Trabajando" variant="subtle" />
+                  <UButton
+                    color="neutral"
+                    label="Trabajando"
+                    variant="subtle"
+                    tabindex="-1"
+                  />
 
-                <UButton
-                  color="neutral"
-                  label="Requiere humano"
-                  variant="subtle"
-                />
-              </UFieldGroup>
+                  <UButton
+                    color="neutral"
+                    label="Requiere humano"
+                    variant="subtle"
+                    tabindex="-1"
+                  />
+                </UFieldGroup>
+
+                <div
+                  class="absolute inset-0 z-10 flex items-center justify-center rounded-lg"
+                  aria-label="Próximamente"
+                >
+                  <span
+                    class="rounded-full border border-default bg-elevated/95 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted shadow-sm backdrop-blur-sm"
+                  >
+                    Próximamente
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div class="ml-auto flex flex-row gap-3">
