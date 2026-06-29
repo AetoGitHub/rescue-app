@@ -3,6 +3,7 @@ import { h, resolveComponent } from 'vue';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import { adminBoardListTableClass } from '~/constants/admin-list-layout';
+import type { RescueTableBadgeComponents } from '~/utils/rescue-table-display';
 
 const props = defineProps<{
   rows: AdministrativeRescueCard[];
@@ -29,6 +30,12 @@ const tableRef = useTemplateRef('table');
 
 const UButton = resolveComponent('UButton');
 const UBadge = resolveComponent('UBadge');
+const UIcon = resolveComponent('UIcon');
+
+const badgeComponents: RescueTableBadgeComponents = {
+  UBadge,
+  UIcon,
+};
 
 function toggleSort(key: SortKey) {
   if (sortKey.value === key) {
@@ -103,21 +110,16 @@ const columns: TableColumn<AdministrativeRescueCard>[] = [
   {
     accessorKey: 'folio',
     header: () => sortHeader('Folio', 'folio'),
-    cell: ({ row }) =>
-      h('span', { class: 'font-medium' }, row.original.folio),
+    cell: ({ row }) => renderRescueTableFolio(row.original.folio),
   },
   {
     id: 'service_type',
     header: 'Tipo',
-    cell: ({ row }) => {
-      const badge = getRescueServiceTypeBadge(row.original.service_type);
-      return h(UBadge, {
-        color: badge.color,
-        variant: 'subtle',
-        size: 'sm',
-        label: badge.label,
-      });
-    },
+    cell: ({ row }) =>
+      renderRescueTableServiceTypeBadge(
+        badgeComponents,
+        row.original.service_type,
+      ),
   },
   {
     accessorKey: 'client_name',
@@ -131,36 +133,39 @@ const columns: TableColumn<AdministrativeRescueCard>[] = [
   {
     id: 'supplier',
     header: 'Proveedor',
-    cell: ({ row }) => row.original.supplier_name?.trim() || '—',
+    cell: ({ row }) =>
+      renderRescueTableSupplierBadge(
+        badgeComponents,
+        row.original.supplier_name,
+      ),
   },
   {
     id: 'sale_price',
     header: () => sortHeader('Precio venta', 'sale_price'),
-    cell: ({ row }) => formatRescueCardMoney(row.original.sale_price),
+    cell: ({ row }) => renderRescueTableMoney(row.original.sale_price),
   },
   {
     id: 'net_profit',
     header: () => sortHeader('Utilidad', 'net_profit'),
-    cell: ({ row }) => formatRescueCardMoney(row.original.net_profit),
+    cell: ({ row }) => renderRescueTableMoney(row.original.net_profit),
   },
   {
     id: 'operative_status',
     header: 'Estatus Op.',
     cell: ({ row }) =>
-      getAdministrativeOperativeStatusLabel(row.original.operative_status),
+      renderRescueTableOperativeStatusBadge(
+        badgeComponents,
+        row.original.operative_status,
+      ),
   },
   {
     id: 'billing_status',
     header: 'Estatus Admin',
-    cell: ({ row }) => {
-      const badge = getBillingStatusBadge(row.original.billing_status);
-      return h(UBadge, {
-        color: badge.color,
-        variant: 'subtle',
-        size: 'sm',
-        label: badge.label,
-      });
-    },
+    cell: ({ row }) =>
+      renderRescueTableBillingStatusBadge(
+        badgeComponents,
+        row.original.billing_status,
+      ),
   },
   {
     id: 'date',

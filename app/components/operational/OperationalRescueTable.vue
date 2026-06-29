@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue';
 import type { TableColumn, TableRow } from '@nuxt/ui';
-import { RESCUE_ADMIN_STATUS_LABELS } from '~/constants/operational-rescue-detail';
 import { adminBoardListTableClass } from '~/constants/admin-list-layout';
 import type { RescueCard } from '~/interfaces/rescue';
+import type { RescueTableBadgeComponents } from '~/utils/rescue-table-display';
 
 const props = defineProps<{
   rows: RescueCard[];
@@ -21,6 +21,12 @@ const tableRef = useTemplateRef('table');
 
 const UButton = resolveComponent('UButton');
 const UBadge = resolveComponent('UBadge');
+const UIcon = resolveComponent('UIcon');
+
+const badgeComponents: RescueTableBadgeComponents = {
+  UBadge,
+  UIcon,
+};
 
 function formatPhaseStartedAt(isoDate: string | null | undefined): string {
   if (!isoDate) return '—';
@@ -32,18 +38,6 @@ function formatPhaseStartedAt(isoDate: string | null | undefined): string {
   });
 }
 
-function getGestorAgentBadge(adminStatus: string | null | undefined): {
-  label: string;
-  color: string;
-} {
-  const config = RESCUE_ADMIN_STATUS_LABELS[adminStatus ?? ''];
-  if (config) {
-    return { label: config.label, color: config.color };
-  }
-
-  return { label: adminStatus?.replaceAll('_', ' ') ?? '—', color: 'neutral' };
-}
-
 function onRowSelect(_e: Event, row: TableRow<RescueCard>) {
   emit('select', row.original);
 }
@@ -52,21 +46,16 @@ const columns: TableColumn<RescueCard>[] = [
   {
     accessorKey: 'folio',
     header: 'Folio',
-    cell: ({ row }) =>
-      h('span', { class: 'font-medium' }, row.original.folio),
+    cell: ({ row }) => renderRescueTableFolio(row.original.folio),
   },
   {
     id: 'service_type',
     header: 'Tipo',
-    cell: ({ row }) => {
-      const badge = getRescueServiceTypeBadge(row.original.service_type);
-      return h(UBadge, {
-        color: badge.color,
-        variant: 'subtle',
-        size: 'sm',
-        label: badge.label,
-      });
-    },
+    cell: ({ row }) =>
+      renderRescueTableServiceTypeBadge(
+        badgeComponents,
+        row.original.service_type,
+      ),
   },
   {
     accessorKey: 'client_name',
@@ -80,31 +69,34 @@ const columns: TableColumn<RescueCard>[] = [
   {
     id: 'supplier',
     header: 'Proveedor',
-    cell: ({ row }) => row.original.supplier_name?.trim() || '—',
+    cell: ({ row }) =>
+      renderRescueTableSupplierBadge(
+        badgeComponents,
+        row.original.supplier_name,
+      ),
   },
   {
     id: 'sub_total',
     header: 'Subtotal',
-    cell: ({ row }) => formatRescueCardMoney(row.original.sub_total),
+    cell: ({ row }) => renderRescueTableMoney(row.original.sub_total),
   },
   {
     id: 'operative_status',
     header: 'Estatus Op.',
     cell: ({ row }) =>
-      getAdministrativeOperativeStatusLabel(row.original.operative_status),
+      renderRescueTableOperativeStatusBadge(
+        badgeComponents,
+        row.original.operative_status,
+      ),
   },
   {
     id: 'admin_status',
-    header: 'Agente gestor',
-    cell: ({ row }) => {
-      const badge = getGestorAgentBadge(row.original.admin_status);
-      return h(UBadge, {
-        color: badge.color,
-        variant: 'subtle',
-        size: 'sm',
-        label: badge.label,
-      });
-    },
+    header: 'Estatus admin',
+    cell: ({ row }) =>
+      renderRescueTableBillingStatusBadge(
+        badgeComponents,
+        row.original.admin_status,
+      ),
   },
   {
     id: 'phase_started_at',

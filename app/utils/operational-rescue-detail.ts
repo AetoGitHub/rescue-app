@@ -8,6 +8,7 @@ import {
 } from '~/constants/operational-rescue-detail';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
+import { getBillingStatusBadge } from '~/utils/administrative-rescue-display';
 import {
   getRescueDetailFooterFlowLabel as footerFlowLabelForContext,
   getRescueDetailPrimaryActionLabel as primaryActionLabelForContext,
@@ -25,18 +26,25 @@ export function getOperationalStatusLabel(
 
 export function getAdminStatusBadge(adminStatus: string | null | undefined): {
   label: string;
-  color: 'error' | 'warning' | 'info' | 'neutral';
+  color:
+    | 'error'
+    | 'warning'
+    | 'info'
+    | 'neutral'
+    | 'success'
+    | 'primary';
 } {
   if (!adminStatus) {
     return { label: 'Sin atender', color: 'neutral' };
   }
 
-  return (
-    RESCUE_ADMIN_STATUS_LABELS[adminStatus] ?? {
-      label: adminStatus.replaceAll('_', ' '),
-      color: 'neutral',
-    }
-  );
+  const gestor = RESCUE_ADMIN_STATUS_LABELS[adminStatus];
+  if (gestor) {
+    return gestor;
+  }
+
+  const billing = getBillingStatusBadge(adminStatus);
+  return { label: billing.label, color: billing.color };
 }
 
 export function getClientInitials(name: string | null | undefined): string {
