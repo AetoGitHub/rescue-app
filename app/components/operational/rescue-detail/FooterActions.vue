@@ -64,11 +64,11 @@ function onAction(id: RescueOperativeActionId) {
 </script>
 
 <template>
-  <div class="flex w-full flex-wrap items-center justify-between gap-3">
+  <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
     <p class="text-xs text-muted">
       {{ flowLabel }}
     </p>
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
       <UButton
         v-for="action in primaryActions"
         :key="action.id"

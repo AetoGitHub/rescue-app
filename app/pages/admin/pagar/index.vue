@@ -491,7 +491,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
     description="Consulta deudas de operadores y vendedores, agrégalas al carrito y prepara el pago"
   >
     <template #filters>
-      <div class="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div class="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <UFormField label="Tipo">
           <USelect
             v-model="recipientType"
@@ -553,7 +553,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
       </div>
     </template>
 
-    <div class="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+    <div class="flex min-h-0 flex-1 flex-col gap-4 pb-28 lg:flex-row lg:pb-0">
       <div class="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
         <div class="flex flex-wrap items-center gap-2">
           <UButton
@@ -587,7 +587,9 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
         />
       </div>
 
-      <div class="w-full shrink-0 lg:w-80 space-y-4">
+      <div
+        class="fixed inset-x-0 bottom-0 z-30 max-h-[45vh] space-y-4 overflow-y-auto border-t border-default bg-default p-4 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] lg:static lg:z-auto lg:max-h-none lg:w-80 lg:shrink-0 lg:overflow-visible lg:border-0 lg:p-0 lg:shadow-none"
+      >
         <UPageCard
           v-if="isDev"
           variant="subtle"

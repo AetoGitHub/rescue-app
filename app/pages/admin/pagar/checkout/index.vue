@@ -611,18 +611,12 @@ const itemCountLabel = computed(() => {
                     "
                   />
                   <div
-                    class="grid border-t border-default px-4 py-3 text-sm"
-                    :class="isOperativeCheckout ? 'grid-cols-6' : 'grid-cols-5'"
+                    class="flex flex-wrap items-center justify-between gap-2 border-t border-default px-4 py-3 text-sm"
                   >
-                    <div
-                      class="text-center font-semibold"
-                      :class="isOperativeCheckout ? 'col-span-4' : 'col-span-3'"
-                    >
-                      Subtotal
-                    </div>
-                    <div class="col-span-2 text-right tabular-nums font-semibold">
+                    <span class="font-semibold">Subtotal</span>
+                    <span class="tabular-nums font-semibold">
                       {{ formatRescueCardMoney(rescueSubtotal) }}
-                    </div>
+                    </span>
                   </div>
                 </div>
               </section>
@@ -656,16 +650,12 @@ const itemCountLabel = computed(() => {
                     </template>
                   </UTable>
                   <div
-                    class="grid grid-cols-4 border-t border-default px-4 py-3 text-sm"
+                    class="flex flex-wrap items-center justify-between gap-2 border-t border-default px-4 py-3 text-sm"
                   >
-                    <div />
-                    <div />
-                    <div class="text-center font-semibold">
-                      Subtotal
-                    </div>
-                    <div class="text-right tabular-nums font-semibold">
+                    <span class="font-semibold">Subtotal</span>
+                    <span class="tabular-nums font-semibold">
                       −{{ formatRescueCardMoney(debtSubtotal) }}
-                    </div>
+                    </span>
                   </div>
                 </div>
               </section>

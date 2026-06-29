@@ -200,8 +200,8 @@ function formatRanking(value: number) {
 </script>
 
 <template>
-  <div class="grid min-h-112 grid-cols-1 gap-4 lg:grid-cols-2">
-    <div class="flex min-h-0 flex-col gap-3">
+  <div class="grid min-h-0 grid-cols-1 gap-4 lg:min-h-112 lg:grid-cols-2">
+    <div class="order-2 flex min-h-0 flex-col gap-3 lg:order-1">
       <UInput
         v-model="search"
         leading-icon="i-lucide-search"
@@ -368,6 +368,7 @@ function formatRanking(value: number) {
     </div>
 
     <OperationalRescueRequestSupplierStepMap
+      class="order-1 h-[40vh] min-h-48 lg:order-2 lg:h-full lg:min-h-72"
       :unit-latitude="state.location_latitude"
       :unit-longitude="state.location_longitude"
       :selected-supplier="selectedSupplierPin"

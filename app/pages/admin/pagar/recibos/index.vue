@@ -185,7 +185,7 @@ const columns: TableColumn<PaymentReceiptListItem>[] = [
   >
     <template #filters>
       <div
-        class="grid w-full gap-3 sm:grid-cols-2"
+        class="grid w-full grid-cols-1 gap-3 sm:grid-cols-2"
         :class="
           canFilterByRecipient
             ? 'lg:grid-cols-3 xl:grid-cols-5'

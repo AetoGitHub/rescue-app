@@ -250,12 +250,12 @@ watch(
         v-if="hasQuoteLines"
         class="overflow-x-auto rounded-lg border border-default"
       >
-        <table class="w-full min-w-[960px] text-sm">
+        <table class="w-full min-w-[640px] text-sm sm:min-w-[960px]">
           <thead>
             <tr class="border-b border-default bg-elevated/50 text-left text-xs uppercase tracking-wide text-muted">
               <th class="px-3 py-2 font-medium">Servicio</th>
               <th class="w-24 px-3 py-2 font-medium">Cantidad</th>
-              <th class="w-36 px-3 py-2 font-medium">Costo unit.</th>
+              <th class="hidden px-3 py-2 font-medium sm:table-cell sm:w-36">Costo unit.</th>
               <th class="w-40 px-3 py-2 font-medium">P. unitario</th>
               <th class="w-32 px-3 py-2 font-medium text-right">Total</th>
               <th class="w-10 px-2 py-2" />
@@ -304,7 +304,7 @@ watch(
                   />
                 </UFormField>
               </td>
-              <td class="px-3 py-2 align-top">
+              <td class="hidden px-3 py-2 align-top sm:table-cell">
                 <UFormField :name="`quote_lines.${index}.unit_cost`" required>
                   <UInputNumber
                     v-model="line.unit_cost"

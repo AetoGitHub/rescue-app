@@ -152,25 +152,37 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
 
     <template #body>
       <div class="flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6">
-        <div class="shrink-0 flex flex-col gap-4">
-          <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
-            <div class="flex flex-row gap-3 flex-wrap">
+        <div class="mb-2 shrink-0">
+          <SharedMobileFilterBar slideover-title="Filtros operacionales">
+            <template #primary>
               <UInput
                 v-model="folioSearch"
+                class="w-full min-w-0"
                 leading-icon="i-lucide-search"
                 placeholder="Buscar folio"
-                class="min-w-80"
               />
+            </template>
 
+            <template #actions>
               <UButton
+                icon="i-lucide-plus"
+                label="Nueva solicitud"
+                @click="openCreateRequest()"
+              />
+            </template>
+
+            <template #filters>
+              <UButton
+                block
                 color="neutral"
                 label="Limpiar filtros"
                 variant="link"
                 @click="clearBoardFilters"
               />
 
-              <UFieldGroup>
+              <UFieldGroup class="w-full">
                 <UButton
+                  block
                   :color="
                     selectedServiceTypes.length === 0 ? 'primary' : 'neutral'
                   "
@@ -184,6 +196,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 <UButton
                   v-for="option in RESCUE_SERVICE_TYPE_OPTIONS"
                   :key="option.value"
+                  block
                   :color="
                     isServiceTypeSelected(option.value) ? 'primary' : 'neutral'
                   "
@@ -196,14 +209,16 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
               </UFieldGroup>
 
               <UButton
+                block
                 :color="pendingAdvance ? 'primary' : 'neutral'"
                 label="Con anticipo pendiente"
                 :variant="pendingAdvance ? 'solid' : 'subtle'"
                 @click="pendingAdvance = !pendingAdvance"
               />
 
-              <UFieldGroup>
+              <UFieldGroup class="w-full">
                 <UButton
+                  block
                   :color="slaAlert ? 'primary' : 'neutral'"
                   label="Alerta SLA"
                   :variant="slaAlert ? 'solid' : 'subtle'"
@@ -211,6 +226,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 />
 
                 <UButton
+                  block
                   :color="commentAlert ? 'primary' : 'neutral'"
                   label="Alerta actualización"
                   :variant="commentAlert ? 'solid' : 'subtle'"
@@ -218,73 +234,20 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 />
               </UFieldGroup>
 
-              <div class="relative inline-flex">
-                <UFieldGroup
-                  class="pointer-events-none select-none blur-[2px] opacity-60"
-                  aria-hidden="true"
-                >
-                  <UButton
-                    color="neutral"
-                    label="Agente: todos"
-                    variant="solid"
-                    tabindex="-1"
-                  />
+              <CatalogDropdownSelect
+                v-model="companyId"
+                class="w-full"
+                placeholder="Compañía: todas"
+                :fetcher="fetchOperationalCompanyDropdown"
+              />
 
-                  <UButton
-                    color="neutral"
-                    label="Trabajando"
-                    variant="subtle"
-                    tabindex="-1"
-                  />
+              <CatalogDropdownSelect
+                v-model="managerId"
+                class="w-full"
+                placeholder="Gestor: todos"
+                :fetcher="fetchOperationalManagerDropdown"
+              />
 
-                  <UButton
-                    color="neutral"
-                    label="Requiere humano"
-                    variant="subtle"
-                    tabindex="-1"
-                  />
-                </UFieldGroup>
-
-                <div
-                  class="absolute inset-0 z-10 flex items-center justify-center rounded-lg"
-                  aria-label="Próximamente"
-                >
-                  <span
-                    class="rounded-full border border-default bg-elevated/95 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted shadow-sm backdrop-blur-sm"
-                  >
-                    Próximamente
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="ml-auto flex flex-row gap-3">
-              <USlideover title="Filtros">
-                <UButton
-                  icon="i-lucide-filter"
-                  color="neutral"
-                  label="Mas filtros"
-                  variant="subtle"
-                />
-
-                <template #body>
-                  <div class="flex flex-col gap-3">
-                    <CatalogDropdownSelect
-                      v-model="companyId"
-                      class="min-w-52"
-                      placeholder="Compañía: todas"
-                      :fetcher="fetchOperationalCompanyDropdown"
-                    />
-
-                    <CatalogDropdownSelect
-                      v-model="managerId"
-                      class="min-w-52"
-                      placeholder="Gestor: todos"
-                      :fetcher="fetchOperationalManagerDropdown"
-                    />
-                  </div>
-                </template>
-              </USlideover>
               <UDropdownMenu
                 :items="[
                   { label: 'Columnas visibles', type: 'label' },
@@ -294,9 +257,10 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 :ui="{ content: 'w-64' }"
               >
                 <UButton
+                  block
                   color="neutral"
                   icon="i-lucide-eye"
-                  label="Columnas"
+                  label="Columnas visibles"
                   variant="subtle"
                 />
 
@@ -311,24 +275,186 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                   />
                 </template>
               </UDropdownMenu>
+            </template>
 
-              <UFieldGroup>
-                <UButton color="primary" icon="i-lucide-grid" variant="solid" />
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex min-w-0 flex-1 flex-row flex-wrap gap-3">
+                <UInput
+                  v-model="folioSearch"
+                  class="w-full min-w-0 sm:min-w-64 sm:max-w-xs"
+                  leading-icon="i-lucide-search"
+                  placeholder="Buscar folio"
+                />
 
                 <UButton
                   color="neutral"
-                  icon="i-lucide-list"
-                  variant="subtle"
+                  label="Limpiar filtros"
+                  variant="link"
+                  @click="clearBoardFilters"
                 />
-              </UFieldGroup>
 
-              <UButton
-                icon="i-lucide-plus"
-                label="Nueva solicitud"
-                @click="openCreateRequest()"
-              />
+                <UFieldGroup>
+                  <UButton
+                    :color="
+                      selectedServiceTypes.length === 0 ? 'primary' : 'neutral'
+                    "
+                    label="Todos"
+                    :variant="
+                      selectedServiceTypes.length === 0 ? 'solid' : 'subtle'
+                    "
+                    @click="clearServiceTypeFilters"
+                  />
+
+                  <UButton
+                    v-for="option in RESCUE_SERVICE_TYPE_OPTIONS"
+                    :key="option.value"
+                    :color="
+                      isServiceTypeSelected(option.value) ? 'primary' : 'neutral'
+                    "
+                    :label="option.label"
+                    :variant="
+                      isServiceTypeSelected(option.value) ? 'solid' : 'subtle'
+                    "
+                    @click="toggleServiceType(option.value)"
+                  />
+                </UFieldGroup>
+
+                <UButton
+                  :color="pendingAdvance ? 'primary' : 'neutral'"
+                  label="Con anticipo pendiente"
+                  :variant="pendingAdvance ? 'solid' : 'subtle'"
+                  @click="pendingAdvance = !pendingAdvance"
+                />
+
+                <UFieldGroup>
+                  <UButton
+                    :color="slaAlert ? 'primary' : 'neutral'"
+                    label="Alerta SLA"
+                    :variant="slaAlert ? 'solid' : 'subtle'"
+                    @click="slaAlert = !slaAlert"
+                  />
+
+                  <UButton
+                    :color="commentAlert ? 'primary' : 'neutral'"
+                    label="Alerta actualización"
+                    :variant="commentAlert ? 'solid' : 'subtle'"
+                    @click="commentAlert = !commentAlert"
+                  />
+                </UFieldGroup>
+
+                <div class="relative hidden lg:inline-flex">
+                  <UFieldGroup
+                    class="pointer-events-none select-none blur-[2px] opacity-60"
+                    aria-hidden="true"
+                  >
+                    <UButton
+                      color="neutral"
+                      label="Agente: todos"
+                      variant="solid"
+                      tabindex="-1"
+                    />
+
+                    <UButton
+                      color="neutral"
+                      label="Trabajando"
+                      variant="subtle"
+                      tabindex="-1"
+                    />
+
+                    <UButton
+                      color="neutral"
+                      label="Requiere humano"
+                      variant="subtle"
+                      tabindex="-1"
+                    />
+                  </UFieldGroup>
+
+                  <div
+                    class="absolute inset-0 z-10 flex items-center justify-center rounded-lg"
+                    aria-label="Próximamente"
+                  >
+                    <span
+                      class="rounded-full border border-default bg-elevated/95 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted shadow-sm backdrop-blur-sm"
+                    >
+                      Próximamente
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ml-auto flex flex-row flex-wrap gap-3">
+                <USlideover title="Filtros">
+                  <UButton
+                    icon="i-lucide-filter"
+                    color="neutral"
+                    label="Mas filtros"
+                    variant="subtle"
+                  />
+
+                  <template #body>
+                    <div class="flex flex-col gap-3">
+                      <CatalogDropdownSelect
+                        v-model="companyId"
+                        class="w-full"
+                        placeholder="Compañía: todas"
+                        :fetcher="fetchOperationalCompanyDropdown"
+                      />
+
+                      <CatalogDropdownSelect
+                        v-model="managerId"
+                        class="w-full"
+                        placeholder="Gestor: todos"
+                        :fetcher="fetchOperationalManagerDropdown"
+                      />
+                    </div>
+                  </template>
+                </USlideover>
+
+                <UDropdownMenu
+                  :items="[
+                    { label: 'Columnas visibles', type: 'label' },
+                    ...columnDropdownItems,
+                  ]"
+                  :content="{ align: 'end' }"
+                  :ui="{ content: 'w-64' }"
+                >
+                  <UButton
+                    color="neutral"
+                    icon="i-lucide-eye"
+                    label="Columnas"
+                    variant="subtle"
+                  />
+
+                  <template #item-leading="{ item }">
+                    <span
+                      class="size-2.5 shrink-0 rounded-full"
+                      :style="{
+                        backgroundColor: (item as KanbanColumnMenuItem)
+                          .accentColor,
+                      }"
+                      aria-hidden="true"
+                    />
+                  </template>
+                </UDropdownMenu>
+
+                <UFieldGroup class="hidden sm:flex">
+                  <UButton color="primary" icon="i-lucide-grid" variant="solid" />
+
+                  <UButton
+                    color="neutral"
+                    icon="i-lucide-list"
+                    variant="subtle"
+                  />
+                </UFieldGroup>
+
+                <UButton
+                  icon="i-lucide-plus"
+                  label="Nueva solicitud"
+                  @click="openCreateRequest()"
+                />
+              </div>
             </div>
-          </div>
+          </SharedMobileFilterBar>
         </div>
 
         <LazyOperationalRescueRequestModal
@@ -341,22 +467,18 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
           @closed="onModalClosed"
         />
 
-        <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div class="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
-            <div class="flex h-full min-h-0 min-w-max gap-3 items-stretch">
-              <LazyOperationalKanbanColumnData
-                v-for="column in visibleColumns"
-                :key="column.status"
-                hydrate-on-visible
-                :status="column.status"
-                :title="column.title"
-                :accent-color="column.accentColor"
-                :filters="boardFilters"
-                @select="openRescue"
-              />
-            </div>
-          </div>
-        </div>
+        <SharedKanbanScrollContainer>
+          <LazyOperationalKanbanColumnData
+            v-for="column in visibleColumns"
+            :key="column.status"
+            hydrate-on-visible
+            :status="column.status"
+            :title="column.title"
+            :accent-color="column.accentColor"
+            :filters="boardFilters"
+            @select="openRescue"
+          />
+        </SharedKanbanScrollContainer>
       </div>
     </template>
   </UDashboardPanel>

@@ -457,14 +457,12 @@ const debtColumns = computed((): TableColumn<PaymentDebtItem>[] => [
           </UTable>
           <div
             v-if="debtRows.length > 0"
-            class="grid grid-cols-4 border-t border-default px-4 py-3 text-sm"
+            class="flex flex-wrap items-center justify-between gap-2 border-t border-default px-4 py-3 text-sm"
           >
-            <div class="col-span-3 text-center font-semibold">
-              Subtotal
-            </div>
-            <div class="text-right tabular-nums font-semibold text-error">
+            <span class="font-semibold">Subtotal</span>
+            <span class="tabular-nums font-semibold text-error">
               −{{ formatRescueCardMoney(debtSubtotal) }}
-            </div>
+            </span>
           </div>
         </div>
       </section>

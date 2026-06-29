@@ -30,6 +30,12 @@ function onRowSelect(_e: Event, row: TableRow<Client>) {
   }
 }
 
+function openClient(client: Client) {
+  if (client.id != null) {
+    void slideoverRef.value?.openEdit(client.id);
+  }
+}
+
 const {
   rows,
   asyncStatus,
@@ -203,15 +209,72 @@ const columns: TableColumn<Client>[] = [
       />
     </template>
 
-    <UTable
-      ref="table"
-      sticky
-      :class="adminListTableClass"
-      :columns="columns"
-      :data="filteredRows"
-      :loading="isInitialLoading"
-      :get-row-id="(row: Client) => String(row.id)"
-      @select="onRowSelect"
-    />
+    <SharedResponsiveDataList>
+      <template #cards>
+        <div
+          v-if="isInitialLoading"
+          class="space-y-2"
+        >
+          <USkeleton
+            v-for="index in 4"
+            :key="index"
+            class="h-24 w-full rounded-lg"
+          />
+        </div>
+        <div
+          v-else-if="filteredRows.length === 0"
+          class="rounded-lg border border-dashed border-default p-8 text-center text-sm text-muted"
+        >
+          No hay clientes
+        </div>
+        <button
+          v-for="client in filteredRows"
+          :key="client.id"
+          type="button"
+          class="w-full rounded-lg border border-default bg-default p-4 text-left transition-colors hover:bg-elevated"
+          @click="openClient(client)"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="font-medium text-highlighted">
+                {{ client.name }}
+              </p>
+              <p class="mt-0.5 text-xs text-muted">
+                {{ client.phone?.trim() || 'Sin teléfono' }}
+              </p>
+            </div>
+            <UBadge
+              v-bind="clientTypeBadgeProps(client.client_type)"
+              size="sm"
+            />
+          </div>
+          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span v-if="client.rfc?.trim()">{{ client.rfc }}</span>
+            <UBadge
+              :color="client.is_active ? 'success' : 'neutral'"
+              variant="subtle"
+              size="sm"
+              :label="client.is_active ? 'Activo' : 'Inactivo'"
+            />
+            <UIcon
+              v-if="client.has_contract"
+              name="i-lucide-file-text"
+              class="size-4 text-primary"
+            />
+          </div>
+        </button>
+      </template>
+
+      <UTable
+        ref="table"
+        sticky
+        :class="adminListTableClass"
+        :columns="columns"
+        :data="filteredRows"
+        :loading="isInitialLoading"
+        :get-row-id="(row: Client) => String(row.id)"
+        @select="onRowSelect"
+      />
+    </SharedResponsiveDataList>
   </AdminListPageShell>
 </template>

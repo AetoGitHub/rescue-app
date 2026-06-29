@@ -233,16 +233,16 @@ async function confirmRemove(row: ContractItemEditableRow) {
     </div>
 
     <div class="overflow-x-auto rounded-lg border border-default">
-      <table class="w-full min-w-[880px] text-sm">
+      <table class="w-full min-w-[640px] text-sm sm:min-w-[880px]">
         <thead>
           <tr
             class="border-b border-default bg-elevated/50 text-left text-xs font-medium uppercase tracking-wide text-muted"
           >
             <th class="px-3 py-2">Producto / servicio</th>
-            <th class="px-3 py-2">Categoría</th>
-            <th class="px-3 py-2">Precio base</th>
+            <th class="hidden px-3 py-2 sm:table-cell">Categoría</th>
+            <th class="hidden px-3 py-2 md:table-cell">Precio base</th>
             <th class="px-3 py-2">Precio negociado</th>
-            <th class="px-3 py-2">Diferencia</th>
+            <th class="hidden px-3 py-2 lg:table-cell">Diferencia</th>
             <th class="w-12 px-2 py-2" />
           </tr>
         </thead>
@@ -262,10 +262,10 @@ async function confirmRemove(row: ContractItemEditableRow) {
             class="border-b border-default last:border-b-0"
           >
             <td class="px-3 py-2 font-medium">{{ row.service_name }}</td>
-            <td class="px-3 py-2 text-muted">
+            <td class="hidden px-3 py-2 text-muted sm:table-cell">
               {{ row.category_name || '—' }}
             </td>
-            <td class="px-3 py-2 tabular-nums text-muted">
+            <td class="hidden px-3 py-2 tabular-nums text-muted md:table-cell">
               {{ formatContractMoney(0) }}
             </td>
             <td class="px-3 py-2">
@@ -284,7 +284,7 @@ async function confirmRemove(row: ContractItemEditableRow) {
                 />
               </div>
             </td>
-            <td class="px-3 py-2 tabular-nums text-muted">
+            <td class="hidden px-3 py-2 tabular-nums text-muted lg:table-cell">
               {{ formatContractPriceDifference(row.price, row.base_price) }}
             </td>
             <td class="px-2 py-2 text-center">

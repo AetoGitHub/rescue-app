@@ -138,7 +138,36 @@ useHead({
               Sin extensiones registradas para este cliente.
             </div>
 
-            <div v-else class="overflow-x-auto rounded-lg border border-default">
+            <template v-else>
+              <div class="space-y-2 md:hidden">
+                <button
+                  v-for="unlock in unlockRows"
+                  :key="unlock.id"
+                  type="button"
+                  class="w-full rounded-lg border border-default bg-default p-4 text-left"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-medium">{{ unlockModeLabel(unlock.mode) }}</span>
+                    <UBadge
+                      :color="unlock.active ? 'success' : 'neutral'"
+                      variant="subtle"
+                      :label="unlock.active ? 'Activa' : 'Inactiva'"
+                    />
+                  </div>
+                  <p class="mt-2 text-sm tabular-nums">
+                    {{
+                      unlock.mode === 'money'
+                        ? formatClientMoney(unlock.value)
+                        : `${unlock.value} días`
+                    }}
+                  </p>
+                  <p class="mt-1 text-xs text-muted">
+                    Expira: {{ formatUnlockDate(unlock.expires_at) }}
+                  </p>
+                </button>
+              </div>
+
+              <div class="hidden overflow-x-auto rounded-lg border border-default md:block">
               <table class="min-w-full divide-y divide-default text-sm">
                 <thead class="bg-elevated/50 text-xs uppercase tracking-wider text-muted">
                   <tr>
@@ -185,7 +214,8 @@ useHead({
                   </tr>
                 </tbody>
               </table>
-            </div>
+              </div>
+            </template>
 
             <div
               v-if="creditUnlockList.hasNextPage.value && unlockRows.length > 0"

@@ -10,7 +10,8 @@
     "postinstall": "nuxt prepare",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
-    "test:nuxt": "vitest run --project nuxt"
+    "test:nuxt": "vitest run --project nuxt",
+    "test:e2e": "playwright test -c test/e2e/responsive/playwright.config.ts"
   },
   "dependencies": {
     "@internationalized/date": "3.12.1",
@@ -40,6 +41,7 @@
     "@iconify-json/heroicons": "^1.2.3",
     "@iconify-json/lucide": "^1.2.105",
     "@nuxt/test-utils": "^4.0.3",
+    "@playwright/test": "^1.61.1",
     "@types/google.maps": "^3.64.0",
     "@vue/test-utils": "^2.4.10",
     "happy-dom": "^20.9.0",

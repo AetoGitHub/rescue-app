@@ -372,15 +372,27 @@ function onPrimaryAction() {
     goNext();
   }
 }
+
+const { isMobile } = useResponsive();
+
+const wizardModalProps = computed(() => {
+  if (isMobile.value) {
+    return { fullscreen: true, scrollable: true };
+  }
+
+  return {
+    scrollable: true,
+    ui: { content: modalContentClass.value },
+  };
+});
 </script>
 
 <template>
   <UModal
     v-model:open="open"
     :dismissible="false"
-    scrollable
     title="Nueva solicitud"
-    :ui="{ content: modalContentClass }"
+    v-bind="wizardModalProps"
   >
     <template #body>
       <div v-if="open" class="space-y-4">
@@ -388,7 +400,11 @@ function onPrimaryAction() {
           v-model="currentStep"
           :items="stepItems"
           disabled
-          class="mb-6 w-full"
+          class="mb-6 w-full overflow-x-auto"
+          :ui="{
+            wrapper: 'min-w-max sm:min-w-0',
+            title: 'hidden sm:block',
+          }"
         />
 
         <UForm
@@ -447,15 +463,16 @@ function onPrimaryAction() {
     </template>
 
     <template #footer>
-      <div class="flex w-full flex-wrap items-center justify-between gap-2">
+      <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <UButton
           type="button"
+          class="w-full sm:w-auto"
           color="neutral"
           variant="subtle"
           label="Cancelar"
           @click="cancel"
         />
-        <div class="flex flex-wrap justify-end gap-2">
+        <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
           <UButton
             v-if="isSupplierStep"
             type="button"

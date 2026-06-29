@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T">
+import { operationalKanbanColumnClass } from '~/constants/admin-list-layout';
 interface Props<T> {
   title: string;
   items: T[];
@@ -36,7 +37,8 @@ defineExpose({
 
 <template>
   <div
-    class="flex h-full min-h-0 w-[280px] shrink-0 flex-col rounded-lg bg-muted/30 overflow-hidden"
+    class="flex h-full min-h-0 flex-col rounded-lg bg-muted/30 overflow-hidden"
+    :class="operationalKanbanColumnClass"
   >
     <div
       class="sticky top-0 z-10 shrink-0 px-3 py-2.5 rounded-t-lg bg-default border-t-2"

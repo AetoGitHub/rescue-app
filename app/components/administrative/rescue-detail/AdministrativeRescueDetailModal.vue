@@ -184,15 +184,21 @@ watch(open, (isOpen) => {
 });
 
 defineExpose({ open: openDetail, close: closeDetail });
+
+const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
+
+const modalTabsUi = computed(() => ({
+  list: 'shrink-0 flex-nowrap overflow-x-auto max-w-full',
+  trigger: 'shrink-0',
+}));
 </script>
 
 <template>
   <UModal
     v-model:open="open"
     :dismissible="false"
-    scrollable
     :title="modalTitle"
-    :ui="{ content: 'max-w-6xl' }"
+    v-bind="modalProps"
   >
     <template #body>
       <div v-if="open && rescueId != null" class="space-y-4">
@@ -269,7 +275,7 @@ defineExpose({ open: openDetail, close: closeDetail });
             :model-value="activeTab"
             :items="[...RESCUE_DETAIL_TAB_ITEMS]"
             class="flex flex-col gap-4"
-            :ui="{ list: 'shrink-0 flex-wrap' }"
+            :ui="modalTabsUi"
             @update:model-value="onActiveTabChange"
           >
             <template #general>

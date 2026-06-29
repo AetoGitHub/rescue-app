@@ -379,18 +379,12 @@ const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
                       :get-row-id="(row: PaymentReceiptSellerItem) => String(row.id)"
                     />
                     <div
-                      class="grid border-t border-default px-4 py-3 text-sm"
-                      :class="isOperativeReceipt ? 'grid-cols-4' : 'grid-cols-3'"
+                      class="flex flex-wrap items-center justify-between gap-2 border-t border-default px-4 py-3 text-sm"
                     >
-                      <div
-                        class="text-center font-semibold"
-                        :class="isOperativeReceipt ? 'col-span-3' : 'col-span-2'"
-                      >
-                        Subtotal
-                      </div>
-                      <div class="text-right tabular-nums font-semibold">
+                      <span class="font-semibold">Subtotal</span>
+                      <span class="tabular-nums font-semibold">
                         {{ formatRescueCardMoney(commissionSubtotal) }}
-                      </div>
+                      </span>
                     </div>
                   </div>
                 </section>
@@ -410,14 +404,12 @@ const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
                       :get-row-id="(row: PaymentCheckoutDebtRow) => String(row.id)"
                     />
                     <div
-                      class="grid grid-cols-3 border-t border-default px-4 py-3 text-sm"
+                      class="flex flex-wrap items-center justify-between gap-2 border-t border-default px-4 py-3 text-sm"
                     >
-                      <div class="col-span-2 text-center font-semibold">
-                        Subtotal
-                      </div>
-                      <div class="text-right tabular-nums font-semibold">
+                      <span class="font-semibold">Subtotal</span>
+                      <span class="tabular-nums font-semibold">
                         −{{ formatRescueCardMoney(debtSubtotal) }}
-                      </div>
+                      </span>
                     </div>
                   </div>
                 </section>

@@ -212,15 +212,16 @@ function onSaveClick() {
   }
   void formRef.value?.submit();
 }
+
+const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
 </script>
 
 <template>
   <UModal
     v-model:open="open"
     :dismissible="false"
-    scrollable
     :title="modalTitle"
-    :ui="{ content: 'max-w-6xl' }"
+    v-bind="modalProps"
   >
     <template #body>
       <UForm
@@ -231,8 +232,8 @@ function onSaveClick() {
       >
         <UFormField name="supplier" class="hidden" />
 
-        <div class="grid min-h-112 grid-cols-1 gap-4 lg:grid-cols-2">
-          <div class="flex min-h-0 flex-col gap-3">
+        <div class="grid min-h-0 grid-cols-1 gap-4 lg:min-h-112 lg:grid-cols-2">
+          <div class="order-2 flex min-h-0 flex-col gap-3 lg:order-1">
             <UInput
               v-model="search"
               leading-icon="i-lucide-search"
@@ -360,6 +361,7 @@ function onSaveClick() {
 
           <OperationalRescueRequestSupplierStepMap
             :key="mapLayoutKey"
+            class="order-1 h-[40vh] min-h-48 lg:order-2 lg:h-full lg:min-h-72"
             :unit-latitude="latitude"
             :unit-longitude="longitude"
             :selected-supplier="selectedSupplierPin"
@@ -369,9 +371,10 @@ function onSaveClick() {
     </template>
 
     <template #footer>
-      <div class="flex w-full flex-wrap items-center justify-between gap-2">
+      <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <UButton
           v-if="currentSupplierId != null"
+          class="w-full sm:w-auto"
           color="error"
           label="Quitar proveedor"
           variant="ghost"
@@ -379,7 +382,7 @@ function onSaveClick() {
           :disabled="isBusy"
           @click="onRemoveSupplier"
         />
-        <div class="ml-auto flex gap-2">
+        <div class="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row">
           <UButton
             color="neutral"
             label="Cancelar"

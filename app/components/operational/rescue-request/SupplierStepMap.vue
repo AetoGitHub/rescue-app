@@ -69,10 +69,10 @@ function onMapIdle() {
 </script>
 
 <template>
-  <div class="h-full min-h-72 overflow-hidden rounded-lg border border-default">
+  <div class="h-full min-h-48 overflow-hidden rounded-lg border border-default lg:min-h-72">
     <div
       v-if="!config.public.googleMapsApiKey"
-      class="flex h-full min-h-72 items-center justify-center px-4 text-sm text-muted"
+      class="flex h-full min-h-48 items-center justify-center px-4 text-sm text-muted lg:min-h-72"
     >
       Configura `NUXT_PUBLIC_GOOGLE_MAPS_API_KEY` para ver el mapa.
     </div>
@@ -84,7 +84,7 @@ function onMapIdle() {
         :center="initialCenter"
         :zoom="initialZoom"
         gesture-handling="greedy"
-        class="h-full min-h-72 w-full"
+        class="h-full min-h-48 w-full lg:min-h-72"
         :map-type-control="false"
         :street-view-control="false"
         @idle="onMapIdle"

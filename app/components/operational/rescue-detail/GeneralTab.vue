@@ -58,7 +58,7 @@ const showSupplierActions = computed(
       v-if="!hideChat"
       :rescue-id="detail.id"
       layout="sidebar"
-      class="lg:sticky lg:top-0 lg:self-start"
+      class="min-h-64 lg:sticky lg:top-0 lg:min-h-0 lg:self-start"
     />
 
     <div class="min-w-0 space-y-6">

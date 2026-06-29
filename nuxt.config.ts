@@ -38,6 +38,12 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: 'es-MX',
       },
+      meta: [
+        {
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+        },
+      ],
       link: [{ rel: 'icon', type: 'image/png', href: '/favicon.png' }],
     },
   },

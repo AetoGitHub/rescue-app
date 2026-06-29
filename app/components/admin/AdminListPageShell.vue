@@ -2,6 +2,10 @@
 import {
   adminListContainerClass,
   adminListDashboardPanelUi,
+  adminListFiltersClass,
+  adminListPageTitleClass,
+  adminListTableWrapperClass,
+  adminListToolbarClass,
 } from '~/constants/admin-list-layout';
 
 defineProps<{
@@ -18,11 +22,9 @@ defineProps<{
     </template>
     <template #body>
       <UContainer :class="adminListContainerClass">
-        <div
-          class="flex shrink-0 flex-row flex-wrap items-center justify-between gap-3"
-        >
-          <div>
-            <h1 class="text-3xl font-bold tracking-tight">
+        <div :class="adminListToolbarClass">
+          <div class="min-w-0">
+            <h1 :class="adminListPageTitleClass">
               {{ title }}
             </h1>
             <p v-if="description" class="mt-1 text-sm text-muted">
@@ -41,13 +43,15 @@ defineProps<{
 
         <div
           v-if="$slots.filters"
-          class="flex w-full shrink-0 flex-row flex-wrap gap-2"
+          :class="adminListFiltersClass"
         >
           <slot name="filters" />
         </div>
 
         <div class="flex min-h-0 flex-1 flex-col">
-          <slot />
+          <div :class="adminListTableWrapperClass">
+            <slot />
+          </div>
         </div>
       </UContainer>
     </template>

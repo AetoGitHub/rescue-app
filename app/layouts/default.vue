@@ -1,5 +1,5 @@
 <template>
-  <UDashboardGroup>
+  <UDashboardGroup storage="local" storage-key="rescue-dashboard">
     <SharedSidebar />
 
     <slot />

@@ -27,7 +27,7 @@ onMounted(() => {
       <UContainer>
         <div class="flex flex-col gap-4 pb-6">
           <div class="flex flex-col gap-1">
-            <h1 class="text-3xl font-bold tracking-tight">
+            <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">
               Configuración de SLA
             </h1>
             <p class="text-sm text-muted">
@@ -52,7 +52,10 @@ onMounted(() => {
             v-model="activeTab"
             :items="[...SLA_TAB_ITEMS]"
             class="flex flex-col gap-4"
-            :ui="{ list: 'flex-wrap' }"
+            :ui="{
+              list: 'flex-nowrap overflow-x-auto max-w-full',
+              trigger: 'shrink-0',
+            }"
             variant="link"
           >
             <template #stages>

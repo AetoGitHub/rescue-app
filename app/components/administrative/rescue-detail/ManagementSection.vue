@@ -109,8 +109,11 @@ function onAction(id: RescueAdministrativeActionId) {
       :items="stepperItems"
       disabled
       size="sm"
-      class="w-full"
-      :ui="{ title: 'uppercase tracking-wide text-xs' }"
+      class="w-full overflow-x-auto"
+      :ui="{
+        title: 'uppercase tracking-wide text-xs hidden sm:block',
+        wrapper: 'min-w-max sm:min-w-0',
+      }"
     />
 
     <AdministrativeRescueDetailPaidSummaryPanel
