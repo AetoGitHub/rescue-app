@@ -1,8 +1,10 @@
+import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import type { RescueServiceType } from '~/interfaces/rescue';
 
 export interface OperationalBoardFilters {
   folio: string;
   serviceTypes: RescueServiceType[];
+  operativeStatuses: OperationalRescueStatus[];
   companyId: number | null;
   managerId: number | null;
   pendingAdvance: boolean;

@@ -26,9 +26,12 @@ describe('invalidateRescueKanbanCards', () => {
 
     await invalidateRescueKanbanCards(queryCache);
 
-    expect(invalidateQueries).toHaveBeenCalledTimes(1);
+    expect(invalidateQueries).toHaveBeenCalledTimes(2);
     expect(invalidateQueries).toHaveBeenCalledWith({
       key: ['operational-rescue-cards'],
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      key: ['operational-rescue-list'],
     });
   });
 });
@@ -40,12 +43,15 @@ describe('invalidateRescueDataAfterChatMessage', () => {
 
     await invalidateRescueDataAfterChatMessage(queryCache, 42);
 
-    expect(invalidateQueries).toHaveBeenCalledTimes(2);
+    expect(invalidateQueries).toHaveBeenCalledTimes(3);
     expect(invalidateQueries).toHaveBeenCalledWith({
       key: ['rescue-chat-messages', 42],
     });
     expect(invalidateQueries).toHaveBeenCalledWith({
       key: ['operational-rescue-cards'],
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      key: ['operational-rescue-list'],
     });
   });
 });

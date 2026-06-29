@@ -22,6 +22,10 @@ export function normalizeClientBillingType(
 export const RESCUE_ADMINISTRATIVE_CARDS_PATH =
   '/api/rescue/administrative/cards/';
 
+/** Administrative flat list (optional `status`, cursor pagination). */
+export const RESCUE_ADMINISTRATIVE_LIST_PATH =
+  '/api/rescue/administrative/list/';
+
 export const RESCUE_ADMINISTRATIVE_DETAIL_PATH = (rescueId: number) =>
   `/api/rescue/administrative/cards/${rescueId}/`;
 

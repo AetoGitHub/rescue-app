@@ -4,8 +4,7 @@ import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
 import type { RescueCard } from '~/interfaces/rescue';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
-
-const RESCUE_CARDS_PATH = '/api/rescue/cards/';
+import { RESCUE_CARDS_PATH } from '~/constants/rescue-api';
 
 export function useOperationalRescueCards(
   status: MaybeRefOrGetter<OperationalRescueStatus>,

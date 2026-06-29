@@ -13,6 +13,9 @@ export async function invalidateRescueKanbanCards(queryCache: QueryCache) {
   await queryCache.invalidateQueries({
     key: ['operational-rescue-cards'],
   });
+  await queryCache.invalidateQueries({
+    key: ['operational-rescue-list'],
+  });
 }
 
 /** Refresh chat messages and kanban cards (last_comment_at) after a new chat message. */

@@ -3,13 +3,17 @@ import { refDebounced } from '@vueuse/core';
 import type { DropdownMenuItem } from '@nuxt/ui';
 
 import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
+import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
+import type { RescueCard } from '~/interfaces/rescue';
 import type { RescueServiceType } from '~/interfaces/rescue';
 import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
 
 useHead({
   title: 'Operacional',
-})
+});
+
+const viewMode = ref<'kanban' | 'list'>('kanban');
 
 const requestModalMounted = ref(false);
 const detailModalMounted = ref(false);
@@ -95,6 +99,7 @@ const columnDropdownItems = computed((): KanbanColumnMenuItem[] =>
 const folioSearch = ref('');
 const debouncedFolio = refDebounced(folioSearch, 300);
 const selectedServiceTypes = ref<RescueServiceType[]>([]);
+const selectedOperativeStatuses = ref<OperationalRescueStatus[]>([]);
 const companyId = ref<number | null>(null);
 const managerId = ref<number | null>(null);
 const pendingAdvance = ref(false);
@@ -104,6 +109,7 @@ const commentAlert = ref(false);
 const boardFilters = computed<OperationalBoardFilters>(() => ({
   folio: debouncedFolio.value,
   serviceTypes: selectedServiceTypes.value,
+  operativeStatuses: selectedOperativeStatuses.value,
   companyId: companyId.value,
   managerId: managerId.value,
   pendingAdvance: pendingAdvance.value,
@@ -111,9 +117,32 @@ const boardFilters = computed<OperationalBoardFilters>(() => ({
   commentAlert: commentAlert.value,
 }));
 
+const {
+  rows: listRows,
+  asyncStatus: listAsyncStatus,
+  hasNextPage: listHasNextPage,
+  loadNextPage: listLoadNextPage,
+  isInitialLoading: listInitialLoading,
+  isLoadingMore: listLoadingMore,
+  isError: listIsError,
+  errorMessage: listErrorMessage,
+} = useOperationalRescueList(boardFilters, {
+  enabled: () => viewMode.value === 'list',
+});
+
+const resultCountLabel = computed(() => {
+  const count = listRows.value.length;
+  return `${count} resultado${count === 1 ? '' : 's'}`;
+});
+
+function openRescueFromList(card: RescueCard) {
+  openRescue(card.id);
+}
+
 function clearBoardFilters() {
   folioSearch.value = '';
   selectedServiceTypes.value = [];
+  selectedOperativeStatuses.value = [];
   companyId.value = null;
   managerId.value = null;
   pendingAdvance.value = false;
@@ -135,6 +164,11 @@ function toggleServiceType(value: RescueServiceType) {
 function isServiceTypeSelected(value: RescueServiceType) {
   return isOperationalServiceTypeActive(selectedServiceTypes.value, value);
 }
+
+const operativeStatusFilterItems = OPERATIONAL_KANBAN_COLUMNS.map((column) => ({
+  label: column.title,
+  value: column.status,
+}));
 
 const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
   useOperationalBoardDropdownFetchers();
@@ -164,6 +198,30 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
             </template>
 
             <template #actions>
+              <span
+                v-if="viewMode === 'list'"
+                class="text-sm text-muted whitespace-nowrap"
+              >
+                {{ resultCountLabel }}
+              </span>
+
+              <UFieldGroup class="hidden sm:flex">
+                <UButton
+                  :color="viewMode === 'kanban' ? 'primary' : 'neutral'"
+                  icon="i-lucide-grid"
+                  :variant="viewMode === 'kanban' ? 'solid' : 'subtle'"
+                  aria-label="Vista kanban"
+                  @click="viewMode = 'kanban'"
+                />
+                <UButton
+                  :color="viewMode === 'list' ? 'primary' : 'neutral'"
+                  icon="i-lucide-list"
+                  :variant="viewMode === 'list' ? 'solid' : 'subtle'"
+                  aria-label="Vista lista"
+                  @click="viewMode = 'list'"
+                />
+              </UFieldGroup>
+
               <UButton
                 icon="i-lucide-plus"
                 label="Nueva solicitud"
@@ -209,6 +267,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
               </UFieldGroup>
 
               <UButton
+                v-if="viewMode === 'kanban'"
                 block
                 :color="pendingAdvance ? 'primary' : 'neutral'"
                 label="Con anticipo pendiente"
@@ -216,7 +275,10 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 @click="pendingAdvance = !pendingAdvance"
               />
 
-              <UFieldGroup class="w-full">
+              <UFieldGroup
+                v-if="viewMode === 'kanban'"
+                class="w-full"
+              >
                 <UButton
                   block
                   :color="slaAlert ? 'primary' : 'neutral'"
@@ -234,6 +296,22 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 />
               </UFieldGroup>
 
+              <UFormField
+                v-if="viewMode === 'list'"
+                label="Estatus operativo"
+                :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
+              >
+                <USelectMenu
+                  v-model="selectedOperativeStatuses"
+                  class="w-full"
+                  multiple
+                  :items="operativeStatusFilterItems"
+                  value-key="value"
+                  label-key="label"
+                  placeholder="Todos"
+                />
+              </UFormField>
+
               <CatalogDropdownSelect
                 v-model="companyId"
                 class="w-full"
@@ -249,6 +327,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
               />
 
               <UDropdownMenu
+                v-if="viewMode === 'kanban'"
                 :items="[
                   { label: 'Columnas visibles', type: 'label' },
                   ...columnDropdownItems,
@@ -320,13 +399,14 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 </UFieldGroup>
 
                 <UButton
+                  v-if="viewMode === 'kanban'"
                   :color="pendingAdvance ? 'primary' : 'neutral'"
                   label="Con anticipo pendiente"
                   :variant="pendingAdvance ? 'solid' : 'subtle'"
                   @click="pendingAdvance = !pendingAdvance"
                 />
 
-                <UFieldGroup>
+                <UFieldGroup v-if="viewMode === 'kanban'">
                   <UButton
                     :color="slaAlert ? 'primary' : 'neutral'"
                     label="Alerta SLA"
@@ -341,6 +421,17 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                     @click="commentAlert = !commentAlert"
                   />
                 </UFieldGroup>
+
+                <USelectMenu
+                  v-if="viewMode === 'list'"
+                  v-model="selectedOperativeStatuses"
+                  class="min-w-48"
+                  multiple
+                  :items="operativeStatusFilterItems"
+                  value-key="value"
+                  label-key="label"
+                  placeholder="Estatus: todos"
+                />
 
                 <div class="relative hidden lg:inline-flex">
                   <UFieldGroup
@@ -383,6 +474,13 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
               </div>
 
               <div class="ml-auto flex flex-row flex-wrap gap-3">
+                <span
+                  v-if="viewMode === 'list'"
+                  class="hidden text-sm text-muted whitespace-nowrap sm:inline"
+                >
+                  {{ resultCountLabel }}
+                </span>
+
                 <USlideover title="Filtros">
                   <UButton
                     icon="i-lucide-filter"
@@ -411,6 +509,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 </USlideover>
 
                 <UDropdownMenu
+                  v-if="viewMode === 'kanban'"
                   :items="[
                     { label: 'Columnas visibles', type: 'label' },
                     ...columnDropdownItems,
@@ -438,12 +537,20 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 </UDropdownMenu>
 
                 <UFieldGroup class="hidden sm:flex">
-                  <UButton color="primary" icon="i-lucide-grid" variant="solid" />
+                  <UButton
+                    :color="viewMode === 'kanban' ? 'primary' : 'neutral'"
+                    icon="i-lucide-grid"
+                    :variant="viewMode === 'kanban' ? 'solid' : 'subtle'"
+                    aria-label="Vista kanban"
+                    @click="viewMode = 'kanban'"
+                  />
 
                   <UButton
-                    color="neutral"
+                    :color="viewMode === 'list' ? 'primary' : 'neutral'"
                     icon="i-lucide-list"
-                    variant="subtle"
+                    :variant="viewMode === 'list' ? 'solid' : 'subtle'"
+                    aria-label="Vista lista"
+                    @click="viewMode = 'list'"
                   />
                 </UFieldGroup>
 
@@ -467,18 +574,41 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
           @closed="onModalClosed"
         />
 
-        <SharedKanbanScrollContainer>
-          <LazyOperationalKanbanColumnData
-            v-for="column in visibleColumns"
-            :key="column.status"
-            hydrate-on-visible
-            :status="column.status"
-            :title="column.title"
-            :accent-color="column.accentColor"
-            :filters="boardFilters"
-            @select="openRescue"
-          />
-        </SharedKanbanScrollContainer>
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <SharedKanbanScrollContainer v-if="viewMode === 'kanban'">
+            <LazyOperationalKanbanColumnData
+              v-for="column in visibleColumns"
+              :key="column.status"
+              hydrate-on-visible
+              :status="column.status"
+              :title="column.title"
+              :accent-color="column.accentColor"
+              :filters="boardFilters"
+              @select="openRescue"
+            />
+          </SharedKanbanScrollContainer>
+
+          <div
+            v-else
+            class="min-h-0 flex-1 overflow-auto"
+          >
+            <UAlert
+              v-if="listIsError"
+              class="mb-4"
+              color="error"
+              :description="listErrorMessage"
+              title="No se pudo cargar la lista"
+            />
+            <OperationalRescueTable
+              :async-status="listAsyncStatus"
+              :has-next-page="listHasNextPage"
+              :loading="listInitialLoading || listLoadingMore"
+              :load-next-page="listLoadNextPage"
+              :rows="listRows"
+              @select="openRescueFromList"
+            />
+          </div>
+        </div>
       </div>
     </template>
   </UDashboardPanel>

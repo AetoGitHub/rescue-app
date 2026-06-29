@@ -231,6 +231,7 @@ const { mutate, asyncStatus } = useMutation({
           color: 'error',
         });
         await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });
+        await queryCache.invalidateQueries({ key: ['operational-rescue-list'] });
         await queryCache.invalidateQueries({ key: ['operational-rescue-cards-summary'] });
         open.value = false;
         return rescue;
@@ -247,6 +248,7 @@ const { mutate, asyncStatus } = useMutation({
       color: 'success',
     });
     await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });
+    await queryCache.invalidateQueries({ key: ['operational-rescue-list'] });
     await queryCache.invalidateQueries({ key: ['operational-rescue-cards-summary'] });
     open.value = false;
     return rescue;

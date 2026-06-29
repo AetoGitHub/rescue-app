@@ -74,6 +74,53 @@ export function buildAdministrativeCardsQuery(
   return query;
 }
 
+/**
+ * Query for GET /api/rescue/administrative/list/
+ * Optional: `status`, `folio`, `service_type`, `company`.
+ */
+export function buildAdministrativeListQuery(
+  filters: AdministrativeBoardFilters,
+): Record<string, string> {
+  const query: Record<string, string> = {};
+
+  if (filters.billingStatuses.length > 0) {
+    query.status = [...filters.billingStatuses].sort().join(',');
+  }
+
+  const folio = filters.folio.trim();
+  if (folio) {
+    query.folio = folio;
+  }
+
+  if (filters.serviceTypes.length > 0) {
+    const serviceType = administrativeServiceTypesForApi(filters.serviceTypes);
+    if (serviceType) {
+      query.service_type = serviceType;
+    }
+  }
+
+  if (filters.companyId != null) {
+    query.company = String(filters.companyId);
+  }
+
+  return query;
+}
+
+/** Pinia Colada key — params sent to the administrative list API. */
+export function administrativeListApiFiltersKey(
+  filters: AdministrativeBoardFilters,
+): string[] {
+  const serviceTypes = [...filters.serviceTypes].sort().join(',');
+  const billing = [...filters.billingStatuses].sort().join(',');
+
+  return [
+    billing,
+    filters.folio.trim(),
+    serviceTypes,
+    filters.companyId != null ? String(filters.companyId) : '',
+  ];
+}
+
 /** Pinia Colada key — params sent to the administrative cards API. */
 export function administrativeCardsApiFiltersKey(
   filters: AdministrativeBoardFilters,

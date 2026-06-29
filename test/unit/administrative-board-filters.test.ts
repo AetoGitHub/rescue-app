@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAdministrativeCardsQuery,
+  buildAdministrativeListQuery,
   emptyAdministrativeBoardFilters,
   filterAdministrativeCardsLocally,
   toggleAdministrativeBillingStatusFilter,
@@ -69,6 +70,40 @@ describe('buildAdministrativeCardsQuery', () => {
     expect(query.folio).toBe('ABC-99');
     expect(query.service_type).toBe('rescue,loan');
     expect(query.company).toBe('5');
+  });
+});
+
+describe('buildAdministrativeListQuery', () => {
+  it('omits status when no billing statuses are selected', () => {
+    const query = buildAdministrativeListQuery(emptyAdministrativeBoardFilters());
+
+    expect(query).toEqual({});
+    expect(query).not.toHaveProperty('status');
+    expect(query).not.toHaveProperty('cursor');
+  });
+
+  it('sends comma-separated billing statuses', () => {
+    const query = buildAdministrativeListQuery({
+      ...emptyAdministrativeBoardFilters(),
+      billingStatuses: ['paid', 'unattended'],
+    });
+
+    expect(query.status).toBe('paid,unattended');
+  });
+
+  it('sends folio, service_type and company', () => {
+    const query = buildAdministrativeListQuery({
+      ...emptyAdministrativeBoardFilters(),
+      folio: 'ABC-99',
+      serviceTypes: ['rescue', 'loan', 'direct_budget'],
+      companyId: 5,
+    });
+
+    expect(query).toEqual({
+      folio: 'ABC-99',
+      service_type: 'rescue,loan',
+      company: '5',
+    });
   });
 });
 

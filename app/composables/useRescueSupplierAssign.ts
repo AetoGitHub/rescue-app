@@ -22,6 +22,9 @@ export function useRescueSupplierAssign(
       key: ['operational-rescue-cards'],
     });
     await queryCache.invalidateQueries({
+      key: ['operational-rescue-list'],
+    });
+    await queryCache.invalidateQueries({
       key: ['operational-rescue-cards-summary'],
     });
   }
