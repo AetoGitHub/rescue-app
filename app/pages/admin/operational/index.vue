@@ -13,7 +13,7 @@ useHead({
   title: 'Operacional',
 });
 
-const viewMode = ref<'kanban' | 'list'>('kanban');
+const { viewMode, setViewMode } = useRescueBoardViewMode();
 
 const requestModalMounted = ref(false);
 const detailModalMounted = ref(false);
@@ -211,14 +211,14 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                   icon="i-lucide-grid"
                   :variant="viewMode === 'kanban' ? 'solid' : 'subtle'"
                   aria-label="Vista kanban"
-                  @click="viewMode = 'kanban'"
+                  @click="setViewMode('kanban')"
                 />
                 <UButton
                   :color="viewMode === 'list' ? 'primary' : 'neutral'"
                   icon="i-lucide-list"
                   :variant="viewMode === 'list' ? 'solid' : 'subtle'"
                   aria-label="Vista lista"
-                  @click="viewMode = 'list'"
+                  @click="setViewMode('list')"
                 />
               </UFieldGroup>
 
@@ -542,7 +542,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                     icon="i-lucide-grid"
                     :variant="viewMode === 'kanban' ? 'solid' : 'subtle'"
                     aria-label="Vista kanban"
-                    @click="viewMode = 'kanban'"
+                    @click="setViewMode('kanban')"
                   />
 
                   <UButton
@@ -550,7 +550,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                     icon="i-lucide-list"
                     :variant="viewMode === 'list' ? 'solid' : 'subtle'"
                     aria-label="Vista lista"
-                    @click="viewMode = 'list'"
+                    @click="setViewMode('list')"
                   />
                 </UFieldGroup>
 
@@ -599,7 +599,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
               :description="listErrorMessage"
               title="No se pudo cargar la lista"
             />
-            <OperationalRescueTable
+            <LazyOperationalRescueTable
               :async-status="listAsyncStatus"
               :has-next-page="listHasNextPage"
               :loading="listInitialLoading || listLoadingMore"

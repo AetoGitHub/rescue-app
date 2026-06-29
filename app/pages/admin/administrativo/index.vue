@@ -18,7 +18,7 @@ useHead({
   title: 'Administrativo',
 });
 
-const viewMode = ref<'kanban' | 'list'>('kanban');
+const { viewMode, setViewMode } = useRescueBoardViewMode();
 const filtersExpanded = ref(false);
 const detailModalMounted = ref(false);
 const pendingDetailOpen = ref<{
@@ -244,11 +244,12 @@ function exportCsv() {
     downloadAdministrativeCsv(filteredListRows.value);
     return;
   }
-  viewMode.value = 'list';
-  void refreshList().then(() => {
-    downloadAdministrativeCsv(
-      filterAdministrativeCardsLocally(listRows.value, boardFilters.value),
-    );
+  void setViewMode('list').then(() => {
+    void refreshList().then(() => {
+      downloadAdministrativeCsv(
+        filterAdministrativeCardsLocally(listRows.value, boardFilters.value),
+      );
+    });
   });
 }
 
@@ -442,14 +443,14 @@ const {
                   icon="i-lucide-grid"
                   :variant="viewMode === 'kanban' ? 'solid' : 'subtle'"
                   aria-label="Vista kanban"
-                  @click="viewMode = 'kanban'"
+                  @click="setViewMode('kanban')"
                 />
                 <UButton
                   :color="viewMode === 'list' ? 'primary' : 'neutral'"
                   icon="i-lucide-list"
                   :variant="viewMode === 'list' ? 'solid' : 'subtle'"
                   aria-label="Vista lista"
-                  @click="viewMode = 'list'"
+                  @click="setViewMode('list')"
                 />
               </UFieldGroup>
 
@@ -523,13 +524,13 @@ const {
                       :color="viewMode === 'kanban' ? 'primary' : 'neutral'"
                       icon="i-lucide-grid"
                       :variant="viewMode === 'kanban' ? 'solid' : 'subtle'"
-                      @click="viewMode = 'kanban'"
+                      @click="setViewMode('kanban')"
                     />
                     <UButton
                       :color="viewMode === 'list' ? 'primary' : 'neutral'"
                       icon="i-lucide-list"
                       :variant="viewMode === 'list' ? 'solid' : 'subtle'"
-                      @click="viewMode = 'list'"
+                      @click="setViewMode('list')"
                     />
                   </UFieldGroup>
 
@@ -707,7 +708,7 @@ const {
               :description="listErrorMessage"
               title="No se pudo cargar la lista"
             />
-            <AdministrativeRescueTable
+            <LazyAdministrativeRescueTable
               :async-status="listAsyncStatus"
               :has-next-page="listHasNextPage"
               :loading="listInitialLoading || listLoadingMore"
