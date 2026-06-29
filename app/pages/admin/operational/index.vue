@@ -99,7 +99,7 @@ const columnDropdownItems = computed((): KanbanColumnMenuItem[] =>
 const folioSearch = ref('');
 const debouncedFolio = refDebounced(folioSearch, 300);
 const selectedServiceTypes = ref<RescueServiceType[]>([]);
-const selectedOperativeStatuses = ref<OperationalRescueStatus[]>([]);
+const selectedOperativeStatus = ref<OperationalRescueStatus | null>(null);
 const companyId = ref<number | null>(null);
 const managerId = ref<number | null>(null);
 const pendingAdvance = ref(false);
@@ -109,7 +109,7 @@ const commentAlert = ref(false);
 const boardFilters = computed<OperationalBoardFilters>(() => ({
   folio: debouncedFolio.value,
   serviceTypes: selectedServiceTypes.value,
-  operativeStatuses: selectedOperativeStatuses.value,
+  operativeStatus: selectedOperativeStatus.value,
   companyId: companyId.value,
   managerId: managerId.value,
   pendingAdvance: pendingAdvance.value,
@@ -142,7 +142,7 @@ function openRescueFromList(card: RescueCard) {
 function clearBoardFilters() {
   folioSearch.value = '';
   selectedServiceTypes.value = [];
-  selectedOperativeStatuses.value = [];
+  selectedOperativeStatus.value = null;
   companyId.value = null;
   managerId.value = null;
   pendingAdvance.value = false;
@@ -165,10 +165,13 @@ function isServiceTypeSelected(value: RescueServiceType) {
   return isOperationalServiceTypeActive(selectedServiceTypes.value, value);
 }
 
-const operativeStatusFilterItems = OPERATIONAL_KANBAN_COLUMNS.map((column) => ({
-  label: column.title,
-  value: column.status,
-}));
+const operativeStatusFilterItems = [
+  { label: 'Todos', value: null as OperationalRescueStatus | null },
+  ...OPERATIONAL_KANBAN_COLUMNS.map((column) => ({
+    label: column.title,
+    value: column.status,
+  })),
+];
 
 const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
   useOperationalBoardDropdownFetchers();
@@ -301,10 +304,9 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 label="Estatus operativo"
                 :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
               >
-                <USelectMenu
-                  v-model="selectedOperativeStatuses"
+                <USelect
+                  v-model="selectedOperativeStatus"
                   class="w-full"
-                  multiple
                   :items="operativeStatusFilterItems"
                   value-key="value"
                   label-key="label"
@@ -422,11 +424,10 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                   />
                 </UFieldGroup>
 
-                <USelectMenu
+                <USelect
                   v-if="viewMode === 'list'"
-                  v-model="selectedOperativeStatuses"
+                  v-model="selectedOperativeStatus"
                   class="min-w-48"
-                  multiple
                   :items="operativeStatusFilterItems"
                   value-key="value"
                   label-key="label"

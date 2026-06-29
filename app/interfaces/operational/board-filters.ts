@@ -4,7 +4,7 @@ import type { RescueServiceType } from '~/interfaces/rescue';
 export interface OperationalBoardFilters {
   folio: string;
   serviceTypes: RescueServiceType[];
-  operativeStatuses: OperationalRescueStatus[];
+  operativeStatus: OperationalRescueStatus | null;
   companyId: number | null;
   managerId: number | null;
   pendingAdvance: boolean;

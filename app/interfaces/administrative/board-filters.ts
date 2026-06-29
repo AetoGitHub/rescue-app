@@ -7,8 +7,8 @@ export interface AdministrativeBoardFilters {
   createdFrom: string;
   createdTo: string;
   serviceTypes: RescueServiceType[];
-  operativeStatuses: AdministrativeEligibleOperativeStatus[];
-  billingStatuses: AdministrativeBillingStatus[];
+  operativeStatus: AdministrativeEligibleOperativeStatus | null;
+  billingStatus: AdministrativeBillingStatus | null;
   companyId: number | null;
   managerId: number | null;
   sellerId: number | null;

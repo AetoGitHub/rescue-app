@@ -11,7 +11,7 @@ describe('emptyOperationalBoardFilters', () => {
     expect(emptyOperationalBoardFilters()).toEqual({
       folio: '',
       serviceTypes: [],
-      operativeStatuses: [],
+      operativeStatus: null,
       companyId: null,
       managerId: null,
       pendingAdvance: false,
@@ -59,13 +59,13 @@ describe('buildOperationalListQuery', () => {
     expect(query).not.toHaveProperty('cursor');
   });
 
-  it('sends comma-separated operative statuses', () => {
+  it('sends a single operative status', () => {
     const query = buildOperationalListQuery({
       ...emptyOperationalBoardFilters(),
-      operativeStatuses: ['closed', 'in_progress', 'requested'],
+      operativeStatus: 'closed',
     });
 
-    expect(query.status).toBe('closed,in_progress,requested');
+    expect(query.status).toBe('closed');
   });
 
   it('sends folio, service_type, company and manager', () => {

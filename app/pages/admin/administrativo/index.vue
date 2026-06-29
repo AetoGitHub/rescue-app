@@ -103,10 +103,10 @@ const companyId = ref<number | null>(null);
 const createdFrom = ref('');
 const createdTo = ref('');
 const selectedServiceTypes = ref<RescueServiceType[]>([]);
-const selectedOperativeStatuses = ref<AdministrativeEligibleOperativeStatus[]>(
-  [],
+const selectedOperativeStatus = ref<AdministrativeEligibleOperativeStatus | null>(
+  null,
 );
-const selectedBillingStatuses = ref<AdministrativeBillingStatus[]>([]);
+const selectedBillingStatus = ref<AdministrativeBillingStatus | null>(null);
 const managerId = ref<number | null>(null);
 const sellerId = ref<number | null>(null);
 
@@ -115,8 +115,8 @@ const boardFilters = computed<AdministrativeBoardFilters>(() => ({
   createdFrom: createdFrom.value,
   createdTo: createdTo.value,
   serviceTypes: selectedServiceTypes.value,
-  operativeStatuses: selectedOperativeStatuses.value,
-  billingStatuses: selectedBillingStatuses.value,
+  operativeStatus: selectedOperativeStatus.value,
+  billingStatus: selectedBillingStatus.value,
   companyId: companyId.value,
   managerId: managerId.value,
   sellerId: sellerId.value,
@@ -217,6 +217,22 @@ const serviceTypeFilterItems = [
   })),
 ];
 
+const operativeStatusFilterItems = [
+  { label: 'Todos', value: null as AdministrativeEligibleOperativeStatus | null },
+  ...ADMINISTRATIVE_ELIGIBLE_OPERATIVE_STATUSES.map((status) => ({
+    label: getAdministrativeOperativeStatusLabel(status),
+    value: status,
+  })),
+];
+
+const billingStatusFilterItems = [
+  { label: 'Todos', value: null as AdministrativeBillingStatus | null },
+  ...ADMINISTRATIVE_KANBAN_VISIBLE_COLUMNS.map((column) => ({
+    label: column.title,
+    value: column.status,
+  })),
+];
+
 const selectedServiceTypeFilter = computed({
   get: () =>
     selectedServiceTypes.value.length === 1
@@ -232,8 +248,8 @@ function clearFilters() {
   createdFrom.value = '';
   createdTo.value = '';
   selectedServiceTypes.value = [];
-  selectedOperativeStatuses.value = [];
-  selectedBillingStatuses.value = [];
+  selectedOperativeStatus.value = null;
+  selectedBillingStatus.value = null;
   companyId.value = null;
   managerId.value = null;
   sellerId.value = null;
@@ -332,16 +348,10 @@ const {
                 label="Estatus op."
                 :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
               >
-                <USelectMenu
-                  v-model="selectedOperativeStatuses"
+                <USelect
+                  v-model="selectedOperativeStatus"
                   class="w-full"
-                  multiple
-                  :items="[
-                    ...ADMINISTRATIVE_ELIGIBLE_OPERATIVE_STATUSES.map((status) => ({
-                      label: getAdministrativeOperativeStatusLabel(status),
-                      value: status,
-                    })),
-                  ]"
+                  :items="operativeStatusFilterItems"
                   value-key="value"
                   label-key="label"
                   placeholder="Todos"
@@ -352,16 +362,10 @@ const {
                 label="Estatus admin."
                 :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
               >
-                <USelectMenu
-                  v-model="selectedBillingStatuses"
+                <USelect
+                  v-model="selectedBillingStatus"
                   class="w-full"
-                  multiple
-                  :items="[
-                    ...ADMINISTRATIVE_KANBAN_VISIBLE_COLUMNS.map((column) => ({
-                      label: column.title,
-                      value: column.status,
-                    })),
-                  ]"
+                  :items="billingStatusFilterItems"
                   value-key="value"
                   label-key="label"
                   placeholder="Todos"
@@ -588,16 +592,10 @@ const {
                   label="Estatus op."
                   :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
                 >
-                  <USelectMenu
-                    v-model="selectedOperativeStatuses"
+                  <USelect
+                    v-model="selectedOperativeStatus"
                     class="w-full"
-                    multiple
-                    :items="[
-                      ...ADMINISTRATIVE_ELIGIBLE_OPERATIVE_STATUSES.map((status) => ({
-                        label: getAdministrativeOperativeStatusLabel(status),
-                        value: status,
-                      })),
-                    ]"
+                    :items="operativeStatusFilterItems"
                     value-key="value"
                     label-key="label"
                     placeholder="Todos"
@@ -608,16 +606,10 @@ const {
                   label="Estatus admin."
                   :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
                 >
-                  <USelectMenu
-                    v-model="selectedBillingStatuses"
+                  <USelect
+                    v-model="selectedBillingStatus"
                     class="w-full"
-                    multiple
-                    :items="[
-                      ...ADMINISTRATIVE_KANBAN_VISIBLE_COLUMNS.map((column) => ({
-                        label: column.title,
-                        value: column.status,
-                      })),
-                    ]"
+                    :items="billingStatusFilterItems"
                     value-key="value"
                     label-key="label"
                     placeholder="Todos"

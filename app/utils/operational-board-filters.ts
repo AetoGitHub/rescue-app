@@ -6,7 +6,7 @@ export function emptyOperationalBoardFilters(): OperationalBoardFilters {
   return {
     folio: '',
     serviceTypes: [],
-    operativeStatuses: [],
+    operativeStatus: null,
     companyId: null,
     managerId: null,
     pendingAdvance: false,
@@ -62,8 +62,8 @@ export function buildOperationalListQuery(
 ): Record<string, string> {
   const query: Record<string, string> = {};
 
-  if (filters.operativeStatuses.length > 0) {
-    query.status = [...filters.operativeStatuses].sort().join(',');
+  if (filters.operativeStatus != null) {
+    query.status = filters.operativeStatus;
   }
 
   const folio = filters.folio.trim();
@@ -91,10 +91,9 @@ export function operationalListApiFiltersKey(
   filters: OperationalBoardFilters,
 ): string[] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
-  const operativeStatuses = [...filters.operativeStatuses].sort().join(',');
 
   return [
-    operativeStatuses,
+    filters.operativeStatus ?? '',
     filters.folio.trim(),
     serviceTypes,
     filters.companyId != null ? String(filters.companyId) : '',
@@ -134,22 +133,4 @@ export function isOperationalServiceTypeActive(
   value: RescueServiceType,
 ): boolean {
   return serviceTypes.includes(value);
-}
-
-export function toggleOperationalOperativeStatusFilter(
-  statuses: OperationalRescueStatus[],
-  value: OperationalRescueStatus,
-): OperationalRescueStatus[] {
-  if (statuses.includes(value)) {
-    return statuses.filter((status) => status !== value);
-  }
-
-  return [...statuses, value];
-}
-
-export function isOperationalOperativeStatusActive(
-  statuses: OperationalRescueStatus[],
-  value: OperationalRescueStatus,
-): boolean {
-  return statuses.includes(value);
 }

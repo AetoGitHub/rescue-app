@@ -14,8 +14,8 @@ export function emptyAdministrativeBoardFilters(): AdministrativeBoardFilters {
     createdFrom: '',
     createdTo: '',
     serviceTypes: [],
-    operativeStatuses: [],
-    billingStatuses: [],
+    operativeStatus: null,
+    billingStatus: null,
     companyId: null,
     managerId: null,
     sellerId: null,
@@ -47,8 +47,8 @@ export function buildAdministrativeCardsQuery(
 
   if (columnStatus) {
     status = columnStatus;
-  } else if (filters.billingStatuses.length > 0) {
-    status = [...filters.billingStatuses].sort().join(',');
+  } else if (filters.billingStatus != null) {
+    status = filters.billingStatus;
   } else {
     status = ALL_ADMINISTRATIVE_STATUSES.join(',');
   }
@@ -83,8 +83,8 @@ export function buildAdministrativeListQuery(
 ): Record<string, string> {
   const query: Record<string, string> = {};
 
-  if (filters.billingStatuses.length > 0) {
-    query.status = [...filters.billingStatuses].sort().join(',');
+  if (filters.billingStatus != null) {
+    query.status = filters.billingStatus;
   }
 
   const folio = filters.folio.trim();
@@ -111,7 +111,7 @@ export function administrativeListApiFiltersKey(
   filters: AdministrativeBoardFilters,
 ): string[] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
-  const billing = [...filters.billingStatuses].sort().join(',');
+  const billing = filters.billingStatus ?? '';
 
   return [
     billing,
@@ -127,7 +127,7 @@ export function administrativeCardsApiFiltersKey(
   columnStatus: AdministrativeBillingStatus | null,
 ): string[] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
-  const billing = [...filters.billingStatuses].sort().join(',');
+  const billing = filters.billingStatus ?? '';
 
   return [
     columnStatus ?? '',
@@ -155,17 +155,15 @@ export function filterAdministrativeCardsLocally(
     result = result.filter((card) => card.created_at.slice(0, 10) <= to);
   }
 
-  if (filters.operativeStatuses.length > 0) {
-    result = result.filter((card) =>
-      filters.operativeStatuses.includes(
-        card.operative_status as AdministrativeEligibleOperativeStatus,
-      ),
+  if (filters.operativeStatus != null) {
+    result = result.filter(
+      (card) => card.operative_status === filters.operativeStatus,
     );
   }
 
-  if (filters.billingStatuses.length > 0) {
-    result = result.filter((card) =>
-      filters.billingStatuses.includes(card.billing_status),
+  if (filters.billingStatus != null) {
+    result = result.filter(
+      (card) => card.billing_status === filters.billingStatus,
     );
   }
 
@@ -205,15 +203,4 @@ export function isAdministrativeServiceTypeActive(
   value: RescueServiceType,
 ): boolean {
   return serviceTypes.includes(value);
-}
-
-export function toggleAdministrativeBillingStatusFilter(
-  statuses: AdministrativeBillingStatus[],
-  value: AdministrativeBillingStatus,
-): AdministrativeBillingStatus[] {
-  if (statuses.includes(value)) {
-    return statuses.filter((status) => status !== value);
-  }
-
-  return [...statuses, value];
 }

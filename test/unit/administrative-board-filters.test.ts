@@ -4,7 +4,6 @@ import {
   buildAdministrativeListQuery,
   emptyAdministrativeBoardFilters,
   filterAdministrativeCardsLocally,
-  toggleAdministrativeBillingStatusFilter,
 } from '~/utils/administrative-board-filters';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 
@@ -82,13 +81,13 @@ describe('buildAdministrativeListQuery', () => {
     expect(query).not.toHaveProperty('cursor');
   });
 
-  it('sends comma-separated billing statuses', () => {
+  it('sends a single billing status', () => {
     const query = buildAdministrativeListQuery({
       ...emptyAdministrativeBoardFilters(),
-      billingStatuses: ['paid', 'unattended'],
+      billingStatus: 'paid',
     });
 
-    expect(query.status).toBe('paid,unattended');
+    expect(query.status).toBe('paid');
   });
 
   it('sends folio, service_type and company', () => {
@@ -115,16 +114,8 @@ describe('filterAdministrativeCardsLocally', () => {
     ];
     const filtered = filterAdministrativeCardsLocally(rows, {
       ...emptyAdministrativeBoardFilters(),
-      operativeStatuses: ['closed'],
+      operativeStatus: 'closed',
     });
     expect(filtered.map((r) => r.id)).toEqual([1]);
-  });
-});
-
-describe('toggleAdministrativeBillingStatusFilter', () => {
-  it('toggles billing status values', () => {
-    const next = toggleAdministrativeBillingStatusFilter([], 'paid');
-    expect(next).toEqual(['paid']);
-    expect(toggleAdministrativeBillingStatusFilter(next, 'paid')).toEqual([]);
   });
 });
