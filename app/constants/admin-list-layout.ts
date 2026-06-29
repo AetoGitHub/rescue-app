@@ -7,6 +7,9 @@ export const adminListContainerClass =
 
 export const adminListTableClass = 'min-h-0 flex-1';
 
+/** UTable in a flex board/list panel — pairs with `sticky` for internal scroll + infinite load. */
+export const adminBoardListTableClass = 'min-h-0 flex-1 h-full';
+
 export const adminListTableWrapperClass =
   '-mx-4 min-w-0 overflow-x-auto px-4 sm:mx-0 sm:px-0';
 

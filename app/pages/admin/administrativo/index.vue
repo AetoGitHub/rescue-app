@@ -699,16 +699,17 @@ const {
 
           <div
             v-else
-            class="min-h-0 flex-1 overflow-auto"
+            class="flex min-h-0 flex-1 flex-col overflow-hidden"
           >
             <UAlert
               v-if="listIsError"
-              class="mb-4"
+              class="mb-4 shrink-0"
               color="error"
               :description="listErrorMessage"
               title="No se pudo cargar la lista"
             />
             <LazyAdministrativeRescueTable
+              class="min-h-0 flex-1"
               :async-status="listAsyncStatus"
               :has-next-page="listHasNextPage"
               :loading="listInitialLoading || listLoadingMore"

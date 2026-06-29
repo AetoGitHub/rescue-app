@@ -2,7 +2,7 @@
 import { h, resolveComponent } from 'vue';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import { RESCUE_ADMIN_STATUS_LABELS } from '~/constants/operational-rescue-detail';
-import { adminListTableClass } from '~/constants/admin-list-layout';
+import { adminBoardListTableClass } from '~/constants/admin-list-layout';
 import type { RescueCard } from '~/interfaces/rescue';
 
 const props = defineProps<{
@@ -142,12 +142,15 @@ usePaginatedTableInfiniteScroll({
 </script>
 
 <template>
-  <UTable
-    ref="table"
-    :class="adminListTableClass"
-    :columns="columns"
-    :data="rows"
-    :loading="loading"
-    @select="onRowSelect"
-  />
+  <div class="flex min-h-0 flex-1 flex-col">
+    <UTable
+      ref="table"
+      sticky
+      :class="adminBoardListTableClass"
+      :columns="columns"
+      :data="rows"
+      :loading="loading"
+      @select="onRowSelect"
+    />
+  </div>
 </template>

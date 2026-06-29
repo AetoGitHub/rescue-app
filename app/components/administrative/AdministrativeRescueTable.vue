@@ -2,7 +2,7 @@
 import { h, resolveComponent } from 'vue';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
-import { adminListTableClass } from '~/constants/admin-list-layout';
+import { adminBoardListTableClass } from '~/constants/admin-list-layout';
 
 const props = defineProps<{
   rows: AdministrativeRescueCard[];
@@ -201,12 +201,15 @@ defineExpose({ sortedRows });
 </script>
 
 <template>
-  <UTable
-    ref="table"
-    :class="adminListTableClass"
-    :columns="columns"
-    :data="sortedRows"
-    :loading="loading"
-    @select="onRowSelect"
-  />
+  <div class="flex min-h-0 flex-1 flex-col">
+    <UTable
+      ref="table"
+      sticky
+      :class="adminBoardListTableClass"
+      :columns="columns"
+      :data="sortedRows"
+      :loading="loading"
+      @select="onRowSelect"
+    />
+  </div>
 </template>
