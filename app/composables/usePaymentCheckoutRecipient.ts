@@ -1,4 +1,3 @@
-import type { PaymentRecipientType } from '~/constants/payment-api';
 import type { PaymentCheckoutRecipient } from '~/interfaces/payment/checkout-recipient';
 import type { PaymentListFilterInput } from '~/utils/payment-list-query';
 

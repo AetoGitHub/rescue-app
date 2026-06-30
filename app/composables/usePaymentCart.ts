@@ -165,8 +165,8 @@ export function usePaymentCart(
   });
 
   const { mutateAsync: clearCart, asyncStatus: clearStatus } = useMutation({
-    mutation: (options: PaymentCartClearOptions = {}) =>
-      apiFetch<void>(PAYMENT_CART_PATH, {
+    mutation: (_options: PaymentCartClearOptions = {}) =>
+      apiFetch(PAYMENT_CART_PATH, {
         method: 'DELETE',
       }),
     onSuccess: async (_data, options) => {

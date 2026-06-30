@@ -1,5 +1,5 @@
-import type { AdministrativeBillingStatus } from '~/constants/administrative-kanban';
-import type { AdministrativeEligibleOperativeStatus } from '~/constants/administrative-kanban';
+import type { AdministrativeBillingStatus, AdministrativeEligibleOperativeStatus  } from '~/constants/administrative-kanban';
+
 import type { RescueServiceType } from '~/interfaces/rescue';
 
 export interface AdministrativeBoardFilters {

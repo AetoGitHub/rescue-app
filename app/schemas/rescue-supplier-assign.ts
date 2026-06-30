@@ -8,7 +8,7 @@ export const rescueSupplierAssignSchema = z.object({
 });
 
 export type RescueSupplierAssignFormState = {
-  supplier: number | null;
+  supplier?: number;
 };
 
 export type RescueSupplierAssignFormOutput = z.infer<

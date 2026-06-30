@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, resolveComponent } from 'vue';
+import { h, resolveComponent, type Component } from 'vue';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import { adminBoardListTableClass } from '~/constants/admin-list-layout';
@@ -29,8 +29,8 @@ const sortDesc = ref(true);
 const tableRef = useTemplateRef('table');
 
 const UButton = resolveComponent('UButton');
-const UBadge = resolveComponent('UBadge');
-const UIcon = resolveComponent('UIcon');
+const UBadge = resolveComponent('UBadge') as Component;
+const UIcon = resolveComponent('UIcon') as Component;
 
 const badgeComponents: RescueTableBadgeComponents = {
   UBadge,

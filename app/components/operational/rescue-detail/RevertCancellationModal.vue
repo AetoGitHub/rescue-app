@@ -73,7 +73,7 @@ function onSubmit() {
           color="neutral"
           label="Cerrar"
           variant="subtle"
-          @click="open = false"
+          @click="() => { open = false }"
         />
         <UButton
           color="primary"

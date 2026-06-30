@@ -5,7 +5,7 @@ import {
 } from '~/constants/administrative-kanban';
 import type { AdministrativeBoardFilters } from '~/interfaces/administrative/board-filters';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
-import type { AdministrativeEligibleOperativeStatus } from '~/constants/administrative-kanban';
+
 import type { RescueServiceType } from '~/interfaces/rescue';
 
 export function emptyAdministrativeBoardFilters(): AdministrativeBoardFilters {
@@ -29,7 +29,6 @@ const ALL_ADMINISTRATIVE_STATUSES = ADMINISTRATIVE_KANBAN_VISIBLE_COLUMNS.map(
 function administrativeServiceTypesForApi(
   serviceTypes: RescueServiceType[],
 ): string {
-  const allowed = new Set<string>(ADMINISTRATIVE_API_SERVICE_TYPES);
   return ADMINISTRATIVE_API_SERVICE_TYPES.filter((type) =>
     serviceTypes.includes(type as RescueServiceType),
   ).join(',');

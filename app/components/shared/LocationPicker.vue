@@ -17,6 +17,7 @@ const props = withDefaults(
     mapHint?: string;
   }>(),
   {
+    mapLayoutKey: undefined,
     latitudeName: 'latitude',
     longitudeName: 'longitude',
     emptyStatusLabel: 'Sin ubicación definida',
@@ -200,16 +201,18 @@ watch(
         <div class="grid gap-4 pt-2 sm:grid-cols-2">
           <UFormField label="Latitud" :name="latitudeName">
             <UInput
-              v-model="latitude"
+              :model-value="latitude ?? undefined"
               class="w-full"
               placeholder="19.432608"
+              @update:model-value="(value) => (latitude = value ?? null)"
             />
           </UFormField>
           <UFormField label="Longitud" :name="longitudeName">
             <UInput
-              v-model="longitude"
+              :model-value="longitude ?? undefined"
               class="w-full"
               placeholder="-99.133209"
+              @update:model-value="(value) => (longitude = value ?? null)"
             />
           </UFormField>
         </div>

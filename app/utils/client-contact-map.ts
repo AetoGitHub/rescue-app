@@ -71,7 +71,6 @@ export function clientContactFormToUpdateBody(
   input: ClientContactFormState,
 ): ClientContactUpdateBody {
   return {
-    client: clientId,
     ...clientContactFormToCreateBody(clientId, input),
     is_active: input.is_active,
   };

@@ -2,8 +2,8 @@
 import { h, resolveComponent } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
 import type { PaymentCheckoutDebtRow } from '~/interfaces/payment/checkout-debt';
-import type { PaymentReceiptOperativeItem } from '~/interfaces/payment/receipt';
-import type { PaymentReceiptSellerItem } from '~/interfaces/payment/receipt';
+import type { PaymentReceiptOperativeItem, PaymentReceiptSellerItem  } from '~/interfaces/payment/receipt';
+
 import { adminListContainerClass } from '~/constants/admin-list-layout';
 
 const receiptPanelUi = {
@@ -279,7 +279,7 @@ const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
                     label="Reintentar"
                     color="neutral"
                     variant="outline"
-                    @click="refresh()"
+                    @click="() => void refresh()"
                   />
                   <UButton
                     to="/admin/pagar"

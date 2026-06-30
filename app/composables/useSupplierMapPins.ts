@@ -1,5 +1,5 @@
 import type { SupplierListItem } from '~/interfaces/catalogs/supplier';
-import { coordsFromSupplierRow } from '~/utils/supplier-list';
+import { coordsFromSupplierRow, parseSupplierCoord } from '~/utils/supplier-list';
 
 export type SupplierCatalogMapPin = {
   id: number;
@@ -14,10 +14,14 @@ type DetailCoordsStatus = 'idle' | 'loading' | 'success' | 'error';
 function coordsFromDetailRaw(
   raw: Record<string, unknown>,
 ): { lat: number; lng: number } | null {
-  return coordsFromSupplierRow({
-    latitude: raw.latitude ?? raw.lat ?? null,
-    longitude: raw.longitude ?? raw.lng ?? null,
-  });
+  const lat = parseSupplierCoord(
+    (raw.latitude ?? raw.lat) as string | number | null | undefined,
+  );
+  const lng = parseSupplierCoord(
+    (raw.longitude ?? raw.lng) as string | number | null | undefined,
+  );
+  if (lat == null || lng == null) return null;
+  return { lat, lng };
 }
 
 export function useSupplierMapPins(suppliers: Ref<SupplierListItem[]>) {

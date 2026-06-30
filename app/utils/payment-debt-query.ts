@@ -42,7 +42,9 @@ export function buildPaymentDebtQuery(
   return query;
 }
 
-export function paymentDebtQueryKey(input: PaymentDebtFilterInput): unknown[] {
+export function paymentDebtQueryKey(
+  input: PaymentDebtFilterInput,
+): (string | number | boolean | null)[] {
   return [
     'payment-debt',
     input.userId ?? '',

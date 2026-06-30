@@ -61,14 +61,12 @@ export function useRescueOperativeFlow(options: {
   const advanceForm = reactive<RescueAdvanceFormState>({
     advance_amount: '',
     advance_date: todayIsoDate(),
-    advance_payment_method: '',
     advance_reference: '',
   });
 
   const completedForm = reactive<RescueServiceCompletedFormState>({
     close_date: todayIsoDate(),
     disbursement_date: todayIsoDate(),
-    disbursement_payment_method: '',
     ratings: [],
   });
 
@@ -129,8 +127,10 @@ export function useRescueOperativeFlow(options: {
         ? String(amount)
         : '';
     advanceForm.advance_date = d.advance_date?.trim() || todayIsoDate();
-    advanceForm.advance_payment_method = (d.advance_payment_method?.trim()
-      || '') as RescueAdvanceFormState['advance_payment_method'];
+    const method = d.advance_payment_method?.trim();
+    advanceForm.advance_payment_method = method
+      ? (method as NonNullable<RescueAdvanceFormState['advance_payment_method']>)
+      : undefined;
     advanceForm.advance_reference = d.advance_reference?.trim() || '';
   }
 
@@ -147,7 +147,7 @@ export function useRescueOperativeFlow(options: {
     if (!d) return;
     completedForm.close_date = todayIsoDate();
     completedForm.disbursement_date = todayIsoDate();
-    completedForm.disbursement_payment_method = '';
+    completedForm.disbursement_payment_method = undefined;
     completedForm.ratings = buildSupplierRatingRows(d);
     completedPanelOpen.value = true;
   }

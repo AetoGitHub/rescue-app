@@ -79,7 +79,6 @@ describe('toOperativeUpdatePayload request_advance', () => {
       advance: {
         advance_amount: '500',
         advance_date: '',
-        advance_payment_method: '',
         advance_reference: '',
       },
     });

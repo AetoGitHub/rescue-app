@@ -7,7 +7,9 @@ export function fitMapToPoints(
   if (points.length === 0) return;
 
   if (points.length === 1) {
-    map.panTo(points[0]);
+    const point = points[0];
+    if (!point) return;
+    map.panTo(point);
     const zoom = map.getZoom();
     if (zoom == null || zoom < 14) {
       map.setZoom(14);

@@ -18,7 +18,6 @@ const {
   uploadFile,
   savePendingCsf,
   resetPendingUpload,
-  pendingUrl,
   isUploading,
   isSaving,
   hasPendingUpload,

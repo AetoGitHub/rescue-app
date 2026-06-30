@@ -10,9 +10,7 @@ const adminDocFoliosBase = z.object({
   invoice_folio: optionalFolioField,
 });
 
-function withAtLeastOneFolio<T extends z.ZodType>(
-  schema: T,
-): z.ZodEffects<T, z.output<T>, z.input<T>> {
+function withAtLeastOneFolio<T extends z.ZodType>(schema: T) {
   return schema.superRefine((data, ctx) => {
     const folios = data as {
       remittance_folio: string | null;

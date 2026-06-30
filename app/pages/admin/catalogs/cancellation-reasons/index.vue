@@ -61,7 +61,7 @@ const columns: TableColumn<Category>[] = [
         label="Re-aceptación"
         color="neutral"
         variant="subtle"
-        @click="reacceptanceOpen = true"
+        @click="() => { reacceptanceOpen = true }"
       />
       <CatalogCategoryCreateSlideover
         ref="slideoverRef"

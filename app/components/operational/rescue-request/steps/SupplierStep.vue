@@ -338,7 +338,7 @@ function formatRanking(value: number) {
             ? 'Ocultar formulario'
             : 'Agregar un proveedor no registrado'
         "
-        @click="showInlineForm = !showInlineForm"
+        @click="() => { showInlineForm = !showInlineForm }"
       />
 
       <div

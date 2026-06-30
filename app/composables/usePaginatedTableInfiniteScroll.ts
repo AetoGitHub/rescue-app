@@ -26,7 +26,7 @@ export function usePaginatedTableInfiniteScroll(
   }
 
   function attachInfiniteScroll(el: HTMLElement) {
-    const { stop } = useInfiniteScroll(
+    const result = useInfiniteScroll(
       el,
       () => {
         if (
@@ -44,7 +44,15 @@ export function usePaginatedTableInfiniteScroll(
       },
     );
 
-    return stop;
+    if (typeof result === 'function') {
+      return result;
+    }
+
+    return () => {
+      if (typeof result === 'object' && result !== null && 'reset' in result) {
+        (result as { reset: () => void }).reset();
+      }
+    };
   }
 
   watch(

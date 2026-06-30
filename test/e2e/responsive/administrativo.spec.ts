@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { assertNoHorizontalOverflow } from './helpers';
 
 test.describe('Administrative board responsive (guest)', () => {

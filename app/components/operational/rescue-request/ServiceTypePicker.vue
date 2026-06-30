@@ -15,7 +15,7 @@ const model = defineModel<RescueServiceType>({ required: true });
       class="flex h-auto min-h-28 flex-col items-center justify-center gap-1.5 px-2 py-4"
       :variant="model === option.value ? 'solid' : 'outline'"
       :color="model === option.value ? 'primary' : 'neutral'"
-      @click="model = option.value"
+      @click="() => { model = option.value }"
     >
       <UIcon :name="option.icon" class="size-8 shrink-0" />
       <span class="text-center text-sm font-semibold uppercase leading-tight tracking-wide">

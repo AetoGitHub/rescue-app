@@ -1,5 +1,5 @@
-import type { AuthUserRole } from '../types/user';
-import type { AuthUser } from '../types/user';
+import type { AuthUserRole, AuthUser  } from '../types/user';
+
 
 const AUTH_ROLE_ALIASES: Record<string, AuthUserRole> = {
   administrator: 'admin',

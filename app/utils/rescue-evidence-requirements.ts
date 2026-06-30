@@ -1,5 +1,4 @@
 import {
-  RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
   RESCUE_EVIDENCE_TYPE_SERVICE,
 } from '~/constants/rescue-evidence-api';
 import { RESCUE_OPERATIVE_TOAST } from '~/constants/rescue-operative-flow';

@@ -7,9 +7,9 @@ import type {
   MapsLinkToCoordsResponse,
 } from '~/interfaces/maps/geocoding';
 
-type MapsGeocodingFetch = <T>(
+export type MapsGeocodingFetch = <T = unknown>(
   url: string,
-  options?: { method?: string; body?: unknown; signal?: AbortSignal },
+  options?: Record<string, unknown>,
 ) => Promise<T>;
 
 export function isValidGeocodingCoordinate(value: unknown): value is number {

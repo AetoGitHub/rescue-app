@@ -3,8 +3,8 @@ import {
   getAdministrativeOperativeStatusLabel,
   getBillingStatusLabel,
 } from '~/utils/administrative-rescue-display';
-import { formatRescueCardMoney } from '~/utils/operational-rescue-card';
-import { getRescueServiceTypeBadge } from '~/utils/operational-rescue-card';
+import { formatRescueCardMoney, getRescueServiceTypeBadge  } from '~/utils/operational-rescue-card';
+
 
 function escapeCsvCell(value: string): string {
   if (/[",\n\r]/.test(value)) {

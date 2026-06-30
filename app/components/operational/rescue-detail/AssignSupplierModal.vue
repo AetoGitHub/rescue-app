@@ -9,7 +9,7 @@ import {
   type RescueSupplierAssignFormState,
 } from '~/schemas/rescue-supplier-assign';
 import { parseRescueCoord } from '~/schemas/rescue-create';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -32,9 +32,7 @@ const selectedLabel = ref('');
 const mapLayoutKey = ref(0);
 const warnedSupplierIds = ref(new Set<number>());
 
-const state = reactive<RescueSupplierAssignFormState>({
-  supplier: null,
-});
+const state = reactive<RescueSupplierAssignFormState>({});
 
 const latRef = computed(() => props.latitude);
 const lngRef = computed(() => props.longitude);
@@ -92,8 +90,8 @@ const listHasCoords = computed(() => {
 const {
   data: supplierDetail,
   asyncStatus: detailAsyncStatus,
-} = useQuery({
-  key: () => ['supplier-detail', state.supplier],
+} = useQuery<Record<string, unknown>, Error>({
+  key: () => ['supplier-detail', state.supplier ?? null],
   query: async ({ signal }) =>
     $fetch<Record<string, unknown>>(`/api/supplier/detail/${state.supplier}/`, {
       signal,
@@ -132,7 +130,7 @@ const selectedSupplierPin = computed((): SupplierMapPin | null => {
 
 watch(open, (isOpen) => {
   if (isOpen) {
-    state.supplier = props.currentSupplierId;
+    state.supplier = props.currentSupplierId ?? undefined;
     selectedLabel.value = props.currentSupplierName?.trim() ?? '';
     search.value = '';
     warnedSupplierIds.value.clear();
@@ -160,7 +158,7 @@ watch(
 
 function selectSupplier(row: RescueSupplierNearbyRow) {
   if (state.supplier === row.id) {
-    state.supplier = null;
+    state.supplier = undefined;
     selectedLabel.value = '';
     return;
   }
@@ -169,7 +167,7 @@ function selectSupplier(row: RescueSupplierNearbyRow) {
 }
 
 function clearSelection() {
-  state.supplier = null;
+  state.supplier = undefined;
   selectedLabel.value = '';
   warnedSupplierIds.value.clear();
 }
@@ -388,7 +386,7 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
             label="Cancelar"
             variant="subtle"
             :disabled="isBusy"
-            @click="open = false"
+            @click="() => { open = false }"
           />
           <UButton
             color="primary"

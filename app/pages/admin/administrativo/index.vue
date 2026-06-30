@@ -474,7 +474,7 @@ const {
                   :icon="filtersExpanded ? 'i-lucide-chevron-up' : 'i-lucide-sliders-horizontal'"
                   label="Filtros"
                   variant="subtle"
-                  @click="filtersExpanded = !filtersExpanded"
+                  @click="() => { filtersExpanded = !filtersExpanded }"
                 />
 
                 <UInput

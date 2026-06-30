@@ -1,12 +1,12 @@
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
-import type { RescueCard } from '~/interfaces/rescue';
+import type { RescueCard, RescueServiceType  } from '~/interfaces/rescue';
 import type { RescueGeneralSettings } from '~/interfaces/rescue/settings';
 import type {
   SlaLevelAlertConfig,
   SlaTimePerStage,
   SlaUpdateChatConfig,
 } from '~/interfaces/sla';
-import type { RescueServiceType } from '~/interfaces/rescue';
+
 import { formatElapsedDuration, formatElapsedSince } from '~/utils/operational-rescue-card';
 import { getOperationalStatusLabel } from '~/utils/operational-rescue-detail';
 import {

@@ -56,14 +56,14 @@ export interface RescueSupplierRatingRow {
 export interface RescueAdvanceFormState {
   advance_amount: string;
   advance_date: string;
-  advance_payment_method: RescuePaymentMethod | '';
+  advance_payment_method?: RescuePaymentMethod;
   advance_reference: string;
 }
 
 export interface RescueServiceCompletedFormState {
   close_date: string;
   disbursement_date: string;
-  disbursement_payment_method: RescuePaymentMethod | '';
+  disbursement_payment_method?: RescuePaymentMethod;
   ratings: RescueSupplierRatingRow[];
 }
 

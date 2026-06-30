@@ -163,7 +163,7 @@ async function requestSubmit() {
           color="neutral"
           label="Cancelar"
           variant="subtle"
-          @click="open = false"
+          @click="() => { open = false }"
         />
         <UButton
           type="button"

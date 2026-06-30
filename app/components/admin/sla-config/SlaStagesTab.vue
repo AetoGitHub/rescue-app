@@ -46,9 +46,9 @@ function disabledStatusesForRow(
       :key="serviceType"
       :open="openByType[serviceType]"
       :service-type="serviceType"
-      @update:open="(v) => (openByType[serviceType] = v)"
       :count-label="`${sla.timePerStageForType(serviceType, false).length} etapa(s)`"
       :has-dirty="sla.hasDirtyTimePerStageForType(serviceType, false)"
+      @update:open="(v) => (openByType[serviceType] = v)"
     >
       <AdminSlaConfigSlaFlowDiagram :items="timelineItems(serviceType)" />
 

@@ -148,7 +148,7 @@ async function saveOperator(operator: OperativeCommissionOperator) {
                 :model-value="commissionDraftNumber(operator.id)"
                 v-bind="catalogPercentInputProps"
                 placeholder="—"
-                @update:model-value="setCommissionDraft(operator.id, $event)"
+                @update:model-value="setCommissionDraft(operator.id, $event ?? undefined)"
               />
             </UFormField>
 
@@ -160,7 +160,7 @@ async function saveOperator(operator: OperativeCommissionOperator) {
               class="shrink-0"
               :loading="savingOperatorId === operator.id"
               :disabled="savingOperatorId === operator.id"
-              @click="saveOperator(operator)"
+              @click="() => void saveOperator(operator)"
             />
           </div>
         </div>
@@ -175,7 +175,7 @@ async function saveOperator(operator: OperativeCommissionOperator) {
           label="Cargar más"
           variant="subtle"
           :loading="asyncStatus === 'loading'"
-          @click="loadNextPage()"
+          @click="() => void loadNextPage()"
         />
       </div>
     </div>

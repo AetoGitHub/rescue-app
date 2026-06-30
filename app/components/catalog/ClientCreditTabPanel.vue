@@ -290,7 +290,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
           color="neutral"
           variant="outline"
           size="sm"
-          @click="lineEditOpen = true"
+          @click="() => { lineEditOpen = true }"
         />
         <UButton
           v-else
@@ -298,7 +298,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
           color="neutral"
           variant="ghost"
           size="sm"
-          @click="lineEditOpen = false"
+          @click="() => { lineEditOpen = false }"
         />
       </div>
 
@@ -452,7 +452,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
             color="neutral"
             variant="outline"
             :disabled="!canCreateUnlock"
-            @click="unlockCreateOpen = true"
+            @click="() => { unlockCreateOpen = true }"
           />
         </div>
       </div>
@@ -534,7 +534,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
           color="neutral"
           variant="outline"
           size="sm"
-          @click="creditUnlockList.loadNextPage()"
+          @click="() => void creditUnlockList.loadNextPage()"
         />
       </div>
     </UPageCard>

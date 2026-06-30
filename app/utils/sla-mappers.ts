@@ -1,9 +1,9 @@
 import type {
   SlaLevelAlertConfig,
   SlaTimePerStage,
-  SlaUpdateChatConfig,
+  SlaUpdateChatConfig, SlaDurationUnit 
 } from '~/interfaces/sla';
-import type { SlaDurationUnit } from '~/interfaces/sla';
+
 
 function toNumber(value: unknown, fallback = 0): number {
   const parsed = Number(value);

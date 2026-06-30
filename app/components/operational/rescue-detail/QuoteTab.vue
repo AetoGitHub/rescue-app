@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { CatalogDropdownFetcher } from '~/composables/useCatalogDropdown';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';

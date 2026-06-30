@@ -68,7 +68,7 @@ const columns: TableColumn<Service>[] = [
         label="Categorías"
         color="neutral"
         variant="subtle"
-        @click="categoriesOpen = true"
+        @click="() => { categoriesOpen = true }"
       />
       <CatalogServiceCreateSlideover ref="slideoverRef" />
     </template>

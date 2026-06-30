@@ -1,11 +1,10 @@
 import type { MaybeRefOrGetter } from 'vue';
 import { RESCUE_ADMINISTRATIVE_TOAST } from '~/constants/rescue-administrative-flow';
-import type { AdministrativeRescueDetail } from '~/interfaces/rescue/administrative';
-import type {
+import type { AdministrativeRescueDetail,
   RescueAdministrativeActionId,
   RescueInvoiceFormState,
-  RescueRemittanceFormState,
-} from '~/interfaces/rescue/administrative';
+  RescueRemittanceFormState } from '~/interfaces/rescue/administrative';
+
 import {
   rescueAdminCancelSchema,
   rescueAdminRevertCancelSchema,

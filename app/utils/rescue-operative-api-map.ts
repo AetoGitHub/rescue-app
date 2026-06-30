@@ -91,6 +91,14 @@ export function toOperativeUpdatePayload(
 
     case 'mark_as_closed':
       return { to: 'closed' };
+
+    case 'revert_cancellation':
+      throw new Error('revert_cancellation uses a dedicated endpoint');
+
+    default: {
+      const _exhaustive: never = action;
+      throw new Error(`Unsupported operative action: ${String(_exhaustive)}`);
+    }
   }
 }
 

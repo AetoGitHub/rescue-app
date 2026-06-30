@@ -5,8 +5,8 @@ import type { DropdownMenuItem } from '@nuxt/ui';
 import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
-import type { RescueCard } from '~/interfaces/rescue';
-import type { RescueServiceType } from '~/interfaces/rescue';
+import type { RescueCard, RescueServiceType  } from '~/interfaces/rescue';
+
 import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
 
 useHead({
@@ -275,7 +275,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                 :color="pendingAdvance ? 'primary' : 'neutral'"
                 label="Con anticipo pendiente"
                 :variant="pendingAdvance ? 'solid' : 'subtle'"
-                @click="pendingAdvance = !pendingAdvance"
+                @click="() => { pendingAdvance = !pendingAdvance }"
               />
 
               <UFieldGroup
@@ -287,7 +287,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                   :color="slaAlert ? 'primary' : 'neutral'"
                   label="Alerta SLA"
                   :variant="slaAlert ? 'solid' : 'subtle'"
-                  @click="slaAlert = !slaAlert"
+                  @click="() => { slaAlert = !slaAlert }"
                 />
 
                 <UButton
@@ -295,7 +295,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                   :color="commentAlert ? 'primary' : 'neutral'"
                   label="Alerta actualización"
                   :variant="commentAlert ? 'solid' : 'subtle'"
-                  @click="commentAlert = !commentAlert"
+                  @click="() => { commentAlert = !commentAlert }"
                 />
               </UFieldGroup>
 
@@ -405,7 +405,7 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                   :color="pendingAdvance ? 'primary' : 'neutral'"
                   label="Con anticipo pendiente"
                   :variant="pendingAdvance ? 'solid' : 'subtle'"
-                  @click="pendingAdvance = !pendingAdvance"
+                  @click="() => { pendingAdvance = !pendingAdvance }"
                 />
 
                 <UFieldGroup v-if="viewMode === 'kanban'">
@@ -413,14 +413,14 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                     :color="slaAlert ? 'primary' : 'neutral'"
                     label="Alerta SLA"
                     :variant="slaAlert ? 'solid' : 'subtle'"
-                    @click="slaAlert = !slaAlert"
+                    @click="() => { slaAlert = !slaAlert }"
                   />
 
                   <UButton
                     :color="commentAlert ? 'primary' : 'neutral'"
                     label="Alerta actualización"
                     :variant="commentAlert ? 'solid' : 'subtle'"
-                    @click="commentAlert = !commentAlert"
+                    @click="() => { commentAlert = !commentAlert }"
                   />
                 </UFieldGroup>
 

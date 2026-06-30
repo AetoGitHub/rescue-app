@@ -11,12 +11,11 @@ import {
 import type { AdministrativeBillingStatus } from '~/constants/administrative-kanban';
 import { getBillingStatusLabel } from '~/utils/administrative-rescue-display';
 import { targetBillingStatusForAction } from '~/utils/rescue-administrative-api-map';
-import type { AdministrativeRescueDetail } from '~/interfaces/rescue/administrative';
-import type {
+import type { AdministrativeRescueDetail,
   RescueAdministrativeActionId,
   RescueAdministrativeFlowContext,
-  RescueAdministrativeFooterAction,
-} from '~/interfaces/rescue/administrative';
+  RescueAdministrativeFooterAction } from '~/interfaces/rescue/administrative';
+
 
 export function administrativeDetailToFlowContext(
   detail: AdministrativeRescueDetail,

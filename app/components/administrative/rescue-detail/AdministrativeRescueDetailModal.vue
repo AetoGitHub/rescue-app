@@ -221,7 +221,7 @@ const modalTabsUi = computed(() => ({
             icon="i-lucide-refresh-cw"
             label="Reintentar"
             variant="subtle"
-            @click="refresh()"
+            @click="() => void refresh()"
           />
         </div>
 

@@ -4,7 +4,7 @@ import type { RescueServiceCompletedFormState } from '~/interfaces/rescue/operat
 
 const open = defineModel<boolean>('open', { required: true });
 
-const props = defineProps<{
+defineProps<{
   isLoan: boolean;
   loading?: boolean;
 }>();
@@ -133,7 +133,7 @@ function onSubmit() {
           color="neutral"
           label="Cancelar"
           variant="subtle"
-          @click="open = false"
+          @click="() => { open = false }"
         />
         <UButton
           color="primary"

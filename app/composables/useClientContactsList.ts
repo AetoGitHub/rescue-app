@@ -1,7 +1,6 @@
 import { useInfiniteQuery } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
 import { CLIENT_CONTACTS_LIST_PATH } from '~/constants/client-api';
-import type { ClientContact } from '~/interfaces/catalogs/client';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { mapClientContactRow } from '~/utils/client-contact-map';
 

@@ -19,12 +19,29 @@ export function coordsFromSupplierRow(
   return { lat, lng };
 }
 
+function normalizeSupplierCoordField(value: unknown): string | number | null {
+  if (value == null) return null;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed === '') return null;
+    return parseSupplierCoord(trimmed) != null ? trimmed : null;
+  }
+  return null;
+}
+
 function readSupplierCoordsFromRaw(raw: Record<string, unknown>) {
-  const latitude =
-    raw.latitude ?? raw.lat ?? (raw.location as Record<string, unknown> | undefined)?.latitude ?? null;
-  const longitude =
-    raw.longitude ?? raw.lng ?? (raw.location as Record<string, unknown> | undefined)?.longitude ?? null;
-  return { latitude, longitude };
+  const location = raw.location as Record<string, unknown> | undefined;
+  const latitudeRaw =
+    raw.latitude ?? raw.lat ?? location?.latitude ?? null;
+  const longitudeRaw =
+    raw.longitude ?? raw.lng ?? location?.longitude ?? null;
+  return {
+    latitude: normalizeSupplierCoordField(latitudeRaw),
+    longitude: normalizeSupplierCoordField(longitudeRaw),
+  };
 }
 
 export function mapSupplierListRow(

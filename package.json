@@ -8,6 +8,9 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:nuxt": "vitest run --project nuxt",
@@ -46,6 +49,7 @@
     "@vue/test-utils": "^2.4.10",
     "happy-dom": "^20.9.0",
     "playwright-core": "^1.60.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "vue-tsc": "^3.0.5"
   }
 }

@@ -226,7 +226,7 @@ useHead({
                 color="neutral"
                 variant="outline"
                 size="sm"
-                @click="creditUnlockList.loadNextPage()"
+                @click="() => void creditUnlockList.loadNextPage()"
               />
             </div>
           </UPageCard>

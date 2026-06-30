@@ -183,7 +183,7 @@ function fileLabel(url: string, index: number) {
           label="Reintentar"
           variant="subtle"
           size="sm"
-          @click="refresh()"
+          @click="() => void refresh()"
         />
       </div>
 
@@ -239,7 +239,7 @@ function fileLabel(url: string, index: number) {
             color="neutral"
             :label="RESCUE_EVIDENCE_MODAL_COPY.close"
             variant="outline"
-            @click="open = false"
+            @click="() => { open = false }"
           />
         </div>
       </div>

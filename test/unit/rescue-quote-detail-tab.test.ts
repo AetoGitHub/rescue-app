@@ -18,7 +18,6 @@ function minimalDetail(
     service_description: '',
     location_description: '',
     sale_price: null,
-    operative_status: partial.operative_status,
     operator_id: null,
     operator_name: null,
     supplier_id: null,

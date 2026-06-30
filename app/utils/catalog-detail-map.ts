@@ -377,7 +377,10 @@ function toServiceUnit(value: unknown): ServiceUnit {
     : 'service';
 }
 
-export function mapServiceDetail(raw: Record<string, unknown>): ServiceCreateBody & {
+export function mapServiceDetail(raw: Record<string, unknown>): Omit<
+  ServiceCreateBody,
+  'category'
+> & {
   category?: number;
 } {
   const cat = raw.category ?? raw.category_id;

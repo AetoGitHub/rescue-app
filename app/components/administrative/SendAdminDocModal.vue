@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui';
+import type { infer as ZodInfer } from 'zod';
 import {
   parseRescueAdminDocInput,
   rescueAdminDocCopySchema,
@@ -79,7 +80,9 @@ function onBack() {
   state.extra_rescues = [];
 }
 
-function onSubmit(event: FormSubmitEvent<RescueAdminDocFormState>) {
+function onSubmit(
+  event: FormSubmitEvent<ZodInfer<typeof rescueAdminDocCopySchema>>,
+) {
   emit('submit', rescueAdminDocToBody(event.data));
 }
 
@@ -159,7 +162,7 @@ function onApplySelected() {
             label="Cancelar"
             variant="subtle"
             :disabled="loading"
-            @click="open = false"
+            @click="() => { open = false }"
           />
           <UButton
             color="neutral"

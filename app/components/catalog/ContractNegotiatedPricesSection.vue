@@ -275,7 +275,7 @@ async function confirmRemove(row: ContractItemEditableRow) {
                   v-bind="catalogCurrencyInputProps"
                   :min="0"
                   class="min-w-32"
-                  @update:model-value="(v) => onPriceUpdate(row, v)"
+                  @update:model-value="(v) => onPriceUpdate(row, v ?? undefined)"
                 />
                 <UIcon
                   v-if="savingIds.has(row.id)"

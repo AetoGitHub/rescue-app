@@ -1,5 +1,10 @@
 import * as z from 'zod';
 
+const rescuePaymentMethodSchema = z.enum(
+  ['cash', 'transfer', 'card', 'check', 'other'],
+  { error: 'Selecciona la forma de pago' },
+);
+
 const positiveAmountString = z
   .string()
   .transform((s) => s.trim())
@@ -15,9 +20,7 @@ export const rescueAdvanceAmountSchema = z.object({
 export const rescueAdvanceConfirmSchema = z.object({
   advance_amount: positiveAmountString,
   advance_date: z.string().min(1, 'La fecha de recepción es obligatoria'),
-  advance_payment_method: z
-    .string()
-    .min(1, 'Selecciona la forma de pago'),
+  advance_payment_method: rescuePaymentMethodSchema,
   advance_reference: z
     .string()
     .trim()
@@ -49,7 +52,7 @@ export const rescueServiceCompletedSchema = z
   .object({
     close_date: z.string().min(1, 'La fecha de cierre es obligatoria'),
     disbursement_date: z.string(),
-    disbursement_payment_method: z.string(),
+    disbursement_payment_method: rescuePaymentMethodSchema.optional(),
     ratings: z.array(ratingRowSchema),
     is_loan: z.boolean(),
   })
@@ -70,7 +73,7 @@ export const rescueServiceCompletedSchema = z
           path: ['disbursement_date'],
         });
       }
-      if (!data.disbursement_payment_method.trim()) {
+      if (!data.disbursement_payment_method) {
         ctx.addIssue({
           code: 'custom',
           message: 'Selecciona la forma de pago del desembolso',

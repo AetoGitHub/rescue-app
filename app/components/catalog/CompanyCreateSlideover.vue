@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { CompanyCreateBody } from '~/interfaces/catalogs/company';
+import type { infer as ZodInfer } from 'zod';
 import {
   BILLING_TYPE_OPTIONS,
   CLIENT_TYPE_OPTIONS,
@@ -10,13 +11,15 @@ import { companyCreateSchema } from '~/schemas/catalog-create';
 
 const toast = useToast();
 
+type CompanyFormState = ZodInfer<typeof companyCreateSchema>;
+
 const open = ref(false);
 const editingId = ref<number | null>(null);
 const detailPending = ref(false);
 
 const isEdit = computed(() => editingId.value != null);
 
-function emptyState(): CompanyCreateBody {
+function emptyState(): CompanyFormState {
   return {
     name: '',
     business_name: '',
