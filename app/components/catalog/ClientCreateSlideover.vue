@@ -29,14 +29,18 @@ const editingCreditId = ref<number | null>(null);
 const clientDetailRaw = ref<Record<string, unknown> | null>(null);
 const clientDetailLoaded = ref(false);
 const clientDetailPending = ref(false);
-const editTab = ref<'general' | 'credit'>('general');
+const editTab = ref<'general' | 'credit' | 'contacts' | 'csf'>('general');
 
 const isEdit = computed(() => editingId.value != null);
 
 const editTabItems = [
   { label: 'General', value: 'general', slot: 'general' as const },
   { label: 'Crédito', value: 'credit', slot: 'credit' as const },
+  { label: 'Contactos', value: 'contacts', slot: 'contacts' as const },
+  { label: 'CSF', value: 'csf', slot: 'csf' as const },
 ];
+
+const clientCsfUrl = ref<string | null>(null);
 
 function emptyCreditState(): CreditFormState {
   return {
@@ -132,7 +136,8 @@ const creditTabInvoiceBindings = computed(() => ({
   hasMoreInvoices: clientCreditInvoices.hasNextPage.value,
 }));
 
-const formRef = ref<{ submit: () => Promise<void> } | null>(null);
+const formRef = ref<{ submit: () => Promise<void>; $el?: HTMLElement } | null>(null);
+const clientSlideoverScrollRoot = computed(() => formRef.value?.$el ?? null);
 const creditFormSectionRef = ref<{ submit: () => Promise<void> } | null>(null);
 const pendingClientData = ref<ZodInfer<typeof clientCreateSchema> | null>(null);
 
@@ -144,6 +149,7 @@ function resetForm() {
   clientDetailRaw.value = null;
   clientDetailLoaded.value = false;
   editTab.value = 'general';
+  clientCsfUrl.value = null;
   pendingClientData.value = null;
 }
 
@@ -179,6 +185,7 @@ async function loadDetail(id: number) {
     const mapped = mapClientDetail(raw);
     Object.assign(state, emptyState(), mapped);
     clientDetailRaw.value = raw;
+    clientCsfUrl.value = mapClientCsfUrl(raw);
     clientDetailLoaded.value = true;
   } catch (e) {
     console.error(e);
@@ -197,6 +204,13 @@ async function openEdit(id: number) {
   resetForm();
   open.value = true;
   await loadDetail(id);
+}
+
+function onCsfSaved(url: string) {
+  clientCsfUrl.value = url;
+  if (clientDetailRaw.value) {
+    clientDetailRaw.value = { ...clientDetailRaw.value, csf: url };
+  }
 }
 
 defineExpose({ openEdit });
@@ -677,6 +691,24 @@ async function requestSubmit() {
               @load-more-invoices="clientCreditInvoices.loadNextPage()"
               @credit-submit="onCreditSubmit"
               @credit-error="onCreditFormError"
+            />
+          </template>
+
+          <template #contacts>
+            <CatalogClientContactsTabPanel
+              v-if="editingId != null"
+              :client-id="editingId"
+              :enabled="editTab === 'contacts' && clientDetailLoaded"
+              :scroll-root-ref="clientSlideoverScrollRoot"
+            />
+          </template>
+
+          <template #csf>
+            <CatalogClientCsfTabPanel
+              v-if="editingId != null"
+              v-model:csf-url="clientCsfUrl"
+              :client-id="editingId"
+              @saved="onCsfSaved"
             />
           </template>
         </UTabs>

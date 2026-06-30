@@ -10,6 +10,10 @@ import type {
   ContractUpdateBody,
 } from '~/interfaces/catalogs/contract';
 import type { CreditCreateBody } from '~/interfaces/catalogs/credit';
+import type {
+  ClientContactCreateBody,
+  ClientContactUpdateBody,
+} from '~/interfaces/catalogs/client';
 
 const requiredStr = (label: string) =>
   z.string().transform((s) => s.trim()).pipe(z.string().min(1, `${label} es obligatorio`));
@@ -84,6 +88,56 @@ export function creditFormToCreateBody(
     is_blocked: input.is_blocked,
   };
 }
+
+export const clientContactFormSchema = z.object({
+  name: catalogNameField('El nombre'),
+  position: requiredStr('El puesto'),
+  email: z
+    .string()
+    .transform((s) => s.trim())
+    .pipe(z.email({ error: 'Introduce un correo válido' })),
+  phone: requiredStr('El teléfono'),
+  whatsapp: requiredStr('El WhatsApp'),
+  is_authorizer: z.boolean(),
+  receives_quotes: z.boolean(),
+  receives_oc_reminders: z.boolean(),
+  receives_account_status: z.boolean(),
+  is_billing_contact: z.boolean(),
+  is_active: z.boolean(),
+});
+
+export function clientContactFormToCreateBody(
+  clientId: number,
+  input: z.output<typeof clientContactFormSchema>,
+): ClientContactCreateBody {
+  return {
+    client: clientId,
+    name: input.name,
+    position: input.position,
+    email: input.email,
+    phone: input.phone,
+    whatsapp: input.whatsapp,
+    is_authorizer: input.is_authorizer,
+    receives_quotes: input.receives_quotes,
+    receives_oc_reminders: input.receives_oc_reminders,
+    receives_account_status: input.receives_account_status,
+    is_billing_contact: input.is_billing_contact,
+  };
+}
+
+export function clientContactFormToUpdateBody(
+  clientId: number,
+  input: z.output<typeof clientContactFormSchema>,
+): ClientContactUpdateBody {
+  return {
+    ...clientContactFormToCreateBody(clientId, input),
+    is_active: input.is_active,
+  };
+}
+
+export type ClientContactFormStateFromSchema = z.infer<
+  typeof clientContactFormSchema
+>;
 
 export const serviceCreateSchema = z.object({
   name: catalogNameField('El nombre').pipe(

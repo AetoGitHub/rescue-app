@@ -35,3 +35,66 @@ export interface ClientCreateBody {
   notes: string;
   is_active?: boolean;
 }
+
+export interface ClientContact {
+  id: number;
+  client_id: number;
+  name: string;
+  position: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  is_authorizer: boolean;
+  receives_quotes: boolean;
+  receives_oc_reminders: boolean;
+  receives_account_status: boolean;
+  is_billing_contact: boolean;
+  is_active: boolean;
+}
+
+export interface ClientContactFormState {
+  name: string;
+  position: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  is_authorizer: boolean;
+  receives_quotes: boolean;
+  receives_oc_reminders: boolean;
+  receives_account_status: boolean;
+  is_billing_contact: boolean;
+  is_active: boolean;
+}
+
+export interface ClientContactCreateBody {
+  client: number;
+  name: string;
+  position: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  is_authorizer: boolean;
+  receives_quotes: boolean;
+  receives_oc_reminders: boolean;
+  receives_account_status: boolean;
+  is_billing_contact: boolean;
+}
+
+export interface ClientContactUpdateBody {
+  client: number;
+  name: string;
+  position: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  is_authorizer: boolean;
+  receives_quotes: boolean;
+  receives_oc_reminders: boolean;
+  receives_account_status: boolean;
+  is_billing_contact: boolean;
+  is_active: boolean;
+}
+
+export interface ClientCsfUpdateBody {
+  csf: string;
+}
