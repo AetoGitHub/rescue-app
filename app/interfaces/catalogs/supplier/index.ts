@@ -70,3 +70,16 @@ export interface SupplierCreateBody {
   latitude: string;
   longitude: string;
 }
+
+/** Query propuesta para GET /api/supplier/map/ (endpoint futuro). */
+export interface SupplierMapListQuery {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+  zoom?: number;
+  name?: string;
+  service_type?: SupplierServiceType;
+  is_trusted?: boolean;
+  cursor?: string;
+}

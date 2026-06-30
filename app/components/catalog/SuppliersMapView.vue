@@ -1,112 +1,142 @@
 <script setup lang="ts">
-import { GoogleMap, AdvancedMarker } from 'vue3-google-map';
-import type { Supplier } from '~/interfaces/catalogs/supplier';
+import { AdvancedMarker } from 'vue3-google-map';
+import type { SupplierListItem } from '~/interfaces/catalogs/supplier';
+import type { MapViewport } from '~/utils/map-viewport';
 
 const props = defineProps<{
-  suppliers: Supplier[];
+  suppliers: SupplierListItem[];
+  layoutKey?: number;
 }>();
 
 const emit = defineEmits<{
   select: [id: number];
+  viewportChange: [viewport: MapViewport];
 }>();
 
 const config = useRuntimeConfig();
-const mapId = '21013da77446513d35236d00';
 const DEFAULT_CENTER = { lat: 19.432608, lng: -99.133209 };
 const initialCenter = DEFAULT_CENTER;
 const initialZoom = 11;
 
-const mapRef = ref<{ map: google.maps.Map } | null>(null);
+const suppliersRef = toRef(props, 'suppliers');
+const { pins, isResolvingCoords, suppliersWithoutCoords } = useSupplierMapPins(suppliersRef);
 
-function parseCoord(value: string | number | null | undefined): number | null {
-  if (value == null) return null;
-  const parsed = Number(String(value).trim().replace(/,/g, ''));
-  return Number.isFinite(parsed) ? parsed : null;
-}
+const sharedMapRef = ref<{ getMap: () => google.maps.Map | null } | null>(null);
+const hasFittedPins = ref(false);
 
-const pins = computed(() =>
-  props.suppliers
-    .map((supplier) => {
-      const lat = parseCoord(supplier.latitude);
-      const lng = parseCoord(supplier.longitude);
-      if (lat == null || lng == null) return null;
-      return {
-        id: supplier.id,
-        name: supplier.name,
-        lat,
-        lng,
-        is_trusted: supplier.is_trusted,
-      };
-    })
-    .filter((pin): pin is NonNullable<typeof pin> => pin != null),
-);
+const noCoordsHint = computed(() => {
+  if (isResolvingCoords.value) return null;
+  if (suppliersWithoutCoords.value > 0 && pins.value.length === 0) {
+    return 'Ningún proveedor tiene ubicación registrada. Edita un proveedor y agrega coordenadas en el mapa.';
+  }
+  if (pins.value.length === 0) {
+    return 'No hay proveedores con ubicación para mostrar en el mapa.';
+  }
+  return null;
+});
 
 function fitAllPins() {
-  const map = mapRef.value?.map;
+  const map = sharedMapRef.value?.getMap();
   if (!map || pins.value.length === 0) return;
   fitMapToPoints(
     map,
     pins.value.map((pin) => ({ lat: pin.lat, lng: pin.lng })),
   );
+  hasFittedPins.value = true;
 }
 
 watch(
   pins,
   () => {
+    hasFittedPins.value = false;
     nextTick(() => fitAllPins());
   },
   { deep: true },
 );
 
-function onMapIdle() {
-  const map = mapRef.value?.map;
-  if (map) {
-    google.maps.event.trigger(map, 'resize');
+watch(
+  () => props.layoutKey,
+  () => {
+    hasFittedPins.value = false;
+    nextTick(() => {
+      const map = sharedMapRef.value?.getMap();
+      if (map) {
+        google.maps.event.trigger(map, 'resize');
+        fitAllPins();
+      }
+    });
+  },
+);
+
+function emitViewport() {
+  const map = sharedMapRef.value?.getMap();
+  const viewport = getMapViewport(map);
+  if (viewport) {
+    emit('viewportChange', viewport);
   }
+}
+
+function onMapIdle() {
+  if (!hasFittedPins.value && pins.value.length > 0) {
+    fitAllPins();
+  }
+  emitViewport();
 }
 </script>
 
 <template>
   <div
-    class="h-[min(32rem,70vh)] overflow-hidden rounded-lg border border-default"
+    class="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-default"
   >
     <div
       v-if="!config.public.googleMapsApiKey"
-      class="flex h-full items-center justify-center px-4 text-sm text-muted"
+      class="flex flex-1 items-center justify-center px-4 text-sm text-muted"
     >
       Configura `NUXT_PUBLIC_GOOGLE_MAPS_API_KEY` para ver el mapa de
       proveedores.
     </div>
-    <div
-      v-else-if="pins.length === 0"
-      class="flex h-full items-center justify-center px-4 text-center text-sm text-muted"
-    >
-      No hay proveedores con ubicación para mostrar en el mapa.
-    </div>
-    <GoogleMap
-      v-else
-      ref="mapRef"
-      :api-key="config.public.googleMapsApiKey"
-      :map-id="mapId"
-      :center="initialCenter"
-      :zoom="initialZoom"
-      class="h-full w-full"
-      @idle="onMapIdle"
-    >
-      <AdvancedMarker
-        v-for="pin in pins"
-        :key="pin.id"
-        :options="{
-          position: { lat: pin.lat, lng: pin.lng },
-          title: pin.name,
-        }"
-        :pin-options="{
-          background: pin.is_trusted ? '#f59e0b' : '#2563eb',
-          borderColor: pin.is_trusted ? '#d97706' : '#1d4ed8',
-          glyphColor: '#ffffff',
-        }"
-        @click="emit('select', pin.id)"
-      />
-    </GoogleMap>
+    <template v-else>
+      <SharedMap
+        :key="layoutKey ?? 0"
+        ref="sharedMapRef"
+        :center="initialCenter"
+        :zoom="initialZoom"
+        map-class="min-h-0 flex-1 h-full w-full"
+        @idle="onMapIdle"
+      >
+        <AdvancedMarker
+          v-for="pin in pins"
+          :key="pin.id"
+          :options="{
+            position: { lat: pin.lat, lng: pin.lng },
+            title: pin.name,
+          }"
+          :pin-options="{
+            background: pin.is_trusted ? '#f59e0b' : '#2563eb',
+            borderColor: pin.is_trusted ? '#d97706' : '#1d4ed8',
+            glyphColor: '#ffffff',
+          }"
+          @click="emit('select', pin.id)"
+        />
+      </SharedMap>
+
+      <div
+        v-if="isResolvingCoords"
+        class="absolute inset-0 flex items-center justify-center gap-2 bg-default/80 px-4 text-sm text-muted"
+      >
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-5 animate-spin"
+        />
+        Cargando ubicaciones de proveedores…
+      </div>
+
+      <div
+        v-else-if="noCoordsHint"
+        class="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg border border-default bg-default/95 px-4 py-3 text-center text-sm text-muted shadow-sm"
+      >
+        {{ noCoordsHint }}
+      </div>
+    </template>
   </div>
 </template>

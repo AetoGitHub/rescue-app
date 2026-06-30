@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapSupplierListRow } from '../../app/utils/supplier-list';
+import { mapSupplierListRow, coordsFromSupplierRow } from '../../app/utils/supplier-list';
 
 describe('mapSupplierListRow', () => {
   it('maps service_types array to service_type', () => {
@@ -66,5 +66,32 @@ describe('mapSupplierListRow', () => {
       distance: 12.5,
     });
     expect(row.distance_km).toBe(12.5);
+  });
+
+  it('maps latitude and longitude from list payload', () => {
+    const row = mapSupplierListRow({
+      id: 5,
+      name: 'Con coords',
+      service_types: ['cranes'],
+      latitude: '19.432608',
+      longitude: '-99.133209',
+    });
+    expect(row.latitude).toBe('19.432608');
+    expect(row.longitude).toBe('-99.133209');
+    expect(coordsFromSupplierRow(row)).toEqual({
+      lat: 19.432608,
+      lng: -99.133209,
+    });
+  });
+
+  it('maps lat/lng aliases from list payload', () => {
+    const row = mapSupplierListRow({
+      id: 6,
+      name: 'Alias coords',
+      service_types: ['cranes'],
+      lat: 20.5,
+      lng: -100.2,
+    });
+    expect(coordsFromSupplierRow(row)).toEqual({ lat: 20.5, lng: -100.2 });
   });
 });

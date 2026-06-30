@@ -2,6 +2,31 @@ import type { SupplierListItem } from '~/interfaces/catalogs/supplier';
 import type { RescueSupplierNearbyRow } from '~/interfaces/rescue';
 import { toSupplierServiceTypes } from '~/utils/catalog-detail-map';
 
+export function parseSupplierCoord(
+  value: string | number | null | undefined,
+): number | null {
+  if (value == null) return null;
+  const parsed = Number(String(value).trim().replace(/,/g, ''));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function coordsFromSupplierRow(
+  row: Pick<SupplierListItem, 'latitude' | 'longitude'>,
+): { lat: number; lng: number } | null {
+  const lat = parseSupplierCoord(row.latitude);
+  const lng = parseSupplierCoord(row.longitude);
+  if (lat == null || lng == null) return null;
+  return { lat, lng };
+}
+
+function readSupplierCoordsFromRaw(raw: Record<string, unknown>) {
+  const latitude =
+    raw.latitude ?? raw.lat ?? (raw.location as Record<string, unknown> | undefined)?.latitude ?? null;
+  const longitude =
+    raw.longitude ?? raw.lng ?? (raw.location as Record<string, unknown> | undefined)?.longitude ?? null;
+  return { latitude, longitude };
+}
+
 export function mapSupplierListRow(
   raw: Record<string, unknown>,
 ): SupplierListItem {
@@ -10,6 +35,7 @@ export function mapSupplierListRow(
     distanceRaw != null && Number.isFinite(Number(distanceRaw))
       ? Number(distanceRaw)
       : null;
+  const { latitude, longitude } = readSupplierCoordsFromRaw(raw);
 
   return {
     id: Number(raw.id),
@@ -21,8 +47,8 @@ export function mapSupplierListRow(
     score: Number(raw.score) || 0,
     rescues_count: Number(raw.rescues_count) || 0,
     distance_km,
-    latitude: raw.latitude ?? null,
-    longitude: raw.longitude ?? null,
+    latitude,
+    longitude,
   };
 }
 

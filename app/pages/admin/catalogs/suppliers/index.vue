@@ -2,8 +2,12 @@
 import { h, resolveComponent } from 'vue';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Supplier, SupplierServiceType } from '~/interfaces/catalogs/supplier';
+import type { MapViewport } from '~/utils/map-viewport';
 import { SUPPLIER_SERVICE_TYPE_OPTIONS } from '~/constants/catalog-select-options';
-import { adminListTableClass } from '~/constants/admin-list-layout';
+import {
+  adminCatalogMapPanelClass,
+  adminListTableClass,
+} from '~/constants/admin-list-layout';
 
 useHead({
   title: 'Proveedores',
@@ -11,27 +15,45 @@ useHead({
 
 const UBadge = resolveComponent('UBadge');
 
-const modalRef = ref<{
+type SupplierViewMode = 'list' | 'map';
+
+const SUPPLIER_VIEW_TAB_ITEMS = [
+  { label: 'Lista', value: 'list' as const, icon: 'i-lucide-list', slot: 'list' as const },
+  { label: 'Mapa', value: 'map' as const, icon: 'i-lucide-map', slot: 'map' as const },
+];
+
+const slideoverRef = ref<{
   openEdit: (id: number) => void | Promise<void>;
 } | null>(null);
 const tableRef = useTemplateRef('table');
 
-// Vista mapa deshabilitada temporalmente
-// const viewMode = ref<'list' | 'map'>('list');
+const viewMode = ref<SupplierViewMode>('list');
 const search = ref('');
 const trustedOnly = ref(false);
 const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
+const isLoadingMapPages = ref(false);
+const mapViewLayoutKey = ref(0);
+
+const { setViewport } = useSupplierMapViewport();
+
+function toggleTrustedOnly() {
+  trustedOnly.value = !trustedOnly.value;
+}
 
 function onRowSelect(_e: Event, row: TableRow<Supplier>) {
   const id = row.original.id;
   if (id != null) {
-    void modalRef.value?.openEdit(id);
+    void slideoverRef.value?.openEdit(id);
   }
 }
 
-// function openSupplier(id: number) {
-//   void modalRef.value?.openEdit(id);
-// }
+function openSupplier(id: number) {
+  void slideoverRef.value?.openEdit(id);
+}
+
+function onMapViewportChange(viewport: MapViewport) {
+  setViewport(viewport);
+}
 
 const {
   rows: rawRows,
@@ -83,6 +105,25 @@ const filteredRows = computed(() => {
       typeLabels.includes(q)
     );
   });
+});
+
+async function loadAllSupplierPages() {
+  if (isLoadingMapPages.value) return;
+  isLoadingMapPages.value = true;
+  try {
+    while (hasNextPage.value) {
+      await loadNextPage();
+    }
+  } finally {
+    isLoadingMapPages.value = false;
+  }
+}
+
+watch(viewMode, (mode) => {
+  if (mode === 'map') {
+    mapViewLayoutKey.value += 1;
+    void loadAllSupplierPages();
+  }
 });
 
 const columns: TableColumn<Supplier>[] = [
@@ -158,25 +199,7 @@ const columns: TableColumn<Supplier>[] = [
     description="Gestiona los proveedores de servicios"
   >
     <template #actions>
-      <!-- Vista mapa deshabilitada temporalmente
-      <UFieldGroup>
-        <UButton
-          :color="viewMode === 'list' ? 'primary' : 'neutral'"
-          icon="i-lucide-list"
-          variant="solid"
-          aria-label="Vista lista"
-          @click="viewMode = 'list'"
-        />
-        <UButton
-          :color="viewMode === 'map' ? 'primary' : 'neutral'"
-          icon="i-lucide-map"
-          variant="subtle"
-          aria-label="Vista mapa"
-          @click="viewMode = 'map'"
-        />
-      </UFieldGroup>
-      -->
-      <CatalogSupplierCreateModal ref="modalRef" />
+      <CatalogSupplierCreateSlideover ref="slideoverRef" />
     </template>
 
     <template #filters>
@@ -196,7 +219,7 @@ const columns: TableColumn<Supplier>[] = [
         label="Solo confianza"
         leading-icon="i-lucide-star"
         :variant="trustedOnly ? 'solid' : 'subtle'"
-        @click="trustedOnly = !trustedOnly"
+        @click="toggleTrustedOnly"
       />
 
       <USelectMenu
@@ -209,23 +232,53 @@ const columns: TableColumn<Supplier>[] = [
       />
     </template>
 
-    <UTable
-      ref="table"
-      sticky
-      :class="adminListTableClass"
-      :columns="columns"
-      :data="filteredRows"
-      :loading="isInitialLoading"
-      :get-row-id="(row: Supplier) => String(row.id)"
-      @select="onRowSelect"
-    />
+    <UTabs
+      v-model="viewMode"
+      :items="SUPPLIER_VIEW_TAB_ITEMS"
+      :unmount-on-hide="false"
+      class="flex min-h-0 flex-1 flex-col gap-4"
+      :ui="{
+        list: 'flex-nowrap overflow-x-auto max-w-full shrink-0',
+        trigger: 'shrink-0',
+        content: 'flex min-h-0 flex-1 flex-col',
+      }"
+      variant="link"
+    >
+      <template #list>
+        <UTable
+          ref="table"
+          sticky
+          :class="adminListTableClass"
+          :columns="columns"
+          :data="filteredRows"
+          :loading="isInitialLoading"
+          :get-row-id="(row: Supplier) => String(row.id)"
+          @select="onRowSelect"
+        />
+      </template>
 
-    <!-- Vista mapa deshabilitada temporalmente
-    <CatalogSuppliersMapView
-      v-else
-      :suppliers="filteredRows"
-      @select="openSupplier"
-    />
-    -->
+      <template #map>
+        <div :class="adminCatalogMapPanelClass">
+          <div
+            v-if="isLoadingMapPages"
+            class="flex shrink-0 items-center justify-center gap-2 py-4 text-sm text-muted"
+          >
+            <UIcon
+              name="i-lucide-loader-circle"
+              class="size-5 animate-spin"
+            />
+            Cargando proveedores…
+          </div>
+          <CatalogSuppliersMapView
+            :key="mapViewLayoutKey"
+            :class="adminCatalogMapPanelClass"
+            :layout-key="mapViewLayoutKey"
+            :suppliers="filteredRows"
+            @select="openSupplier"
+            @viewport-change="onMapViewportChange"
+          />
+        </div>
+      </template>
+    </UTabs>
   </AdminListPageShell>
 </template>

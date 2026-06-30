@@ -11,7 +11,11 @@ export const adminListTableClass = 'min-h-0 flex-1';
 export const adminBoardListTableClass = 'min-h-0 flex-1 h-full';
 
 export const adminListTableWrapperClass =
-  '-mx-4 min-w-0 overflow-x-auto px-4 sm:mx-0 sm:px-0';
+  '-mx-4 flex min-h-0 min-w-0 flex-1 flex-col overflow-x-auto px-4 sm:mx-0 sm:px-0';
+
+/** Catalog map tab panel — fills remaining viewport below filters/tabs. */
+export const adminCatalogMapPanelClass =
+  'flex min-h-0 flex-1 flex-col';
 
 export const adminListPageTitleClass = 'text-2xl font-bold tracking-tight sm:text-3xl';
 

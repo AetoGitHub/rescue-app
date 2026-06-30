@@ -146,17 +146,14 @@ async function requestSubmit() {
 </script>
 
 <template>
-  <UModal
+  <USlideover
     v-model:open="open"
-    :dismissible="false"
-    scrollable
     :title="isEdit ? 'Editar proveedor' : 'Nuevo proveedor'"
     :description="
       isEdit
         ? 'Actualiza los datos del operador o grúa.'
         : 'Registra un nuevo operador o grúa.'
     "
-    :ui="{ content: 'max-w-3xl' }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -172,7 +169,10 @@ async function requestSubmit() {
           class="size-8 animate-spin text-muted"
         />
       </div>
-      <div v-show="!detailPending || !isEdit" class="space-y-8">
+      <div
+        v-show="!detailPending || !isEdit"
+        class="space-y-8 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+      >
         <UForm
           ref="formRef"
           :schema="supplierCreateSchema"
@@ -216,5 +216,5 @@ async function requestSubmit() {
         />
       </div>
     </template>
-  </UModal>
+  </USlideover>
 </template>

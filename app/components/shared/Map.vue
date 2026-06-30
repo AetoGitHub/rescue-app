@@ -48,25 +48,30 @@ defineExpose({ getMap });
 
 <template>
   <ClientOnly>
-    <GoogleMap
+    <div
       v-if="config.public.googleMapsApiKey"
-      ref="mapRef"
-      :map-id="mapId"
-      :api-key="config.public.googleMapsApiKey"
-      :center="center"
-      :zoom="zoom"
-      :gesture-handling="gestureHandling"
       :class="mapClass"
-      :map-type-control="false"
-      :street-view-control="false"
-      @click="emit('click', $event)"
-      @idle="onIdle"
     >
-      <slot />
-    </GoogleMap>
+      <GoogleMap
+        ref="mapRef"
+        :map-id="mapId"
+        :api-key="config.public.googleMapsApiKey"
+        :center="center"
+        :zoom="zoom"
+        :gesture-handling="gestureHandling"
+        class="h-full w-full"
+        :map-type-control="false"
+        :street-view-control="false"
+        @click="emit('click', $event)"
+        @idle="onIdle"
+      >
+        <slot />
+      </GoogleMap>
+    </div>
     <template #fallback>
       <div
-        class="flex h-full min-h-48 items-center justify-center rounded-lg border border-dashed border-default px-4 text-sm text-muted"
+        :class="mapClass"
+        class="flex min-h-48 items-center justify-center rounded-lg border border-dashed border-default px-4 text-sm text-muted"
       >
         Cargando mapa…
       </div>
