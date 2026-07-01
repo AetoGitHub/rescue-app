@@ -78,6 +78,7 @@ watch(open, (v) => {
 });
 
 const queryCache = useQueryCache();
+const cacheStore = useSupplierLocationCacheStore();
 
 const { mutate, asyncStatus } = useMutation({
   mutation: ({ body, id }: { body: SupplierCreateBody; id: number | null }) =>
@@ -86,9 +87,21 @@ const { mutate, asyncStatus } = useMutation({
           method: 'PUT',
           body,
         })
-      : $fetch('/api/supplier/create/', { method: 'POST', body }),
-  async onSuccess() {
-    const wasEdit = editingId.value != null;
+      : $fetch<{ id: number; name?: string }>('/api/supplier/create/', {
+          method: 'POST',
+          body,
+        }),
+  async onSuccess(data, { body, id }) {
+    const wasEdit = id != null;
+    const supplierId = id ?? data?.id;
+    if (supplierId != null) {
+      cacheStore.upsertSupplier(
+        supplierListItemFromCreateBody(supplierId, body, {
+          score: rankingSummary.value.score,
+          rescues_count: rankingSummary.value.rescues_count,
+        }),
+      );
+    }
     toast.add({
       title: wasEdit ? 'Proveedor actualizado' : 'Proveedor creado',
       color: 'success',

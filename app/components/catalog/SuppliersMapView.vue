@@ -45,7 +45,7 @@ watch(
   },
 );
 
-function onMapIdle() {
+function onMapViewportChange() {
   const map = sharedMapRef.value?.getMap();
   const viewport = getMapViewport(map);
   if (viewport) {
@@ -71,7 +71,8 @@ function onMapIdle() {
         :center="initialCenter"
         :zoom="initialZoom"
         map-class="min-h-0 flex-1 h-full w-full"
-        @idle="onMapIdle"
+        @idle="onMapViewportChange"
+        @bounds-changed="onMapViewportChange"
       >
         <AdvancedMarker
           v-for="pin in pins"

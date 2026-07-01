@@ -35,6 +35,39 @@ export function getMapViewport(
   };
 }
 
+/** Default map center (CDMX) used when rescue unit has no coordinates. */
+export const DEFAULT_MAP_CENTER = {
+  lat: 19.432608,
+  lng: -99.133209,
+} as const;
+
+/** Fallback bounds (~±0.45°) around CDMX for supplier search without unit location. */
+export const DEFAULT_SUPPLIER_SEARCH_BOUNDS: MapBounds = {
+  north: DEFAULT_MAP_CENTER.lat + 0.45,
+  south: DEFAULT_MAP_CENTER.lat - 0.45,
+  east: DEFAULT_MAP_CENTER.lng + 0.45,
+  west: DEFAULT_MAP_CENTER.lng - 0.45,
+};
+
+const KM_PER_DEGREE_LAT = 111.32;
+
+export function boundsFromCenter(
+  lat: number,
+  lng: number,
+  radiusKm: number,
+): MapBounds {
+  const latDelta = radiusKm / KM_PER_DEGREE_LAT;
+  const lngDelta =
+    radiusKm / (KM_PER_DEGREE_LAT * Math.cos((lat * Math.PI) / 180));
+
+  return {
+    north: lat + latDelta,
+    south: lat - latDelta,
+    east: lng + lngDelta,
+    west: lng - lngDelta,
+  };
+}
+
 export function mapViewportToQuery(viewport: MapViewport): SupplierMapListQuery {
   return {
     north: viewport.bounds.north,

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada';
-import type { SupplierCreateBody } from '~/interfaces/catalogs/supplier';
+import type { SupplierCreateBody, SupplierServiceType } from '~/interfaces/catalogs/supplier';
 import type { RescueSupplierNearbyRow, SupplierMapPin } from '~/interfaces/rescue';
 import type { RescueRequestFormState } from '~/schemas/rescue-create';
+import { SUPPLIER_SERVICE_TYPE_OPTIONS } from '~/constants/catalog-select-options';
 import { RESCUE_SUPPLIER_SORT_OPTIONS } from '~/constants/rescue-select-options';
 import { supplierCreateSchema } from '~/schemas/catalog-create';
 import { parseRescueCoord } from '~/schemas/rescue-create';
@@ -11,9 +12,16 @@ const state = defineModel<RescueRequestFormState>({ required: true });
 
 const toast = useToast();
 const queryCache = useQueryCache();
+const cacheStore = useSupplierLocationCacheStore();
 
 const latRef = computed(() => state.value.location_latitude);
 const lngRef = computed(() => state.value.location_longitude);
+const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
+
+const serviceTypeFilterItems = [
+  { label: 'Todos los tipos', value: 'all' as const },
+  ...SUPPLIER_SERVICE_TYPE_OPTIONS,
+];
 
 const {
   search,
@@ -25,6 +33,7 @@ const {
 } = useRescueSupplierSearch({
   latitude: latRef,
   longitude: lngRef,
+  serviceTypeFilter,
 });
 
 const showInlineForm = ref(false);
@@ -167,9 +176,14 @@ const { mutate: createSupplier, asyncStatus: createPending } = useMutation({
     }),
   async onSuccess(data) {
     toast.add({ title: 'Proveedor creado', color: 'success' });
+    cacheStore.upsertSupplier(
+      supplierListItemFromCreateBody(data.id, inlineSupplierState, {
+        name: data.name ?? inlineSupplierState.name,
+      }),
+    );
     await Promise.all([
       queryCache.invalidateQueries({ key: ['suppliers'] }),
-      queryCache.invalidateQueries({ key: ['rescue-suppliers-list'] }),
+      queryCache.invalidateQueries({ key: ['rescue-suppliers-map'] }),
     ]);
     state.value.supplier = data.id;
     state.value.supplierLabel = data.name ?? inlineSupplierState.name;
@@ -213,6 +227,15 @@ function formatRanking(value: number) {
       <USelectMenu
         v-model="sort"
         :items="[...RESCUE_SUPPLIER_SORT_OPTIONS]"
+        value-key="value"
+        label-key="label"
+        class="w-full"
+        variant="subtle"
+      />
+
+      <USelectMenu
+        v-model="serviceTypeFilter"
+        :items="serviceTypeFilterItems"
         value-key="value"
         label-key="label"
         class="w-full"

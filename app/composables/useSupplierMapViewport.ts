@@ -13,6 +13,13 @@ export function useSupplierMapViewport() {
     return mapViewportToQuery(current);
   });
 
+  /** Immediate bounds for pin filtering (no debounce). */
+  const displayQueryParams = computed<SupplierMapListQuery | null>(() => {
+    const current = viewport.value;
+    if (!current) return null;
+    return mapViewportToQuery(current);
+  });
+
   function updateFromMap(map: google.maps.Map | null | undefined) {
     viewport.value = getMapViewport(map);
   }
@@ -25,6 +32,7 @@ export function useSupplierMapViewport() {
     viewport,
     debouncedViewport,
     queryParams,
+    displayQueryParams,
     updateFromMap,
     setViewport,
   };

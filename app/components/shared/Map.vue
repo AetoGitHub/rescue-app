@@ -24,6 +24,7 @@ withDefaults(
 const emit = defineEmits<{
   click: [event: google.maps.MapMouseEvent];
   idle: [];
+  boundsChanged: [];
 }>();
 
 const config = useRuntimeConfig();
@@ -37,6 +38,10 @@ function onIdle() {
     google.maps.event.trigger(map, 'resize');
   }
   emit('idle');
+}
+
+function onBoundsChanged() {
+  emit('boundsChanged');
 }
 
 function getMap(): google.maps.Map | null {
@@ -64,6 +69,7 @@ defineExpose({ getMap });
         :street-view-control="false"
         @click="emit('click', $event)"
         @idle="onIdle"
+        @bounds_changed="onBoundsChanged"
       >
         <slot />
       </GoogleMap>

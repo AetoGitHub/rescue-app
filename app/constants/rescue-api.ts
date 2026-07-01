@@ -8,11 +8,14 @@ export const RESCUE_LIST_PATH = '/api/rescue/list/';
 export const SUPPLIER_LIST_PATH = '/api/supplier/list/';
 
 /**
- * Map-bounds supplier list for admin catalog map view.
- * Query: north, south, east, west (required), zoom (optional), plus list filters.
- * Response: same PaginatedResponse<SupplierListItem> as SUPPLIER_LIST_PATH.
+ * Map-bounds supplier list for admin catalog map view and rescue supplier search.
+ * Query: north, south, east, west (required), hash, zoom (optional), filters.
+ * Response: PaginatedResponse<SupplierListItem>.
  */
 export const SUPPLIER_MAP_PATH = '/api/supplier/map/';
+
+/** Search radius (km) around unit location for rescue supplier map queries. */
+export const SUPPLIER_RESCUE_SEARCH_RADIUS_KM = 50;
 
 export const SUPPLIER_REVIEW_CREATE_PATH = (supplierId: number) =>
   `/api/supplier/${supplierId}/review/create/`;

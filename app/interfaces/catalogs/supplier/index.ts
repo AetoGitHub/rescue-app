@@ -82,4 +82,8 @@ export interface SupplierMapListQuery {
   service_type?: SupplierServiceType;
   is_trusted?: boolean;
   cursor?: string;
+  hash?: string;
+  order_by?: 'distance' | 'ranking' | 'name';
+  lat?: number;
+  lng?: number;
 }

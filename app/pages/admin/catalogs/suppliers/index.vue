@@ -33,7 +33,7 @@ const trustedOnly = ref(false);
 const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
 const mapViewLayoutKey = ref(0);
 
-const { queryParams, setViewport } = useSupplierMapViewport();
+const { queryParams, displayQueryParams, setViewport } = useSupplierMapViewport();
 
 const mapListEnabled = computed(() => viewMode.value === 'map');
 
@@ -42,7 +42,8 @@ const {
   loading: mapLoading,
   errorMessage: mapErrorMessage,
 } = useSupplierMapList({
-  viewport: queryParams,
+  fetchViewport: queryParams,
+  displayViewport: displayQueryParams,
   search,
   trustedOnly,
   serviceTypeFilter,

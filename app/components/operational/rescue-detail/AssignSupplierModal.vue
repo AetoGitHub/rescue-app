@@ -2,6 +2,8 @@
 import { useQuery } from '@pinia/colada';
 import type { FormSubmitEvent } from '@nuxt/ui';
 import type { RescueSupplierNearbyRow, SupplierMapPin } from '~/interfaces/rescue';
+import type { SupplierServiceType } from '~/interfaces/catalogs/supplier';
+import { SUPPLIER_SERVICE_TYPE_OPTIONS } from '~/constants/catalog-select-options';
 import { RESCUE_SUPPLIER_SORT_OPTIONS } from '~/constants/rescue-select-options';
 import {
   rescueSupplierAssignSchema,
@@ -36,6 +38,12 @@ const state = reactive<RescueSupplierAssignFormState>({});
 
 const latRef = computed(() => props.latitude);
 const lngRef = computed(() => props.longitude);
+const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
+
+const serviceTypeFilterItems = [
+  { label: 'Todos los tipos', value: 'all' as const },
+  ...SUPPLIER_SERVICE_TYPE_OPTIONS,
+];
 
 const {
   search,
@@ -47,6 +55,7 @@ const {
 } = useRescueSupplierSearch({
   latitude: latRef,
   longitude: lngRef,
+  serviceTypeFilter,
 });
 
 const { saveSupplier, isAssigning } = useRescueSupplierAssign(
@@ -243,6 +252,15 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
             <USelectMenu
               v-model="sort"
               :items="[...RESCUE_SUPPLIER_SORT_OPTIONS]"
+              value-key="value"
+              label-key="label"
+              class="w-full"
+              variant="subtle"
+            />
+
+            <USelectMenu
+              v-model="serviceTypeFilter"
+              :items="serviceTypeFilterItems"
               value-key="value"
               label-key="label"
               class="w-full"
