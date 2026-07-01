@@ -17,6 +17,8 @@ export const RESCUE_OPERATIVE_TOAST = {
     'Debes crear una cotización antes de enviar a autorización',
   evidenceServiceRequired:
     'Sube evidencia del servicio antes de cerrar',
+  evidencePaymentRequired:
+    'Sube evidencia de pago al proveedor antes de marcar como cerrado',
   supplierRequiredBeforeClose: 'Asigna un proveedor antes de cerrar',
   advanceAmountRequired: 'El monto del anticipo debe ser mayor a $0',
   advanceConfirmRequired:

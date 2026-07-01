@@ -3,11 +3,13 @@ import {
   RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
   RESCUE_EVIDENCE_TYPE_SERVICE,
 } from '~/constants/rescue-evidence-api';
+import { RESCUE_OPERATIVE_TOAST } from '~/constants/rescue-operative-flow';
 import type { RescueEvidence } from '~/interfaces/rescue/evidence';
 import {
   applyCloseEvidenceGuard,
-  getMissingCloseEvidenceTypes,
-  hasRequiredCloseEvidences,
+  getEvidenceRequiredToastMessage,
+  getMissingEvidenceTypesForAction,
+  hasRequiredEvidencesForAction,
   isCloseOperativeAction,
   MARK_AS_CLOSED_ACTION,
 } from '~/utils/rescue-evidence-requirements';
@@ -24,35 +26,55 @@ const paymentEvidence: RescueEvidence = {
   url: 'https://example.com/payment.pdf',
 };
 
-describe('hasRequiredCloseEvidences', () => {
-  it('returns false when no evidences', () => {
-    expect(hasRequiredCloseEvidences([])).toBe(false);
-  });
-
-  it('returns true with only service evidence', () => {
-    expect(hasRequiredCloseEvidences([serviceEvidence])).toBe(true);
-  });
-
-  it('returns false with only payment evidence', () => {
-    expect(hasRequiredCloseEvidences([paymentEvidence])).toBe(false);
-  });
-
-  it('returns true with both evidence types', () => {
+describe('hasRequiredEvidencesForAction', () => {
+  it('requires service evidence for complete_service', () => {
+    expect(hasRequiredEvidencesForAction([], 'complete_service')).toBe(false);
     expect(
-      hasRequiredCloseEvidences([serviceEvidence, paymentEvidence]),
+      hasRequiredEvidencesForAction([serviceEvidence], 'complete_service'),
     ).toBe(true);
+    expect(
+      hasRequiredEvidencesForAction([paymentEvidence], 'complete_service'),
+    ).toBe(false);
+  });
+
+  it('requires payment evidence for mark_as_closed', () => {
+    expect(hasRequiredEvidencesForAction([], MARK_AS_CLOSED_ACTION)).toBe(
+      false,
+    );
+    expect(
+      hasRequiredEvidencesForAction([paymentEvidence], MARK_AS_CLOSED_ACTION),
+    ).toBe(true);
+    expect(
+      hasRequiredEvidencesForAction([serviceEvidence], MARK_AS_CLOSED_ACTION),
+    ).toBe(false);
   });
 });
 
-describe('getMissingCloseEvidenceTypes', () => {
-  it('lists service when empty', () => {
-    expect(getMissingCloseEvidenceTypes([])).toEqual([
+describe('getMissingEvidenceTypesForAction', () => {
+  it('lists service when completing service without evidence', () => {
+    expect(getMissingEvidenceTypesForAction([], 'complete_service')).toEqual([
       RESCUE_EVIDENCE_TYPE_SERVICE,
     ]);
   });
 
-  it('lists nothing when service exists', () => {
-    expect(getMissingCloseEvidenceTypes([serviceEvidence])).toEqual([]);
+  it('lists payment when marking closed without payment evidence', () => {
+    expect(
+      getMissingEvidenceTypesForAction([serviceEvidence], MARK_AS_CLOSED_ACTION),
+    ).toEqual([RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER]);
+  });
+});
+
+describe('getEvidenceRequiredToastMessage', () => {
+  it('returns service message for service evidence', () => {
+    expect(getEvidenceRequiredToastMessage([RESCUE_EVIDENCE_TYPE_SERVICE])).toBe(
+      RESCUE_OPERATIVE_TOAST.evidenceServiceRequired,
+    );
+  });
+
+  it('returns payment message for payment evidence', () => {
+    expect(
+      getEvidenceRequiredToastMessage([RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER]),
+    ).toBe(RESCUE_OPERATIVE_TOAST.evidencePaymentRequired);
   });
 });
 
@@ -64,17 +86,12 @@ describe('isCloseOperativeAction', () => {
 });
 
 describe('applyCloseEvidenceGuard', () => {
-  it('disables close actions when evidences are missing', () => {
+  it('disables complete_service when service evidence is missing', () => {
     const actions = applyCloseEvidenceGuard(
       [
         {
           id: 'complete_service',
           label: 'Servicio completado',
-          primary: true,
-        },
-        {
-          id: MARK_AS_CLOSED_ACTION,
-          label: 'Marcar como cerrado',
           primary: true,
         },
       ],
@@ -82,20 +99,39 @@ describe('applyCloseEvidenceGuard', () => {
     );
 
     expect(actions[0]?.disabled).toBe(true);
-    expect(actions[0]?.disabledReason).toBeTruthy();
-    expect(actions[1]?.disabled).toBe(true);
+    expect(actions[0]?.disabledReason).toBe(
+      RESCUE_OPERATIVE_TOAST.evidenceServiceRequired,
+    );
   });
 
-  it('leaves actions enabled when evidences are complete', () => {
+  it('disables mark_as_closed when payment evidence is missing', () => {
     const actions = applyCloseEvidenceGuard(
       [
         {
-          id: 'complete_service',
-          label: 'Servicio completado',
+          id: MARK_AS_CLOSED_ACTION,
+          label: 'Marcar como cerrado',
           primary: true,
         },
       ],
       [serviceEvidence],
+    );
+
+    expect(actions[0]?.disabled).toBe(true);
+    expect(actions[0]?.disabledReason).toBe(
+      RESCUE_OPERATIVE_TOAST.evidencePaymentRequired,
+    );
+  });
+
+  it('leaves mark_as_closed enabled with payment evidence', () => {
+    const actions = applyCloseEvidenceGuard(
+      [
+        {
+          id: MARK_AS_CLOSED_ACTION,
+          label: 'Marcar como cerrado',
+          primary: true,
+        },
+      ],
+      [paymentEvidence],
     );
 
     expect(actions[0]?.disabled).toBeUndefined();

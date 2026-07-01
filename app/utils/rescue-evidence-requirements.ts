@@ -1,4 +1,5 @@
 import {
+  RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
   RESCUE_EVIDENCE_TYPE_SERVICE,
 } from '~/constants/rescue-evidence-api';
 import { RESCUE_OPERATIVE_TOAST } from '~/constants/rescue-operative-flow';
@@ -19,10 +20,53 @@ export const MARK_AS_CLOSED_ACTION = 'mark_as_closed' as const;
 
 export type CloseOperativeActionId = (typeof CLOSE_OPERATIVE_ACTIONS)[number];
 
-const REQUIRED_CLOSE_EVIDENCE_TYPES: RescueEvidenceType[] = [
+const SERVICE_CLOSE_EVIDENCE_TYPES: RescueEvidenceType[] = [
   RESCUE_EVIDENCE_TYPE_SERVICE,
 ];
 
+const MARK_CLOSED_EVIDENCE_TYPES: RescueEvidenceType[] = [
+  RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
+];
+
+export function getRequiredEvidenceTypesForCloseAction(
+  actionId: RescueOperativeActionId,
+): RescueEvidenceType[] {
+  if (actionId === MARK_AS_CLOSED_ACTION) {
+    return MARK_CLOSED_EVIDENCE_TYPES;
+  }
+  if (isCloseOperativeAction(actionId)) {
+    return SERVICE_CLOSE_EVIDENCE_TYPES;
+  }
+  return [];
+}
+
+export function getMissingEvidenceTypesForAction(
+  evidences: RescueEvidence[],
+  actionId: RescueOperativeActionId,
+): RescueEvidenceType[] {
+  return getRequiredEvidenceTypesForCloseAction(actionId).filter(
+    (type) => !evidences.some((item) => item.type === type),
+  );
+}
+
+export function hasRequiredEvidencesForAction(
+  evidences: RescueEvidence[],
+  actionId: RescueOperativeActionId,
+): boolean {
+  return getMissingEvidenceTypesForAction(evidences, actionId).length === 0;
+}
+
+/** @deprecated Use hasRequiredEvidencesForAction with a close action id. */
+export function hasRequiredCloseEvidences(evidences: RescueEvidence[]): boolean {
+  return hasRequiredEvidencesForAction(evidences, 'complete_service');
+}
+
+/** @deprecated Use getMissingEvidenceTypesForAction with a close action id. */
+export function getMissingCloseEvidenceTypes(
+  evidences: RescueEvidence[],
+): RescueEvidenceType[] {
+  return getMissingEvidenceTypesForAction(evidences, 'complete_service');
+}
 export function isCloseOperativeAction(
   actionId: RescueOperativeActionId,
 ): actionId is CloseOperativeActionId {
@@ -33,21 +77,12 @@ export function isCloseEvidenceGuardedAction(actionId: RescueOperativeActionId):
   return isCloseOperativeAction(actionId) || actionId === MARK_AS_CLOSED_ACTION;
 }
 
-export function hasRequiredCloseEvidences(evidences: RescueEvidence[]): boolean {
-  return getMissingCloseEvidenceTypes(evidences).length === 0;
-}
-
-export function getMissingCloseEvidenceTypes(
-  evidences: RescueEvidence[],
-): RescueEvidenceType[] {
-  return REQUIRED_CLOSE_EVIDENCE_TYPES.filter(
-    (type) => !evidences.some((item) => item.type === type),
-  );
-}
-
 export function getEvidenceRequiredToastMessage(
-  _missing: RescueEvidenceType[],
+  missing: RescueEvidenceType[],
 ): string {
+  if (missing.includes(RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER)) {
+    return RESCUE_OPERATIVE_TOAST.evidencePaymentRequired;
+  }
   return RESCUE_OPERATIVE_TOAST.evidenceServiceRequired;
 }
 
@@ -68,20 +103,24 @@ export function getPrimaryEvidenceTabForMissing(
 
 export function getCloseEvidenceDisabledReason(
   evidences: RescueEvidence[],
+  actionId: RescueOperativeActionId,
 ): string | undefined {
-  if (hasRequiredCloseEvidences(evidences)) return undefined;
-  return getEvidenceRequiredToastMessage(getMissingCloseEvidenceTypes(evidences));
+  if (hasRequiredEvidencesForAction(evidences, actionId)) return undefined;
+  return getEvidenceRequiredToastMessage(
+    getMissingEvidenceTypesForAction(evidences, actionId),
+  );
 }
 
 export function applyCloseEvidenceGuard(
   actions: RescueFooterAction[],
   evidences: RescueEvidence[],
 ): RescueFooterAction[] {
-  const disabledReason = getCloseEvidenceDisabledReason(evidences);
-  if (!disabledReason) return actions;
-
   return actions.map((item) => {
     if (!isCloseEvidenceGuardedAction(item.id)) return item;
+
+    const disabledReason = getCloseEvidenceDisabledReason(evidences, item.id);
+    if (!disabledReason) return item;
+
     return {
       ...item,
       disabled: true,

@@ -27,9 +27,9 @@ import {
 import { mapClientCreditSummary } from '~/utils/catalog-detail-map';
 import {
   getEvidenceRequiredToastMessage,
-  getMissingCloseEvidenceTypes,
+  getMissingEvidenceTypesForAction,
   getPrimaryEvidenceTabForMissing,
-  hasRequiredCloseEvidences,
+  hasRequiredEvidencesForAction,
   MARK_AS_CLOSED_ACTION,
 } from '~/utils/rescue-evidence-requirements';
 import {
@@ -80,6 +80,7 @@ export function useRescueOperativeFlow(options: {
 
   const supplierSectionHighlight = ref(false);
   const evidenceUploadHighlight = ref(false);
+  const highlightedEvidenceAction = ref<RescueOperativeActionId | null>(null);
 
   const HIGHLIGHT_TIMEOUT_MS = 8_000;
   let supplierHighlightTimer: ReturnType<typeof setTimeout> | null = null;
@@ -93,7 +94,8 @@ export function useRescueOperativeFlow(options: {
     }, HIGHLIGHT_TIMEOUT_MS);
   }
 
-  function activateEvidenceHighlight() {
+  function activateEvidenceHighlight(actionId: RescueOperativeActionId) {
+    highlightedEvidenceAction.value = actionId;
     evidenceUploadHighlight.value = true;
     if (evidenceHighlightTimer) clearTimeout(evidenceHighlightTimer);
     evidenceHighlightTimer = setTimeout(() => {
@@ -104,6 +106,7 @@ export function useRescueOperativeFlow(options: {
   function clearCloseHighlights() {
     supplierSectionHighlight.value = false;
     evidenceUploadHighlight.value = false;
+    highlightedEvidenceAction.value = null;
     if (supplierHighlightTimer) clearTimeout(supplierHighlightTimer);
     if (evidenceHighlightTimer) clearTimeout(evidenceHighlightTimer);
     supplierHighlightTimer = null;
@@ -154,8 +157,13 @@ export function useRescueOperativeFlow(options: {
   );
 
   watch(evidences, (list) => {
-    if (hasRequiredCloseEvidences(list)) {
+    const action = highlightedEvidenceAction.value;
+    if (
+      action != null
+      && hasRequiredEvidencesForAction(list, action)
+    ) {
       evidenceUploadHighlight.value = false;
+      highlightedEvidenceAction.value = null;
       if (evidenceHighlightTimer) {
         clearTimeout(evidenceHighlightTimer);
         evidenceHighlightTimer = null;
@@ -207,15 +215,20 @@ export function useRescueOperativeFlow(options: {
     completedPanelOpen.value = true;
   }
 
-  function ensureCloseEvidencesOrRedirect(): boolean {
-    if (hasRequiredCloseEvidences(evidences.value)) return true;
+  function ensureCloseEvidencesOrRedirect(
+    actionId: RescueOperativeActionId,
+  ): boolean {
+    if (hasRequiredEvidencesForAction(evidences.value, actionId)) return true;
 
-    const missing = getMissingCloseEvidenceTypes(evidences.value);
+    const missing = getMissingEvidenceTypesForAction(
+      evidences.value,
+      actionId,
+    );
     toast.add({
       title: getEvidenceRequiredToastMessage(missing),
       color: 'error',
     });
-    activateEvidenceHighlight();
+    activateEvidenceHighlight(actionId);
     options.setActiveTab(getPrimaryEvidenceTabForMissing(missing));
     return false;
   }
@@ -348,14 +361,14 @@ export function useRescueOperativeFlow(options: {
       || actionId === 'confirm_disbursement'
       || actionId === 'complete_project'
     ) {
-      if (!ensureCloseEvidencesOrRedirect()) return;
+      if (!ensureCloseEvidencesOrRedirect(actionId)) return;
       if (!ensureSupplierBeforeCloseOrRedirect()) return;
       openCompletedPanel();
       return;
     }
 
     if (actionId === MARK_AS_CLOSED_ACTION) {
-      if (!ensureCloseEvidencesOrRedirect()) return;
+      if (!ensureCloseEvidencesOrRedirect(MARK_AS_CLOSED_ACTION)) return;
       if (!ensureSupplierBeforeCloseOrRedirect()) return;
       await runUpdate(MARK_AS_CLOSED_ACTION);
       return;
@@ -480,7 +493,7 @@ export function useRescueOperativeFlow(options: {
           ? 'complete_project'
           : 'complete_service';
 
-    if (!ensureCloseEvidencesOrRedirect()) return;
+    if (!ensureCloseEvidencesOrRedirect(action)) return;
     if (!ensureSupplierBeforeCloseOrRedirect()) return;
 
     try {
