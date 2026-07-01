@@ -8,11 +8,17 @@ import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
 
 const open = defineModel<boolean>('open', { required: true });
 
-const props = defineProps<{
-  rescueId: number;
-  folio: string;
-  type?: RescueEvidenceType;
-}>();
+const props = withDefaults(
+  defineProps<{
+    rescueId: number;
+    folio: string;
+    type?: RescueEvidenceType;
+    highlight?: boolean;
+  }>(),
+  {
+    highlight: false,
+  },
+);
 
 const evidenceType = computed(() => props.type ?? RESCUE_EVIDENCE_TYPE_SERVICE);
 
@@ -114,10 +120,29 @@ async function onPendingFilesChange(value: File[] | null | undefined) {
   pendingFiles.value = [];
 }
 
+const dropzoneRef = ref<HTMLElement | null>(null);
+
+function scrollDropzoneIntoView() {
+  nextTick(() => {
+    dropzoneRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 watch(open, (isOpen) => {
-  if (isOpen) void refresh();
-  else pendingFiles.value = [];
+  if (isOpen) {
+    void refresh();
+    if (props.highlight) scrollDropzoneIntoView();
+  } else {
+    pendingFiles.value = [];
+  }
 });
+
+watch(
+  () => props.highlight,
+  (active) => {
+    if (active && open.value) scrollDropzoneIntoView();
+  },
+);
 
 function openEvidenceUrl(url: string) {
   window.open(url, '_blank', 'noopener,noreferrer');
@@ -143,22 +168,38 @@ function fileLabel(url: string, index: number) {
     :ui="{ content: 'max-w-2xl' }"
   >
     <template #body>
-      <UFileUpload
-        v-model="pendingFiles"
-        multiple
-        variant="area"
-        size="lg"
-        icon="i-lucide-upload"
-        :accept="acceptAttribute"
-        :disabled="isBusy"
-        :preview="false"
-        :dropzone="true"
-        :label="copy.dropzoneLabel"
-        :description="dropzoneDescription"
-        class="mb-4 w-full"
-        :ui="{ base: 'min-h-48' }"
-        @update:model-value="onPendingFilesChange"
-      />
+      <div
+        ref="dropzoneRef"
+        class="mb-4 rounded-lg transition-shadow"
+        :class="highlight ? 'ring-2 ring-error p-1' : ''"
+      >
+        <div
+          v-if="highlight"
+          class="mb-2 flex justify-end"
+        >
+          <UBadge
+            color="error"
+            label="Requerida para continuar"
+            size="sm"
+          />
+        </div>
+        <UFileUpload
+          v-model="pendingFiles"
+          multiple
+          variant="area"
+          size="lg"
+          icon="i-lucide-upload"
+          :accept="acceptAttribute"
+          :disabled="isBusy"
+          :preview="false"
+          :dropzone="true"
+          :label="copy.dropzoneLabel"
+          :description="dropzoneDescription"
+          class="w-full"
+          :ui="{ base: 'min-h-48' }"
+          @update:model-value="onPendingFilesChange"
+        />
+      </div>
 
       <div
         v-if="isPending"

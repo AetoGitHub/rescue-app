@@ -7,11 +7,13 @@ const props = withDefaults(
     hideClientAuthorization?: boolean;
     hideChat?: boolean;
     editable?: boolean;
+    supplierHighlight?: boolean;
   }>(),
   {
     hideClientAuthorization: false,
     hideChat: false,
     editable: true,
+    supplierHighlight: false,
   },
 );
 
@@ -42,6 +44,21 @@ const hasSupplier = computed(() =>
 
 const showSupplierActions = computed(
   () => props.editable && canAssignRescueSupplier(props.detail),
+);
+
+const supplierSectionRef = ref<HTMLElement | null>(null);
+
+function scrollSupplierSectionIntoView() {
+  nextTick(() => {
+    supplierSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
+watch(
+  () => props.supplierHighlight,
+  (active) => {
+    if (active) scrollSupplierSectionIntoView();
+  },
 );
 </script>
 
@@ -225,11 +242,21 @@ const showSupplierActions = computed(
       </section>
 
       <section
-        class="space-y-3 rounded-lg border border-default bg-default p-4"
+        ref="supplierSectionRef"
+        class="space-y-3 rounded-lg border border-default bg-default p-4 transition-shadow"
+        :class="supplierHighlight ? 'ring-2 ring-error' : ''"
       >
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
-          Proveedor
-        </h3>
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
+            Proveedor
+          </h3>
+          <UBadge
+            v-if="supplierHighlight"
+            color="error"
+            label="Requerido para continuar"
+            size="sm"
+          />
+        </div>
         <div
           class="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
           :class="hasSupplier ? 'border-default bg-muted/20' : 'border-warning/30 bg-warning/5 '"

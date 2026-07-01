@@ -46,7 +46,9 @@ const {
   submitRevertCancellation,
   isUpdating,
   detailForActions,
-  evidences,
+  supplierSectionHighlight,
+  evidenceUploadHighlight,
+  clearCloseHighlights,
 } = useRescueOperativeFlow({
   rescueId,
   detail,
@@ -124,6 +126,7 @@ watch(open, (isOpen) => {
     activeTab.value = 'general';
     previousTab.value = 'general';
     evidenceModalOpen.value = false;
+    clearCloseHighlights();
   }
 });
 
@@ -267,6 +270,7 @@ const modalTabsUi = computed(() => ({
           <template #general>
             <OperationalRescueDetailGeneralTab
               :detail="detail"
+              :supplier-highlight="supplierSectionHighlight"
               @assign-supplier="assignSupplierModalOpen = true"
             >
               <template #afterChat>
@@ -314,7 +318,6 @@ const modalTabsUi = computed(() => ({
     >
       <OperationalRescueDetailFooterActions
         :detail="modalFooterDetail"
-        :evidences="evidences"
         :loading="isUpdatingOperative"
         @action="handleAction"
       />
@@ -352,6 +355,7 @@ const modalTabsUi = computed(() => ({
     :type="evidenceModalType"
     :rescue-id="rescueId"
     :folio="detail.folio"
+    :highlight="evidenceUploadHighlight"
   />
 
   <LazyOperationalRescueDetailAssignSupplierModal

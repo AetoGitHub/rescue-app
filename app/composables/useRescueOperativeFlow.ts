@@ -78,6 +78,38 @@ export function useRescueOperativeFlow(options: {
     credit_available: number | null;
   } | null>(null);
 
+  const supplierSectionHighlight = ref(false);
+  const evidenceUploadHighlight = ref(false);
+
+  const HIGHLIGHT_TIMEOUT_MS = 8_000;
+  let supplierHighlightTimer: ReturnType<typeof setTimeout> | null = null;
+  let evidenceHighlightTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function activateSupplierHighlight() {
+    supplierSectionHighlight.value = true;
+    if (supplierHighlightTimer) clearTimeout(supplierHighlightTimer);
+    supplierHighlightTimer = setTimeout(() => {
+      supplierSectionHighlight.value = false;
+    }, HIGHLIGHT_TIMEOUT_MS);
+  }
+
+  function activateEvidenceHighlight() {
+    evidenceUploadHighlight.value = true;
+    if (evidenceHighlightTimer) clearTimeout(evidenceHighlightTimer);
+    evidenceHighlightTimer = setTimeout(() => {
+      evidenceUploadHighlight.value = false;
+    }, HIGHLIGHT_TIMEOUT_MS);
+  }
+
+  function clearCloseHighlights() {
+    supplierSectionHighlight.value = false;
+    evidenceUploadHighlight.value = false;
+    if (supplierHighlightTimer) clearTimeout(supplierHighlightTimer);
+    if (evidenceHighlightTimer) clearTimeout(evidenceHighlightTimer);
+    supplierHighlightTimer = null;
+    evidenceHighlightTimer = null;
+  }
+
   async function loadClientCredit(clientId: number) {
     try {
       const raw = await $fetch<Record<string, unknown>>(
@@ -107,6 +139,29 @@ export function useRescueOperativeFlow(options: {
     },
     { immediate: true },
   );
+
+  watch(
+    () => detail.value?.supplier_id,
+    (supplierId) => {
+      if (supplierId != null) {
+        supplierSectionHighlight.value = false;
+        if (supplierHighlightTimer) {
+          clearTimeout(supplierHighlightTimer);
+          supplierHighlightTimer = null;
+        }
+      }
+    },
+  );
+
+  watch(evidences, (list) => {
+    if (hasRequiredCloseEvidences(list)) {
+      evidenceUploadHighlight.value = false;
+      if (evidenceHighlightTimer) {
+        clearTimeout(evidenceHighlightTimer);
+        evidenceHighlightTimer = null;
+      }
+    }
+  });
 
   const detailForActions = computed((): RescueCardDetail | null => {
     const d = detail.value;
@@ -160,6 +215,7 @@ export function useRescueOperativeFlow(options: {
       title: getEvidenceRequiredToastMessage(missing),
       color: 'error',
     });
+    activateEvidenceHighlight();
     options.setActiveTab(getPrimaryEvidenceTabForMissing(missing));
     return false;
   }
@@ -172,6 +228,7 @@ export function useRescueOperativeFlow(options: {
       title: RESCUE_OPERATIVE_TOAST.supplierRequiredBeforeClose,
       color: 'error',
     });
+    activateSupplierHighlight();
     options.setActiveTab('general');
     return false;
   }
@@ -496,6 +553,9 @@ export function useRescueOperativeFlow(options: {
   return {
     detailForActions,
     evidences,
+    supplierSectionHighlight,
+    evidenceUploadHighlight,
+    clearCloseHighlights,
     advancePanelOpen,
     advancePanelMode,
     completedPanelOpen,
