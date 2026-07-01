@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { mapCenterFromBounds } from '../../app/utils/map-viewport';
 import { buildSupplierMapQuery } from '../../app/utils/supplier-map-query';
 
 const bounds = {
@@ -8,8 +9,17 @@ const bounds = {
   west: -99.4,
 };
 
+describe('mapCenterFromBounds', () => {
+  it('returns geographic center of bounds', () => {
+    expect(mapCenterFromBounds(bounds)).toEqual({
+      lat: 19.45,
+      lng: -99.15,
+    });
+  });
+});
+
 describe('buildSupplierMapQuery', () => {
-  it('builds required bounds and hash params', () => {
+  it('builds required bounds, hash and map center', () => {
     const query = buildSupplierMapQuery({
       hash: 'session-abc',
       bounds,
@@ -20,6 +30,8 @@ describe('buildSupplierMapQuery', () => {
       east: '-98.9',
       west: '-99.4',
       hash: 'session-abc',
+      lat: '19.45',
+      lng: '-99.15',
     });
   });
 
@@ -31,8 +43,6 @@ describe('buildSupplierMapQuery', () => {
       trustedOnly: true,
       serviceType: 'cranes',
       orderBy: 'distance',
-      unitLat: 19.43,
-      unitLng: -99.13,
       zoom: 12,
     });
     expect(query).toMatchObject({
@@ -40,24 +50,22 @@ describe('buildSupplierMapQuery', () => {
       is_trusted: 'true',
       service_type: 'cranes',
       order_by: 'distance',
-      lat: '19.43',
-      lng: '-99.13',
+      lat: '19.45',
+      lng: '-99.15',
       zoom: '12',
     });
   });
 
-  it('omits service_type when all and lat/lng when sort is not distance', () => {
+  it('omits service_type when all', () => {
     const query = buildSupplierMapQuery({
       hash: 'session-abc',
       bounds,
       serviceType: 'all',
       orderBy: 'ranking',
-      unitLat: 19.43,
-      unitLng: -99.13,
     });
     expect(query.service_type).toBeUndefined();
-    expect(query.lat).toBeUndefined();
-    expect(query.lng).toBeUndefined();
+    expect(query.lat).toBe('19.45');
+    expect(query.lng).toBe('-99.15');
     expect(query.order_by).toBe('ranking');
   });
 });

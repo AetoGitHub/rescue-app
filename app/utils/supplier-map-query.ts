@@ -1,6 +1,6 @@
 import type { SupplierServiceType } from '~/interfaces/catalogs/supplier';
 import type { RescueSupplierSort } from '~/interfaces/rescue';
-import type { MapBounds } from '~/utils/map-viewport';
+import { mapCenterFromBounds, type MapBounds } from '~/utils/map-viewport';
 
 export type BuildSupplierMapQueryOptions = {
   hash: string;
@@ -9,8 +9,6 @@ export type BuildSupplierMapQueryOptions = {
   trustedOnly?: boolean;
   serviceType?: SupplierServiceType | 'all';
   orderBy?: RescueSupplierSort;
-  unitLat?: number | null;
-  unitLng?: number | null;
   zoom?: number;
 };
 
@@ -24,6 +22,10 @@ export function buildSupplierMapQuery(
     west: String(options.bounds.west),
     hash: options.hash,
   };
+
+  const center = mapCenterFromBounds(options.bounds);
+  query.lat = String(center.lat);
+  query.lng = String(center.lng);
 
   if (options.zoom != null) {
     query.zoom = String(options.zoom);
@@ -44,15 +46,6 @@ export function buildSupplierMapQuery(
 
   if (options.orderBy) {
     query.order_by = options.orderBy;
-  }
-
-  if (
-    options.orderBy === 'distance'
-    && options.unitLat != null
-    && options.unitLng != null
-  ) {
-    query.lat = String(options.unitLat);
-    query.lng = String(options.unitLng);
   }
 
   return query;

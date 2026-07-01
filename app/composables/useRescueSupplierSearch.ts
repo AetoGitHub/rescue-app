@@ -1,6 +1,9 @@
 import { useQuery } from '@pinia/colada';
 import { refDebounced } from '@vueuse/core';
-import type { SupplierServiceType } from '~/interfaces/catalogs/supplier';
+import type {
+  SupplierMapListQuery,
+  SupplierServiceType,
+} from '~/interfaces/catalogs/supplier';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type { RescueSupplierSort } from '~/interfaces/rescue';
 import {
@@ -8,11 +11,23 @@ import {
   SUPPLIER_RESCUE_SEARCH_RADIUS_KM,
 } from '~/constants/rescue-api';
 import { parseRescueCoord } from '~/schemas/rescue-create';
+import type { MapBounds } from '~/utils/map-viewport';
+
+function boundsFromQuery(viewport: SupplierMapListQuery): MapBounds {
+  return {
+    north: viewport.north,
+    south: viewport.south,
+    east: viewport.east,
+    west: viewport.west,
+  };
+}
 
 export function useRescueSupplierSearch(options: {
   latitude: Ref<string | null>;
   longitude: Ref<string | null>;
   serviceTypeFilter: Ref<SupplierServiceType | 'all'>;
+  fetchViewport: Ref<SupplierMapListQuery | null>;
+  displayViewport: Ref<SupplierMapListQuery | null>;
 }) {
   const cacheStore = useSupplierLocationCacheStore();
   const apiFetch = useApiFetch();
@@ -33,7 +48,7 @@ export function useRescueSupplierSearch(options: {
 
   const canFetch = computed(() => !distanceSortBlocked.value);
 
-  const searchBounds = computed(() => {
+  const fallbackBounds = computed((): MapBounds => {
     const { lat, lng } = unitCoords.value;
     if (lat != null && lng != null) {
       return boundsFromCenter(lat, lng, SUPPLIER_RESCUE_SEARCH_RADIUS_KM);
@@ -41,16 +56,27 @@ export function useRescueSupplierSearch(options: {
     return DEFAULT_SUPPLIER_SEARCH_BOUNDS;
   });
 
+  const fetchBounds = computed((): MapBounds => {
+    const viewport = options.fetchViewport.value;
+    return viewport ? boundsFromQuery(viewport) : fallbackBounds.value;
+  });
+
+  const fetchZoom = computed(() => options.fetchViewport.value?.zoom);
+
+  const displayBounds = computed((): MapBounds => {
+    const viewport = options.displayViewport.value;
+    return viewport ? boundsFromQuery(viewport) : fallbackBounds.value;
+  });
+
   function buildQuery(): Record<string, string> {
     return buildSupplierMapQuery({
       hash: cacheStore.sessionHash,
-      bounds: searchBounds.value,
+      bounds: fetchBounds.value,
+      zoom: fetchZoom.value,
       name: debouncedSearch.value,
       trustedOnly: true,
       serviceType: options.serviceTypeFilter.value,
       orderBy: sort.value,
-      unitLat: unitCoords.value.lat,
-      unitLng: unitCoords.value.lng,
     });
   }
 
@@ -63,10 +89,11 @@ export function useRescueSupplierSearch(options: {
       options.serviceTypeFilter.value,
       unitCoords.value.lat ?? '',
       unitCoords.value.lng ?? '',
-      searchBounds.value.north,
-      searchBounds.value.south,
-      searchBounds.value.east,
-      searchBounds.value.west,
+      fetchBounds.value.north,
+      fetchBounds.value.south,
+      fetchBounds.value.east,
+      fetchBounds.value.west,
+      fetchZoom.value ?? '',
     ],
     query: async ({ signal }) => {
       const response = await apiFetch<PaginatedResponse<Record<string, unknown>>>(
@@ -85,16 +112,25 @@ export function useRescueSupplierSearch(options: {
     staleTime: 30_000,
   });
 
-  const suppliers = computed(() =>
-    filterAndSortRescueSuppliers(cacheStore.allSuppliers, {
-      name: debouncedSearch.value,
+  const suppliers = computed(() => {
+    const inView = filterSuppliersForMapView(
+      cacheStore.allSuppliers,
+      displayBounds.value,
+      {
+        name: debouncedSearch.value,
+        trustedOnly: true,
+        serviceType: options.serviceTypeFilter.value,
+      },
+    );
+    return filterAndSortRescueSuppliers(inView, {
+      name: '',
       sort: sort.value,
       unitLat: unitCoords.value.lat ?? null,
       unitLng: unitCoords.value.lng ?? null,
-      serviceType: options.serviceTypeFilter.value,
-      trustedOnly: true,
-    }),
-  );
+      serviceType: 'all',
+      trustedOnly: false,
+    });
+  });
 
   const loading = computed(() => asyncStatus.value === 'loading');
 

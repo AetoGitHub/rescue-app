@@ -40,6 +40,8 @@ const latRef = computed(() => props.latitude);
 const lngRef = computed(() => props.longitude);
 const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
 
+const { queryParams, displayQueryParams, setViewport } = useSupplierMapViewport();
+
 const serviceTypeFilterItems = [
   { label: 'Todos los tipos', value: 'all' as const },
   ...SUPPLIER_SERVICE_TYPE_OPTIONS,
@@ -56,6 +58,8 @@ const {
   latitude: latRef,
   longitude: lngRef,
   serviceTypeFilter,
+  fetchViewport: queryParams,
+  displayViewport: displayQueryParams,
 });
 
 const { saveSupplier, isAssigning } = useRescueSupplierAssign(
@@ -381,6 +385,9 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
             :unit-latitude="latitude"
             :unit-longitude="longitude"
             :selected-supplier="selectedSupplierPin"
+            :selected-supplier-id="state.supplier ?? null"
+            :nearby-suppliers="suppliers"
+            @viewport-change="setViewport"
           />
         </div>
       </UForm>

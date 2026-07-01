@@ -18,6 +18,8 @@ const latRef = computed(() => state.value.location_latitude);
 const lngRef = computed(() => state.value.location_longitude);
 const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
 
+const { queryParams, displayQueryParams, setViewport } = useSupplierMapViewport();
+
 const serviceTypeFilterItems = [
   { label: 'Todos los tipos', value: 'all' as const },
   ...SUPPLIER_SERVICE_TYPE_OPTIONS,
@@ -34,6 +36,8 @@ const {
   latitude: latRef,
   longitude: lngRef,
   serviceTypeFilter,
+  fetchViewport: queryParams,
+  displayViewport: displayQueryParams,
 });
 
 const showInlineForm = ref(false);
@@ -395,6 +399,9 @@ function formatRanking(value: number) {
       :unit-latitude="state.location_latitude"
       :unit-longitude="state.location_longitude"
       :selected-supplier="selectedSupplierPin"
+      :selected-supplier-id="state.supplier"
+      :nearby-suppliers="suppliers"
+      @viewport-change="setViewport"
     />
   </div>
 </template>

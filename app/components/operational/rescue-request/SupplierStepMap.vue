@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { GoogleMap, AdvancedMarker } from 'vue3-google-map';
-import type { SupplierMapPin } from '~/interfaces/rescue';
+import { AdvancedMarker, GoogleMap } from 'vue3-google-map';
+import type { RescueSupplierNearbyRow, SupplierMapPin } from '~/interfaces/rescue';
+import type { MapViewport } from '~/utils/map-viewport';
 import { parseRescueCoord } from '~/schemas/rescue-create';
 
 const props = defineProps<{
   unitLatitude: string | null;
   unitLongitude: string | null;
   selectedSupplier: SupplierMapPin | null;
+  selectedSupplierId?: number | null;
+  nearbySuppliers?: RescueSupplierNearbyRow[];
+}>();
+
+const emit = defineEmits<{
+  viewportChange: [viewport: MapViewport];
 }>();
 
 const config = useRuntimeConfig();
@@ -32,6 +39,31 @@ const supplierPosition = computed(() => {
     lng: props.selectedSupplier.lng,
   };
 });
+
+const nearbyPins = computed(() =>
+  (props.nearbySuppliers ?? []).flatMap((row) => {
+    if (
+      props.selectedSupplierId != null
+      && row.id === props.selectedSupplierId
+    ) {
+      return [];
+    }
+    const lat = parseRescueCoord(
+      row.latitude != null ? String(row.latitude) : null,
+    );
+    const lng = parseRescueCoord(
+      row.longitude != null ? String(row.longitude) : null,
+    );
+    if (lat == null || lng == null) return [];
+    return [{
+      id: row.id,
+      name: row.name,
+      lat,
+      lng,
+      is_trusted: row.is_trusted,
+    }];
+  }),
+);
 
 function collectVisiblePoints(): { lat: number; lng: number }[] {
   const points: { lat: number; lng: number }[] = [];
@@ -60,10 +92,14 @@ watch(
   { deep: true },
 );
 
-function onMapIdle() {
+function emitViewportChange() {
   const map = mapRef.value?.map;
   if (map) {
     google.maps.event.trigger(map, 'resize');
+  }
+  const viewport = getMapViewport(map);
+  if (viewport) {
+    emit('viewportChange', viewport);
   }
 }
 </script>
@@ -87,7 +123,8 @@ function onMapIdle() {
         class="h-full min-h-48 w-full lg:min-h-72"
         :map-type-control="false"
         :street-view-control="false"
-        @idle="onMapIdle"
+        @idle="emitViewportChange"
+        @bounds_changed="emitViewportChange"
       >
         <AdvancedMarker
           v-if="unitPosition"
@@ -95,6 +132,20 @@ function onMapIdle() {
           :pin-options="{
             background: '#fbbc04',
             borderColor: '#e6a800',
+            glyphColor: '#ffffff',
+          }"
+        />
+
+        <AdvancedMarker
+          v-for="pin in nearbyPins"
+          :key="pin.id"
+          :options="{
+            position: { lat: pin.lat, lng: pin.lng },
+            title: pin.name,
+          }"
+          :pin-options="{
+            background: pin.is_trusted ? '#f59e0b' : '#2563eb',
+            borderColor: pin.is_trusted ? '#d97706' : '#1d4ed8',
             glyphColor: '#ffffff',
           }"
         />

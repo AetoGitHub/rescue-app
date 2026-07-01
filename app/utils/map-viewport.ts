@@ -68,6 +68,18 @@ export function boundsFromCenter(
   };
 }
 
+export function mapCenterFromBounds(
+  bounds: MapBounds,
+): { lat: number; lng: number } {
+  const lat = (bounds.north + bounds.south) / 2;
+  if (bounds.west <= bounds.east) {
+    return { lat, lng: (bounds.east + bounds.west) / 2 };
+  }
+  let lng = (bounds.east + bounds.west + 360) / 2;
+  if (lng > 180) lng -= 360;
+  return { lat, lng };
+}
+
 export function mapViewportToQuery(viewport: MapViewport): SupplierMapListQuery {
   return {
     north: viewport.bounds.north,
