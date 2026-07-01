@@ -56,7 +56,8 @@ export interface SupplierRankingSummary {
 
 export interface SupplierReviewFormState {
   rating: number;
-  comment: string;
+  selectedChips: string[];
+  freeComment: string;
 }
 
 export interface SupplierCreateBody {

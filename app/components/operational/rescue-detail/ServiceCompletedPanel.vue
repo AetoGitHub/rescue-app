@@ -15,11 +15,6 @@ const emit = defineEmits<{
 
 const form = defineModel<RescueServiceCompletedFormState>('form', { required: true });
 
-function setRating(index: number, score: number) {
-  const row = form.value.ratings[index];
-  if (row) row.score = score;
-}
-
 function onSubmit() {
   emit('submit');
 }
@@ -82,39 +77,21 @@ function onSubmit() {
             Calificación de proveedores
           </h3>
           <div
-            v-for="(row, index) in form.ratings"
+            v-for="row in form.ratings"
             :key="row.supplier_id"
             class="space-y-2 rounded-lg border border-default p-3"
           >
             <p class="text-sm font-medium text-highlighted">
               {{ row.supplier_name }}
             </p>
-            <div class="flex items-center gap-1">
-              <button
-                v-for="star in 5"
-                :key="star"
-                type="button"
-                class="rounded p-0.5 transition-colors hover:bg-elevated"
-                :aria-label="`${star} estrellas`"
-                @click="setRating(index, star)"
-              >
-                <UIcon
-                  :name="row.score >= star ? 'i-heroicons-star-solid' : 'i-heroicons-star'"
-                  class="size-5"
-                  :class="row.score >= star ? 'text-warning' : 'text-muted opacity-60'"
-                />
-              </button>
-            </div>
-            <UFormField
-              :name="`rating_comment_${row.supplier_id}`"
-              label="Comentario (opcional)"
-            >
-              <UTextarea
-                v-model="row.comment"
-                class="w-full"
-                :rows="2"
-              />
-            </UFormField>
+            <CatalogSupplierReviewRatingFields
+              v-model:rating="row.score"
+              v-model:selected-chips="row.selectedChips"
+              v-model:free-comment="row.freeComment"
+              :rating-name="`rating_score_${row.supplier_id}`"
+              :chips-name="`rating_chips_${row.supplier_id}`"
+              :free-comment-name="`rating_comment_${row.supplier_id}`"
+            />
           </div>
         </section>
 

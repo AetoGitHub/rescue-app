@@ -50,7 +50,8 @@ export interface RescueSupplierRatingRow {
   supplier_id: number;
   supplier_name: string;
   score: number;
-  comment: string;
+  selectedChips: string[];
+  freeComment: string;
 }
 
 export interface RescueAdvanceFormState {

@@ -22,7 +22,8 @@ const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 const state = reactive<SupplierReviewFormState>({
   rating: 0,
-  comment: '',
+  selectedChips: [],
+  freeComment: '',
 });
 
 const displayScore = computed(() => {
@@ -31,13 +32,10 @@ const displayScore = computed(() => {
   return value.toFixed(1);
 });
 
-function setRating(rating: number) {
-  state.rating = rating;
-}
-
 function resetReviewForm() {
   state.rating = 0;
-  state.comment = '';
+  state.selectedChips = [];
+  state.freeComment = '';
 }
 
 async function onSubmit(event: FormSubmitEvent<SupplierReviewFormState>) {
@@ -94,33 +92,11 @@ async function requestSubmit() {
           @submit="onSubmit"
           @error="onFormError"
         >
-          <UFormField name="rating" required>
-            <div class="flex items-center gap-1">
-              <button
-                v-for="star in 5"
-                :key="star"
-                type="button"
-                class="rounded p-0.5 transition-colors hover:bg-elevated"
-                :aria-label="`${star} estrellas`"
-                @click="setRating(star)"
-              >
-                <UIcon
-                  :name="state.rating >= star ? 'i-heroicons-star-solid' : 'i-heroicons-star'"
-                  class="size-5"
-                  :class="state.rating >= star ? 'text-warning' : 'text-muted opacity-60'"
-                />
-              </button>
-            </div>
-          </UFormField>
-
-          <UFormField label="Comentario (opcional)" name="comment">
-            <UTextarea
-              v-model="state.comment"
-              class="w-full"
-              :rows="2"
-              placeholder="Describe tu experiencia con este proveedor"
-            />
-          </UFormField>
+          <CatalogSupplierReviewRatingFields
+            v-model:rating="state.rating"
+            v-model:selected-chips="state.selectedChips"
+            v-model:free-comment="state.freeComment"
+          />
 
           <div class="flex justify-end">
             <UButton

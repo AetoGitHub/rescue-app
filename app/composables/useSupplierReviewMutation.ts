@@ -39,11 +39,19 @@ export function useSupplierReviewMutation() {
 
   async function createReview(
     supplierId: number,
-    input: { rating: number; comment: string },
+    input: {
+      rating: number;
+      selectedChips: string[];
+      freeComment: string;
+    },
   ) {
     await mutateAsync({
       supplierId,
-      body: toStandaloneSupplierReviewBody(input.rating, input.comment),
+      body: toStandaloneSupplierReviewBody(
+        input.rating,
+        input.selectedChips,
+        input.freeComment,
+      ),
     });
     toast.add({
       title: 'Calificación guardada',

@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { refineSupplierReviewCommentary } from '~/utils/supplier-review-commentary';
 import {
   BILLING_TYPE_VALUES,
   SERVICE_UNIT_VALUES,
@@ -210,10 +211,15 @@ export const supplierCreateSchema = z
     }
   });
 
-export const supplierReviewSchema = z.object({
-  rating: z.number().min(1, 'Selecciona una calificación').max(5),
-  comment: z.string(),
-});
+export const supplierReviewSchema = z
+  .object({
+    rating: z.number().min(1, 'Selecciona una calificación').max(5),
+    selectedChips: z.array(z.string()),
+    freeComment: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    refineSupplierReviewCommentary(data, ctx);
+  });
 
 export const contractItemFormSchema = z.object({
   service: z.number().int().positive({ error: 'Selecciona un servicio' }),

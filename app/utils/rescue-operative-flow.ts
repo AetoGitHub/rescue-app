@@ -70,7 +70,8 @@ export function buildSupplierRatingRows(
       supplier_id: s.id,
       supplier_name: s.name,
       score: 0,
-      comment: '',
+      selectedChips: [],
+      freeComment: '',
     }));
   }
   if (detail.supplier_id != null) {
@@ -79,7 +80,8 @@ export function buildSupplierRatingRows(
         supplier_id: detail.supplier_id,
         supplier_name: detail.supplier_name?.trim() || `Proveedor #${detail.supplier_id}`,
         score: 0,
-        comment: '',
+        selectedChips: [],
+        freeComment: '',
       },
     ];
   }

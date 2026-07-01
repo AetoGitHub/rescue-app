@@ -1,5 +1,6 @@
 import type { SupplierReviewCreateBody } from '~/interfaces/catalogs/supplier';
 import type { RescueSupplierRatingRow } from '~/interfaces/rescue/operative';
+import { buildSupplierReviewComment } from '~/utils/supplier-review-commentary';
 
 export function getRatedSuppliers(
   rows: RescueSupplierRatingRow[],
@@ -9,11 +10,13 @@ export function getRatedSuppliers(
 
 export function toStandaloneSupplierReviewBody(
   rating: number,
-  comment: string,
+  selectedChips: string[],
+  freeComment: string,
 ): SupplierReviewCreateBody {
+  const comment = buildSupplierReviewComment(selectedChips, freeComment);
   return {
     rating,
-    comment: comment.trim() || undefined,
+    comment: comment || undefined,
   };
 }
 
@@ -21,9 +24,10 @@ export function toSupplierReviewCreateBody(
   row: RescueSupplierRatingRow,
   rescueId?: number,
 ): SupplierReviewCreateBody {
+  const comment = buildSupplierReviewComment(row.selectedChips, row.freeComment);
   const body: SupplierReviewCreateBody = {
     rating: row.score,
-    comment: row.comment.trim() || undefined,
+    comment: comment || undefined,
   };
   if (rescueId != null) {
     body.rescue_id = rescueId;

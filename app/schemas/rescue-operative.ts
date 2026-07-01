@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { refineSupplierReviewCommentary } from '~/utils/supplier-review-commentary';
 
 const rescuePaymentMethodSchema = z.enum(
   ['cash', 'transfer', 'card', 'check', 'other'],
@@ -41,12 +42,17 @@ export const rescueRevertCancellationSchema = z.object({
     .positive('Selecciona un motivo de re-aceptación'),
 });
 
-const ratingRowSchema = z.object({
-  supplier_id: z.number().int().positive(),
-  supplier_name: z.string(),
-  score: z.number().min(1, 'Califica al proveedor').max(5),
-  comment: z.string(),
-});
+const ratingRowSchema = z
+  .object({
+    supplier_id: z.number().int().positive(),
+    supplier_name: z.string(),
+    score: z.number().min(1, 'Califica al proveedor').max(5),
+    selectedChips: z.array(z.string()),
+    freeComment: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    refineSupplierReviewCommentary(data, ctx);
+  });
 
 export const rescueServiceCompletedSchema = z
   .object({
