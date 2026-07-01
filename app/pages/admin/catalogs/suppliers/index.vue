@@ -31,10 +31,23 @@ const viewMode = ref<SupplierViewMode>('list');
 const search = ref('');
 const trustedOnly = ref(false);
 const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
-const isLoadingMapPages = ref(false);
 const mapViewLayoutKey = ref(0);
 
-const { setViewport } = useSupplierMapViewport();
+const { queryParams, setViewport } = useSupplierMapViewport();
+
+const mapListEnabled = computed(() => viewMode.value === 'map');
+
+const {
+  suppliers: mapSuppliers,
+  loading: mapLoading,
+  errorMessage: mapErrorMessage,
+} = useSupplierMapList({
+  viewport: queryParams,
+  search,
+  trustedOnly,
+  serviceTypeFilter,
+  enabled: mapListEnabled,
+});
 
 function toggleTrustedOnly() {
   trustedOnly.value = !trustedOnly.value;
@@ -107,22 +120,9 @@ const filteredRows = computed(() => {
   });
 });
 
-async function loadAllSupplierPages() {
-  if (isLoadingMapPages.value) return;
-  isLoadingMapPages.value = true;
-  try {
-    while (hasNextPage.value) {
-      await loadNextPage();
-    }
-  } finally {
-    isLoadingMapPages.value = false;
-  }
-}
-
 watch(viewMode, (mode) => {
   if (mode === 'map') {
     mapViewLayoutKey.value += 1;
-    void loadAllSupplierPages();
   }
 });
 
@@ -258,25 +258,40 @@ const columns: TableColumn<Supplier>[] = [
       </template>
 
       <template #map>
-        <div :class="adminCatalogMapPanelClass">
-          <div
-            v-if="isLoadingMapPages"
-            class="flex shrink-0 items-center justify-center gap-2 py-4 text-sm text-muted"
-          >
-            <UIcon
-              name="i-lucide-loader-circle"
-              class="size-5 animate-spin"
-            />
-            Cargando proveedores…
-          </div>
+        <div
+          v-if="viewMode === 'map'"
+          class="relative"
+          :class="adminCatalogMapPanelClass"
+        >
           <CatalogSuppliersMapView
             :key="mapViewLayoutKey"
             :class="adminCatalogMapPanelClass"
             :layout-key="mapViewLayoutKey"
-            :suppliers="filteredRows"
+            :suppliers="mapSuppliers"
             @select="openSupplier"
             @viewport-change="onMapViewportChange"
           />
+          <div
+            v-if="mapLoading"
+            class="pointer-events-none absolute inset-0 z-10 flex items-start justify-center bg-default/40 pt-4"
+          >
+            <div
+              class="flex items-center gap-2 rounded-lg border border-default bg-default/95 px-3 py-2 text-sm text-muted shadow-sm"
+            >
+              <UIcon
+                name="i-lucide-loader-circle"
+                class="size-5 animate-spin"
+              />
+              Cargando proveedores…
+            </div>
+          </div>
+          <p
+            v-if="mapErrorMessage"
+            class="pointer-events-none absolute inset-x-3 top-3 z-10 rounded-lg border border-error/30 bg-default/95 px-3 py-2 text-xs text-error shadow-sm"
+            role="alert"
+          >
+            {{ mapErrorMessage }}
+          </p>
         </div>
       </template>
     </UTabs>

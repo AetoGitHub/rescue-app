@@ -19,13 +19,11 @@ const initialCenter = DEFAULT_CENTER;
 const initialZoom = 11;
 
 const suppliersRef = toRef(props, 'suppliers');
-const { pins, isResolvingCoords, suppliersWithoutCoords } = useSupplierMapPins(suppliersRef);
+const { pins, suppliersWithoutCoords } = useSupplierMapPins(suppliersRef);
 
 const sharedMapRef = ref<{ getMap: () => google.maps.Map | null } | null>(null);
-const hasFittedPins = ref(false);
 
 const noCoordsHint = computed(() => {
-  if (isResolvingCoords.value) return null;
   if (suppliersWithoutCoords.value > 0 && pins.value.length === 0) {
     return 'Ningún proveedor tiene ubicación registrada. Edita un proveedor y agrega coordenadas en el mapa.';
   }
@@ -35,52 +33,24 @@ const noCoordsHint = computed(() => {
   return null;
 });
 
-function fitAllPins() {
-  const map = sharedMapRef.value?.getMap();
-  if (!map || pins.value.length === 0) return;
-  fitMapToPoints(
-    map,
-    pins.value.map((pin) => ({ lat: pin.lat, lng: pin.lng })),
-  );
-  hasFittedPins.value = true;
-}
-
-watch(
-  pins,
-  () => {
-    hasFittedPins.value = false;
-    nextTick(() => fitAllPins());
-  },
-  { deep: true },
-);
-
 watch(
   () => props.layoutKey,
   () => {
-    hasFittedPins.value = false;
     nextTick(() => {
       const map = sharedMapRef.value?.getMap();
       if (map) {
         google.maps.event.trigger(map, 'resize');
-        fitAllPins();
       }
     });
   },
 );
 
-function emitViewport() {
+function onMapIdle() {
   const map = sharedMapRef.value?.getMap();
   const viewport = getMapViewport(map);
   if (viewport) {
     emit('viewportChange', viewport);
   }
-}
-
-function onMapIdle() {
-  if (!hasFittedPins.value && pins.value.length > 0) {
-    fitAllPins();
-  }
-  emitViewport();
 }
 </script>
 
@@ -97,7 +67,6 @@ function onMapIdle() {
     </div>
     <template v-else>
       <SharedMap
-        :key="layoutKey ?? 0"
         ref="sharedMapRef"
         :center="initialCenter"
         :zoom="initialZoom"
@@ -121,18 +90,7 @@ function onMapIdle() {
       </SharedMap>
 
       <div
-        v-if="isResolvingCoords"
-        class="absolute inset-0 flex items-center justify-center gap-2 bg-default/80 px-4 text-sm text-muted"
-      >
-        <UIcon
-          name="i-lucide-loader-circle"
-          class="size-5 animate-spin"
-        />
-        Cargando ubicaciones de proveedores…
-      </div>
-
-      <div
-        v-else-if="noCoordsHint"
+        v-if="noCoordsHint"
         class="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg border border-default bg-default/95 px-4 py-3 text-center text-sm text-muted shadow-sm"
       >
         {{ noCoordsHint }}

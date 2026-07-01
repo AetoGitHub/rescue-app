@@ -8,7 +8,7 @@ export const RESCUE_LIST_PATH = '/api/rescue/list/';
 export const SUPPLIER_LIST_PATH = '/api/supplier/list/';
 
 /**
- * Future map-bounds supplier list (not implemented on backend yet).
+ * Map-bounds supplier list for admin catalog map view.
  * Query: north, south, east, west (required), zoom (optional), plus list filters.
  * Response: same PaginatedResponse<SupplierListItem> as SUPPLIER_LIST_PATH.
  */
