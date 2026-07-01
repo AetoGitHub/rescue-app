@@ -108,6 +108,9 @@ const contractTitle = computed(
 const {
   rows: itemRows,
   isInitialLoading: itemsInitialLoading,
+  hasNextPage: itemsHasNextPage,
+  loadNextPage: loadNextItemsPage,
+  asyncStatus: itemsAsyncStatus,
 } = useCatalogInfiniteList<ContractItem>({
   key: () => ['contract-items', contractId.value],
   path: `/api/catalogue/contract/${contractId.value}/items/`,
@@ -248,6 +251,9 @@ useHead({
             :contract-id="contractId"
             :items="itemRows"
             :loading="itemsInitialLoading"
+            :async-status="itemsAsyncStatus"
+            :has-next-page="itemsHasNextPage"
+            :load-next-page="loadNextItemsPage"
             @add="openCreateItem"
           />
 

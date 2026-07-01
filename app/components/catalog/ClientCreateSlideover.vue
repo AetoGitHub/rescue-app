@@ -134,6 +134,7 @@ const creditTabInvoiceBindings = computed(() => ({
   invoices: clientCreditInvoices.rows.value,
   invoicesLoading: clientCreditInvoices.isInitialLoading.value,
   hasMoreInvoices: clientCreditInvoices.hasNextPage.value,
+  invoicesAsyncStatus: clientCreditInvoices.asyncStatus.value,
 }));
 
 const formRef = ref<{ submit: () => Promise<void>; $el?: HTMLElement } | null>(null);

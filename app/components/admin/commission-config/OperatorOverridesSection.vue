@@ -66,6 +66,16 @@ async function saveOperator(operator: OperativeCommissionOperator) {
     savingOperatorId.value = null;
   }
 }
+
+const operatorsListRef = ref<HTMLElement | null>(null);
+
+useScrollContainerInfiniteLoad({
+  containerRef: operatorsListRef,
+  hasNextPage,
+  loadNextPage,
+  asyncStatus,
+  disabled: computed(() => isInitialLoading.value),
+});
 </script>
 
 <template>
@@ -98,7 +108,8 @@ async function saveOperator(operator: OperativeCommissionOperator) {
 
     <div
       v-else
-      class="space-y-3"
+      ref="operatorsListRef"
+      class="max-h-[32rem] space-y-3 overflow-y-auto"
     >
       <article
         v-for="operator in operators"
@@ -165,19 +176,6 @@ async function saveOperator(operator: OperativeCommissionOperator) {
           </div>
         </div>
       </article>
-
-      <div
-        v-if="hasNextPage"
-        class="flex justify-center pt-2"
-      >
-        <UButton
-          color="neutral"
-          label="Cargar más"
-          variant="subtle"
-          :loading="asyncStatus === 'loading'"
-          @click="() => void loadNextPage()"
-        />
-      </div>
     </div>
   </section>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useQueryCache } from '@pinia/colada';
+import type { AsyncStatus } from '@pinia/colada';
 import type { ContractItem } from '~/interfaces/catalogs/contract';
 import {
   contractItemToEditableRow,
@@ -14,6 +15,9 @@ const props = defineProps<{
   contractId: number;
   items: ContractItem[];
   loading?: boolean;
+  asyncStatus?: AsyncStatus;
+  hasNextPage?: boolean;
+  loadNextPage?: () => unknown;
 }>();
 
 const emit = defineEmits<{
@@ -154,6 +158,24 @@ function onImportPrices() {
 
 const removingId = ref<number | null>(null);
 
+const tableScrollRef = ref<HTMLElement | null>(null);
+const hasNextPageRef = computed(() => props.hasNextPage ?? false);
+const listAsyncStatus = computed(() => props.asyncStatus ?? 'idle');
+const loadingMore = computed(
+  () =>
+    listAsyncStatus.value === 'loading'
+    && editableRows.value.length > 0
+    && props.loading !== true,
+);
+
+useScrollContainerInfiniteLoad({
+  containerRef: tableScrollRef,
+  hasNextPage: hasNextPageRef,
+  loadNextPage: () => props.loadNextPage?.(),
+  asyncStatus: listAsyncStatus,
+  disabled: computed(() => props.loading === true),
+});
+
 async function confirmRemove(row: ContractItemEditableRow) {
   if (!import.meta.client) return;
   if (
@@ -232,7 +254,10 @@ async function confirmRemove(row: ContractItemEditableRow) {
       </div>
     </div>
 
-    <div class="overflow-x-auto rounded-lg border border-default">
+    <div
+      ref="tableScrollRef"
+      class="max-h-[32rem] overflow-x-auto overflow-y-auto rounded-lg border border-default"
+    >
       <table class="w-full min-w-[640px] text-sm sm:min-w-[880px]">
         <thead>
           <tr
@@ -303,6 +328,14 @@ async function confirmRemove(row: ContractItemEditableRow) {
           <tr v-if="!loading && editableRows.length === 0">
             <td colspan="6" class="px-3 py-8 text-center text-muted">
               Sin productos en el contrato. Agrega el primero abajo.
+            </td>
+          </tr>
+          <tr v-if="loadingMore">
+            <td colspan="6" class="px-3 py-4 text-center text-muted">
+              <UIcon
+                name="i-lucide-loader-circle"
+                class="mx-auto size-5 animate-spin"
+              />
             </td>
           </tr>
         </tbody>

@@ -54,6 +54,22 @@ const pagePending = computed(
     || creditUnlockList.isInitialLoading.value,
 );
 
+const unlocksScrollRef = ref<HTMLElement | null>(null);
+
+const isLoadingMoreUnlocks = computed(
+  () =>
+    creditUnlockList.asyncStatus.value === 'loading'
+    && unlockRows.value.length > 0,
+);
+
+useScrollContainerInfiniteLoad({
+  containerRef: unlocksScrollRef,
+  hasNextPage: computed(() => creditUnlockList.hasNextPage.value),
+  loadNextPage: () => creditUnlockList.loadNextPage(),
+  asyncStatus: computed(() => creditUnlockList.asyncStatus.value),
+  disabled: computed(() => pagePending.value),
+});
+
 const clientTitle = computed(
   () => clientDetail.value?.name?.trim() || `Cliente #${clientId.value}`,
 );
@@ -139,6 +155,10 @@ useHead({
             </div>
 
             <template v-else>
+              <div
+                ref="unlocksScrollRef"
+                class="max-h-[calc(100vh-14rem)] space-y-2 overflow-y-auto"
+              >
               <div class="space-y-2 md:hidden">
                 <button
                   v-for="unlock in unlockRows"
@@ -215,20 +235,18 @@ useHead({
                 </tbody>
               </table>
               </div>
-            </template>
 
-            <div
-              v-if="creditUnlockList.hasNextPage.value && unlockRows.length > 0"
-              class="flex justify-center pt-2"
-            >
-              <UButton
-                label="Cargar más"
-                color="neutral"
-                variant="outline"
-                size="sm"
-                @click="() => void creditUnlockList.loadNextPage()"
-              />
-            </div>
+              <div
+                v-if="isLoadingMoreUnlocks"
+                class="flex justify-center py-2"
+              >
+                <UIcon
+                  name="i-lucide-loader-circle"
+                  class="size-5 animate-spin text-muted"
+                />
+              </div>
+              </div>
+            </template>
           </UPageCard>
         </div>
       </UContainer>

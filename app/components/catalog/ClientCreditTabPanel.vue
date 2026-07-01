@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui';
+import type { AsyncStatus } from '@pinia/colada';
 import type { infer as ZodInfer } from 'zod';
 import type {
   ClientCreditInvoice,
@@ -33,6 +34,7 @@ const props = defineProps<{
   invoices?: ClientCreditInvoice[];
   invoicesLoading?: boolean;
   hasMoreInvoices?: boolean;
+  invoicesAsyncStatus?: AsyncStatus;
 }>();
 
 const emit = defineEmits<{
@@ -103,11 +105,32 @@ const creditUnlockMutations = useCreditUnlockMutations({
 
 const unlockRows = computed(() => creditUnlockList.rows.value);
 const unlocksLoading = computed(() => creditUnlockList.isInitialLoading.value);
-const hasMoreUnlocks = computed(() => creditUnlockList.hasNextPage.value);
 const canCreateUnlock = computed(() => props.creditId != null);
 const canListUnlocks = computed(
   () => props.companyId != null && props.creditId != null,
 );
+
+const unlocksListRef = ref<HTMLElement | null>(null);
+const invoicesListRef = ref<HTMLElement | null>(null);
+
+useScrollContainerInfiniteLoad({
+  containerRef: unlocksListRef,
+  hasNextPage: computed(() => creditUnlockList.hasNextPage.value),
+  loadNextPage: () => creditUnlockList.loadNextPage(),
+  asyncStatus: computed(() => creditUnlockList.asyncStatus.value),
+  disabled: computed(() => !canListUnlocks.value || unlocksLoading.value),
+});
+
+const invoicesHasNextPage = computed(() => props.hasMoreInvoices ?? false);
+const invoicesAsyncStatus = computed(() => props.invoicesAsyncStatus ?? 'idle');
+
+useScrollContainerInfiniteLoad({
+  containerRef: invoicesListRef,
+  hasNextPage: invoicesHasNextPage,
+  loadNextPage: () => emit('loadMoreInvoices'),
+  asyncStatus: invoicesAsyncStatus,
+  disabled: computed(() => props.invoicesLoading === true),
+});
 
 function unlockModeLabel(mode: CreditTemporaryUnlock['mode']): string {
   return mode === 'money' ? 'Monto' : 'Días';
@@ -477,10 +500,12 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
           Crea un desbloqueo temporal por monto o días de gracia.
         </p>
       </div>
-      <ul
+      <div
         v-else-if="canListUnlocks"
-        class="divide-y divide-default rounded-lg border border-default"
+        ref="unlocksListRef"
+        class="max-h-80 overflow-y-auto rounded-lg border border-default"
       >
+        <ul class="divide-y divide-default">
         <li
           v-for="unlock in unlockRows"
           :key="unlock.id"
@@ -524,18 +549,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
             />
           </div>
         </li>
-      </ul>
-      <div
-        v-if="canListUnlocks && hasMoreUnlocks && unlockRows.length > 0"
-        class="flex justify-center pt-2"
-      >
-        <UButton
-          label="Cargar más"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          @click="() => void creditUnlockList.loadNextPage()"
-        />
+        </ul>
       </div>
     </UPageCard>
 
@@ -598,7 +612,12 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
         <p class="font-medium">Sin facturas pendientes</p>
         <p class="text-sm text-muted">El cliente está al corriente</p>
       </div>
-      <ul v-else class="divide-y divide-default rounded-lg border border-default">
+      <div
+        v-else
+        ref="invoicesListRef"
+        class="max-h-80 overflow-y-auto rounded-lg border border-default"
+      >
+        <ul class="divide-y divide-default">
         <li
           v-for="invoice in invoiceRows"
           :key="invoice.id"
@@ -624,15 +643,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
             {{ formatClientMoney(invoice.amount) }}
           </span>
         </li>
-      </ul>
-      <div v-if="hasMoreInvoices && invoiceRows.length > 0" class="flex justify-center pt-2">
-        <UButton
-          label="Cargar más"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          @click="emit('loadMoreInvoices')"
-        />
+        </ul>
       </div>
     </UPageCard>
 

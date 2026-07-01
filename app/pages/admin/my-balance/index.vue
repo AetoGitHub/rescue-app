@@ -41,11 +41,23 @@ const {
 const {
   rows: debtRows,
   isInitialLoading: isDebtsPending,
+  hasNextPage: debtsHasNextPage,
+  loadNextPage: loadNextDebtsPage,
+  asyncStatus: debtsAsyncStatus,
   errorMessage: debtsErrorMessage,
 } = usePaymentDebtList(
   computed(() => user.value?.id),
   { payment: false },
 );
+
+const debtsTableRef = useTemplateRef('debtsTable');
+
+usePaginatedTableInfiniteScroll({
+  tableRef: debtsTableRef,
+  hasNextPage: debtsHasNextPage,
+  loadNextPage: loadNextDebtsPage,
+  asyncStatus: debtsAsyncStatus,
+});
 
 const isOperativeProfile = computed(() => balanceProfile.value === 'operative');
 
@@ -441,10 +453,13 @@ const debtColumns = computed((): TableColumn<PaymentDebtItem>[] => [
 
         <div
           v-else
-          class="overflow-hidden rounded-lg border border-default"
+          class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-default"
         >
           <UTable
-            class="w-full"
+            ref="debtsTable"
+            sticky
+            :class="adminListTableClass"
+            class="max-h-96 w-full"
             :columns="debtColumns"
             :data="debtRows"
             :get-row-id="(row: PaymentDebtItem) => String(row.id)"
