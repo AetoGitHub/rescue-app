@@ -36,6 +36,8 @@ const webhookUrl = computed(
 const toast = useToast();
 const pendingFiles = ref<File[]>([]);
 const isUploading = ref(false);
+const uploadProgress = ref<number | null>(null);
+const uploadLabel = ref('');
 
 const rescueIdRef = computed(() => props.rescueId);
 
@@ -57,6 +59,7 @@ const fileCountLabel = computed(() =>
 );
 
 const dropzoneDescription = computed(() => {
+  if (isUploading.value && uploadLabel.value) return uploadLabel.value;
   if (isUploading.value) return RESCUE_EVIDENCE_MODAL_COPY.uploading;
   if (items.value.length === 0) return copy.value.empty;
   return copy.value.subtitle;
@@ -79,6 +82,7 @@ async function uploadFiles(files: File[]) {
   }
 
   isUploading.value = true;
+  uploadProgress.value = 0;
   try {
     const storagePath = buildRescueEvidenceStoragePath(
       props.rescueId,
@@ -86,13 +90,34 @@ async function uploadFiles(files: File[]) {
     );
     const uploaded: { type: RescueEvidenceType; url: string }[] = [];
 
-    for (const file of files) {
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index]!;
+      uploadLabel.value = RESCUE_EVIDENCE_MODAL_COPY.uploadingFile(
+        file.name,
+        index + 1,
+        files.length,
+      );
+
       const url = await uploadFileToFirebaseGeneral(
         file,
         storagePath,
         webhookUrl.value,
+        {
+          onProgress: (filePercent) => {
+            uploadProgress.value = computeMultiFileUploadProgress(
+              index,
+              files.length,
+              filePercent,
+            );
+          },
+        },
       );
       uploaded.push({ type: evidenceType.value, url });
+      uploadProgress.value = computeMultiFileUploadProgress(
+        index + 1,
+        files.length,
+        0,
+      );
     }
 
     await createEvidences({ evidences: uploaded });
@@ -109,6 +134,8 @@ async function uploadFiles(files: File[]) {
     });
   } finally {
     isUploading.value = false;
+    uploadProgress.value = null;
+    uploadLabel.value = '';
   }
 }
 
@@ -128,7 +155,16 @@ function scrollDropzoneIntoView() {
   });
 }
 
-watch(open, (isOpen) => {
+watch(open, (isOpen, wasOpen) => {
+  if (!isOpen && wasOpen && isUploading.value) {
+    open.value = true;
+    toast.add({
+      title: RESCUE_EVIDENCE_MODAL_COPY.uploadInProgressCloseBlocked,
+      color: 'warning',
+    });
+    return;
+  }
+
   if (isOpen) {
     void refresh();
     if (props.highlight) scrollDropzoneIntoView();
@@ -136,6 +172,17 @@ watch(open, (isOpen) => {
     pendingFiles.value = [];
   }
 });
+
+function requestClose() {
+  if (isUploading.value) {
+    toast.add({
+      title: RESCUE_EVIDENCE_MODAL_COPY.uploadInProgressCloseBlocked,
+      color: 'warning',
+    });
+    return;
+  }
+  open.value = false;
+}
 
 watch(
   () => props.highlight,
@@ -196,9 +243,25 @@ function fileLabel(url: string, index: number) {
           :label="copy.dropzoneLabel"
           :description="dropzoneDescription"
           class="w-full"
+          :class="isUploading ? 'pointer-events-none opacity-80' : ''"
           :ui="{ base: 'min-h-48' }"
           @update:model-value="onPendingFilesChange"
         />
+      </div>
+
+      <div
+        v-if="isUploading"
+        class="mb-4 space-y-2"
+      >
+        <UProgress
+          :model-value="uploadProgress"
+          status
+          size="md"
+          color="primary"
+        />
+        <p class="text-center text-sm text-muted">
+          {{ uploadLabel || RESCUE_EVIDENCE_MODAL_COPY.uploading }}
+        </p>
       </div>
 
       <div
@@ -280,7 +343,8 @@ function fileLabel(url: string, index: number) {
             color="neutral"
             :label="RESCUE_EVIDENCE_MODAL_COPY.close"
             variant="outline"
-            @click="() => { open = false }"
+            :disabled="isUploading"
+            @click="requestClose"
           />
         </div>
       </div>

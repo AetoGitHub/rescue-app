@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { SupplierCreateBody, SupplierRankingSummary } from '~/interfaces/catalogs/supplier';
-import { supplierCreateSchema } from '~/schemas/catalog-create';
+import { supplierCreateSchema, supplierCreateToCreateBody, type SupplierCreateFormOutput } from '~/schemas/catalog-create';
 
 const toast = useToast();
 
@@ -135,8 +135,12 @@ watch(open, (isOpen) => {
   }
 });
 
-function onSubmit(payload: { data: SupplierCreateBody }) {
-  mutate({ body: payload.data, id: editingId.value });
+function onSubmit(payload: { data: SupplierCreateFormOutput }) {
+  const body =
+    editingId.value == null
+      ? (supplierCreateToCreateBody(payload.data) as SupplierCreateBody)
+      : (payload.data as SupplierCreateBody);
+  mutate({ body, id: editingId.value });
 }
 
 function onFormError() {

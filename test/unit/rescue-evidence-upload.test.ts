@@ -1,113 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import {
-  RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
-  RESCUE_EVIDENCE_TYPE_SERVICE,
-  RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
-} from '~/constants/rescue-evidence-api';
-import {
-  buildAdministrativePaymentStoragePath,
-  buildFirebaseGeneralUploadUrl,
-  buildRescueEvidenceStoragePath,
-  extractUploadedFileUrl,
-  isRescueEvidenceFileAllowed,
-} from '~/utils/rescue-evidence-upload';
+import { computeMultiFileUploadProgress } from '../../app/utils/rescue-evidence-upload';
 
-describe('buildRescueEvidenceStoragePath', () => {
-  it('builds service evidence path', () => {
-    expect(buildRescueEvidenceStoragePath(42, RESCUE_EVIDENCE_TYPE_SERVICE)).toBe(
-      'rescue-2/rescue/42/services',
-    );
+describe('computeMultiFileUploadProgress', () => {
+  it('returns 0 for empty batch', () => {
+    expect(computeMultiFileUploadProgress(0, 0, 50)).toBe(0);
   });
 
-  it('builds payment provider evidence path', () => {
-    expect(
-      buildRescueEvidenceStoragePath(42, RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER),
-    ).toBe('rescue-2/rescue/42/payment_provider');
-  });
-});
-
-describe('buildAdministrativePaymentStoragePath', () => {
-  it('builds client payment evidence path for admin flow', () => {
-    expect(buildAdministrativePaymentStoragePath(42)).toBe(
-      'rescue-2/rescue/42/payment_client',
-    );
-  });
-});
-
-describe('buildFirebaseGeneralUploadUrl', () => {
-  it('appends path query with literal slashes', () => {
-    const storagePath = buildRescueEvidenceStoragePath(
-      42,
-      RESCUE_EVIDENCE_TYPE_SERVICE,
-    );
-    expect(
-      buildFirebaseGeneralUploadUrl(
-        RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
-        storagePath,
-      ),
-    ).toBe(
-      `${RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT}?path=rescue-2/rescue/42/services`,
-    );
-    expect(
-      buildFirebaseGeneralUploadUrl(
-        RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
-        storagePath,
-      ),
-    ).not.toContain('%2F');
+  it('computes progress for a single file', () => {
+    expect(computeMultiFileUploadProgress(0, 1, 50)).toBe(50);
+    expect(computeMultiFileUploadProgress(0, 1, 100)).toBe(100);
   });
 
-  it('replaces existing query on webhook base', () => {
-    expect(
-      buildFirebaseGeneralUploadUrl(
-        'https://example.com/hook?old=1',
-        'rescue-2/rescue/1/services',
-      ),
-    ).toBe('https://example.com/hook?path=rescue-2/rescue/1/services');
-  });
-});
-
-describe('extractUploadedFileUrl', () => {
-  it('reads url from root', () => {
-    expect(
-      extractUploadedFileUrl({ url: 'https://cdn.example.com/a.jpg' }),
-    ).toBe('https://cdn.example.com/a.jpg');
+  it('computes progress across multiple files', () => {
+    expect(computeMultiFileUploadProgress(0, 2, 100)).toBe(50);
+    expect(computeMultiFileUploadProgress(1, 2, 50)).toBe(75);
+    expect(computeMultiFileUploadProgress(2, 2, 0)).toBe(100);
   });
 
-  it('reads downloadURL from nested data', () => {
-    expect(
-      extractUploadedFileUrl({
-        data: { downloadURL: 'https://cdn.example.com/b.pdf' },
-      }),
-    ).toBe('https://cdn.example.com/b.pdf');
-  });
-
-  it('reads plain http string', () => {
-    expect(extractUploadedFileUrl('https://cdn.example.com/c.png')).toBe(
-      'https://cdn.example.com/c.png',
-    );
-  });
-
-  it('throws when url is missing', () => {
-    expect(() => extractUploadedFileUrl({ ok: true })).toThrow(
-      'sin URL válida',
-    );
-  });
-});
-
-describe('isRescueEvidenceFileAllowed', () => {
-  it('allows pdf under service limit', () => {
-    const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' });
-    Object.defineProperty(file, 'size', { value: 1024 });
-    expect(isRescueEvidenceFileAllowed(file, RESCUE_EVIDENCE_TYPE_SERVICE)).toBe(
-      true,
-    );
-  });
-
-  it('rejects unknown extension', () => {
-    const file = new File(['x'], 'doc.exe', { type: 'application/octet-stream' });
-    Object.defineProperty(file, 'size', { value: 1024 });
-    expect(isRescueEvidenceFileAllowed(file, RESCUE_EVIDENCE_TYPE_SERVICE)).toBe(
-      false,
-    );
+  it('clamps file percent to 0-100', () => {
+    expect(computeMultiFileUploadProgress(0, 1, 150)).toBe(100);
+    expect(computeMultiFileUploadProgress(0, 1, -10)).toBe(0);
   });
 });

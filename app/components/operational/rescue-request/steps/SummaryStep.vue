@@ -42,6 +42,16 @@ const quoteCreditWarning = computed(() =>
     state.value.company_settings,
   ),
 );
+
+const {
+  showBreakdown: showQuotePricingDevBreakdown,
+  breakdownMode: quotePricingDevBreakdownMode,
+  registerShortcut: registerQuoteDevUnlockShortcut,
+  unregisterShortcut: unregisterQuoteDevUnlockShortcut,
+} = useQuotePricingDevUnlock();
+
+onMounted(registerQuoteDevUnlockShortcut);
+onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
 </script>
 
 <template>
@@ -206,12 +216,12 @@ const quoteCreditWarning = computed(() =>
       icon="i-lucide-circle-alert"
     />
 
-    <DevOnly v-if="quotePricing.lines.length > 0">
-      <OperationalRescueRequestQuotePricingDevBreakdown
-        :pricing="quotePricing"
-        :settings="state.company_settings"
-      />
-    </DevOnly>
+    <OperationalRescueRequestQuotePricingDevBreakdown
+      v-if="showQuotePricingDevBreakdown && quotePricing.lines.length > 0"
+      :pricing="quotePricing"
+      :settings="state.company_settings"
+      :mode="quotePricingDevBreakdownMode ?? 'dev'"
+    />
 
     <UFormField label="Nota interna" name="internal_notes">
       <UTextarea v-model="state.internal_notes" class="w-full" :rows="4" />

@@ -81,22 +81,57 @@ const primaryButtonLabel = computed(() => {
 
 const toast = useToast();
 const panelRef = ref<HTMLElement | null>(null);
+const panelEndRef = ref<HTMLElement | null>(null);
+let panelResizeObserver: ResizeObserver | null = null;
+
+function scrollTarget() {
+  return panelEndRef.value ?? panelRef.value;
+}
 
 function scrollPanelIntoView() {
   nextTick(() => {
-    panelRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    scrollScrollableAncestorToBottomWithRetries(scrollTarget(), {
+      bottomOffset: 32,
+    });
   });
+}
+
+function startPanelScrollObserver() {
+  panelResizeObserver?.disconnect();
+  if (panelRef.value == null || typeof ResizeObserver === 'undefined') return;
+
+  panelResizeObserver = new ResizeObserver(() => {
+    scrollScrollableAncestorToBottom(scrollTarget(), { bottomOffset: 32 });
+  });
+  panelResizeObserver.observe(panelRef.value);
+  window.setTimeout(() => {
+    panelResizeObserver?.disconnect();
+    panelResizeObserver = null;
+  }, 600);
 }
 
 watch(
   () => open.value,
   (isOpen) => {
-    if (isOpen) scrollPanelIntoView();
+    if (isOpen) {
+      scrollPanelIntoView();
+      startPanelScrollObserver();
+    } else {
+      panelResizeObserver?.disconnect();
+      panelResizeObserver = null;
+    }
   },
 );
 
 onMounted(() => {
-  if (open.value) scrollPanelIntoView();
+  if (open.value) {
+    scrollPanelIntoView();
+    startPanelScrollObserver();
+  }
+});
+
+onBeforeUnmount(() => {
+  panelResizeObserver?.disconnect();
 });
 
 function applyPercent(percent: number) {
@@ -129,7 +164,7 @@ function onSubmit() {
 <template>
   <section
     ref="panelRef"
-    class="space-y-4 rounded-lg border border-default bg-default p-4"
+    class="scroll-mt-4 space-y-4 rounded-lg border border-default bg-default p-4 pb-6"
   >
     <div class="flex items-center gap-2">
       <UIcon
@@ -255,7 +290,10 @@ function onSubmit() {
       </template>
     </template>
 
-    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+    <div
+      ref="panelEndRef"
+      class="flex flex-wrap items-center justify-between gap-3 pt-2"
+    >
       <UButton
         color="primary"
         icon="i-lucide-check"

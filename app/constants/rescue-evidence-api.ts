@@ -54,6 +54,11 @@ export const RESCUE_EVIDENCE_MODAL_COPY = {
   },
   downloadAll: 'Descargar todo',
   uploading: 'Subiendo…',
+  uploadingFile: (fileName: string, index: number, total: number) =>
+    total > 1
+      ? `Subiendo ${fileName} (${index} de ${total})…`
+      : `Subiendo ${fileName}…`,
+  uploadInProgressCloseBlocked: 'Espera a que termine la subida para cerrar',
   upload: 'Subir',
   close: 'Cerrar',
   uploadError: 'No se pudo subir la evidencia',

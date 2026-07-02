@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { COMMISSION_TYPE_OPTIONS } from '~/constants/catalog-select-options';
-import { DEFAULT_IVA_RATE, QUOTE_SUMMARY_LABELS } from '~/constants/quote-pricing';
+import {
+  DEFAULT_IVA_RATE,
+  QUOTE_DEV_BREAKDOWN_COPY,
+  QUOTE_DEV_UNLOCK_COPY,
+  QUOTE_SUMMARY_LABELS,
+} from '~/constants/quote-pricing';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
+import type { QuotePricingDevBreakdownMode } from '~/utils/quote-pricing-dev-unlock';
 import {
   isFilledQuoteLine,
   type QuoteLinePricing,
@@ -12,7 +18,18 @@ const props = defineProps<{
   pricing: QuotePricingSummary;
   settings: RescueCompanySettings | null;
   ivaRate?: number;
+  mode?: QuotePricingDevBreakdownMode;
 }>();
+
+const devCopy = QUOTE_DEV_BREAKDOWN_COPY;
+
+const panelTitle = computed(() =>
+  props.mode === 'admin'
+    ? QUOTE_DEV_UNLOCK_COPY.panelTitleAdmin
+    : QUOTE_DEV_UNLOCK_COPY.panelTitleDev,
+);
+
+const showAdminShortcutHint = computed(() => props.mode === 'admin');
 
 const ivaRate = computed(() => props.ivaRate ?? DEFAULT_IVA_RATE);
 const ivaPercentLabel = computed(() => formatIvaPercent(ivaRate.value));
@@ -31,6 +48,15 @@ const standardAfterMultSum = computed(() =>
     .reduce((sum, row) => sum + row.afterMultiplier, 0),
 );
 
+const sellerCommissionRule = computed(() => {
+  const commissions = props.settings?.commissions;
+  if (commissions == null) return null;
+  if (commissions.commission_type === 'FIXED') {
+    return devCopy.ruleSellerFixed;
+  }
+  return devCopy.ruleSellerPercent;
+});
+
 function fixedShareExplanation(row: QuoteLinePricing): string | null {
   if (row.isContractLine || row.fixedShare <= 0 || !props.settings) {
     return null;
@@ -39,26 +65,54 @@ function fixedShareExplanation(row: QuoteLinePricing): string | null {
   const sum = standardAfterMultSum.value;
   if (sum <= 0) return null;
   const pct = ((row.afterMultiplier / sum) * 100).toFixed(1);
-  return `Parte de la comisión fija total de la cotización (${formatQuoteMoney(pool)}): esta partida pesa ${pct}% del subtotal tras multiplicador → ${formatQuoteMoney(row.fixedShare)}`;
+  return `${devCopy.fixedShareLinePrefix} (${formatQuoteMoney(pool)} total; esta partida ${pct}% del subtotal tras multiplicador) → ${formatQuoteMoney(row.fixedShare)} ${devCopy.fixedShareLineSuffix}`;
 }
 
-const commissionFormula = computed(() => {
+const sellerCommissionDetail = computed(() => {
   const commissions = props.settings?.commissions;
-  if (commissions == null) return 'Sin ajustes de cliente cargados.';
+  if (commissions == null) {
+    return 'Sin ajustes de cliente: no se calcula comisión vendedor.';
+  }
+
   if (commissions.commission_type === 'FIXED') {
-    return `Fija: se suma ${formatQuoteMoney(commissions.commission_value)} al subtotal antes de IVA.`;
+    return [
+      `Tipo FIXED: se suma ${formatQuoteMoney(commissions.commission_value)} al subtotal antes de IVA.`,
+      `Cálculo: ${formatQuoteMoney(props.pricing.subtotalLines)} + ${formatQuoteMoney(props.pricing.sellerCommission)} = ${formatQuoteMoney(props.pricing.totalBeforeTax)}.`,
+      'Este monto sí incrementa lo que paga el cliente.',
+    ].join(' ');
   }
+
   if (props.pricing.profit <= 0) {
-    return `Porcentaje ${commissions.commission_value}% de la utilidad → $0 (no se suma al total del cliente).`;
+    return [
+      `Tipo PERCENTAGE: ${commissions.commission_value}% × utilidad ${formatQuoteMoney(props.pricing.profit)} = $0.`,
+      'No se suma al total del cliente.',
+    ].join(' ');
   }
-  return `Porcentaje ${commissions.commission_value}% de la utilidad ${formatQuoteMoney(props.pricing.profit)} = ${formatQuoteMoney(props.pricing.sellerCommission)} (referencia; no se suma al total del cliente).`;
+
+  return [
+    `Tipo PERCENTAGE: ${commissions.commission_value}% × utilidad ${formatQuoteMoney(props.pricing.profit)} = ${formatQuoteMoney(props.pricing.sellerCommission)}.`,
+    'Solo referencia interna (pagos al vendedor). No aparece en subtotal antes de IVA ni en total cotizado.',
+    `Si esperabas sumarlo al total, el cliente debe tener tipo FIXED o revisar que commission_fixed (${formatQuoteMoney(commissions.commission_fixed)}) ya esté embebida en las líneas.`,
+  ].join(' ');
 });
 
-const beforeTaxFormula = computed(() => {
+const beforeTaxDetail = computed(() => {
+  const sub = formatQuoteMoney(props.pricing.subtotalLines);
+  const total = formatQuoteMoney(props.pricing.totalBeforeTax);
+
   if (props.pricing.sellerCommissionAddsToTotal) {
-    return `${QUOTE_SUMMARY_LABELS.subtotal} + comisión fija vendedor`;
+    const comm = formatQuoteMoney(props.pricing.sellerCommission);
+    return `${sub} + comisión vendedor fija ${comm} = ${total}`;
   }
-  return QUOTE_SUMMARY_LABELS.subtotal;
+
+  return `${sub} (sin comisión % vendedor) = ${total}`;
+});
+
+const totalChargedDetail = computed(() => {
+  const before = formatQuoteMoney(props.pricing.totalBeforeTax);
+  const iva = formatQuoteMoney(props.pricing.ivaAmount);
+  const total = formatQuoteMoney(props.pricing.totalCharged);
+  return `${before} + IVA ${ivaPercentLabel.value} (${iva}) = ${total}`;
 });
 </script>
 
@@ -69,31 +123,60 @@ const beforeTaxFormula = computed(() => {
     <summary
       class="cursor-pointer select-none px-3 py-2 font-semibold text-amber-600 dark:text-amber-400"
     >
-      Desglose de cotización (solo desarrollo)
+      {{ panelTitle }}
     </summary>
 
+    <p
+      v-if="showAdminShortcutHint"
+      class="border-t border-amber-500/20 px-3 py-1.5 text-[11px] text-muted"
+    >
+      {{ QUOTE_DEV_UNLOCK_COPY.panelHintAdmin }}
+    </p>
+
     <div class="space-y-3 border-t border-amber-500/20 px-3 pb-3 pt-2">
+      <section
+        v-if="settings"
+        class="space-y-1.5 rounded border border-amber-500/30 bg-amber-500/10 p-2"
+      >
+        <p class="font-semibold text-amber-700 dark:text-amber-300">
+          {{ devCopy.rulesTitle }}
+        </p>
+        <p class="text-muted">
+          {{ devCopy.rulesIntro }}
+        </p>
+        <ul class="list-inside list-disc space-y-1 text-muted">
+          <li>{{ devCopy.ruleEmbeddedFixed }}</li>
+          <li>{{ devCopy.ruleMultiplier }}</li>
+          <li v-if="sellerCommissionRule">
+            {{ sellerCommissionRule }}
+          </li>
+        </ul>
+      </section>
+
       <section v-if="settings" class="space-y-1">
         <p class="font-medium text-muted">
           Ajustes del cliente
         </p>
         <ul class="list-inside list-disc space-y-0.5 text-muted">
           <li>
-            Tipo comisión vendedor:
+            {{ devCopy.sellerCommissionTypeLabel }}:
             <strong class="text-default">{{ commissionTypeLabel }}</strong>
             ({{ settings.commissions.commission_type }})
           </li>
           <li>
-            Valor comisión:
+            {{ devCopy.sellerCommissionValueLabel }}:
             <strong class="tabular-nums text-default">
               {{ settings.commissions.commission_value }}
             </strong>
             <span v-if="settings.commissions.commission_type === 'PERCENTAGE'">
-              %
+              % sobre utilidad
+            </span>
+            <span v-else>
+              (monto extra al subtotal)
             </span>
           </li>
           <li>
-            Comisión fija total de la cotización (se reparte entre partidas):
+            {{ devCopy.embeddedFixedLabel }}:
             <strong class="tabular-nums text-default">
               {{ formatQuoteMoney(settings.commissions.commission_fixed) }}
             </strong>
@@ -152,21 +235,21 @@ const beforeTaxFormula = computed(() => {
               {{ formatQuoteMoney(row.baseFinal) }}
             </li>
             <li v-if="!row.isContractLine">
-              Tras multiplicador:
+              Tras multiplicador →
               {{ formatQuoteMoney(row.afterMultiplier) }}
             </li>
             <li v-if="fixedShareExplanation(row)">
               {{ fixedShareExplanation(row) }}
             </li>
             <li v-if="row.isContractLine">
-              Línea convenio: sin multiplicador ni comisión fija de empresa
+              {{ devCopy.contractLineNote }}
             </li>
             <li>
               {{ QUOTE_SUMMARY_LABELS.technicalCost }} línea:
               {{ formatQuoteMoney(row.costSubtotal) }}
             </li>
             <li>
-              Total calculado:
+              Total calculado (antes de redondeo):
               {{ formatQuoteMoney(row.lineTotalCalculated) }}
             </li>
             <li v-if="row.roundingAdd !== 0">
@@ -175,7 +258,8 @@ const beforeTaxFormula = computed(() => {
               }}{{ formatQuoteMoney(row.roundingAdd) }}
             </li>
             <li>
-              Total línea ({{ QUOTE_SUMMARY_LABELS.subtotal }} partida):
+              Total línea ({{ QUOTE_SUMMARY_LABELS.subtotal }} partida, lo que
+              suma al cliente):
               <strong class="text-default">
                 {{ formatQuoteMoney(row.lineTotal) }}
               </strong>
@@ -191,7 +275,7 @@ const beforeTaxFormula = computed(() => {
         <p class="font-medium text-muted">
           Totales
         </p>
-        <ul class="space-y-0.5 tabular-nums text-muted">
+        <ul class="space-y-1 tabular-nums text-muted">
           <li>
             {{ QUOTE_SUMMARY_LABELS.technicalCost }} = Σ costo línea →
             <strong class="text-default">
@@ -203,6 +287,10 @@ const beforeTaxFormula = computed(() => {
             <strong class="text-default">
               {{ formatQuoteMoney(pricing.subtotalLines) }}
             </strong>
+            <span class="block text-[11px] text-muted/90">
+              (incluye multiplicador, comisión fija de empresa repartida y
+              redondeo al diez)
+            </span>
           </li>
           <li v-if="pricing.roundingAddTotal !== 0">
             Σ ajuste redondeo al diez →
@@ -217,26 +305,21 @@ const beforeTaxFormula = computed(() => {
               {{ formatQuoteMoney(pricing.profit) }}
             </strong>
           </li>
-          <li>
-            Comisión vendedor: {{ commissionFormula }}
+          <li class="rounded border border-default/50 bg-elevated/20 p-1.5">
+            <span class="font-medium text-default">Comisión vendedor</span>
+            <span class="block mt-0.5">{{ sellerCommissionDetail }}</span>
           </li>
           <li>
-            {{ QUOTE_SUMMARY_LABELS.beforeTax }} = {{ beforeTaxFormula }} →
-            <strong class="text-default">
-              {{ formatQuoteMoney(pricing.totalBeforeTax) }}
-            </strong>
+            {{ QUOTE_SUMMARY_LABELS.beforeTax }} = {{ beforeTaxDetail }}
           </li>
           <li>
-            IVA {{ ivaPercentLabel }} →
+            IVA {{ ivaPercentLabel }} sobre subtotal antes de IVA →
             <strong class="text-default">
               {{ formatQuoteMoney(pricing.ivaAmount) }}
             </strong>
           </li>
           <li>
-            {{ QUOTE_SUMMARY_LABELS.totalQuoted }} →
-            <strong class="text-primary">
-              {{ formatQuoteMoney(pricing.totalCharged) }}
-            </strong>
+            {{ QUOTE_SUMMARY_LABELS.totalQuoted }} = {{ totalChargedDetail }}
           </li>
         </ul>
       </section>

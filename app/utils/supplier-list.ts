@@ -1,5 +1,9 @@
-import type { SupplierListItem } from '~/interfaces/catalogs/supplier';
+import type {
+  SupplierListItem,
+  SupplierServiceType,
+} from '~/interfaces/catalogs/supplier';
 import type { RescueSupplierNearbyRow } from '~/interfaces/rescue';
+import { SUPPLIER_SERVICE_TYPE_OPTIONS } from '~/constants/catalog-select-options';
 import { toSupplierServiceTypes } from '~/utils/catalog-detail-map';
 
 export function parseSupplierCoord(
@@ -94,7 +98,27 @@ export function mapSupplierListItem(
     distance_km,
     latitude: row.latitude ?? null,
     longitude: row.longitude ?? null,
+    service_type: row.service_type,
   };
+}
+
+const supplierServiceTypeLabelByValue = new Map<string, string>(
+  SUPPLIER_SERVICE_TYPE_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+export function formatSupplierServiceTypeLabel(
+  value: SupplierServiceType,
+): string {
+  return supplierServiceTypeLabelByValue.get(value) ?? value;
+}
+
+export function partitionSuppliersByTrust(list: RescueSupplierNearbyRow[]): {
+  trusted: RescueSupplierNearbyRow[];
+  others: RescueSupplierNearbyRow[];
+} {
+  const trusted = list.filter((s) => s.is_trusted);
+  const others = list.filter((s) => !s.is_trusted);
+  return { trusted, others };
 }
 
 export function groupTrustedFirst(

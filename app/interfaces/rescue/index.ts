@@ -57,6 +57,7 @@ export interface RescueSupplierNearbyRow {
   distance_km: number | null;
   latitude?: string | number | null;
   longitude?: string | number | null;
+  service_type: import('~/interfaces/catalogs/supplier').SupplierServiceType[];
 }
 
 export interface SupplierMapPin {

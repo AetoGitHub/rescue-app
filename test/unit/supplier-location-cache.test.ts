@@ -153,7 +153,7 @@ describe('filterAndSortRescueSuppliers', () => {
     }),
   ];
 
-  it('sorts by ranking descending and groups trusted first', () => {
+  it('sorts by ranking descending', () => {
     const result = filterAndSortRescueSuppliers(suppliers, {
       name: '',
       sort: 'ranking',

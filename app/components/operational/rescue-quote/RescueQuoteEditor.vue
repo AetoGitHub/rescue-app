@@ -85,6 +85,16 @@ const pricing = computed(() =>
   computeQuotePricing(quoteLines.value, settings.value),
 );
 
+const {
+  showBreakdown: showQuotePricingDevBreakdown,
+  breakdownMode: quotePricingDevBreakdownMode,
+  registerShortcut: registerQuoteDevUnlockShortcut,
+  unregisterShortcut: unregisterQuoteDevUnlockShortcut,
+} = useQuotePricingDevUnlock();
+
+onMounted(registerQuoteDevUnlockShortcut);
+onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
+
 const hasFilledLines = computed(() =>
   quoteLinesHaveFilledEntries(quoteLines.value),
 );
@@ -404,12 +414,12 @@ watch(
         {{ creditAvailableLabel }}
       </p>
 
-      <DevOnly>
-        <OperationalRescueRequestQuotePricingDevBreakdown
-          :pricing="pricing"
-          :settings="settings"
-        />
-      </DevOnly>
+      <OperationalRescueRequestQuotePricingDevBreakdown
+        v-if="showQuotePricingDevBreakdown"
+        :pricing="pricing"
+        :settings="settings"
+        :mode="quotePricingDevBreakdownMode ?? 'dev'"
+      />
     </div>
   </div>
 </template>

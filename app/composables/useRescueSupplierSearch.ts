@@ -74,7 +74,7 @@ export function useRescueSupplierSearch(options: {
       bounds: fetchBounds.value,
       zoom: fetchZoom.value,
       name: debouncedSearch.value,
-      trustedOnly: true,
+      trustedOnly: false,
       serviceType: options.serviceTypeFilter.value,
       orderBy: sort.value,
     });
@@ -118,7 +118,7 @@ export function useRescueSupplierSearch(options: {
       displayBounds.value,
       {
         name: debouncedSearch.value,
-        trustedOnly: true,
+        trustedOnly: false,
         serviceType: options.serviceTypeFilter.value,
       },
     );

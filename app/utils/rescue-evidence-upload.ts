@@ -110,20 +110,76 @@ export function extractUploadedFileUrl(response: unknown): string {
   throw new Error('Respuesta de subida sin URL válida');
 }
 
+export type FirebaseUploadOptions = {
+  onProgress?: (percent: number) => void;
+};
+
+export function computeMultiFileUploadProgress(
+  fileIndex: number,
+  totalFiles: number,
+  filePercent: number,
+): number {
+  if (totalFiles <= 0) return 0;
+  const normalized = Math.min(100, Math.max(0, filePercent));
+  return Math.min(
+    100,
+    Math.round(((fileIndex + normalized / 100) / totalFiles) * 100),
+  );
+}
+
+function uploadFileWithXhr(
+  file: File,
+  uploadUrl: string,
+  onProgress?: (percent: number) => void,
+): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', uploadUrl);
+
+    xhr.upload.onprogress = (event) => {
+      if (!onProgress || !event.lengthComputable) return;
+      onProgress(Math.round((event.loaded / event.total) * 100));
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch {
+          resolve(xhr.responseText);
+        }
+        return;
+      }
+      reject(new Error(`Error de subida (${xhr.status})`));
+    };
+
+    xhr.onerror = () => reject(new Error('Error de red al subir el archivo'));
+
+    const form = new FormData();
+    form.append('file', file);
+    xhr.send(form);
+  });
+}
+
 export async function uploadFileToFirebaseGeneral(
   file: File,
   storagePath: string,
   webhookUrl: string,
+  options: FirebaseUploadOptions = {},
 ): Promise<string> {
-  const form = new FormData();
-  form.append('file', file);
-
   const uploadUrl = buildFirebaseGeneralUploadUrl(webhookUrl, storagePath);
 
-  const response = await $fetch<unknown>(uploadUrl, {
-    method: 'POST',
-    body: form,
-  });
+  const response =
+    typeof XMLHttpRequest !== 'undefined'
+      ? await uploadFileWithXhr(file, uploadUrl, options.onProgress)
+      : await $fetch<unknown>(uploadUrl, {
+          method: 'POST',
+          body: (() => {
+            const form = new FormData();
+            form.append('file', file);
+            return form;
+          })(),
+        });
 
   return extractUploadedFileUrl(response);
 }

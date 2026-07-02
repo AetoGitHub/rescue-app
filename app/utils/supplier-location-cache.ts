@@ -8,7 +8,6 @@ import type { RescueSupplierNearbyRow, RescueSupplierSort } from '~/interfaces/r
 import type { MapBounds } from '~/utils/map-viewport';
 import {
   coordsFromSupplierRow,
-  groupTrustedFirst,
   mapSupplierListItem,
 } from '~/utils/supplier-list';
 
@@ -159,7 +158,7 @@ export function filterAndSortRescueSuppliers(
     return mapSupplierListItem(supplier);
   });
 
-  return groupTrustedFirst(rows);
+  return rows;
 }
 
 export function supplierListItemFromCreateBody(

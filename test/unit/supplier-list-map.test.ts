@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { mapSupplierListRow, coordsFromSupplierRow } from '../../app/utils/supplier-list';
+import { mapSupplierListRow, coordsFromSupplierRow, partitionSuppliersByTrust } from '../../app/utils/supplier-list';
+import type { RescueSupplierNearbyRow } from '../../app/interfaces/rescue';
 
 describe('mapSupplierListRow', () => {
   it('maps service_types array to service_type', () => {
@@ -93,5 +94,37 @@ describe('mapSupplierListRow', () => {
       lng: -100.2,
     });
     expect(coordsFromSupplierRow(row)).toEqual({ lat: 20.5, lng: -100.2 });
+  });
+});
+
+describe('partitionSuppliersByTrust', () => {
+  it('splits trusted and non-trusted without duplication', () => {
+    const list: RescueSupplierNearbyRow[] = [
+      {
+        id: 1,
+        name: 'Trusted',
+        phone: '',
+        is_trusted: true,
+        score: 5,
+        rescues_count: 0,
+        ranking: 5,
+        distance_km: null,
+        service_type: ['cranes'],
+      },
+      {
+        id: 2,
+        name: 'Other',
+        phone: '',
+        is_trusted: false,
+        score: 4,
+        rescues_count: 0,
+        ranking: 4,
+        distance_km: null,
+        service_type: ['mechanics'],
+      },
+    ];
+    const { trusted, others } = partitionSuppliersByTrust(list);
+    expect(trusted.map((s) => s.id)).toEqual([1]);
+    expect(others.map((s) => s.id)).toEqual([2]);
   });
 });

@@ -15,6 +15,7 @@ import type {
   ClientContactCreateBody,
   ClientContactUpdateBody,
 } from '~/interfaces/catalogs/client';
+import type { SupplierCreateBody } from '~/interfaces/catalogs/supplier';
 
 const requiredStr = (label: string) =>
   z.string().transform((s) => s.trim()).pipe(z.string().min(1, `${label} es obligatorio`));
@@ -210,6 +211,27 @@ export const supplierCreateSchema = z
       });
     }
   });
+
+export type SupplierCreateFormOutput = z.output<typeof supplierCreateSchema>;
+
+export function supplierCreateToCreateBody(
+  input: SupplierCreateFormOutput,
+): Omit<SupplierCreateBody, 'is_trusted'> & { is_trusted?: boolean } {
+  const body: Omit<SupplierCreateBody, 'is_trusted'> & { is_trusted?: boolean } = {
+    name: input.name.trim(),
+    description: input.description,
+    phone: input.phone,
+    email: input.email,
+    service_type: input.service_type,
+    notes: input.notes,
+    latitude: input.latitude,
+    longitude: input.longitude,
+  };
+  if (input.is_trusted) {
+    body.is_trusted = true;
+  }
+  return body;
+}
 
 export const supplierReviewSchema = z
   .object({
