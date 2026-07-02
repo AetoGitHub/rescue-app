@@ -1,22 +1,30 @@
 <script setup lang="ts">
-import { useMutation, useQueryCache } from '@pinia/colada';
+import { useMutation, useQuery, useQueryCache } from '@pinia/colada';
 import { SERVICE_UNIT_OPTIONS } from '~/constants/catalog-select-options';
-import type { ServiceCreateBody } from '~/interfaces/catalogs/service';
+import type { AlegraItemDisplay } from '~/interfaces/alegra/item.interface';
+import type { ServiceCreateBody, ServiceUpdateBody } from '~/interfaces/catalogs/service';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
-import { serviceCreateSchema } from '~/schemas/catalog-create';
+import { serviceCreateSchema, serviceUpdateSchema } from '~/schemas/catalog-create';
 
 const toast = useToast();
+const apiFetch = useApiFetch();
 
-type ServiceFormState = Omit<ServiceCreateBody, 'category'> & {
+type ServiceFormState = Omit<ServiceCreateBody, 'category' | 'alegra_id'> & {
   category?: number;
+  alegra_id?: number;
 };
 
 const open = ref(false);
 const editingId = ref<number | null>(null);
 const detailPending = ref(false);
+const linkedAlegraId = ref<number | null>(null);
 
 const isEdit = computed(() => editingId.value != null);
+
+const activeSchema = computed(() =>
+  isEdit.value ? serviceUpdateSchema : serviceCreateSchema,
+);
 
 function emptyState(): ServiceFormState {
   return {
@@ -25,6 +33,7 @@ function emptyState(): ServiceFormState {
     category: undefined,
     unit: 'service',
     warranty: false,
+    alegra_id: undefined,
   };
 }
 
@@ -32,6 +41,7 @@ const state = reactive(emptyState());
 
 function resetForm() {
   Object.assign(state, emptyState());
+  linkedAlegraId.value = null;
 }
 
 function prepareCreate() {
@@ -45,7 +55,13 @@ async function loadDetail(id: number) {
     const raw = await $fetch<Record<string, unknown>>(
       `/api/catalogue/service/detail/${id}/`,
     );
-    Object.assign(state, emptyState(), mapServiceDetail(raw));
+    const mapped = mapServiceDetail(raw);
+    linkedAlegraId.value =
+      mapped.alegra_id != null && Number.isFinite(mapped.alegra_id)
+        ? mapped.alegra_id
+        : null;
+    Object.assign(state, emptyState(), mapped);
+    delete state.alegra_id;
   } catch (e) {
     console.error(e);
     toast.add({
@@ -84,10 +100,46 @@ function fetchCategoryDropdown(
   );
 }
 
+function fetchAlegraItemsDropdown(
+  name: string,
+  options?: { signal?: AbortSignal },
+) {
+  return apiFetch<PaginatedResponse<CatalogDropdownRow>>('/api/alegra/items', {
+    query: { name: name.trim() || undefined },
+    signal: options?.signal,
+  });
+}
+
+const {
+  data: alegraItemDetail,
+  asyncStatus: alegraDetailStatus,
+  error: alegraDetailError,
+} = useQuery({
+  key: () => ['alegra-item-detail', linkedAlegraId.value],
+  query: ({ signal }) =>
+    apiFetch<AlegraItemDisplay>(`/api/alegra/items/${linkedAlegraId.value}`, {
+      signal,
+    }),
+  enabled: () => isEdit.value && linkedAlegraId.value != null,
+  refetchOnWindowFocus: false,
+});
+
+const alegraDetailErrorMessage = computed(() =>
+  alegraDetailError.value != null
+    ? getFetchErrorMessage(alegraDetailError.value)
+    : '',
+);
+
 const queryCache = useQueryCache();
 
 const { mutate, asyncStatus } = useMutation({
-  mutation: ({ body, id }: { body: ServiceCreateBody; id: number | null }) =>
+  mutation: ({
+    body,
+    id,
+  }: {
+    body: ServiceCreateBody | ServiceUpdateBody;
+    id: number | null;
+  }) =>
     id != null
       ? $fetch(`/api/catalogue/service/update/${id}/`, {
           method: 'PUT',
@@ -117,8 +169,17 @@ const { mutate, asyncStatus } = useMutation({
 
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
-function onSubmit(payload: { data: ServiceCreateBody }) {
-  mutate({ body: payload.data, id: editingId.value });
+function onSubmit(payload: { data: ServiceFormState }) {
+  if (isEdit.value) {
+    const { alegra_id: _ignored, ...body } = payload.data;
+    mutate({ body, id: editingId.value });
+    return;
+  }
+
+  mutate({
+    body: payload.data as ServiceCreateBody,
+    id: editingId.value,
+  });
 }
 
 function onFormError() {
@@ -148,7 +209,7 @@ async function requestSubmit() {
       <UForm
         v-show="!detailPending || !isEdit"
         ref="formRef"
-        :schema="serviceCreateSchema"
+        :schema="activeSchema"
         :state="state"
         class="space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
         @submit="onSubmit"
@@ -169,6 +230,56 @@ async function requestSubmit() {
             :fetcher="fetchCategoryDropdown"
           />
         </UFormField>
+
+        <UFormField
+          v-if="!isEdit"
+          label="Ítem Alegra"
+          name="alegra_id"
+          required
+        >
+          <CatalogDropdownSelect
+            v-model="state.alegra_id"
+            placeholder="Buscar ítem en Alegra..."
+            :fetcher="fetchAlegraItemsDropdown"
+          />
+        </UFormField>
+
+        <div v-else class="space-y-2">
+          <span class="block text-sm font-medium text-default">Ítem Alegra</span>
+          <div
+            v-if="linkedAlegraId == null"
+            class="rounded-lg border border-dashed border-default px-3 py-2 text-sm text-muted"
+          >
+            Sin vínculo Alegra
+          </div>
+          <div
+            v-else-if="alegraDetailStatus === 'loading'"
+            class="flex items-center gap-2 rounded-lg border border-default px-3 py-2 text-sm text-muted"
+          >
+            <UIcon name="i-lucide-loader-circle" class="size-4 animate-spin" />
+            Cargando ítem de Alegra...
+          </div>
+          <p
+            v-else-if="alegraDetailErrorMessage"
+            class="rounded-lg border border-error/30 bg-error/5 px-3 py-2 text-sm text-error"
+            role="alert"
+          >
+            {{ alegraDetailErrorMessage }}
+          </p>
+          <div
+            v-else-if="alegraItemDetail"
+            class="rounded-lg border border-default px-3 py-2 text-sm"
+          >
+            <p class="font-medium break-all">{{ alegraItemDetail.name }}</p>
+            <p
+              v-if="alegraItemDetail.reference"
+              class="mt-1 text-xs text-muted break-all"
+            >
+              Ref: {{ alegraItemDetail.reference }}
+            </p>
+          </div>
+        </div>
+
         <UFormField label="Unidad" name="unit" required>
           <USelectMenu
             v-model="state.unit"

@@ -376,7 +376,7 @@ function buildSubmitBody(data: ZodInfer<typeof clientCreateSchema>): ClientCreat
   return {
     ...data,
     company: data.company ?? null,
-    seller: data.seller,
+    seller: data.seller ?? null,
     is_active: data.is_active ?? true,
   };
 }
@@ -603,7 +603,7 @@ async function requestSubmit() {
                     variant="subtle"
                   />
                 </UFormField>
-                <UFormField label="Vendedor asignado" name="seller" required>
+                <UFormField label="Vendedor asignado" name="seller">
                   <CatalogDropdownSelect
                     v-model="state.seller"
                     placeholder="Buscar vendedor"

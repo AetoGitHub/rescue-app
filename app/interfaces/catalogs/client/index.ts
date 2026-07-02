@@ -31,7 +31,7 @@ export interface ClientCreateBody {
   commission_fixed: string;
   price_multiplier: string;
   company: number | null;
-  seller: number;
+  seller?: number | null;
   notes: string;
   is_active?: boolean;
 }

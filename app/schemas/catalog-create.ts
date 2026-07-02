@@ -52,7 +52,7 @@ export const companyCreateSchema = z.object({
 
 export const clientCreateSchema = companyCreateSchema.extend({
   company: z.number().int().positive().optional(),
-  seller: z.number().int().positive({ error: 'Selecciona un vendedor' }),
+  seller: z.number().int().positive({ error: 'Selecciona un vendedor' }).optional(),
   notes: z.string(),
   is_active: z.boolean().optional(),
 });
@@ -149,7 +149,10 @@ export const serviceCreateSchema = z.object({
   category: z.number().int().positive({ error: 'Selecciona una categoría' }),
   unit: z.enum(SERVICE_UNIT_VALUES, { error: 'Selecciona una unidad' }),
   warranty: z.boolean(),
+  alegra_id: z.number().int().positive({ error: 'Selecciona un ítem de Alegra' }),
 });
+
+export const serviceUpdateSchema = serviceCreateSchema.omit({ alegra_id: true });
 
 export const categoryCreateSchema = z.object({
   name: catalogNameField('El nombre'),

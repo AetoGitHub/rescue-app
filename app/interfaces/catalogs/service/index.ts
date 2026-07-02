@@ -16,4 +16,7 @@ export interface ServiceCreateBody {
   category: number;
   unit: ServiceUnit;
   warranty: boolean;
+  alegra_id: number;
 }
+
+export type ServiceUpdateBody = Omit<ServiceCreateBody, 'alegra_id'>;

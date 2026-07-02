@@ -63,6 +63,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     apiUrl: '',
+    alegraApiToken: '',
     n8nCoordsToAddressUrl: '',
     n8nLinkToCoordsUrl: '',
     n8nRescueClassifierUrl: '',

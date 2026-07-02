@@ -366,7 +366,7 @@ export function mapClientDetailToCreateBody(
   return {
     ...base,
     company: base.company ?? null,
-    seller: base.seller ?? 0,
+    seller: base.seller ?? null,
   };
 }
 
@@ -379,9 +379,10 @@ function toServiceUnit(value: unknown): ServiceUnit {
 
 export function mapServiceDetail(raw: Record<string, unknown>): Omit<
   ServiceCreateBody,
-  'category'
+  'category' | 'alegra_id'
 > & {
   category?: number;
+  alegra_id?: number;
 } {
   const cat = raw.category ?? raw.category_id;
   return {
@@ -390,6 +391,10 @@ export function mapServiceDetail(raw: Record<string, unknown>): Omit<
     category: cat != null && cat !== '' ? Number(cat) : undefined,
     unit: toServiceUnit(raw.unit),
     warranty: Boolean(raw.warranty),
+    alegra_id:
+      raw.alegra_id != null && raw.alegra_id !== ''
+        ? Number(raw.alegra_id)
+        : undefined,
   };
 }
 
