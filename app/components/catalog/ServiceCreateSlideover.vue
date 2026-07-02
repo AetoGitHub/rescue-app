@@ -55,12 +55,9 @@ async function loadDetail(id: number) {
     const raw = await $fetch<Record<string, unknown>>(
       `/api/catalogue/service/detail/${id}/`,
     );
-    const mapped = mapServiceDetail(raw);
-    linkedAlegraId.value =
-      mapped.alegra_id != null && Number.isFinite(mapped.alegra_id)
-        ? mapped.alegra_id
-        : null;
-    Object.assign(state, emptyState(), mapped);
+    const detail = mapServiceDetailApi(raw);
+    linkedAlegraId.value = detail.alegra_id;
+    Object.assign(state, emptyState(), mapServiceDetail(raw));
     delete state.alegra_id;
   } catch (e) {
     console.error(e);

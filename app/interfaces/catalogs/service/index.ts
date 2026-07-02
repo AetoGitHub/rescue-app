@@ -8,6 +8,19 @@ export interface Service {
   category_id: number;
   category_name: string;
   is_active: boolean;
+  alegra_id?: number | null;
+}
+
+export interface ServiceDetail {
+  id: number;
+  name: string;
+  description: string;
+  category_id: number;
+  category_name: string;
+  unit: ServiceUnit;
+  warranty: boolean;
+  is_active: boolean;
+  alegra_id: number | null;
 }
 
 export interface ServiceCreateBody {

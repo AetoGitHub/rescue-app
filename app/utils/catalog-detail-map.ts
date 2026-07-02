@@ -8,7 +8,7 @@ import type {
   CreditUnlockMode,
 } from '~/interfaces/catalogs/credit';
 import { SERVICE_UNIT_VALUES } from '~/constants/catalog-select-options';
-import type { ServiceCreateBody, ServiceUnit } from '~/interfaces/catalogs/service';
+import type { ServiceCreateBody, ServiceDetail, ServiceUnit } from '~/interfaces/catalogs/service';
 import type {
   SupplierCreateBody,
   SupplierRankingSummary,
@@ -377,6 +377,42 @@ function toServiceUnit(value: unknown): ServiceUnit {
     : 'service';
 }
 
+export function parseServiceAlegraId(raw: Record<string, unknown>): number | null {
+  const direct = raw.alegra_id ?? raw.alegraId;
+  if (direct != null && direct !== '') {
+    const parsed = Number(direct);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  const nested = raw.alegra;
+  if (nested != null && typeof nested === 'object' && !Array.isArray(nested)) {
+    const nestedId = (nested as Record<string, unknown>).id;
+    if (nestedId != null && nestedId !== '') {
+      const parsed = Number(nestedId);
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+    }
+  }
+
+  return null;
+}
+
+export function mapServiceDetailApi(raw: Record<string, unknown>): ServiceDetail {
+  const cat = raw.category ?? raw.category_id;
+  const id = raw.id != null && raw.id !== '' ? Number(raw.id) : NaN;
+
+  return {
+    id: Number.isInteger(id) && id > 0 ? id : 0,
+    name: normalizeCatalogName(String(raw.name ?? '')),
+    description: String(raw.description ?? ''),
+    category_id: cat != null && cat !== '' ? Number(cat) : 0,
+    category_name: String(raw.category_name ?? ''),
+    unit: toServiceUnit(raw.unit),
+    warranty: Boolean(raw.warranty),
+    is_active: raw.is_active != null ? Boolean(raw.is_active) : true,
+    alegra_id: parseServiceAlegraId(raw),
+  };
+}
+
 export function mapServiceDetail(raw: Record<string, unknown>): Omit<
   ServiceCreateBody,
   'category' | 'alegra_id'
@@ -384,17 +420,15 @@ export function mapServiceDetail(raw: Record<string, unknown>): Omit<
   category?: number;
   alegra_id?: number;
 } {
-  const cat = raw.category ?? raw.category_id;
+  const detail = mapServiceDetailApi(raw);
+
   return {
-    name: normalizeCatalogName(String(raw.name ?? '')),
-    description: String(raw.description ?? ''),
-    category: cat != null && cat !== '' ? Number(cat) : undefined,
-    unit: toServiceUnit(raw.unit),
-    warranty: Boolean(raw.warranty),
-    alegra_id:
-      raw.alegra_id != null && raw.alegra_id !== ''
-        ? Number(raw.alegra_id)
-        : undefined,
+    name: detail.name,
+    description: detail.description,
+    category: detail.category_id > 0 ? detail.category_id : undefined,
+    unit: detail.unit,
+    warranty: detail.warranty,
+    alegra_id: detail.alegra_id ?? undefined,
   };
 }
 
