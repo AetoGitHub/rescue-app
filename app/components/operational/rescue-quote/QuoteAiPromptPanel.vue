@@ -123,7 +123,7 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
           type="button"
           color="primary"
           icon="i-lucide-sparkles"
-          label="Generar renglones"
+          label="Generar servicios"
           :loading="isBusy"
           :disabled="!canSubmitText"
           @click="onSubmitText"

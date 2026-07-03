@@ -156,7 +156,7 @@ function onToggleRecording() {
             type="button"
             color="primary"
             icon="i-lucide-sparkles"
-            label="Generar renglones"
+            label="Generar servicios"
             :loading="isBusy"
             :disabled="!canSubmitVoice"
             @click="onSubmitVoice"

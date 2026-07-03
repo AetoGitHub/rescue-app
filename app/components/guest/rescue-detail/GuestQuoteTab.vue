@@ -100,7 +100,10 @@ function formatMoney(value: string | number | null | undefined): string {
         </div>
       </dl>
 
-      <div class="overflow-x-auto border-t border-default pt-2">
+      <div class="overflow-x-auto border-t border-default pt-4">
+        <h4 class="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+          Servicios
+        </h4>
         <table class="w-full min-w-[28rem] text-sm">
           <thead>
             <tr class="border-b border-default text-left text-xs uppercase text-muted">

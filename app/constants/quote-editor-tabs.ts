@@ -2,7 +2,7 @@ export type QuoteEditorTabValue = 'lines' | 'prompt' | 'voice';
 
 export const QUOTE_EDITOR_TAB_ITEMS = [
   {
-    label: 'Renglones',
+    label: 'Servicios',
     icon: 'i-lucide-plus',
     slot: 'lines' as const,
     value: 'lines' satisfies QuoteEditorTabValue,

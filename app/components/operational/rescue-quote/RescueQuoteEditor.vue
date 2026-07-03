@@ -368,7 +368,7 @@ watch(
         @click="addLine"
       >
         <UIcon name="i-lucide-plus" class="size-4" />
-        Agregar renglón
+        Agregar servicio
       </button>
 
       <div

@@ -34,11 +34,11 @@ export function useQuoteClassifierApply(options: {
       options.onApplyLines({ lines, notes });
 
       toast.add({
-        title: 'Renglones generados',
+        title: 'Servicios generados',
         description:
           lines.length === 1
-            ? 'Se agregó 1 renglón a la cotización.'
-            : `Se agregaron ${lines.length} renglones a la cotización.`,
+            ? 'Se agregó 1 servicio a la cotización.'
+            : `Se agregaron ${lines.length} servicios a la cotización.`,
         color: 'success',
       });
     } catch (error) {
