@@ -3,15 +3,28 @@ import type { RescueChatMessage } from '~/interfaces/rescue';
 
 const props = withDefaults(
   defineProps<{
-    rescueId: number;
+    rescueId?: number;
     layout?: 'inline' | 'sidebar';
+    guestAuthorId?: number | null;
+    externalMessages?: RescueChatMessage[] | null;
+    sendMessage?: (text: string) => Promise<void>;
+    isSendingExternal?: boolean;
   }>(),
   {
+    rescueId: undefined,
     layout: 'inline',
+    guestAuthorId: undefined,
+    externalMessages: undefined,
+    sendMessage: undefined,
+    isSendingExternal: false,
   },
 );
 
 const messageText = ref('');
+
+const isGuestMode = computed(
+  () => props.externalMessages != null && props.sendMessage != null,
+);
 
 const isSidebar = computed(() => props.layout === 'sidebar');
 
@@ -28,28 +41,65 @@ const sectionClass = computed(() =>
 );
 
 const { user } = useUserSession();
-const currentUserId = computed(() => user.value?.id ?? null);
+const sessionUserId = computed(() => user.value?.id ?? null);
+
+const currentUserId = computed(() => {
+  if (props.guestAuthorId != null) return props.guestAuthorId;
+  return sessionUserId.value;
+});
+
+const effectiveRescueId = computed(() =>
+  isGuestMode.value ? null : (props.rescueId ?? null),
+);
 
 const {
-  messages,
+  messages: apiMessages,
   asyncStatus,
   hasNextPage,
   loadNextPage,
-  isInitialLoading,
-  isLoadingMore,
-  errorMessage,
-} = useRescueChatMessages(() => props.rescueId);
+  isInitialLoading: apiIsInitialLoading,
+  isLoadingMore: apiIsLoadingMore,
+  errorMessage: apiErrorMessage,
+} = useRescueChatMessages(effectiveRescueId);
 
-const { sendMessageAsync, isSending } = useRescueChatSendMessage(
-  () => props.rescueId,
-);
+const { sendMessageAsync, isSending: apiIsSending } =
+  useRescueChatSendMessage(effectiveRescueId);
+
+const messages = computed(() => {
+  if (isGuestMode.value) return props.externalMessages ?? [];
+  return apiMessages.value;
+});
+
+const isInitialLoading = computed(() => {
+  if (isGuestMode.value) return false;
+  return apiIsInitialLoading.value;
+});
+
+const isLoadingMore = computed(() => {
+  if (isGuestMode.value) return false;
+  return apiIsLoadingMore.value;
+});
+
+const errorMessage = computed(() => {
+  if (isGuestMode.value) return '';
+  return apiErrorMessage.value;
+});
+
+const isSending = computed(() => {
+  if (isGuestMode.value) return props.isSendingExternal;
+  return apiIsSending.value;
+});
 
 const scrollContainerRef = ref<HTMLElement | null>(null);
 const pendingScrollAfterSend = ref(false);
 
+const scrollHasNextPage = computed(() =>
+  isGuestMode.value ? false : hasNextPage.value,
+);
+
 useScrollContainerInfiniteLoad({
   containerRef: scrollContainerRef,
-  hasNextPage,
+  hasNextPage: scrollHasNextPage,
   loadNextPage,
   asyncStatus,
 });
@@ -87,14 +137,17 @@ async function submitMessage() {
   if (!text || isSending.value) return;
 
   try {
-    await sendMessageAsync(text);
+    if (isGuestMode.value && props.sendMessage) {
+      await props.sendMessage(text);
+    } else {
+      await sendMessageAsync(text);
+    }
     messageText.value = '';
     pendingScrollAfterSend.value = true;
     await nextTick();
     scrollChatToBottom();
   } catch {
     pendingScrollAfterSend.value = false;
-    // Toast handled in mutation
   }
 }
 </script>

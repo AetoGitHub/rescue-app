@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RescueChatMessage } from '~/interfaces/rescue';
 import type { RescueCardDetail } from '~/interfaces/rescue';
 
 const props = withDefaults(
@@ -6,14 +7,26 @@ const props = withDefaults(
     detail: RescueCardDetail;
     hideClientAuthorization?: boolean;
     hideChat?: boolean;
+    hideEconomicSensitive?: boolean;
+    hideSupplierSection?: boolean;
     editable?: boolean;
     supplierHighlight?: boolean;
+    guestAuthorId?: number | null;
+    externalChatMessages?: RescueChatMessage[] | null;
+    sendChatMessage?: (text: string) => Promise<void>;
+    isSendingChat?: boolean;
   }>(),
   {
     hideClientAuthorization: false,
     hideChat: false,
+    hideEconomicSensitive: false,
+    hideSupplierSection: false,
     editable: true,
     supplierHighlight: false,
+    guestAuthorId: undefined,
+    externalChatMessages: undefined,
+    sendChatMessage: undefined,
+    isSendingChat: false,
   },
 );
 
@@ -74,6 +87,10 @@ watch(
     <OperationalRescueDetailChat
       v-if="!hideChat"
       :rescue-id="detail.id"
+      :guest-author-id="guestAuthorId"
+      :external-messages="externalChatMessages"
+      :send-message="sendChatMessage"
+      :is-sending-external="isSendingChat"
       layout="sidebar"
       class="min-h-64 lg:sticky lg:top-0 lg:min-h-0 lg:self-start"
     />
@@ -186,13 +203,19 @@ watch(
               </UBadge>
             </span>
           </div>
-          <div class="flex items-center justify-between gap-2">
+          <div
+            v-if="!hideEconomicSensitive"
+            class="flex items-center justify-between gap-2"
+          >
             <span class="text-muted">Costo proveedor</span>
             <span class="font-medium text-highlighted">
               {{ formatRescueCardMoney(detail.provider_cost) }}
             </span>
           </div>
-          <div class="flex items-center justify-between gap-2">
+          <div
+            v-if="!hideEconomicSensitive"
+            class="flex items-center justify-between gap-2"
+          >
             <span class="text-muted">Utilidad neta</span>
             <span class="font-medium text-success">
               {{ formatRescueCardMoney(detail.net_profit) }}
@@ -242,6 +265,7 @@ watch(
       </section>
 
       <section
+        v-if="!hideSupplierSection"
         ref="supplierSectionRef"
         class="space-y-3 rounded-lg border border-default bg-default p-4 transition-shadow"
         :class="supplierHighlight ? 'ring-2 ring-error' : ''"

@@ -4,7 +4,7 @@ import {
   RESCUE_EVIDENCE_TYPE_SERVICE,
   RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
 } from '~/constants/rescue-evidence-api';
-import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
+import type { RescueEvidence, RescueEvidenceType } from '~/interfaces/rescue/evidence';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -14,9 +14,13 @@ const props = withDefaults(
     folio: string;
     type?: RescueEvidenceType;
     highlight?: boolean;
+    readonly?: boolean;
+    externalEvidences?: RescueEvidence[] | null;
   }>(),
   {
     highlight: false,
+    readonly: false,
+    externalEvidences: undefined,
   },
 );
 
@@ -41,8 +45,32 @@ const uploadLabel = ref('');
 
 const rescueIdRef = computed(() => props.rescueId);
 
-const { evidences, isPending, errorMessage, refresh } =
-  useRescueEvidenceList(rescueIdRef);
+const isGuestMode = computed(
+  () => props.readonly && props.externalEvidences != null,
+);
+
+const {
+  evidences: apiEvidences,
+  isPending: apiIsPending,
+  errorMessage: apiErrorMessage,
+  refresh,
+} = useRescueEvidenceList(
+  computed(() => (isGuestMode.value ? null : props.rescueId)),
+);
+
+const evidences = computed(() =>
+  isGuestMode.value ? (props.externalEvidences ?? []) : apiEvidences.value,
+);
+
+const isPending = computed(() => {
+  if (isGuestMode.value) return false;
+  return apiIsPending.value;
+});
+
+const errorMessage = computed(() => {
+  if (isGuestMode.value) return '';
+  return apiErrorMessage.value;
+});
 
 const items = computed(() =>
   evidences.value.filter((item) => item.type === evidenceType.value),
@@ -67,7 +95,9 @@ const dropzoneDescription = computed(() => {
 
 const canDownloadAll = computed(() => items.value.length > 0);
 
-const isBusy = computed(() => isPending.value || isUploading.value);
+const isBusy = computed(
+  () => !props.readonly && (isPending.value || isUploading.value),
+);
 
 async function uploadFiles(files: File[]) {
   const invalid = files.find(
@@ -166,8 +196,8 @@ watch(open, (isOpen, wasOpen) => {
   }
 
   if (isOpen) {
-    void refresh();
-    if (props.highlight) scrollDropzoneIntoView();
+    if (!isGuestMode.value) void refresh();
+    if (props.highlight && !props.readonly) scrollDropzoneIntoView();
   } else {
     pendingFiles.value = [];
   }
@@ -216,6 +246,7 @@ function fileLabel(url: string, index: number) {
   >
     <template #body>
       <div
+        v-if="!readonly"
         ref="dropzoneRef"
         class="mb-4 rounded-lg transition-shadow"
         :class="highlight ? 'ring-2 ring-error p-1' : ''"
@@ -250,7 +281,7 @@ function fileLabel(url: string, index: number) {
       </div>
 
       <div
-        v-if="isUploading"
+        v-if="!readonly && isUploading"
         class="mb-4 space-y-2"
       >
         <UProgress
@@ -291,8 +322,17 @@ function fileLabel(url: string, index: number) {
         />
       </div>
 
+      <div
+        v-else-if="items.length === 0"
+        class="flex flex-col items-center gap-2 py-8 text-center"
+      >
+        <p class="text-sm text-muted">
+          {{ copy.empty }}
+        </p>
+      </div>
+
       <ul
-        v-else-if="items.length > 0"
+        v-else
         class="divide-y divide-default rounded-lg border border-default"
       >
         <li
