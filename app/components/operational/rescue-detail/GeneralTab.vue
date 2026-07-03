@@ -229,40 +229,11 @@ watch(
     </div>
 
     <div class="space-y-4">
-      <section
-        v-if="!hideClientAuthorization"
-        class="space-y-3 rounded-lg border border-default bg-default p-4"
-      >
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
-          Autorización del cliente
-        </h3>
-        <div class="flex items-start gap-2 text-sm text-warning">
-          <UIcon name="i-lucide-clock" class="size-4 shrink-0 mt-0.5" />
-          <span>Pendiente de autorización</span>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            color="neutral"
-            icon="i-lucide-link"
-            label="Generar link de autorización"
-            size="sm"
-            variant="outline"
-          />
-          <UButton
-            color="primary"
-            icon="i-simple-icons-whatsapp"
-            label="Enviar por WhatsApp"
-            size="sm"
-          />
-        </div>
-        <UButton
-          color="neutral"
-          icon="i-lucide-refresh-cw"
-          label="Regenerar link"
-          size="xs"
-          variant="link"
-        />
-      </section>
+      <OperationalRescueDetailClientAuthorizationSection
+        v-if="!hideClientAuthorization && detail.operative_status === 'pending_authorization'"
+        :rescue-id="detail.id"
+        :operative-status="detail.operative_status"
+      />
 
       <section
         v-if="!hideSupplierSection"

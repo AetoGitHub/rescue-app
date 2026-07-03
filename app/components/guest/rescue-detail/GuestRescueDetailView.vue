@@ -33,6 +33,26 @@ const { sendMessage, isSending } = useGuestRescueChat(
   guestAuthorId,
 );
 
+const {
+  approve,
+  isApproving,
+  isApproved,
+} = useGuestRescueApprove(
+  () => props.rescueId,
+  () => props.token,
+);
+
+const canApprove = computed(
+  () =>
+    detail.value?.operative_status === 'pending_authorization'
+    && !isApproved.value,
+);
+
+async function onApprove() {
+  const ok = await approve();
+  if (ok) await refresh();
+}
+
 const serviceTypeBadge = computed(() => {
   if (!detail.value) return null;
   return getRescueServiceTypeBadge(detail.value.service_type);
@@ -106,7 +126,24 @@ watch(evidenceModalOpen, (isOpen, wasOpen) => {
           </h1>
         </div>
       </div>
+      <UButton
+        v-if="canApprove && !isPending && !errorMessage"
+        color="primary"
+        icon="i-lucide-check"
+        label="Aprobar rescate"
+        :loading="isApproving"
+        @click="onApprove"
+      />
     </header>
+
+    <UAlert
+      v-if="isApproved"
+      color="success"
+      variant="subtle"
+      icon="i-lucide-circle-check"
+      title="Rescate aprobado"
+      description="La autorización se registró correctamente."
+    />
 
     <div
       v-if="detail"
