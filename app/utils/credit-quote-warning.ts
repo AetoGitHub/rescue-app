@@ -37,11 +37,14 @@ export function getWizardQuoteCreditWarning(
   snapshot: ClientCreditSnapshot | null | undefined,
   quoteLines: RescueQuoteLine[],
   companySettings: Parameters<typeof computeQuotePricing>[1],
+  clientSellerId?: number | null,
 ): ClientQuoteCreditWarning | null {
   const hasFilledLines = quoteLinesHaveFilledEntries(quoteLines);
   if (!hasFilledLines) return null;
 
-  const pricing = computeQuotePricing(quoteLines, companySettings);
+  const pricing = computeQuotePricing(quoteLines, companySettings, {
+    clientSellerId,
+  });
   return getClientQuoteCreditWarning(
     snapshot,
     pricing.totalCharged,

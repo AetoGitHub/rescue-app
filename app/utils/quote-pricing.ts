@@ -3,7 +3,10 @@ import {
   DEFAULT_QUOTE_ROUND_TO_TEN,
   QUOTE_MONEY_DECIMALS,
 } from '~/constants/quote-pricing';
-import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
+import type {
+  RescueCompanyCommissions,
+  RescueCompanySettings,
+} from '~/interfaces/rescue/company-settings';
 import { isContractLine } from '~/utils/rescue-company-settings';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 
@@ -11,6 +14,8 @@ export interface QuotePricingOptions {
   ivaRate?: number;
   /** Round each filled line total up to the next $10 (default true). */
   roundToTen?: boolean;
+  /** When null, seller commission fields are zeroed; price_multiplier unchanged. */
+  clientSellerId?: number | null;
 }
 
 export interface QuoteLinePricing {
@@ -50,6 +55,28 @@ const DEFAULT_COMMISSIONS = {
 };
 
 const MONEY_FACTOR = 10 ** QUOTE_MONEY_DECIMALS;
+
+export function resolveSellerCommissions(
+  settings: RescueCompanySettings | null | undefined,
+  clientSellerId?: number | null,
+): Pick<
+  RescueCompanyCommissions,
+  'commission_type' | 'commission_value' | 'commission_fixed'
+> {
+  const base = settings?.commissions ?? DEFAULT_COMMISSIONS;
+  if (clientSellerId === null) {
+    return {
+      commission_type: 'PERCENTAGE',
+      commission_value: 0,
+      commission_fixed: 0,
+    };
+  }
+  return {
+    commission_type: base.commission_type,
+    commission_value: base.commission_value,
+    commission_fixed: base.commission_fixed,
+  };
+}
 
 export function isFilledQuoteLine(
   line: Pick<RescueQuoteLine, 'service_id'>,
@@ -104,12 +131,14 @@ function emptyLinePricing(line: RescueQuoteLine): QuoteLinePricing {
 
 function computeSellerCommission(
   profit: number,
-  settings: RescueCompanySettings | null | undefined,
+  sellerCommissions: Pick<
+    RescueCompanyCommissions,
+    'commission_type' | 'commission_value' | 'commission_fixed'
+  >,
 ): { amount: number; addsToTotal: boolean } {
-  const commissions = settings?.commissions ?? DEFAULT_COMMISSIONS;
-  if (commissions.commission_type === 'FIXED') {
+  if (sellerCommissions.commission_type === 'FIXED') {
     return {
-      amount: roundQuoteMoney(commissions.commission_value),
+      amount: roundQuoteMoney(sellerCommissions.commission_value),
       addsToTotal: true,
     };
   }
@@ -117,7 +146,9 @@ function computeSellerCommission(
     return { amount: 0, addsToTotal: false };
   }
   return {
-    amount: roundQuoteMoney(profit * (commissions.commission_value / 100)),
+    amount: roundQuoteMoney(
+      profit * (sellerCommissions.commission_value / 100),
+    ),
     addsToTotal: false,
   };
 }
@@ -166,9 +197,13 @@ export function computeQuotePricing(
 ): QuotePricingSummary {
   const ivaRate = options.ivaRate ?? DEFAULT_IVA_RATE;
   const roundToTen = options.roundToTen ?? DEFAULT_QUOTE_ROUND_TO_TEN;
-  const commissions = settings?.commissions ?? DEFAULT_COMMISSIONS;
-  const priceMultiplier = commissions.price_multiplier;
-  const commissionFixedPool = commissions.commission_fixed;
+  const baseCommissions = settings?.commissions ?? DEFAULT_COMMISSIONS;
+  const sellerCommissions = resolveSellerCommissions(
+    settings,
+    options.clientSellerId,
+  );
+  const priceMultiplier = baseCommissions.price_multiplier;
+  const commissionFixedPool = sellerCommissions.commission_fixed;
 
   const standardIndices: number[] = [];
   const rowDrafts: Array<{
@@ -284,7 +319,7 @@ export function computeQuotePricing(
   );
   const profit = roundQuoteMoney(subtotalLines - costSubtotal);
   const { amount: sellerCommission, addsToTotal: sellerCommissionAddsToTotal } =
-    computeSellerCommission(profit, settings);
+    computeSellerCommission(profit, sellerCommissions);
   const totalBeforeTax = roundQuoteMoney(
     subtotalLines + (sellerCommissionAddsToTotal ? sellerCommission : 0),
   );

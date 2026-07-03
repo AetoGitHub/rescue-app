@@ -337,6 +337,8 @@ export type RescueRequestFormState = {
   internal_notes: string;
   clientLabel: string;
   client_credit_snapshot: ClientCreditSnapshot | null;
+  /** Client's assigned seller; null when none — zeros seller commissions in quotes. */
+  client_seller_id: number | null;
   quote_lines: RescueQuoteLine[];
   company_settings: RescueCompanySettings | null;
 };
@@ -358,6 +360,7 @@ export function emptyRescueRequestState(): RescueRequestFormState {
     internal_notes: '',
     clientLabel: '',
     client_credit_snapshot: null,
+    client_seller_id: null,
     quote_lines: initialQuoteLinesForServiceType('rescue'),
     company_settings: null,
   };

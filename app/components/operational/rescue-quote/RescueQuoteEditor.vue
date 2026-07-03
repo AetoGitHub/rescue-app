@@ -18,6 +18,7 @@ import {
 
 const props = defineProps<{
   clientId: number | undefined;
+  clientSellerId?: number | null;
   clientName?: string;
   clientCreditSnapshot?: ClientCreditSnapshot | null;
   serviceType: RescueServiceType;
@@ -82,7 +83,9 @@ watch(
 );
 
 const pricing = computed(() =>
-  computeQuotePricing(quoteLines.value, settings.value),
+  computeQuotePricing(quoteLines.value, settings.value, {
+    clientSellerId: props.clientSellerId,
+  }),
 );
 
 const {

@@ -177,6 +177,19 @@ async function requestSubmit() {
   await formRef.value?.submit();
 }
 
+async function generateAndCopyPassword() {
+  const password = generateSecurePassword();
+  state.password = password;
+  const copied = await copyTextToClipboard(password);
+  toast.add({
+    title: copied ? 'Contraseña generada y copiada' : 'Contraseña generada',
+    description: copied
+      ? 'La contraseña se copió al portapapeles.'
+      : 'No se pudo copiar al portapapeles.',
+    color: copied ? 'success' : 'warning',
+  });
+}
+
 const { mutateAsync: resetPasswordAsync, asyncStatus: passwordResetStatus } =
   useMutation({
     mutation: ({
@@ -304,12 +317,23 @@ async function requestPasswordResetSubmit() {
           name="password"
           required
         >
-          <UInput
-            v-model="state.password"
-            class="w-full"
-            type="password"
-            autocomplete="new-password"
-          />
+          <div class="flex gap-2">
+            <UInput
+              v-model="state.password"
+              class="min-w-0 flex-1"
+              type="password"
+              autocomplete="new-password"
+            />
+            <UButton
+              type="button"
+              color="neutral"
+              variant="subtle"
+              icon="i-lucide-wand-sparkles"
+              label="Generar"
+              class="shrink-0"
+              @click="generateAndCopyPassword"
+            />
+          </div>
         </UFormField>
         <UFormField v-if="isEdit" label="Activo" name="is_active">
           <UCheckbox v-model="state.is_active" label="Usuario activo" />

@@ -55,6 +55,13 @@ const clientCreditPending = computed(
   () => state.client != null && state.client_credit_snapshot == null,
 );
 
+function parseClientSellerId(raw: Record<string, unknown>): number | null {
+  const seller = raw.seller ?? raw.seller_id;
+  if (seller == null || seller === '') return null;
+  const id = Number(seller);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
 function clearFormState() {
   Object.assign(state, emptyRescueRequestState());
   stepError.value = null;
@@ -116,6 +123,7 @@ watch(
       if (active) {
         state.clientLabel = '';
         state.client_credit_snapshot = null;
+        state.client_seller_id = null;
       }
       return;
     }
@@ -126,6 +134,7 @@ watch(
       if (!active) return;
       const summary = mapClientCreditSummary(raw);
       state.clientLabel = String(raw.name ?? '').trim() || `Cliente #${id}`;
+      state.client_seller_id = parseClientSellerId(raw);
       state.client_credit_snapshot = {
         client_type: normalizeClientType(raw.client_type),
         credit_limit: summary.credit_limit,
@@ -135,6 +144,7 @@ watch(
       if (!active) return;
       state.clientLabel = `Cliente #${id}`;
       state.client_credit_snapshot = null;
+      state.client_seller_id = null;
     }
   },
 );
@@ -190,11 +200,13 @@ const { mutate, asyncStatus } = useMutation({
   mutation: async (payload: {
     form: RescueCreateFormOutput;
     companySettings: RescueRequestFormState['company_settings'];
+    clientSellerId: number | null;
   }) => {
     const creditGate = await assertClientCreditForQuote(
       payload.form.client,
       payload.form.quote_lines,
       payload.companySettings,
+      payload.clientSellerId,
     );
     if (!creditGate.ok) {
       toast.add({
@@ -215,6 +227,7 @@ const { mutate, asyncStatus } = useMutation({
       rescue.id,
       payload.form.quote_lines,
       payload.companySettings,
+      { clientSellerId: payload.clientSellerId },
     );
 
     if (quoteBody) {
@@ -303,6 +316,7 @@ function validateQuoteCredit(): boolean {
     state.client_credit_snapshot,
     state.quote_lines,
     state.company_settings,
+    state.client_seller_id,
   );
   if (warning) {
     stepError.value = warning.description;
@@ -351,6 +365,7 @@ function onSubmit(payload: FormSubmitEvent<RescueCreateFormOutput>) {
   mutate({
     form: payload.data,
     companySettings: state.company_settings,
+    clientSellerId: state.client_seller_id,
   });
 }
 

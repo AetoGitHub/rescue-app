@@ -9,6 +9,7 @@ import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings
 import {
   computeQuotePricing,
   isFilledQuoteLine,
+  resolveSellerCommissions,
   roundQuoteMoney,
   type QuoteLinePricing,
   type QuotePricingOptions,
@@ -62,13 +63,11 @@ export function buildRescueQuoteCreateBody(
     return null;
   }
 
-  const commissions = settings?.commissions ?? {
-    commission_type: 'PERCENTAGE' as const,
-    commission_value: 0,
-    commission_fixed: 0,
-    price_multiplier: 1,
-  };
-  const commissionFixedPool = commissions.commission_fixed;
+  const sellerCommissions = resolveSellerCommissions(
+    settings,
+    options.clientSellerId,
+  );
+  const commissionFixedPool = sellerCommissions.commission_fixed;
   const ivaRate = options.ivaRate ?? DEFAULT_IVA_RATE;
   const ivaPercent = Math.round(ivaRate * 100);
   const sellerCommissionAmount = formatQuoteDecimal(pricing.sellerCommission);
@@ -82,9 +81,9 @@ export function buildRescueQuoteCreateBody(
     technical_cost: formatQuoteDecimal(pricing.costSubtotal),
     sub_total: formatQuoteDecimal(pricing.totalBeforeTax),
     total: formatQuoteDecimal(pricing.totalCharged),
-    seller_commission_type: commissions.commission_type,
-    seller_commission_value: formatQuoteDecimal(commissions.commission_value),
-    seller_commission_fixed: formatQuoteDecimal(commissions.commission_fixed),
+    seller_commission_type: sellerCommissions.commission_type,
+    seller_commission_value: formatQuoteDecimal(sellerCommissions.commission_value),
+    seller_commission_fixed: formatQuoteDecimal(sellerCommissions.commission_fixed),
     seller_commission_amount: sellerCommissionAmount,
     iva: ivaPercent === 8 || ivaPercent === 16 ? ivaPercent : 16,
     services: filledRows.map((row) =>

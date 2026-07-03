@@ -7,7 +7,9 @@ import { parseRescueCoord } from '~/schemas/rescue-create';
 const state = defineModel<RescueRequestFormState>({ required: true });
 
 const quotePricing = computed(() =>
-  computeQuotePricing(state.value.quote_lines, state.value.company_settings),
+  computeQuotePricing(state.value.quote_lines, state.value.company_settings, {
+    clientSellerId: state.value.client_seller_id,
+  }),
 );
 
 const ivaPercentLabel = computed(() => formatIvaPercent(DEFAULT_IVA_RATE));
@@ -40,6 +42,7 @@ const quoteCreditWarning = computed(() =>
     state.value.client_credit_snapshot,
     state.value.quote_lines,
     state.value.company_settings,
+    state.value.client_seller_id,
   ),
 );
 

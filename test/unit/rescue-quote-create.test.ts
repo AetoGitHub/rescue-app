@@ -229,3 +229,50 @@ describe('buildRescueQuoteUpdateBody', () => {
     expect(buildRescueQuoteUpdateBody([emptyLine()], baseSettings)).toBeNull();
   });
 });
+
+describe('buildRescueQuoteCreateBody without client seller', () => {
+  it('zeros seller fields and omits comissions_apply when clientSellerId is null', () => {
+    const lines = [
+      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
+      line({ quantity: 1, unit_cost: 300, service_id: 2 }),
+      line({ quantity: 1, unit_cost: 200, service_id: 3 }),
+    ];
+
+    const body = buildRescueQuoteCreateBody(42, lines, baseSettings, {
+      ivaRate: 0,
+      roundToTen: false,
+      clientSellerId: null,
+    });
+
+    expect(body).not.toBeNull();
+    expect(body!.sub_total).toBe('1100.00');
+    expect(body!.seller_commission_type).toBe('PERCENTAGE');
+    expect(body!.seller_commission_value).toBe('0.00');
+    expect(body!.seller_commission_fixed).toBe('0.00');
+    expect(body!.seller_commission_amount).toBe('0.00');
+    expect(body!.comissions_apply).toBeUndefined();
+    for (const service of body!.services) {
+      expect(service.amount_applied).toBe('0.00');
+      expect(service.percenaje_apply).toBe('0.00');
+    }
+  });
+
+  it('keeps seller commissions when clientSellerId is set', () => {
+    const lines = [
+      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
+      line({ quantity: 1, unit_cost: 300, service_id: 2 }),
+      line({ quantity: 1, unit_cost: 200, service_id: 3 }),
+    ];
+
+    const body = buildRescueQuoteCreateBody(42, lines, baseSettings, {
+      ivaRate: 0,
+      roundToTen: false,
+      clientSellerId: 3,
+    });
+
+    expect(body!.sub_total).toBe('1600.00');
+    expect(body!.seller_commission_value).toBe('5.00');
+    expect(body!.seller_commission_fixed).toBe('500.00');
+    expect(body!.comissions_apply).toBe('530.00');
+  });
+});

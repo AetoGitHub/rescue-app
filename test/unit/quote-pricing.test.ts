@@ -321,4 +321,35 @@ describe('computeQuotePricing', () => {
     expect(result.lines[0]!.roundingAdd).toBe(0);
     expectAllMoneyRounded(result);
   });
+
+  it('zeros seller commissions when client has no seller but keeps price multiplier', () => {
+    const lines = [
+      line({ quantity: 1, unit_cost: 500 }),
+      line({ quantity: 1, unit_cost: 300 }),
+      line({ quantity: 1, unit_cost: 200 }),
+    ];
+
+    const withSeller = computeQuotePricing(lines, baseSettings, {
+      ivaRate: 0,
+      roundToTen: false,
+      clientSellerId: 7,
+    });
+    const withoutSeller = computeQuotePricing(lines, baseSettings, {
+      ivaRate: 0,
+      roundToTen: false,
+      clientSellerId: null,
+    });
+
+    expect(withSeller.subtotalLines).toBe(1600);
+    expect(withSeller.sellerCommission).toBe(30);
+    expect(withSeller.lines[0]!.fixedShare).toBe(250);
+
+    expect(withoutSeller.subtotalLines).toBe(1100);
+    expect(withoutSeller.sellerCommission).toBe(0);
+    expect(withoutSeller.lines[0]!.afterMultiplier).toBe(550);
+    expect(withoutSeller.lines[0]!.fixedShare).toBe(0);
+    expect(withoutSeller.lines[1]!.fixedShare).toBe(0);
+    expect(withoutSeller.lines[2]!.fixedShare).toBe(0);
+    expectAllMoneyRounded(withoutSeller);
+  });
 });

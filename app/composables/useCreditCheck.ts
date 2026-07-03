@@ -15,12 +15,14 @@ export function useCreditCheck() {
     clientId: number,
     lines: RescueQuoteLine[],
     settings: RescueCompanySettings | null | undefined,
+    clientSellerId?: number | null,
   ): Promise<CreditCheckGateResult> {
     return assertClientCreditForQuoteUtil(
       apiFetch as Parameters<typeof assertClientCreditForQuoteUtil>[0],
       clientId,
       lines,
       settings,
+      clientSellerId,
     );
   }
 

@@ -121,6 +121,7 @@ async function onSaveQuote() {
     quoteLines: quoteLines.value,
     companySettings: companySettings.value,
     serviceType: serviceType.value,
+    clientSellerId: props.detail.seller_id,
   };
 
   const ok = isUpdateMode.value
@@ -252,6 +253,7 @@ function formatApiMoney(value: string | number | null | undefined): string {
         v-model:quote-lines="quoteLines"
         v-model:company-settings="companySettings"
         :client-id="detail.client_id"
+        :client-seller-id="detail.seller_id"
         :client-name="detail.client_name"
         :client-credit-snapshot="clientCreditSnapshot"
         :service-type="serviceType"

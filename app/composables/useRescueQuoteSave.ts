@@ -22,6 +22,7 @@ type QuoteSaveBasePayload = {
   quoteLines: RescueQuoteLine[];
   companySettings: RescueCompanySettings | null;
   serviceType: RescueServiceType;
+  clientSellerId?: number | null;
 };
 
 type QuoteSaveCreatePayload = QuoteSaveBasePayload & {
@@ -112,6 +113,7 @@ export function useRescueQuoteSave(
       validated.currentId,
       validated.parsed.quote_lines,
       validated.parsed.company_settings,
+      { clientSellerId: payload.clientSellerId },
     );
     if (body == null) {
       toast.add({
@@ -125,6 +127,7 @@ export function useRescueQuoteSave(
       payload.clientId,
       validated.parsed.quote_lines,
       validated.parsed.company_settings,
+      payload.clientSellerId,
     );
     if (!creditGate.ok) {
       toast.add({
@@ -162,6 +165,7 @@ export function useRescueQuoteSave(
     const body = buildRescueQuoteUpdateBody(
       validated.parsed.quote_lines,
       validated.parsed.company_settings,
+      { clientSellerId: payload.clientSellerId },
     );
     if (body == null) {
       toast.add({
