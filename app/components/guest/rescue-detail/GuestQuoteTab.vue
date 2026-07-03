@@ -10,15 +10,11 @@ const props = defineProps<{
   errorMessage?: string;
 }>();
 
-const {
-  isViewingPdf,
-  isDownloadingPdf,
-  viewQuotePdf,
-  downloadQuotePdf,
-} = useGuestQuotePdf(
-  () => props.rescueId,
-  () => props.token,
-);
+const { isViewingPdf, isDownloadingPdf, viewQuotePdf, downloadQuotePdf } =
+  useGuestQuotePdf(
+    () => props.rescueId,
+    () => props.token,
+  );
 
 const showPdfActions = computed(() => props.quoteDetail != null);
 
@@ -30,7 +26,10 @@ function formatMoney(value: string | number | null | undefined): string {
 <template>
   <div class="flex flex-col gap-4">
     <div v-if="isPending" class="flex items-center justify-center gap-2 py-12">
-      <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-muted" />
+      <UIcon
+        name="i-lucide-loader-circle"
+        class="size-6 animate-spin text-muted"
+      />
       <span class="text-sm text-muted">Cargando cotización…</span>
     </div>
 
@@ -71,9 +70,7 @@ function formatMoney(value: string | number | null | undefined): string {
       :ui="{ body: 'space-y-4 text-sm' }"
     >
       <div class="space-y-2">
-        <h3 class="text-sm font-semibold text-highlighted">
-          Cotización
-        </h3>
+        <h3 class="text-sm font-semibold text-highlighted">Cotización</h3>
         <p class="text-2xl font-bold text-primary">
           {{ formatMoney(quoteDetail.total) }}
         </p>
@@ -101,41 +98,38 @@ function formatMoney(value: string | number | null | undefined): string {
       </dl>
 
       <div class="overflow-x-auto border-t border-default pt-4">
-        <h4 class="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+        <h4
+          class="mb-3 text-xs font-semibold uppercase tracking-wider text-muted"
+        >
           Servicios
         </h4>
-        <table class="w-full min-w-[28rem] text-sm">
+        <table class="w-full min-w-md text-sm">
           <thead>
-            <tr class="border-b border-default text-left text-xs uppercase text-muted">
-              <th class="pb-2 pr-3 font-medium">
-                Servicio
-              </th>
-              <th class="pb-2 pr-3 font-medium text-right">
-                P. unitario
-              </th>
-              <th class="pb-2 pr-3 font-medium text-right">
-                Cantidad
-              </th>
-              <th class="pb-2 font-medium text-right">
-                Total
-              </th>
+            <tr
+              class="border-b border-default text-left text-xs uppercase text-muted"
+            >
+              <th class="pb-2 pr-3 font-medium">Servicio</th>
+              <th class="pb-2 pr-3 font-medium text-right">P. unitario</th>
+              <th class="pb-2 pr-3 font-medium text-right">Cantidad</th>
+              <th class="pb-2 font-medium text-right">Total</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-default">
-            <tr
-              v-for="service in quoteDetail.services"
-              :key="service.id"
-            >
+            <tr v-for="service in quoteDetail.services" :key="service.id">
               <td class="py-2 pr-3 font-medium text-highlighted">
                 {{ service.service_name }}
               </td>
               <td class="py-2 pr-3 text-right tabular-nums text-highlighted">
-                {{ guestQuoteDisplayUnitPrice(service.total, service.quantity) }}
+                {{
+                  guestQuoteDisplayUnitPrice(service.total, service.quantity)
+                }}
               </td>
               <td class="py-2 pr-3 text-right tabular-nums text-muted">
                 {{ service.quantity }}
               </td>
-              <td class="py-2 text-right tabular-nums font-medium text-highlighted">
+              <td
+                class="py-2 text-right tabular-nums font-medium text-highlighted"
+              >
                 {{ formatMoney(service.total) }}
               </td>
             </tr>
