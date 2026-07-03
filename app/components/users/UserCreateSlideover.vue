@@ -91,6 +91,15 @@ function emptyPasswordResetState() {
 
 const passwordResetState = reactive(emptyPasswordResetState());
 const passwordResetFormRef = ref<{ submit: () => Promise<void> } | null>(null);
+const showCreatePassword = ref(false);
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
+
+function resetPasswordVisibility() {
+  showCreatePassword.value = false;
+  showNewPassword.value = false;
+  showConfirmPassword.value = false;
+}
 
 function resetPasswordResetForm() {
   Object.assign(passwordResetState, emptyPasswordResetState());
@@ -101,6 +110,7 @@ watch(open, (v) => {
     editingId.value = null;
     resetForm();
     resetPasswordResetForm();
+    resetPasswordVisibility();
   }
 });
 
@@ -180,6 +190,7 @@ async function requestSubmit() {
 async function generateAndCopyPassword() {
   const password = generateSecurePassword();
   state.password = password;
+  showCreatePassword.value = true;
   const copied = await copyTextToClipboard(password);
   toast.add({
     title: copied ? 'Contraseña generada y copiada' : 'Contraseña generada',
@@ -321,9 +332,23 @@ async function requestPasswordResetSubmit() {
             <UInput
               v-model="state.password"
               class="min-w-0 flex-1"
-              type="password"
+              :type="showCreatePassword ? 'text' : 'password'"
               autocomplete="new-password"
-            />
+              :ui="{ trailing: 'pe-1' }"
+            >
+              <template #trailing>
+                <UButton
+                  type="button"
+                  color="neutral"
+                  variant="link"
+                  size="sm"
+                  :icon="showCreatePassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                  :aria-label="showCreatePassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                  :aria-pressed="showCreatePassword"
+                  @click="showCreatePassword = !showCreatePassword"
+                />
+              </template>
+            </UInput>
             <UButton
               type="button"
               color="neutral"
@@ -364,9 +389,23 @@ async function requestPasswordResetSubmit() {
             <UInput
               v-model="passwordResetState.new_password"
               class="w-full"
-              type="password"
+              :type="showNewPassword ? 'text' : 'password'"
               autocomplete="new-password"
-            />
+              :ui="{ trailing: 'pe-1' }"
+            >
+              <template #trailing>
+                <UButton
+                  type="button"
+                  color="neutral"
+                  variant="link"
+                  size="sm"
+                  :icon="showNewPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                  :aria-label="showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                  :aria-pressed="showNewPassword"
+                  @click="showNewPassword = !showNewPassword"
+                />
+              </template>
+            </UInput>
           </UFormField>
           <UFormField
             label="Confirmar contraseña"
@@ -376,9 +415,23 @@ async function requestPasswordResetSubmit() {
             <UInput
               v-model="passwordResetState.new_password2"
               class="w-full"
-              type="password"
+              :type="showConfirmPassword ? 'text' : 'password'"
               autocomplete="new-password"
-            />
+              :ui="{ trailing: 'pe-1' }"
+            >
+              <template #trailing>
+                <UButton
+                  type="button"
+                  color="neutral"
+                  variant="link"
+                  size="sm"
+                  :icon="showConfirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                  :aria-label="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                  :aria-pressed="showConfirmPassword"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                />
+              </template>
+            </UInput>
           </UFormField>
           <div class="flex justify-end">
             <UButton
@@ -409,3 +462,10 @@ async function requestPasswordResetSubmit() {
     </template>
   </USlideover>
 </template>
+
+<style>
+/* Hide the password reveal button in Edge */
+::-ms-reveal {
+  display: none;
+}
+</style>
