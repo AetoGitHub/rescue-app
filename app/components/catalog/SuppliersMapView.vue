@@ -2,6 +2,10 @@
 import { AdvancedMarker } from 'vue3-google-map';
 import type { SupplierListItem } from '~/interfaces/catalogs/supplier';
 import type { MapViewport } from '~/utils/map-viewport';
+import {
+  CATALOG_SUPPLIER_MAP_LEGEND,
+  trustedSupplierPinOptions,
+} from '~/constants/supplier-map-pins';
 
 const props = defineProps<{
   suppliers: SupplierListItem[];
@@ -81,18 +85,16 @@ function onMapViewportChange() {
             position: { lat: pin.lat, lng: pin.lng },
             title: pin.name,
           }"
-          :pin-options="{
-            background: pin.is_trusted ? '#f59e0b' : '#2563eb',
-            borderColor: pin.is_trusted ? '#d97706' : '#1d4ed8',
-            glyphColor: '#ffffff',
-          }"
+          :pin-options="trustedSupplierPinOptions(pin.is_trusted)"
           @click="emit('select', pin.id)"
         />
       </SharedMap>
 
+      <SharedMapPinLegend :items="CATALOG_SUPPLIER_MAP_LEGEND" />
+
       <div
         v-if="noCoordsHint"
-        class="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg border border-default bg-default/95 px-4 py-3 text-center text-sm text-muted shadow-sm"
+        class="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg border border-default bg-default/95 px-4 py-3 text-center text-sm text-muted shadow-sm sm:pl-40"
       >
         {{ noCoordsHint }}
       </div>

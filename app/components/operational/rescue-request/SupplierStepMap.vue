@@ -3,6 +3,12 @@ import { AdvancedMarker, GoogleMap } from 'vue3-google-map';
 import type { RescueSupplierNearbyRow, SupplierMapPin } from '~/interfaces/rescue';
 import type { MapViewport } from '~/utils/map-viewport';
 import { parseRescueCoord } from '~/schemas/rescue-create';
+import {
+  RESCUE_SUPPLIER_MAP_LEGEND,
+  SUPPLIER_MAP_SELECTED_PIN,
+  SUPPLIER_MAP_UNIT_PIN,
+  trustedSupplierPinOptions,
+} from '~/constants/supplier-map-pins';
 
 const props = defineProps<{
   unitLatitude: string | null;
@@ -14,6 +20,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   viewportChange: [viewport: MapViewport];
+  select: [supplierId: number];
 }>();
 
 const config = useRuntimeConfig();
@@ -84,6 +91,12 @@ function fitToMarkers() {
   fitMapToPoints(map, points);
 }
 
+function onSelectedPinClick() {
+  if (props.selectedSupplierId != null) {
+    emit('select', props.selectedSupplierId);
+  }
+}
+
 watch(
   () => [unitPosition.value, supplierPosition.value] as const,
   () => {
@@ -105,7 +118,7 @@ function emitViewportChange() {
 </script>
 
 <template>
-  <div class="h-full min-h-48 overflow-hidden rounded-lg border border-default lg:min-h-72">
+  <div class="relative h-full min-h-48 overflow-hidden rounded-lg border border-default lg:min-h-72">
     <div
       v-if="!config.public.googleMapsApiKey"
       class="flex h-full min-h-48 items-center justify-center px-4 text-sm text-muted lg:min-h-72"
@@ -129,11 +142,7 @@ function emitViewportChange() {
         <AdvancedMarker
           v-if="unitPosition"
           :options="{ position: unitPosition, title: 'Ubicación de la unidad' }"
-          :pin-options="{
-            background: '#fbbc04',
-            borderColor: '#e6a800',
-            glyphColor: '#ffffff',
-          }"
+          :pin-options="SUPPLIER_MAP_UNIT_PIN"
         />
 
         <AdvancedMarker
@@ -143,11 +152,8 @@ function emitViewportChange() {
             position: { lat: pin.lat, lng: pin.lng },
             title: pin.name,
           }"
-          :pin-options="{
-            background: pin.is_trusted ? '#f59e0b' : '#2563eb',
-            borderColor: pin.is_trusted ? '#d97706' : '#1d4ed8',
-            glyphColor: '#ffffff',
-          }"
+          :pin-options="trustedSupplierPinOptions(pin.is_trusted)"
+          @click="emit('select', pin.id)"
         />
 
         <AdvancedMarker
@@ -156,13 +162,12 @@ function emitViewportChange() {
             position: supplierPosition,
             title: selectedSupplier.name,
           }"
-          :pin-options="{
-            background: '#16a34a',
-            borderColor: '#15803d',
-            glyphColor: '#ffffff',
-          }"
+          :pin-options="SUPPLIER_MAP_SELECTED_PIN"
+          @click="onSelectedPinClick"
         />
       </GoogleMap>
+
+      <SharedMapPinLegend :items="RESCUE_SUPPLIER_MAP_LEGEND" />
     </ClientOnly>
   </div>
 </template>

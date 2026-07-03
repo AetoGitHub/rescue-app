@@ -175,6 +175,13 @@ function selectSupplier(row: RescueSupplierNearbyRow) {
   selectedLabel.value = row.name;
 }
 
+function onMapSupplierSelect(supplierId: number) {
+  const row = suppliers.value.find((item) => item.id === supplierId);
+  if (row) {
+    selectSupplier(row);
+  }
+}
+
 async function onSubmit(event: FormSubmitEvent<z.infer<typeof rescueSupplierAssignSchema>>) {
   const body = rescueSupplierAssignToBody(event.data);
 
@@ -261,6 +268,7 @@ const assignSupplierModalProps = computed(() => ({
               :selected-supplier-id="state.supplier ?? null"
               :nearby-suppliers="suppliers"
               @viewport-change="setViewport"
+              @select="onMapSupplierSelect"
             />
           </template>
         </OperationalRescueRequestRescueSupplierMapLayout>

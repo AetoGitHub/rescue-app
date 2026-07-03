@@ -163,6 +163,13 @@ function selectSupplier(row: RescueSupplierNearbyRow) {
   state.value.supplierLabel = row.name;
 }
 
+function onMapSupplierSelect(supplierId: number) {
+  const row = suppliers.value.find((item) => item.id === supplierId);
+  if (row) {
+    selectSupplier(row);
+  }
+}
+
 function clearSupplier() {
   state.value.supplier = null;
   state.value.supplierLabel = '';
@@ -283,6 +290,7 @@ function toggleInlineForm() {
           :selected-supplier-id="state.supplier"
           :nearby-suppliers="suppliers"
           @viewport-change="setViewport"
+          @select="onMapSupplierSelect"
         />
       </template>
     </OperationalRescueRequestRescueSupplierMapLayout>
