@@ -25,6 +25,8 @@ export interface QuoteLinePricing {
   baseFinal: number;
   afterMultiplier: number;
   fixedShare: number;
+  /** Seller FIXED commission share embedded in this line (proportional to afterMultiplier). */
+  sellerFixedShare: number;
   lineTotalCalculated: number;
   roundingAdd: number;
   lineTotal: number;
@@ -123,34 +125,19 @@ function emptyLinePricing(line: RescueQuoteLine): QuoteLinePricing {
     baseFinal: 0,
     afterMultiplier: 0,
     fixedShare: 0,
+    sellerFixedShare: 0,
     lineTotalCalculated: 0,
     roundingAdd: 0,
     lineTotal: 0,
   };
 }
 
-function computeSellerCommission(
+function computePercentageSellerCommission(
   profit: number,
-  sellerCommissions: Pick<
-    RescueCompanyCommissions,
-    'commission_type' | 'commission_value' | 'commission_fixed'
-  >,
-): { amount: number; addsToTotal: boolean } {
-  if (sellerCommissions.commission_type === 'FIXED') {
-    return {
-      amount: roundQuoteMoney(sellerCommissions.commission_value),
-      addsToTotal: true,
-    };
-  }
-  if (profit <= 0) {
-    return { amount: 0, addsToTotal: false };
-  }
-  return {
-    amount: roundQuoteMoney(
-      profit * (sellerCommissions.commission_value / 100),
-    ),
-    addsToTotal: false,
-  };
+  commissionValue: number,
+): number {
+  if (profit <= 0) return 0;
+  return roundQuoteMoney(profit * (commissionValue / 100));
 }
 
 function distributeRoundedFixedShares(
@@ -264,6 +251,18 @@ export function computeQuotePricing(
     commissionFixedPool,
   );
 
+  const sellerFixedPool =
+    sellerCommissions.commission_type === 'FIXED'
+      ? sellerCommissions.commission_value
+      : 0;
+
+  const sellerFixedShareByIndex = distributeRoundedFixedShares(
+    standardIndices,
+    rowDrafts,
+    standardAfterMultSum,
+    sellerFixedPool,
+  );
+
   const pricingLines: QuoteLinePricing[] = rowDrafts.map((draft, index) => {
     if (!isFilledQuoteLine(draft.line)) {
       return emptyLinePricing(draft.line);
@@ -282,6 +281,7 @@ export function computeQuotePricing(
         baseFinal: costSubtotal,
         afterMultiplier: costSubtotal,
         fixedShare: 0,
+        sellerFixedShare: 0,
         lineTotalCalculated: costSubtotal,
         roundingAdd,
         lineTotal,
@@ -292,7 +292,10 @@ export function computeQuotePricing(
     const baseFinal = roundQuoteMoney(draft.baseFinal);
     const afterMultiplier = roundQuoteMoney(draft.afterMultiplier);
     const fixedShare = fixedShareByIndex.get(index) ?? 0;
-    const lineTotalCalculated = roundQuoteMoney(afterMultiplier + fixedShare);
+    const sellerFixedShare = sellerFixedShareByIndex.get(index) ?? 0;
+    const lineTotalCalculated = roundQuoteMoney(
+      afterMultiplier + fixedShare + sellerFixedShare,
+    );
     const { lineTotal, roundingAdd } = applyLineRounding(
       lineTotalCalculated,
       roundToTen,
@@ -305,6 +308,7 @@ export function computeQuotePricing(
       baseFinal,
       afterMultiplier,
       fixedShare,
+      sellerFixedShare,
       lineTotalCalculated,
       roundingAdd,
       lineTotal,
@@ -318,11 +322,17 @@ export function computeQuotePricing(
     0,
   );
   const profit = roundQuoteMoney(subtotalLines - costSubtotal);
-  const { amount: sellerCommission, addsToTotal: sellerCommissionAddsToTotal } =
-    computeSellerCommission(profit, sellerCommissions);
-  const totalBeforeTax = roundQuoteMoney(
-    subtotalLines + (sellerCommissionAddsToTotal ? sellerCommission : 0),
-  );
+  const sellerCommission =
+    sellerCommissions.commission_type === 'FIXED'
+      ? roundQuoteMoney(
+          pricingLines.reduce((sum, row) => sum + row.sellerFixedShare, 0),
+        )
+      : computePercentageSellerCommission(
+          profit,
+          sellerCommissions.commission_value,
+        );
+  const sellerCommissionAddsToTotal = false;
+  const totalBeforeTax = roundQuoteMoney(subtotalLines);
   const ivaAmount = roundQuoteMoney(totalBeforeTax * ivaRate);
   const totalCharged = roundQuoteMoney(totalBeforeTax + ivaAmount);
 

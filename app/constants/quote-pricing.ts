@@ -30,12 +30,14 @@ export const QUOTE_DEV_BREAKDOWN_COPY = {
   ruleSellerPercent:
     'Comisión vendedor en % (commission_value con tipo PERCENTAGE): se calcula sobre la utilidad (subtotal − costo técnico). Es referencia para pagos internos; no se suma al total del cliente.',
   ruleSellerFixed:
-    'Comisión vendedor fija (commission_value con tipo FIXED): monto extra que sí se suma al subtotal antes de IVA, además de lo ya cobrado en las líneas.',
+    'Comisión vendedor fija (commission_value con tipo FIXED): se reparte entre partidas estándar (proporcional al subtotal tras multiplicador) y ya está incluida en el total de cada línea.',
   embeddedFixedLabel: 'Comisión fija de empresa (embebida en partidas)',
   sellerCommissionTypeLabel: 'Tipo comisión vendedor (sobre utilidad o extra)',
   sellerCommissionValueLabel: 'Valor comisión vendedor',
   fixedShareLinePrefix: 'Comisión fija de empresa repartida',
   fixedShareLineSuffix: '→ incluida en total línea (sí paga el cliente)',
+  sellerFixedShareLinePrefix: 'Comisión vendedor fija repartida',
+  sellerFixedShareLineSuffix: '→ incluida en total línea (sí paga el cliente)',
   contractLineNote:
     'Línea convenio: precio directo, sin multiplicador ni comisión fija de empresa',
 } as const;

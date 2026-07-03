@@ -68,6 +68,22 @@ function fixedShareExplanation(row: QuoteLinePricing): string | null {
   return `${devCopy.fixedShareLinePrefix} (${formatQuoteMoney(pool)} total; esta partida ${pct}% del subtotal tras multiplicador) → ${formatQuoteMoney(row.fixedShare)} ${devCopy.fixedShareLineSuffix}`;
 }
 
+function sellerFixedShareExplanation(row: QuoteLinePricing): string | null {
+  if (
+    row.isContractLine
+    || row.sellerFixedShare <= 0
+    || !props.settings
+    || props.settings.commissions.commission_type !== 'FIXED'
+  ) {
+    return null;
+  }
+  const pool = props.settings.commissions.commission_value;
+  const sum = standardAfterMultSum.value;
+  if (sum <= 0) return null;
+  const pct = ((row.afterMultiplier / sum) * 100).toFixed(1);
+  return `${devCopy.sellerFixedShareLinePrefix} (${formatQuoteMoney(pool)} total; esta partida ${pct}% del subtotal tras multiplicador) → ${formatQuoteMoney(row.sellerFixedShare)} ${devCopy.sellerFixedShareLineSuffix}`;
+}
+
 const sellerCommissionDetail = computed(() => {
   const commissions = props.settings?.commissions;
   if (commissions == null) {
@@ -76,9 +92,9 @@ const sellerCommissionDetail = computed(() => {
 
   if (commissions.commission_type === 'FIXED') {
     return [
-      `Tipo FIXED: se suma ${formatQuoteMoney(commissions.commission_value)} al subtotal antes de IVA.`,
-      `Cálculo: ${formatQuoteMoney(props.pricing.subtotalLines)} + ${formatQuoteMoney(props.pricing.sellerCommission)} = ${formatQuoteMoney(props.pricing.totalBeforeTax)}.`,
-      'Este monto sí incrementa lo que paga el cliente.',
+      `Tipo FIXED: ${formatQuoteMoney(commissions.commission_value)} repartido en partidas estándar.`,
+      `Σ comisión embebida en líneas = ${formatQuoteMoney(props.pricing.sellerCommission)}.`,
+      'Ya está incluida en el subtotal (Σ total línea); no se suma aparte antes de IVA.',
     ].join(' ');
   }
 
@@ -92,20 +108,13 @@ const sellerCommissionDetail = computed(() => {
   return [
     `Tipo PERCENTAGE: ${commissions.commission_value}% × utilidad ${formatQuoteMoney(props.pricing.profit)} = ${formatQuoteMoney(props.pricing.sellerCommission)}.`,
     'Solo referencia interna (pagos al vendedor). No aparece en subtotal antes de IVA ni en total cotizado.',
-    `Si esperabas sumarlo al total, el cliente debe tener tipo FIXED o revisar que commission_fixed (${formatQuoteMoney(commissions.commission_fixed)}) ya esté embebida en las líneas.`,
+    `La comisión fija de empresa (commission_fixed, ${formatQuoteMoney(commissions.commission_fixed)}) ya está embebida en las líneas.`,
   ].join(' ');
 });
 
 const beforeTaxDetail = computed(() => {
   const sub = formatQuoteMoney(props.pricing.subtotalLines);
-  const total = formatQuoteMoney(props.pricing.totalBeforeTax);
-
-  if (props.pricing.sellerCommissionAddsToTotal) {
-    const comm = formatQuoteMoney(props.pricing.sellerCommission);
-    return `${sub} + comisión vendedor fija ${comm} = ${total}`;
-  }
-
-  return `${sub} (sin comisión % vendedor) = ${total}`;
+  return `${sub} (Σ total línea) = ${formatQuoteMoney(props.pricing.totalBeforeTax)}`;
 });
 
 const totalChargedDetail = computed(() => {
@@ -172,7 +181,7 @@ const totalChargedDetail = computed(() => {
               % sobre utilidad
             </span>
             <span v-else>
-              (monto extra al subtotal)
+              (monto repartido en partidas)
             </span>
           </li>
           <li>
@@ -241,6 +250,9 @@ const totalChargedDetail = computed(() => {
             <li v-if="fixedShareExplanation(row)">
               {{ fixedShareExplanation(row) }}
             </li>
+            <li v-if="sellerFixedShareExplanation(row)">
+              {{ sellerFixedShareExplanation(row) }}
+            </li>
             <li v-if="row.isContractLine">
               {{ devCopy.contractLineNote }}
             </li>
@@ -288,8 +300,8 @@ const totalChargedDetail = computed(() => {
               {{ formatQuoteMoney(pricing.subtotalLines) }}
             </strong>
             <span class="block text-[11px] text-muted/90">
-              (incluye multiplicador, comisión fija de empresa repartida y
-              redondeo al diez)
+              (incluye multiplicador, comisión fija de empresa, comisión vendedor
+              fija repartida y redondeo al diez)
             </span>
           </li>
           <li v-if="pricing.roundingAddTotal !== 0">

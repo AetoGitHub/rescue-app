@@ -179,7 +179,7 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.comissions_apply).toBe('500.00');
   });
 
-  it('includes fixed seller commission in comissions_apply and sub_total', () => {
+  it('embeds fixed seller commission in line total and sub_total', () => {
     const settings: RescueCompanySettings = {
       commissions: {
         commission_type: 'FIXED',
@@ -203,6 +203,8 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.seller_commission_fixed).toBe('0.00');
     expect(body!.sub_total).toBe('1100.00');
     expect(body!.total).toBe('1100.00');
+    expect(body!.services[0]!.pre_total).toBe('1100.00');
+    expect(body!.services[0]!.total).toBe('1100.00');
   });
 });
 

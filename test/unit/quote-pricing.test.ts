@@ -50,6 +50,7 @@ function expectAllMoneyRounded(result: QuotePricingSummary) {
     expectAtMostTwoDecimals(row.baseFinal);
     expectAtMostTwoDecimals(row.afterMultiplier);
     expectAtMostTwoDecimals(row.fixedShare);
+    expectAtMostTwoDecimals(row.sellerFixedShare);
     expectAtMostTwoDecimals(row.lineTotalCalculated);
     expectAtMostTwoDecimals(row.roundingAdd);
     expectAtMostTwoDecimals(row.lineTotal);
@@ -202,7 +203,7 @@ describe('computeQuotePricing', () => {
     expectAllMoneyRounded(result);
   });
 
-  it('adds fixed seller commission to totalBeforeTax', () => {
+  it('embeds fixed seller commission in line totals (not added at quote level)', () => {
     const lines = [line({ quantity: 1, unit_cost: 1000 })];
     const settings: RescueCompanySettings = {
       commissions: {
@@ -216,13 +217,112 @@ describe('computeQuotePricing', () => {
 
     const result = computeQuotePricing(lines, settings, { roundToTen: false });
 
-    expect(result.subtotalLines).toBe(1000);
-    expect(result.profit).toBe(0);
+    expect(result.lines[0]!.sellerFixedShare).toBe(100);
+    expect(result.lines[0]!.lineTotal).toBe(1100);
+    expect(result.subtotalLines).toBe(1100);
+    expect(result.profit).toBe(100);
     expect(result.sellerCommission).toBe(100);
-    expect(result.sellerCommissionAddsToTotal).toBe(true);
+    expect(result.sellerCommissionAddsToTotal).toBe(false);
     expect(result.totalBeforeTax).toBe(1100);
     expect(result.ivaAmount).toBe(176);
     expect(result.totalCharged).toBe(1276);
+    expectAllMoneyRounded(result);
+  });
+
+  it('splits fixed seller commission proportionally across standard lines', () => {
+    const lines = [
+      line({ quantity: 5, unit_cost: 1500, service_id: 1 }),
+      line({ quantity: 2, unit_cost: 500, service_id: 2 }),
+    ];
+    const settings: RescueCompanySettings = {
+      commissions: {
+        commission_type: 'FIXED',
+        commission_value: 100,
+        commission_fixed: 0,
+        price_multiplier: 1,
+      },
+      contract: null,
+    };
+
+    const result = computeQuotePricing(lines, settings, {
+      ivaRate: 0,
+      roundToTen: false,
+    });
+
+    // afterMult: 7500 vs 1000 (total 8500) → shares ~88.24 / 11.76
+    expect(result.lines[0]!.sellerFixedShare).toBe(88.24);
+    expect(result.lines[1]!.sellerFixedShare).toBe(11.76);
+    expect(result.lines[0]!.lineTotal).toBe(7588.24);
+    expect(result.lines[1]!.lineTotal).toBe(1011.76);
+    expect(result.subtotalLines).toBe(8600);
+    expect(result.sellerCommission).toBe(100);
+    expect(result.sellerCommissionAddsToTotal).toBe(false);
+    expect(result.totalBeforeTax).toBe(8600);
+    expectAllMoneyRounded(result);
+  });
+
+  it('embeds both commission_fixed and seller FIXED in line totals', () => {
+    const lines = [
+      line({ quantity: 1, unit_cost: 500 }),
+      line({ quantity: 1, unit_cost: 500 }),
+    ];
+    const settings: RescueCompanySettings = {
+      commissions: {
+        commission_type: 'FIXED',
+        commission_value: 100,
+        commission_fixed: 200,
+        price_multiplier: 1,
+      },
+      contract: null,
+    };
+
+    const result = computeQuotePricing(lines, settings, {
+      ivaRate: 0,
+      roundToTen: false,
+    });
+
+    expect(result.lines[0]!.fixedShare).toBe(100);
+    expect(result.lines[1]!.fixedShare).toBe(100);
+    expect(result.lines[0]!.sellerFixedShare).toBe(50);
+    expect(result.lines[1]!.sellerFixedShare).toBe(50);
+    expect(result.lines[0]!.lineTotal).toBe(650);
+    expect(result.lines[1]!.lineTotal).toBe(650);
+    expect(result.subtotalLines).toBe(1300);
+    expect(result.sellerCommission).toBe(100);
+    expect(result.totalBeforeTax).toBe(1300);
+    expectAllMoneyRounded(result);
+  });
+
+  it('does not assign seller FIXED share to contract lines', () => {
+    const lines = [
+      line({
+        quantity: 1,
+        unit_cost: 500,
+        service_id: 1,
+        contract_item_id: 10,
+      }),
+      line({ quantity: 1, unit_cost: 500, service_id: 2 }),
+    ];
+    const settings: RescueCompanySettings = {
+      commissions: {
+        commission_type: 'FIXED',
+        commission_value: 100,
+        commission_fixed: 0,
+        price_multiplier: 1,
+      },
+      contract: baseSettings.contract,
+    };
+
+    const result = computeQuotePricing(lines, settings, {
+      ivaRate: 0,
+      roundToTen: false,
+    });
+
+    expect(result.lines[0]!.sellerFixedShare).toBe(0);
+    expect(result.lines[1]!.sellerFixedShare).toBe(100);
+    expect(result.lines[1]!.lineTotal).toBe(600);
+    expect(result.sellerCommission).toBe(100);
+    expect(result.totalBeforeTax).toBe(1100);
     expectAllMoneyRounded(result);
   });
 
