@@ -12,6 +12,7 @@ const props = withDefaults(
     editable?: boolean;
     supplierHighlight?: boolean;
     guestAuthorId?: number | null;
+    guestToken?: string;
     externalChatMessages?: RescueChatMessage[] | null;
     sendChatMessage?: (text: string) => Promise<void>;
     isSendingChat?: boolean;
@@ -24,6 +25,7 @@ const props = withDefaults(
     editable: true,
     supplierHighlight: false,
     guestAuthorId: undefined,
+    guestToken: undefined,
     externalChatMessages: undefined,
     sendChatMessage: undefined,
     isSendingChat: false,
@@ -87,6 +89,7 @@ watch(
     <OperationalRescueDetailChat
       v-if="!hideChat"
       :rescue-id="detail.id"
+      :guest-token="guestToken"
       :guest-author-id="guestAuthorId"
       :external-messages="externalChatMessages"
       :send-message="sendChatMessage"

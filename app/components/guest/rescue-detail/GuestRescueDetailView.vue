@@ -16,12 +16,14 @@ const ignoreEvidenceTabSelection = ref(false);
 const {
   detail,
   quoteDetail,
-  chatMessages,
   evidences,
-  rescueId,
-  guestAuthorId,
+  chatMessages,
+  useMock,
+  mockGuestAuthorId,
   isPending,
+  isQuotePending,
   errorMessage,
+  quoteErrorMessage,
   refresh,
 } = useGuestRescueAuthorize(
   () => props.rescueId,
@@ -30,7 +32,7 @@ const {
 
 const { sendMessage, isSending } = useGuestRescueChat(
   chatMessages,
-  guestAuthorId,
+  mockGuestAuthorId,
 );
 
 const {
@@ -211,10 +213,11 @@ watch(evidenceModalOpen, (isOpen, wasOpen) => {
           hide-economic-sensitive
           hide-supplier-section
           :editable="false"
-          :guest-author-id="guestAuthorId"
-          :external-chat-messages="chatMessages"
-          :send-chat-message="sendMessage"
-          :is-sending-chat="isSending"
+          :guest-token="useMock ? undefined : token"
+          :guest-author-id="useMock ? mockGuestAuthorId : undefined"
+          :external-chat-messages="useMock ? chatMessages : undefined"
+          :send-chat-message="useMock ? sendMessage : undefined"
+          :is-sending-chat="useMock ? isSending : false"
         />
       </template>
 
@@ -228,6 +231,8 @@ watch(evidenceModalOpen, (isOpen, wasOpen) => {
           :rescue-id="rescueId"
           :token="token"
           :quote-detail="quoteDetail"
+          :is-pending="isQuotePending"
+          :error-message="quoteErrorMessage"
         />
       </template>
     </UTabs>

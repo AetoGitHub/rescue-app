@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { RescueChatMessage } from '~/interfaces/rescue';
+import { guestChatMessageVariant } from '~/utils/guest-rescue-chat';
 
 const props = withDefaults(
   defineProps<{
     rescueId?: number;
     layout?: 'inline' | 'sidebar';
+    guestToken?: string;
     guestAuthorId?: number | null;
     externalMessages?: RescueChatMessage[] | null;
     sendMessage?: (text: string) => Promise<void>;
@@ -13,6 +15,7 @@ const props = withDefaults(
   {
     rescueId: undefined,
     layout: 'inline',
+    guestToken: undefined,
     guestAuthorId: undefined,
     externalMessages: undefined,
     sendMessage: undefined,
@@ -22,8 +25,20 @@ const props = withDefaults(
 
 const messageText = ref('');
 
-const isGuestMode = computed(
+const isGuestTokenMode = computed(
+  () => props.rescueId != null && Boolean(props.guestToken?.trim()),
+);
+
+const isGuestLegacyMode = computed(
   () => props.externalMessages != null && props.sendMessage != null,
+);
+
+const isGuestMode = computed(
+  () => isGuestTokenMode.value || isGuestLegacyMode.value,
+);
+
+const isStaffChatMode = computed(
+  () => !isGuestMode.value && props.rescueId != null,
 );
 
 const isSidebar = computed(() => props.layout === 'sidebar');
@@ -48,60 +63,111 @@ const currentUserId = computed(() => {
   return sessionUserId.value;
 });
 
-const effectiveRescueId = computed(() =>
-  isGuestMode.value ? null : (props.rescueId ?? null),
+const staffRescueId = computed(() =>
+  isStaffChatMode.value ? props.rescueId! : null,
+);
+
+const guestRescueId = computed(() =>
+  isGuestTokenMode.value ? props.rescueId! : null,
+);
+
+const guestTokenValue = computed(() =>
+  isGuestTokenMode.value ? props.guestToken!.trim() : null,
 );
 
 const {
-  messages: apiMessages,
-  asyncStatus,
-  hasNextPage,
-  loadNextPage,
-  isInitialLoading: apiIsInitialLoading,
-  isLoadingMore: apiIsLoadingMore,
-  errorMessage: apiErrorMessage,
-} = useRescueChatMessages(effectiveRescueId);
+  messages: staffMessages,
+  asyncStatus: staffAsyncStatus,
+  hasNextPage: staffHasNextPage,
+  loadNextPage: staffLoadNextPage,
+  isInitialLoading: staffIsInitialLoading,
+  isLoadingMore: staffIsLoadingMore,
+  errorMessage: staffErrorMessage,
+} = useRescueChatMessages(staffRescueId);
 
-const { sendMessageAsync, isSending: apiIsSending } =
-  useRescueChatSendMessage(effectiveRescueId);
+const {
+  messages: guestTokenMessages,
+  asyncStatus: guestAsyncStatus,
+  hasNextPage: guestHasNextPage,
+  loadNextPage: guestLoadNextPage,
+  isInitialLoading: guestIsInitialLoading,
+  isLoadingMore: guestIsLoadingMore,
+  errorMessage: guestErrorMessage,
+} = useGuestRescueChatMessages(guestRescueId, guestTokenValue, {
+  enabled: isGuestTokenMode,
+});
+
+const {
+  sendMessageAsync: guestSendMessageAsync,
+  isSending: guestIsSending,
+  ownMessageIds: guestOwnMessageIds,
+} = useGuestRescueChatSendMessage(guestRescueId, guestTokenValue, {
+  enabled: isGuestTokenMode,
+});
+
+const { sendMessageAsync: staffSendMessageAsync, isSending: staffIsSending } =
+  useRescueChatSendMessage(staffRescueId);
 
 const messages = computed(() => {
-  if (isGuestMode.value) return props.externalMessages ?? [];
-  return apiMessages.value;
+  if (isGuestLegacyMode.value) return props.externalMessages ?? [];
+  if (isGuestTokenMode.value) return guestTokenMessages.value;
+  return staffMessages.value;
 });
 
-const isInitialLoading = computed(() => {
-  if (isGuestMode.value) return false;
-  return apiIsInitialLoading.value;
+const asyncStatus = computed(() => {
+  if (isGuestTokenMode.value) return guestAsyncStatus.value;
+  return staffAsyncStatus.value;
 });
 
-const isLoadingMore = computed(() => {
-  if (isGuestMode.value) return false;
-  return apiIsLoadingMore.value;
+const hasNextPage = computed(() => {
+  if (isGuestTokenMode.value) return guestHasNextPage.value;
+  return staffHasNextPage.value;
 });
 
-const errorMessage = computed(() => {
-  if (isGuestMode.value) return '';
-  return apiErrorMessage.value;
-});
-
-const isSending = computed(() => {
-  if (isGuestMode.value) return props.isSendingExternal;
-  return apiIsSending.value;
-});
+function handleLoadNextPage() {
+  if (isGuestTokenMode.value) {
+    void guestLoadNextPage();
+    return;
+  }
+  void staffLoadNextPage();
+}
 
 const scrollContainerRef = ref<HTMLElement | null>(null);
 const pendingScrollAfterSend = ref(false);
 
 const scrollHasNextPage = computed(() =>
-  isGuestMode.value ? false : hasNextPage.value,
+  isGuestLegacyMode.value ? false : hasNextPage.value,
 );
 
 useScrollContainerInfiniteLoad({
   containerRef: scrollContainerRef,
   hasNextPage: scrollHasNextPage,
-  loadNextPage,
+  loadNextPage: handleLoadNextPage,
   asyncStatus,
+});
+
+const isInitialLoading = computed(() => {
+  if (isGuestLegacyMode.value) return false;
+  if (isGuestTokenMode.value) return guestIsInitialLoading.value;
+  return staffIsInitialLoading.value;
+});
+
+const isLoadingMore = computed(() => {
+  if (isGuestLegacyMode.value) return false;
+  if (isGuestTokenMode.value) return guestIsLoadingMore.value;
+  return staffIsLoadingMore.value;
+});
+
+const errorMessage = computed(() => {
+  if (isGuestLegacyMode.value) return '';
+  if (isGuestTokenMode.value) return guestErrorMessage.value;
+  return staffErrorMessage.value;
+});
+
+const isSending = computed(() => {
+  if (isGuestLegacyMode.value) return props.isSendingExternal;
+  if (isGuestTokenMode.value) return guestIsSending.value;
+  return staffIsSending.value;
 });
 
 const messageCountLabel = computed(() => {
@@ -110,6 +176,13 @@ const messageCountLabel = computed(() => {
 });
 
 function messageVariant(message: RescueChatMessage) {
+  if (isGuestTokenMode.value) {
+    return guestChatMessageVariant(
+      message,
+      currentUserId.value,
+      guestOwnMessageIds.value,
+    );
+  }
   return getRescueChatMessageVariant(message, currentUserId.value);
 }
 
@@ -137,10 +210,12 @@ async function submitMessage() {
   if (!text || isSending.value) return;
 
   try {
-    if (isGuestMode.value && props.sendMessage) {
+    if (isGuestLegacyMode.value && props.sendMessage) {
       await props.sendMessage(text);
+    } else if (isGuestTokenMode.value) {
+      await guestSendMessageAsync(text);
     } else {
-      await sendMessageAsync(text);
+      await staffSendMessageAsync(text);
     }
     messageText.value = '';
     pendingScrollAfterSend.value = true;

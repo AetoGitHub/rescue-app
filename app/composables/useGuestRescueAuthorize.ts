@@ -3,7 +3,10 @@ import type { RescueChatMessage } from '~/interfaces/rescue';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type { RescueEvidence } from '~/interfaces/rescue/evidence';
 import type { RescueQuoteDetail } from '~/interfaces/rescue/quote';
-import { RESCUE_GUEST_CARD_DETAIL_PATH } from '~/constants/rescue-approve-link-api';
+  RESCUE_GUEST_CARD_DETAIL_PATH,
+  RESCUE_GUEST_EVIDENCE_LIST_PATH,
+  RESCUE_GUEST_QUOTE_DETAIL_PATH,
+} from '~/constants/rescue-approve-link-api';
 import {
   buildGuestMockChatMessages,
   buildGuestMockEvidences,
@@ -13,30 +16,7 @@ import {
   isGuestMockInvalidToken,
 } from '~/mocks/guest-rescue-authorize';
 import { mapGuestRescueDetailFromApproveApi } from '~/utils/rescue-guest-detail-map';
-
-export interface GuestRescueAuthorizeParams {
-  rescueId: number;
-  token: string;
-}
-
-export interface GuestRescueAuthorizeData {
-  detail: RescueCardDetail;
-  quoteDetail: RescueQuoteDetail;
-  chatMessages: RescueChatMessage[];
-  evidences: RescueEvidence[];
-  rescueId: number;
-  guestAuthorId: number;
-}
-
-function loadGuestMockData(rescueId: number) {
-  return {
-    detail: buildGuestMockRescueDetail(rescueId),
-    quoteDetail: buildGuestMockQuoteDetail(rescueId),
-    chatMessages: buildGuestMockChatMessages(),
-    evidences: buildGuestMockEvidences(),
-    guestAuthorId: GUEST_MOCK_AUTHOR_ID,
-  };
-}
+import { isRescueQuoteNotFoundError } from '~/utils/rescue-quote-not-found';
 
 export function useGuestRescueAuthorize(
   rescueId: MaybeRefOrGetter<number | null>,
@@ -55,18 +35,57 @@ export function useGuestRescueAuthorize(
   const chatMessages = ref<RescueChatMessage[]>([]);
   const evidences = ref<RescueEvidence[]>([]);
   const isPending = ref(true);
+  const isQuotePending = ref(false);
   const errorMessage = ref('');
-  const guestAuthorId = ref(GUEST_MOCK_AUTHOR_ID);
+  const quoteErrorMessage = ref('');
+
+  async function loadGuestQuote(
+    currentRescueId: number,
+    currentToken: string,
+  ) {
+    isQuotePending.value = true;
+    quoteErrorMessage.value = '';
+
+    try {
+      quoteDetail.value = await guestApiFetch<RescueQuoteDetail>(
+        RESCUE_GUEST_QUOTE_DETAIL_PATH(currentRescueId, currentToken),
+      );
+    } catch (error) {
+      if (isRescueQuoteNotFoundError(error)) {
+        quoteDetail.value = null;
+        return;
+      }
+      quoteDetail.value = null;
+      quoteErrorMessage.value = getFetchErrorMessage(error);
+    } finally {
+      isQuotePending.value = false;
+    }
+  }
+
+  async function loadGuestEvidences(
+    currentRescueId: number,
+    currentToken: string,
+  ) {
+    try {
+      const raw = await guestApiFetch<unknown>(
+        RESCUE_GUEST_EVIDENCE_LIST_PATH(currentRescueId, currentToken),
+      );
+      evidences.value = mapRescueEvidenceListFromApi(raw);
+    } catch {
+      evidences.value = [];
+    }
+  }
 
   async function loadFromApi(currentRescueId: number, currentToken: string) {
     const raw = await guestApiFetch<unknown>(
       RESCUE_GUEST_CARD_DETAIL_PATH(currentRescueId, currentToken),
     );
     detail.value = mapGuestRescueDetailFromApproveApi(raw);
-    quoteDetail.value = buildGuestMockQuoteDetail(currentRescueId);
-    chatMessages.value = buildGuestMockChatMessages();
-    evidences.value = buildGuestMockEvidences();
-    guestAuthorId.value = GUEST_MOCK_AUTHOR_ID;
+
+    await Promise.all([
+      loadGuestQuote(currentRescueId, currentToken),
+      loadGuestEvidences(currentRescueId, currentToken),
+    ]);
   }
 
   async function load() {
@@ -79,24 +98,25 @@ export function useGuestRescueAuthorize(
       chatMessages.value = [];
       evidences.value = [];
       errorMessage.value = 'Enlace no válido o expirado';
+      quoteErrorMessage.value = '';
       isPending.value = false;
+      isQuotePending.value = false;
       return;
     }
 
     isPending.value = true;
     errorMessage.value = '';
+    quoteErrorMessage.value = '';
 
     try {
       if (useMock.value || isGuestMockInvalidToken(currentToken)) {
         if (isGuestMockInvalidToken(currentToken)) {
           throw new Error('Enlace no válido o expirado');
         }
-        const mock = loadGuestMockData(currentRescueId);
-        detail.value = mock.detail;
-        quoteDetail.value = mock.quoteDetail;
-        chatMessages.value = mock.chatMessages;
-        evidences.value = mock.evidences;
-        guestAuthorId.value = mock.guestAuthorId;
+        detail.value = buildGuestMockRescueDetail(currentRescueId);
+        quoteDetail.value = buildGuestMockQuoteDetail(currentRescueId);
+        chatMessages.value = buildGuestMockChatMessages();
+        evidences.value = buildGuestMockEvidences();
         return;
       }
 
@@ -122,9 +142,12 @@ export function useGuestRescueAuthorize(
     chatMessages,
     evidences,
     rescueId: rescueIdValue,
-    guestAuthorId: computed(() => guestAuthorId.value),
+    useMock,
+    mockGuestAuthorId: GUEST_MOCK_AUTHOR_ID,
     isPending: computed(() => isPending.value),
+    isQuotePending: computed(() => isQuotePending.value),
     errorMessage: computed(() => errorMessage.value),
+    quoteErrorMessage: computed(() => quoteErrorMessage.value),
     refresh: load,
   };
 }
