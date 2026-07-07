@@ -37,6 +37,18 @@ async function invalidateAdministrativeQueries(
   await queryCache.invalidateQueries({
     key: ['administrative-rescue-list'],
   });
+  await queryCache.invalidateQueries({
+    key: ['pending-invoice-summary'],
+  });
+  await queryCache.invalidateQueries({
+    key: ['pending-invoice-detail'],
+  });
+  await queryCache.invalidateQueries({
+    key: ['pending-invoice-by-seller'],
+  });
+  await queryCache.invalidateQueries({
+    key: ['pending-invoice-company-matrix'],
+  });
 }
 
 export function useRescueAdministrativeMutation(

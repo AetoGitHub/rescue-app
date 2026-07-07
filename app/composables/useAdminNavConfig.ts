@@ -37,6 +37,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         ability: accessAdministrative,
       },
       {
+        label: 'Por Facturar',
+        to: '/admin/por-facturar',
+        icon: 'i-lucide-file-clock',
+        ability: accessAdministrative,
+      },
+      {
         label: 'Mi saldo',
         to: '/admin/my-balance',
         icon: 'i-lucide-wallet',
