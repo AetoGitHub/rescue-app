@@ -3,6 +3,7 @@ import type {
   PendingInvoiceDetailFilters,
   PendingInvoiceStatusFilter,
 } from '~/interfaces/invoicing/pending-invoice-filters';
+import type { LocationQuery } from 'vue-router';
 
 export function emptyPendingInvoiceDetailFilters(): PendingInvoiceDetailFilters {
   return {
@@ -111,7 +112,7 @@ export function hasActivePendingInvoiceDetailFilters(
 }
 
 export function parsePendingInvoiceDetailFiltersFromRoute(
-  query: Record<string, string | string[] | undefined | null>,
+  query: LocationQuery,
 ): PendingInvoiceDetailFilters {
   const read = (key: string): string | null => {
     const value = query[key];

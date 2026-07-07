@@ -41,9 +41,11 @@ const activeTab = ref<PendingInvoiceTabValue>(readTabFromRoute());
 const detailFilters = ref<PendingInvoiceDetailFilters>(
   parsePendingInvoiceDetailFiltersFromRoute(route.query),
 );
-const matrixMonths = ref(parsePendingInvoiceMatrixMonths(
-  typeof route.query.months === 'string' ? route.query.months : null,
-));
+const matrixMonths = ref(
+  parsePendingInvoiceMatrixMonths(
+    typeof route.query.months === 'string' ? route.query.months : null,
+  ),
+);
 
 const {
   summary,
@@ -127,7 +129,9 @@ watch(
   () => {
     if (isSyncing.value) return;
     activeTab.value = readTabFromRoute();
-    detailFilters.value = parsePendingInvoiceDetailFiltersFromRoute(route.query);
+    detailFilters.value = parsePendingInvoiceDetailFiltersFromRoute(
+      route.query,
+    );
     matrixMonths.value = parsePendingInvoiceMatrixMonths(
       typeof route.query.months === 'string' ? route.query.months : null,
     );
@@ -177,12 +181,18 @@ function onSelectDetailRow(row: PendingInvoiceDetailRow) {
         <div class="grid gap-4 sm:grid-cols-3">
           <PendingInvoiceKpiCard
             label="Total c/IVA"
-            :value="summary != null ? formatRescueCardMoney(summary.total_con_iva) : '—'"
+            :value="
+              summary != null
+                ? formatRescueCardMoney(summary.total_con_iva)
+                : '—'
+            "
             :points="summary?.sparkline_14d.total_con_iva"
           />
           <PendingInvoiceKpiCard
             label="Subtotal"
-            :value="summary != null ? formatRescueCardMoney(summary.subtotal) : '—'"
+            :value="
+              summary != null ? formatRescueCardMoney(summary.subtotal) : '—'
+            "
             :points="summary?.sparkline_14d.subtotal"
           />
           <PendingInvoiceKpiCard
