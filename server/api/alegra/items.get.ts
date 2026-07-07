@@ -4,6 +4,7 @@ import {
   ALEGRA_ITEMS_BASE,
   ALEGRA_ITEMS_LIMIT,
   buildAlegraItemsListQuery,
+  fetchAlegraJson,
   mapAlegraItemsToDropdownResults,
   parseAlegraItemsListResponse,
   resolveAlegraAuthorizationHeader,
@@ -31,7 +32,7 @@ export default defineEventHandler(async (event) => {
   const authorization = resolveAlegraAuthorizationHeader();
 
   try {
-    const data = await $fetch<unknown>(ALEGRA_ITEMS_BASE, {
+    const data = await fetchAlegraJson<unknown>(ALEGRA_ITEMS_BASE, {
       query: buildAlegraItemsListQuery({ query: name, start }),
       headers: {
         accept: 'application/json',
@@ -39,12 +40,19 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    const items = parseAlegraItemsListResponse(data);
-    const results = mapAlegraItemsToDropdownResults(items);
+    const page = parseAlegraItemsListResponse(data);
+    const results = mapAlegraItemsToDropdownResults(page.items);
+
+    const fallbackNext =
+      page.items.length >= ALEGRA_ITEMS_LIMIT
+        ? String(start + ALEGRA_ITEMS_LIMIT)
+        : null;
+    const fallbackPrevious =
+      start > 0 ? String(Math.max(0, start - ALEGRA_ITEMS_LIMIT)) : null;
 
     return {
-      next: items.length >= ALEGRA_ITEMS_LIMIT ? String(start + ALEGRA_ITEMS_LIMIT) : null,
-      previous: start > 0 ? String(Math.max(0, start - ALEGRA_ITEMS_LIMIT)) : null,
+      next: page.next ?? fallbackNext,
+      previous: page.previous ?? fallbackPrevious,
       results,
     };
   } catch (error) {

@@ -41,6 +41,14 @@ export function getNextCursorPageParam(
   return extractCursorFromPaginatedNext(lastPage.next);
 }
 
+/** Alegra y APIs con offset en `next` (ej. `"30"`), no URL con cursor. */
+export function getNextOffsetPageParam(
+  lastPage: PaginatedResponse<unknown>,
+): string | null {
+  const value = lastPage.next?.trim();
+  return value || null;
+}
+
 export function flattenPaginatedPages<T>(
   pages: PaginatedResponse<T>[] | undefined,
 ): T[] {

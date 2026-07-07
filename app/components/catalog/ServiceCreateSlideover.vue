@@ -99,10 +99,14 @@ function fetchCategoryDropdown(
 
 function fetchAlegraItemsDropdown(
   name: string,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; start?: string | null },
 ) {
+  const start = options?.start?.trim();
   return apiFetch<PaginatedResponse<CatalogDropdownRow>>('/api/alegra/items', {
-    query: { name: name.trim() || undefined },
+    query: {
+      name: name.trim() || undefined,
+      start: start || undefined,
+    },
     signal: options?.signal,
   });
 }
@@ -238,6 +242,7 @@ async function requestSubmit() {
             v-model="state.alegra_id"
             placeholder="Buscar ítem en Alegra..."
             :fetcher="fetchAlegraItemsDropdown"
+            infinite="offset"
           />
         </UFormField>
 

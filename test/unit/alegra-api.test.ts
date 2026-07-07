@@ -32,14 +32,35 @@ describe('alegra-api helpers', () => {
     expect(parseAlegraItemId('abc')).toBeNull();
   });
 
-  it('parseAlegraItemsListResponse reads array or metadata.data', () => {
-    expect(parseAlegraItemsListResponse([{ id: 1, name: 'A' }])).toEqual([
-      { id: 1, name: 'A' },
-    ]);
+  it('parseAlegraItemsListResponse reads array, results page, or metadata.data', () => {
+    expect(parseAlegraItemsListResponse([{ id: 1, name: 'A' }])).toEqual({
+      items: [{ id: 1, name: 'A' }],
+      next: null,
+      previous: null,
+    });
     expect(
-      parseAlegraItemsListResponse({ data: [{ id: 2, name: 'B' }] }),
-    ).toEqual([{ id: 2, name: 'B' }]);
-    expect(parseAlegraItemsListResponse({})).toEqual([]);
+      parseAlegraItemsListResponse({
+        next: '30',
+        previous: null,
+        results: [{ id: 2, name: 'B' }],
+      }),
+    ).toEqual({
+      items: [{ id: 2, name: 'B' }],
+      next: '30',
+      previous: null,
+    });
+    expect(
+      parseAlegraItemsListResponse({ data: [{ id: 3, name: 'C' }] }),
+    ).toEqual({
+      items: [{ id: 3, name: 'C' }],
+      next: null,
+      previous: null,
+    });
+    expect(parseAlegraItemsListResponse({})).toEqual({
+      items: [],
+      next: null,
+      previous: null,
+    });
   });
 
   it('mapAlegraItemToDropdownRow uses name when present', () => {
