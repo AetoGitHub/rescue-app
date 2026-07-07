@@ -2,6 +2,7 @@
 import type { GuestRescueDetailTabValue } from '~/constants/guest-rescue-detail';
 import { GUEST_RESCUE_DETAIL_TAB_ITEMS } from '~/constants/guest-rescue-detail';
 import { RESCUE_EVIDENCE_TYPE_SERVICE } from '~/constants/rescue-evidence-api';
+import { modalTabsUi } from '~/constants/tabs-layout';
 
 const props = defineProps<{
   rescueId: number;
@@ -66,11 +67,6 @@ const operativeStatusLabel = computed(() => {
 });
 
 const modalTitle = computed(() => detail.value?.folio ?? 'Detalle de rescate');
-
-const tabsUi = computed(() => ({
-  list: 'shrink-0 flex-nowrap overflow-x-auto max-w-full',
-  trigger: 'shrink-0',
-}));
 
 function openEvidenceModal() {
   evidenceModalOpen.value = true;
@@ -203,7 +199,7 @@ watch(evidenceModalOpen, (isOpen, wasOpen) => {
       :model-value="activeTab"
       :items="[...GUEST_RESCUE_DETAIL_TAB_ITEMS]"
       class="flex flex-col gap-4"
-      :ui="tabsUi"
+      :ui="modalTabsUi"
       @update:model-value="onActiveTabChange"
     >
       <template #general>

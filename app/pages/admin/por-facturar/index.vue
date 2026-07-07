@@ -7,6 +7,10 @@ import {
   type PendingInvoiceTabValue,
 } from '~/constants/pending-invoice-api';
 import {
+  adminLinkTabsFlexClass,
+  adminLinkTabsFlexUi,
+} from '~/constants/tabs-layout';
+import {
   emptyPendingInvoiceDetailFilters,
   parsePendingInvoiceDetailFiltersFromRoute,
   parsePendingInvoiceMatrixMonths,
@@ -193,11 +197,8 @@ function onSelectDetailRow(row: PendingInvoiceDetailRow) {
         <UTabs
           v-model="activeTab"
           :items="[...PENDING_INVOICE_TAB_ITEMS]"
-          class="flex min-h-0 flex-1 flex-col gap-4"
-          :ui="{
-            list: 'flex-nowrap overflow-x-auto max-w-full',
-            trigger: 'shrink-0',
-          }"
+          :class="adminLinkTabsFlexClass"
+          :ui="adminLinkTabsFlexUi"
           variant="link"
         >
           <template #detail>

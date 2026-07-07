@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SlaConfigTabValue } from '~/constants/sla-config';
 import { SLA_TAB_ITEMS } from '~/constants/sla-config';
+import { adminLinkTabsClass, adminLinkTabsUi } from '~/constants/tabs-layout';
 import { slaConfigurationKey } from '~/composables/useSlaConfiguration';
 
 useHead({
@@ -51,11 +52,8 @@ onMounted(() => {
             v-else
             v-model="activeTab"
             :items="[...SLA_TAB_ITEMS]"
-            class="flex flex-col gap-4"
-            :ui="{
-              list: 'flex-nowrap overflow-x-auto max-w-full',
-              trigger: 'shrink-0',
-            }"
+            :class="adminLinkTabsClass"
+            :ui="adminLinkTabsUi"
             variant="link"
           >
             <template #stages>

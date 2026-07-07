@@ -12,6 +12,7 @@ import {
   administrativeDetailToCardDetail,
   cardToAdministrativePreviewDetail,
 } from '~/utils/rescue-administrative-api-map';
+import { modalTabsUi } from '~/constants/tabs-layout';
 
 const open = ref(false);
 const rescueId = ref<number | null>(null);
@@ -186,11 +187,6 @@ watch(open, (isOpen) => {
 defineExpose({ open: openDetail, close: closeDetail });
 
 const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
-
-const modalTabsUi = computed(() => ({
-  list: 'shrink-0 flex-nowrap overflow-x-auto max-w-full',
-  trigger: 'shrink-0',
-}));
 </script>
 
 <template>

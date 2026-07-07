@@ -12,6 +12,7 @@ import {
 } from '~/constants/catalog-select-options';
 import type { ClientCreditSummary, CreditFormState } from '~/interfaces/catalogs/credit';
 import { clientCreateSchema, creditFormSchema, creditFormToCreateBody } from '~/schemas/catalog-create';
+import { slideoverTabsUi } from '~/constants/tabs-layout';
 
 const toast = useToast();
 
@@ -517,7 +518,7 @@ async function requestSubmit() {
           v-model="editTab"
           :items="editTabItems"
           class="flex min-h-0 flex-1 flex-col gap-6"
-          :ui="{ list: 'shrink-0' }"
+          :ui="slideoverTabsUi"
         >
           <template #general>
             <div class="space-y-8 pt-2">

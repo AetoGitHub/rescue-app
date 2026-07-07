@@ -26,5 +26,20 @@ export default defineAppConfig({
         th: 'text-left text-xs uppercase tracking-wider text-muted',
       },
     },
+    tabs: {
+      slots: {
+        root: 'flex items-center gap-2 overflow-hidden',
+        list: 'relative flex p-1 group overflow-y-hidden',
+      },
+      compoundVariants: [
+        {
+          orientation: 'horizontal',
+          variant: 'link',
+          class: {
+            list: 'border-b overflow-y-hidden',
+          },
+        },
+      ],
+    },
   },
 });

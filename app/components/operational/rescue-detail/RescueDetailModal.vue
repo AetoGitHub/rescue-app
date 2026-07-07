@@ -7,6 +7,7 @@ import {
   RESCUE_EVIDENCE_TYPE_SERVICE,
 } from '~/constants/rescue-evidence-api';
 import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
+import { modalTabsUi } from '~/constants/tabs-layout';
 
 const open = ref(false);
 const rescueId = ref<number | null>(null);
@@ -179,11 +180,6 @@ watch(evidenceModalOpen, (isOpen, wasOpen) => {
 defineExpose({ open: openDetail, close: closeDetail });
 
 const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
-
-const modalTabsUi = computed(() => ({
-  list: 'shrink-0 flex-nowrap overflow-x-auto max-w-full',
-  trigger: 'shrink-0',
-}));
 </script>
 
 <template>

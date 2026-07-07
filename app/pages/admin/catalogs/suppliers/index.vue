@@ -8,6 +8,10 @@ import {
   adminCatalogMapPanelClass,
   adminListTableClass,
 } from '~/constants/admin-list-layout';
+import {
+  adminLinkTabsFlexClass,
+  adminLinkTabsFlexUi,
+} from '~/constants/tabs-layout';
 
 useHead({
   title: 'Proveedores',
@@ -237,12 +241,8 @@ const columns: TableColumn<Supplier>[] = [
       v-model="viewMode"
       :items="SUPPLIER_VIEW_TAB_ITEMS"
       :unmount-on-hide="false"
-      class="flex min-h-0 flex-1 flex-col gap-4"
-      :ui="{
-        list: 'flex-nowrap overflow-x-auto max-w-full shrink-0',
-        trigger: 'shrink-0',
-        content: 'flex min-h-0 flex-1 flex-col',
-      }"
+      :class="adminLinkTabsFlexClass"
+      :ui="adminLinkTabsFlexUi"
       variant="link"
     >
       <template #list>
