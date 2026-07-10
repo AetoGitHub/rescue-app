@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { RescueAdministrativeFlowContext } from '~/interfaces/rescue/administrative';
+import type { RescueAdministrativeFlowContext,
+  AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import {
   getAdministrativeFooterActions,
   getAdministrativeRemissionAlert,
@@ -10,10 +11,17 @@ import {
   isAdminActionAllowed,
   isAdministrativeLinearStepperVisible,
   isAdministrativePurchaseOrderEditable,
+  isKanbanAdminDocInputVisible,
+  isKanbanAdminDocReadOnlyVisible,
+  isKanbanAdminDocSectionVisible,
+  isKanbanInvoiceFolioEditable,
+  isKanbanRemittanceFolioEditable,
   isPurchaseOrderBlockingInvoice,
   isRescueAdministrativeBlocked,
   shouldShowAdministrativeInvoiceReadOnly,
   shouldShowAdministrativePurchaseOrderReadOnly,
+  shouldShowKanbanInvoiceReadOnly,
+  shouldShowKanbanRemittanceReadOnly,
   showOperativeWarningBanner,
 } from '~/utils/rescue-administrative-flow';
 import type { AdministrativeRescueDetail } from '~/interfaces/rescue/administrative';
@@ -92,6 +100,41 @@ function detail(
     latitude: null,
     longitude: null,
     supplier_score: null,
+    ...partial,
+  };
+}
+
+function card(
+  partial: Partial<AdministrativeRescueCard> & {
+    billing_status: AdministrativeRescueCard['billing_status'];
+  },
+): AdministrativeRescueCard {
+  return {
+    id: 1,
+    folio: 'R-1',
+    service_type: 'rescue',
+    client_id: 1,
+    client_name: 'Acme',
+    service_description: '',
+    location_description: '',
+    operator_id: null,
+    operator_name: null,
+    supplier_id: null,
+    supplier_name: null,
+    multiple_managers: false,
+    sub_total: '1000',
+    sale_price: '1000',
+    net_profit: null,
+    operative_status: 'closed',
+    created_at: '2026-06-01T12:00:00Z',
+    phase_started_at: null,
+    last_comment_at: null,
+    unlocked_until: null,
+    service_date: null,
+    seller_id: null,
+    remittance_folio: null,
+    invoice_folio: null,
+    blocked: false,
     ...partial,
   };
 }
@@ -484,6 +527,58 @@ describe('purchase order and invoice visibility', () => {
         }),
       ),
     ).toBe(false);
+  });
+});
+
+describe('kanban admin doc visibility', () => {
+  it('shows inputs in unattended when folios are empty', () => {
+    const sample = card({ billing_status: 'unattended' });
+    expect(isKanbanAdminDocInputVisible(sample)).toBe(true);
+    expect(isKanbanRemittanceFolioEditable(sample)).toBe(true);
+    expect(isKanbanInvoiceFolioEditable(sample)).toBe(true);
+    expect(isKanbanAdminDocReadOnlyVisible(sample)).toBe(false);
+  });
+
+  it('hides inputs in paid even when folios are empty', () => {
+    const sample = card({ billing_status: 'paid' });
+    expect(isKanbanAdminDocInputVisible(sample)).toBe(false);
+    expect(isKanbanAdminDocSectionVisible(sample)).toBe(false);
+  });
+
+  it('shows read-only invoice in paid when present', () => {
+    const sample = card({
+      billing_status: 'paid',
+      invoice_folio: 'FAC-99',
+    });
+    expect(isKanbanAdminDocInputVisible(sample)).toBe(false);
+    expect(shouldShowKanbanInvoiceReadOnly(sample)).toBe(true);
+    expect(isKanbanAdminDocReadOnlyVisible(sample)).toBe(true);
+    expect(isKanbanAdminDocSectionVisible(sample)).toBe(true);
+  });
+
+  it('locks saved remittance in remittance and keeps invoice editable', () => {
+    const sample = card({
+      billing_status: 'in_remittance',
+      remittance_folio: 'REM-1',
+      invoice_folio: null,
+    });
+    expect(shouldShowKanbanRemittanceReadOnly(sample)).toBe(true);
+    expect(isKanbanRemittanceFolioEditable(sample)).toBe(false);
+    expect(isKanbanInvoiceFolioEditable(sample)).toBe(true);
+    expect(isKanbanAdminDocInputVisible(sample)).toBe(true);
+  });
+
+  it('hides inputs when blocked but shows read-only folios', () => {
+    const sample = card({
+      billing_status: 'unattended',
+      remittance_folio: 'REM-1',
+      invoice_folio: 'FAC-1',
+      blocked: true,
+    });
+    expect(isKanbanAdminDocInputVisible(sample)).toBe(false);
+    expect(isKanbanAdminDocReadOnlyVisible(sample)).toBe(true);
+    expect(shouldShowKanbanRemittanceReadOnly(sample)).toBe(true);
+    expect(shouldShowKanbanInvoiceReadOnly(sample)).toBe(true);
   });
 });
 

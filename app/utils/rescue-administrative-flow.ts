@@ -12,9 +12,22 @@ import type { AdministrativeBillingStatus } from '~/constants/administrative-kan
 import { getBillingStatusLabel } from '~/utils/administrative-rescue-display';
 import { targetBillingStatusForAction } from '~/utils/rescue-administrative-api-map';
 import type { AdministrativeRescueDetail,
+  AdministrativeRescueCard,
   RescueAdministrativeActionId,
   RescueAdministrativeFlowContext,
   RescueAdministrativeFooterAction } from '~/interfaces/rescue/administrative';
+
+const KANBAN_DOC_EDITABLE_STATUSES = new Set<AdministrativeBillingStatus>([
+  'unattended',
+  'in_remittance',
+  'invoiced',
+]);
+
+const KANBAN_DOC_TERMINAL_STATUSES = new Set<AdministrativeBillingStatus>([
+  'paid',
+  'warranty',
+  'canceled',
+]);
 
 const PURCHASE_ORDER_EDITABLE_STATUSES = new Set<AdministrativeBillingStatus>([
   'in_remittance',
@@ -35,6 +48,88 @@ const INVOICE_READONLY_STATUSES = new Set<AdministrativeBillingStatus>([
   'warranty',
   'canceled',
 ]);
+
+function trimKanbanFolio(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+export function getKanbanRemittanceFolio(
+  card: AdministrativeRescueCard,
+): string | null {
+  return trimKanbanFolio(card.remittance_folio);
+}
+
+export function getKanbanInvoiceFolio(
+  card: AdministrativeRescueCard,
+): string | null {
+  return trimKanbanFolio(card.invoice_folio);
+}
+
+export function isKanbanRemittanceFolioEditable(
+  card: AdministrativeRescueCard,
+): boolean {
+  if (card.blocked) return false;
+  if (!KANBAN_DOC_EDITABLE_STATUSES.has(card.billing_status)) return false;
+  return getKanbanRemittanceFolio(card) == null;
+}
+
+export function isKanbanInvoiceFolioEditable(
+  card: AdministrativeRescueCard,
+): boolean {
+  if (card.blocked) return false;
+  if (!KANBAN_DOC_EDITABLE_STATUSES.has(card.billing_status)) return false;
+  return getKanbanInvoiceFolio(card) == null;
+}
+
+export function shouldShowKanbanRemittanceReadOnly(
+  card: AdministrativeRescueCard,
+): boolean {
+  const remittance = getKanbanRemittanceFolio(card);
+  if (!remittance) return false;
+  return !isKanbanRemittanceFolioEditable(card);
+}
+
+export function shouldShowKanbanInvoiceReadOnly(
+  card: AdministrativeRescueCard,
+): boolean {
+  const invoice = getKanbanInvoiceFolio(card);
+  if (!invoice) return false;
+  return !isKanbanInvoiceFolioEditable(card);
+}
+
+export function isKanbanAdminDocInputVisible(
+  card: AdministrativeRescueCard,
+): boolean {
+  return (
+    isKanbanRemittanceFolioEditable(card)
+    || isKanbanInvoiceFolioEditable(card)
+  );
+}
+
+export function isKanbanAdminDocReadOnlyVisible(
+  card: AdministrativeRescueCard,
+): boolean {
+  return (
+    shouldShowKanbanRemittanceReadOnly(card)
+    || shouldShowKanbanInvoiceReadOnly(card)
+  );
+}
+
+export function isKanbanAdminDocSectionVisible(
+  card: AdministrativeRescueCard,
+): boolean {
+  return (
+    isKanbanAdminDocInputVisible(card)
+    || isKanbanAdminDocReadOnlyVisible(card)
+  );
+}
+
+export function isKanbanAdminDocTerminalStatus(
+  billingStatus: AdministrativeBillingStatus,
+): boolean {
+  return KANBAN_DOC_TERMINAL_STATUSES.has(billingStatus);
+}
 
 
 export function administrativeDetailToFlowContext(
