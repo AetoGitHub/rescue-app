@@ -23,8 +23,13 @@ const KANBAN_DOC_EDITABLE_STATUSES = new Set<AdministrativeBillingStatus>([
   'invoiced',
 ]);
 
-const KANBAN_DOC_TERMINAL_STATUSES = new Set<AdministrativeBillingStatus>([
+/** Pagado: solo lectura si hay folios; sin captura. */
+const KANBAN_DOC_READONLY_STATUSES = new Set<AdministrativeBillingStatus>([
   'paid',
+]);
+
+/** Garantía / cancelado: sin inputs ni visualización de folios en kanban. */
+const KANBAN_DOC_HIDDEN_STATUSES = new Set<AdministrativeBillingStatus>([
   'warranty',
   'canceled',
 ]);
@@ -69,6 +74,7 @@ export function getKanbanInvoiceFolio(
 export function isKanbanRemittanceFolioEditable(
   card: AdministrativeRescueCard,
 ): boolean {
+  if (KANBAN_DOC_HIDDEN_STATUSES.has(card.billing_status)) return false;
   if (card.blocked) return false;
   if (!KANBAN_DOC_EDITABLE_STATUSES.has(card.billing_status)) return false;
   return getKanbanRemittanceFolio(card) == null;
@@ -77,6 +83,7 @@ export function isKanbanRemittanceFolioEditable(
 export function isKanbanInvoiceFolioEditable(
   card: AdministrativeRescueCard,
 ): boolean {
+  if (KANBAN_DOC_HIDDEN_STATUSES.has(card.billing_status)) return false;
   if (card.blocked) return false;
   if (!KANBAN_DOC_EDITABLE_STATUSES.has(card.billing_status)) return false;
   return getKanbanInvoiceFolio(card) == null;
@@ -85,16 +92,20 @@ export function isKanbanInvoiceFolioEditable(
 export function shouldShowKanbanRemittanceReadOnly(
   card: AdministrativeRescueCard,
 ): boolean {
+  if (KANBAN_DOC_HIDDEN_STATUSES.has(card.billing_status)) return false;
   const remittance = getKanbanRemittanceFolio(card);
   if (!remittance) return false;
+  if (KANBAN_DOC_READONLY_STATUSES.has(card.billing_status)) return true;
   return !isKanbanRemittanceFolioEditable(card);
 }
 
 export function shouldShowKanbanInvoiceReadOnly(
   card: AdministrativeRescueCard,
 ): boolean {
+  if (KANBAN_DOC_HIDDEN_STATUSES.has(card.billing_status)) return false;
   const invoice = getKanbanInvoiceFolio(card);
   if (!invoice) return false;
+  if (KANBAN_DOC_READONLY_STATUSES.has(card.billing_status)) return true;
   return !isKanbanInvoiceFolioEditable(card);
 }
 
@@ -119,6 +130,7 @@ export function isKanbanAdminDocReadOnlyVisible(
 export function isKanbanAdminDocSectionVisible(
   card: AdministrativeRescueCard,
 ): boolean {
+  if (KANBAN_DOC_HIDDEN_STATUSES.has(card.billing_status)) return false;
   return (
     isKanbanAdminDocInputVisible(card)
     || isKanbanAdminDocReadOnlyVisible(card)
@@ -128,7 +140,10 @@ export function isKanbanAdminDocSectionVisible(
 export function isKanbanAdminDocTerminalStatus(
   billingStatus: AdministrativeBillingStatus,
 ): boolean {
-  return KANBAN_DOC_TERMINAL_STATUSES.has(billingStatus);
+  return (
+    KANBAN_DOC_READONLY_STATUSES.has(billingStatus)
+    || KANBAN_DOC_HIDDEN_STATUSES.has(billingStatus)
+  );
 }
 
 

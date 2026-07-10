@@ -580,6 +580,19 @@ describe('kanban admin doc visibility', () => {
     expect(shouldShowKanbanRemittanceReadOnly(sample)).toBe(true);
     expect(shouldShowKanbanInvoiceReadOnly(sample)).toBe(true);
   });
+
+  it('hides doc section entirely in warranty and canceled', () => {
+    for (const billing_status of ['warranty', 'canceled'] as const) {
+      const sample = card({
+        billing_status,
+        remittance_folio: 'REM-1',
+        invoice_folio: 'FAC-1',
+      });
+      expect(isKanbanAdminDocInputVisible(sample)).toBe(false);
+      expect(isKanbanAdminDocReadOnlyVisible(sample)).toBe(false);
+      expect(isKanbanAdminDocSectionVisible(sample)).toBe(false);
+    }
+  });
 });
 
 describe('blocked rescue', () => {
