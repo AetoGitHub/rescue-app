@@ -1,5 +1,5 @@
-import { ref as dbRef } from 'firebase/database';
-import { useDatabase, useDatabaseObject } from 'vuefire';
+import { onValue, ref as dbRef } from 'firebase/database';
+import { useDatabase } from 'vuefire';
 import { FIREBASE_ADMINISTRATIVE_VIEW_REFRESH_PATH } from '~/constants/firebase-rtdb';
 import { RESCUE_ADMINISTRATIVE_TOAST } from '~/constants/rescue-administrative-flow';
 import {
@@ -7,6 +7,11 @@ import {
   readAdministrativeViewRefreshCount,
 } from '~/utils/administrative-board-cache';
 
+/**
+ * Listens to RTDB leaf `rescue_2/counters/general/administrative_view_refresh`
+ * (plain number). Skips the first snapshot as baseline; later changes refresh
+ * the administrative board cards and show a toast.
+ */
 export function useAdministrativeViewRefreshListener() {
   if (!import.meta.client) {
     return;
@@ -16,16 +21,12 @@ export function useAdministrativeViewRefreshListener() {
   const toast = useToast();
   const db = useDatabase();
   const counterRef = dbRef(db, FIREBASE_ADMINISTRATIVE_VIEW_REFRESH_PATH);
-  const counterData = useDatabaseObject(counterRef);
-
-  const count = computed(() =>
-    readAdministrativeViewRefreshCount(counterData.value),
-  );
 
   const isReady = ref(false);
   const lastCount = ref<number | null>(null);
 
-  watch(count, async (next) => {
+  const unsubscribe = onValue(counterRef, (snapshot) => {
+    const next = readAdministrativeViewRefreshCount(snapshot.val());
     if (next == null) {
       return;
     }
@@ -41,10 +42,15 @@ export function useAdministrativeViewRefreshListener() {
     }
 
     lastCount.value = next;
-    await invalidateAdministrativeBoardCards(queryCache);
-    toast.add({
-      title: RESCUE_ADMINISTRATIVE_TOAST.rescueUpdated,
-      color: 'info',
+    void invalidateAdministrativeBoardCards(queryCache).then(() => {
+      toast.add({
+        title: RESCUE_ADMINISTRATIVE_TOAST.rescueUpdated,
+        color: 'info',
+      });
     });
+  });
+
+  onScopeDispose(() => {
+    unsubscribe();
   });
 }

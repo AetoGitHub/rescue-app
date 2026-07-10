@@ -5,24 +5,22 @@ import {
 } from '~/utils/administrative-board-cache';
 
 describe('readAdministrativeViewRefreshCount', () => {
-  it('reads count from object payload', () => {
-    expect(readAdministrativeViewRefreshCount({ count: 1 })).toBe(1);
+  it('reads plain number payload from RTDB leaf', () => {
+    expect(readAdministrativeViewRefreshCount(2)).toBe(2);
+    expect(readAdministrativeViewRefreshCount(0)).toBe(0);
   });
 
-  it('reads count from string in object payload', () => {
-    expect(readAdministrativeViewRefreshCount({ count: '2' })).toBe(2);
-  });
-
-  it('reads plain number payload', () => {
-    expect(readAdministrativeViewRefreshCount(3)).toBe(3);
+  it('reads numeric string payload', () => {
+    expect(readAdministrativeViewRefreshCount('3')).toBe(3);
   });
 
   it('returns null for missing or invalid values', () => {
     expect(readAdministrativeViewRefreshCount(null)).toBeNull();
     expect(readAdministrativeViewRefreshCount(undefined)).toBeNull();
     expect(readAdministrativeViewRefreshCount({})).toBeNull();
-    expect(readAdministrativeViewRefreshCount({ count: '' })).toBeNull();
-    expect(readAdministrativeViewRefreshCount({ count: 'abc' })).toBeNull();
+    expect(readAdministrativeViewRefreshCount({ count: 1 })).toBeNull();
+    expect(readAdministrativeViewRefreshCount('')).toBeNull();
+    expect(readAdministrativeViewRefreshCount('abc')).toBeNull();
   });
 });
 

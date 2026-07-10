@@ -1,25 +1,19 @@
 import type { QueryCache } from '@pinia/colada';
 
+/**
+ * RTDB leaf `administrative_view_refresh` is a plain number (e.g. `2`).
+ * Also accepts numeric strings for defensive parsing.
+ */
 export function readAdministrativeViewRefreshCount(
   value: unknown,
 ): number | null {
-  if (value == null) {
-    return null;
-  }
-
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
   }
 
-  if (typeof value === 'object' && 'count' in value) {
-    const count = (value as { count: unknown }).count;
-    if (typeof count === 'number' && Number.isFinite(count)) {
-      return count;
-    }
-    if (typeof count === 'string' && count.trim() !== '') {
-      const parsed = Number(count);
-      return Number.isFinite(parsed) ? parsed : null;
-    }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   return null;
