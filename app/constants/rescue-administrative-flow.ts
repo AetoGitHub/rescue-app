@@ -53,6 +53,8 @@ export const RESCUE_ADMINISTRATIVE_TOAST = {
     'Registra la orden de compra del cliente antes de facturar',
   documentComingSoon: 'Envío de documento disponible próximamente',
   endpointPending: 'El servicio administrativo aún no está disponible',
+  rescueBlocked: 'Rescate bloqueado — no se pueden realizar cambios',
+  rescueUpdated: 'Un rescate se ha actualizado',
 } as const;
 
 export const RESCUE_ADMINISTRATIVE_BUTTON_LABELS = {

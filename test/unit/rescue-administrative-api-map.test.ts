@@ -127,6 +127,23 @@ describe('mapAdministrativeCardFromApi', () => {
     expect(card.invoice_folio).toBe('A-239873');
     expect(card.remittance_folio).toBeNull();
   });
+
+  it('maps blocked from API', () => {
+    const blocked = mapAdministrativeCardFromApi({
+      id: 20,
+      folio: 'R-020',
+      operative_status: 'closed',
+      blocked: true,
+    });
+    expect(blocked.blocked).toBe(true);
+
+    const unblocked = mapAdministrativeCardFromApi({
+      id: 21,
+      folio: 'R-021',
+      operative_status: 'closed',
+    });
+    expect(unblocked.blocked).toBe(false);
+  });
 });
 
 const ADMINISTRATIVE_DETAIL_API_EXAMPLE = {

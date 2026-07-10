@@ -1,5 +1,14 @@
 import type { RescueDropdownRow } from '~/interfaces/rescue/dropdown';
-import { formatRescueDropdownLabel } from '~/schemas/rescue-admin-doc';
+
+export function formatRescueDropdownLabel(row: {
+  folio: string;
+  client_name: string;
+}): string {
+  const folio = row.folio.trim();
+  const client = row.client_name.trim();
+  if (folio && client) return `${folio} · ${client}`;
+  return folio || client || '—';
+}
 
 export function mapRescueDropdownRow(
   raw: Record<string, unknown>,

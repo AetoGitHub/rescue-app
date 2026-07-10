@@ -11,13 +11,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [card: import('~/interfaces/rescue/administrative').AdministrativeRescueCard];
-  adminDocSend: [
-    payload: {
-      card: import('~/interfaces/rescue/administrative').AdministrativeRescueCard;
-      remittance_folio: string;
-      invoice_folio: string;
-    },
-  ];
   count: [status: AdministrativeBillingStatus, count: number];
 }>();
 
@@ -108,7 +101,6 @@ function retryColumn() {
       <AdministrativeKanbanCard
         :card="item"
         @select="emit('select', $event)"
-        @admin-doc-send="emit('adminDocSend', $event)"
       />
     </template>
   </AdministrativeKanbanColumn>

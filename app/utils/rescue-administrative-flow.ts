@@ -16,6 +16,26 @@ import type { AdministrativeRescueDetail,
   RescueAdministrativeFlowContext,
   RescueAdministrativeFooterAction } from '~/interfaces/rescue/administrative';
 
+const PURCHASE_ORDER_EDITABLE_STATUSES = new Set<AdministrativeBillingStatus>([
+  'in_remittance',
+  'invoiced',
+]);
+
+const PURCHASE_ORDER_READONLY_STATUSES = new Set<AdministrativeBillingStatus>([
+  'in_remittance',
+  'invoiced',
+  'paid',
+  'warranty',
+  'canceled',
+]);
+
+const INVOICE_READONLY_STATUSES = new Set<AdministrativeBillingStatus>([
+  'invoiced',
+  'paid',
+  'warranty',
+  'canceled',
+]);
+
 
 export function administrativeDetailToFlowContext(
   detail: AdministrativeRescueDetail,
@@ -30,6 +50,7 @@ export function administrativeDetailToFlowContext(
     purchase_order_number: detail.purchase_order_number,
     remittance_number: detail.remittance_number,
     invoice_number: detail.invoice_number,
+    blocked: detail.blocked,
   };
 }
 
@@ -133,12 +154,46 @@ export function getAdministrativeRemissionAlert(
   return null;
 }
 
+export function isRescueAdministrativeBlocked(
+  ctx: RescueAdministrativeFlowContext,
+): boolean {
+  return ctx.blocked;
+}
+
+export function isAdministrativePurchaseOrderEditable(
+  ctx: RescueAdministrativeFlowContext,
+): boolean {
+  if (ctx.blocked) return false;
+  if (!ctx.requires_purchase_order) return false;
+  if (!PURCHASE_ORDER_EDITABLE_STATUSES.has(ctx.billing_status)) return false;
+  return !ctx.purchase_order_number?.trim();
+}
+
+export function shouldShowAdministrativePurchaseOrderReadOnly(
+  ctx: RescueAdministrativeFlowContext,
+): boolean {
+  if (!ctx.requires_purchase_order) return false;
+  if (!ctx.purchase_order_number?.trim()) return false;
+  return PURCHASE_ORDER_READONLY_STATUSES.has(ctx.billing_status);
+}
+
+export function shouldShowAdministrativeInvoiceReadOnly(
+  detail: AdministrativeRescueDetail,
+): boolean {
+  if (!detail.invoice_number?.trim()) return false;
+  return INVOICE_READONLY_STATUSES.has(detail.billing_status);
+}
+
 export function isAdminActionAllowed(
   ctx: RescueAdministrativeFlowContext,
   actionId: RescueAdministrativeActionId,
 ): boolean {
+  if (ctx.blocked) {
+    return false;
+  }
+
   if (actionId === 'save_purchase_order') {
-    return true;
+    return isAdministrativePurchaseOrderEditable(ctx);
   }
 
   if (actionId === 'revert_admin_cancellation') {
@@ -213,6 +268,10 @@ export function getAdministrativeFooterFlowLabel(
 export function getAdministrativeFooterActions(
   ctx: RescueAdministrativeFlowContext,
 ): RescueAdministrativeFooterAction[] {
+  if (ctx.blocked) {
+    return [];
+  }
+
   const ocBlocked = isPurchaseOrderBlockingInvoice(ctx);
   const actions: RescueAdministrativeFooterAction[] = [];
   const unattendedTransitions =

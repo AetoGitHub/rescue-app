@@ -124,6 +124,14 @@ export function useRescueAdministrativeFlow(options: {
     const ctx = flowContext.value;
     if (!ctx) return;
 
+    if (ctx.blocked) {
+      toast.add({
+        title: RESCUE_ADMINISTRATIVE_TOAST.rescueBlocked,
+        color: 'error',
+      });
+      return;
+    }
+
     if (!isAdminActionAllowed(ctx, action)) {
       return;
     }
@@ -256,6 +264,14 @@ export function useRescueAdministrativeFlow(options: {
   }
 
   async function submitPurchaseOrder() {
+    if (flowContext.value?.blocked) {
+      toast.add({
+        title: RESCUE_ADMINISTRATIVE_TOAST.rescueBlocked,
+        color: 'error',
+      });
+      return;
+    }
+
     const parsed = rescuePurchaseOrderSchema.safeParse({
       purchase_order_number: purchaseOrderNumber.value,
     });

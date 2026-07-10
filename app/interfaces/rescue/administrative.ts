@@ -45,6 +45,7 @@ export interface AdministrativeRescueCard {
   seller_id: number | null;
   remittance_folio: string | null;
   invoice_folio: string | null;
+  blocked: boolean;
 }
 
 export interface AdministrativeRescueDetail extends AdministrativeRescueCard {
@@ -109,6 +110,7 @@ export interface RescueAdministrativeFlowContext {
   purchase_order_number: string | null;
   remittance_number: string | null;
   invoice_number: string | null;
+  blocked: boolean;
 }
 
 export interface RescueAdministrativeFooterAction {

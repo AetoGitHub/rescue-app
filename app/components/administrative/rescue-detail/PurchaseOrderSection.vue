@@ -8,6 +8,8 @@ const purchaseOrderNumber = defineModel<string>('purchaseOrderNumber', {
 defineProps<{
   highlight?: boolean;
   loading?: boolean;
+  readonly?: boolean;
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -32,23 +34,33 @@ const emit = defineEmits<{
       />
     </div>
 
-    <UFormField
-      label="Número de OC"
-      name="purchase_order_number"
-      required
-    >
-      <UInput
-        v-model="purchaseOrderNumber"
-        class="w-full"
-        placeholder="OC del cliente"
-      />
-    </UFormField>
+    <template v-if="readonly">
+      <p class="text-sm font-medium">
+        {{ purchaseOrderNumber.trim() || '—' }}
+      </p>
+    </template>
 
-    <UButton
-      color="primary"
-      :label="RESCUE_ADMINISTRATIVE_BUTTON_LABELS.savePurchaseOrder"
-      :loading="loading"
-      @click="emit('save')"
-    />
+    <template v-else>
+      <UFormField
+        label="Número de OC"
+        name="purchase_order_number"
+        required
+      >
+        <UInput
+          v-model="purchaseOrderNumber"
+          class="w-full"
+          placeholder="OC del cliente"
+          :disabled="disabled || loading"
+        />
+      </UFormField>
+
+      <UButton
+        color="primary"
+        :label="RESCUE_ADMINISTRATIVE_BUTTON_LABELS.savePurchaseOrder"
+        :disabled="disabled"
+        :loading="loading"
+        @click="emit('save')"
+      />
+    </template>
   </UCard>
 </template>

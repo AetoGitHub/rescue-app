@@ -35,6 +35,7 @@ function card(
     seller_id: null,
     remittance_folio: null,
     invoice_folio: null,
+    blocked: false,
     ...partial,
   };
 }

@@ -9,9 +9,14 @@ import {
   getValidAdminBillingTransitions,
   isAdminActionAllowed,
   isAdministrativeLinearStepperVisible,
+  isAdministrativePurchaseOrderEditable,
   isPurchaseOrderBlockingInvoice,
+  isRescueAdministrativeBlocked,
+  shouldShowAdministrativeInvoiceReadOnly,
+  shouldShowAdministrativePurchaseOrderReadOnly,
   showOperativeWarningBanner,
 } from '~/utils/rescue-administrative-flow';
+import type { AdministrativeRescueDetail } from '~/interfaces/rescue/administrative';
 
 function ctx(
   partial: Partial<RescueAdministrativeFlowContext> & {
@@ -27,6 +32,66 @@ function ctx(
     purchase_order_number: null,
     remittance_number: null,
     invoice_number: null,
+    blocked: false,
+    ...partial,
+  };
+}
+
+function detail(
+  partial: Partial<AdministrativeRescueDetail> & {
+    billing_status: AdministrativeRescueDetail['billing_status'];
+  },
+): AdministrativeRescueDetail {
+  return {
+    id: 1,
+    folio: 'R-1',
+    service_type: 'rescue',
+    client_id: 1,
+    client_name: 'Acme',
+    service_description: '',
+    location_description: '',
+    operator_id: null,
+    operator_name: null,
+    supplier_id: null,
+    supplier_name: null,
+    multiple_managers: false,
+    sub_total: '1000',
+    sale_price: '1000',
+    net_profit: null,
+    operative_status: 'closed',
+    created_at: '2026-06-01T12:00:00Z',
+    phase_started_at: null,
+    last_comment_at: null,
+    unlocked_until: null,
+    service_date: null,
+    seller_id: null,
+    remittance_folio: null,
+    invoice_folio: null,
+    blocked: false,
+    client_type: 'CASH',
+    client_billing_type: 'DIRECT_INVOICE',
+    billing_type: 'DIRECT_INVOICE',
+    client_phone: null,
+    seller_name: null,
+    requires_purchase_order: false,
+    purchase_order_number: null,
+    requires_remision: false,
+    remittance_number: null,
+    invoice_number: null,
+    invoice_date: null,
+    invoice_amount: null,
+    payment_amount: null,
+    payment_date: null,
+    payment_method: null,
+    payment_reference: null,
+    closed_at: null,
+    admin_cancellation_reason: null,
+    admin_cancellation_reason_id: null,
+    provider_cost: null,
+    vehicle: null,
+    latitude: null,
+    longitude: null,
+    supplier_score: null,
     ...partial,
   };
 }
@@ -342,5 +407,107 @@ describe('isAdministrativeLinearStepperVisible', () => {
     expect(isAdministrativeLinearStepperVisible('warranty')).toBe(false);
     expect(isAdministrativeLinearStepperVisible('canceled')).toBe(false);
     expect(isAdministrativeLinearStepperVisible('unattended')).toBe(true);
+  });
+});
+
+describe('purchase order and invoice visibility', () => {
+  it('hides editable PO in unattended', () => {
+    expect(
+      isAdministrativePurchaseOrderEditable(
+        ctx({
+          billing_status: 'unattended',
+          requires_purchase_order: true,
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it('allows editable PO in remittance when empty', () => {
+    expect(
+      isAdministrativePurchaseOrderEditable(
+        ctx({
+          billing_status: 'in_remittance',
+          requires_purchase_order: true,
+          purchase_order_number: null,
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('locks PO after value is saved', () => {
+    expect(
+      isAdministrativePurchaseOrderEditable(
+        ctx({
+          billing_status: 'in_remittance',
+          requires_purchase_order: true,
+          purchase_order_number: 'OC-123',
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      shouldShowAdministrativePurchaseOrderReadOnly(
+        ctx({
+          billing_status: 'in_remittance',
+          requires_purchase_order: true,
+          purchase_order_number: 'OC-123',
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('shows read-only PO in paid when present', () => {
+    expect(
+      shouldShowAdministrativePurchaseOrderReadOnly(
+        ctx({
+          billing_status: 'paid',
+          requires_purchase_order: true,
+          purchase_order_number: 'OC-999',
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('shows read-only invoice in terminal statuses when present', () => {
+    expect(
+      shouldShowAdministrativeInvoiceReadOnly(
+        detail({
+          billing_status: 'paid',
+          invoice_number: 'FAC-1',
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      shouldShowAdministrativeInvoiceReadOnly(
+        detail({
+          billing_status: 'unattended',
+          invoice_number: 'FAC-1',
+        }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('blocked rescue', () => {
+  it('detects blocked context', () => {
+    expect(isRescueAdministrativeBlocked(ctx({ billing_status: 'paid', blocked: true }))).toBe(true);
+  });
+
+  it('blocks all actions when blocked', () => {
+    const blockedCtx = ctx({ billing_status: 'in_remittance', blocked: true });
+    expect(isAdminActionAllowed(blockedCtx, 'register_invoice')).toBe(false);
+    expect(isAdminActionAllowed(blockedCtx, 'save_purchase_order')).toBe(false);
+    expect(getAdministrativeFooterActions(blockedCtx)).toEqual([]);
+  });
+
+  it('blocks PO edit when blocked even in remittance', () => {
+    expect(
+      isAdministrativePurchaseOrderEditable(
+        ctx({
+          billing_status: 'in_remittance',
+          requires_purchase_order: true,
+          blocked: true,
+        }),
+      ),
+    ).toBe(false);
   });
 });

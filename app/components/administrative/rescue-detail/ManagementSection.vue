@@ -11,6 +11,9 @@ import {
   getAdministrativeStepperItems,
   getAdministrativeStepperSteps,
   isAdministrativeLinearStepperVisible,
+  isAdministrativePurchaseOrderEditable,
+  shouldShowAdministrativeInvoiceReadOnly,
+  shouldShowAdministrativePurchaseOrderReadOnly,
   showOperativeWarningBanner,
 } from '~/utils/rescue-administrative-flow';
 
@@ -75,6 +78,22 @@ const showWarning = computed(() =>
   showOperativeWarningBanner(props.flowContext),
 );
 
+const isPurchaseOrderEditable = computed(() =>
+  isAdministrativePurchaseOrderEditable(props.flowContext),
+);
+
+const showPurchaseOrderReadOnly = computed(() =>
+  shouldShowAdministrativePurchaseOrderReadOnly(props.flowContext),
+);
+
+const showInvoiceReadOnly = computed(() =>
+  shouldShowAdministrativeInvoiceReadOnly(props.detail),
+);
+
+const showInvoiceDocumentActions = computed(
+  () => props.detail.billing_status === 'invoiced',
+);
+
 function onAction(id: RescueAdministrativeActionId) {
   emit('action', id);
 }
@@ -93,6 +112,15 @@ function onAction(id: RescueAdministrativeActionId) {
         class="uppercase"
       />
     </div>
+
+    <UAlert
+      v-if="detail.blocked"
+      color="warning"
+      icon="i-lucide-lock"
+      title="Rescate bloqueado"
+      description="No se pueden realizar cambios mientras el rescate esté bloqueado."
+      :ui="{ root: 'border border-warning/30' }"
+    />
 
     <UAlert
       v-if="remissionAlert"
@@ -179,11 +207,18 @@ function onAction(id: RescueAdministrativeActionId) {
     />
 
     <AdministrativeRescueDetailPurchaseOrderSection
-      v-if="detail.requires_purchase_order"
+      v-if="isPurchaseOrderEditable"
       v-model:purchase-order-number="purchaseOrderModel"
       :highlight="purchaseOrderHighlight"
+      :disabled="detail.blocked"
       :loading="loading"
       @save="emit('savePurchaseOrder')"
+    />
+
+    <AdministrativeRescueDetailPurchaseOrderSection
+      v-else-if="showPurchaseOrderReadOnly"
+      v-model:purchase-order-number="purchaseOrderModel"
+      readonly
     />
 
     <UCard
@@ -222,16 +257,22 @@ function onAction(id: RescueAdministrativeActionId) {
     </UCard>
 
     <UCard
-      v-if="detail.billing_status === 'invoiced' && detail.invoice_number"
+      v-if="showInvoiceReadOnly"
       :ui="{ body: 'space-y-3 p-4' }"
     >
       <p class="text-sm font-medium">
         Factura: {{ detail.invoice_number }}
       </p>
-      <p class="text-xs text-muted">
+      <p
+        v-if="detail.invoice_date || detail.invoice_amount"
+        class="text-xs text-muted"
+      >
         {{ detail.invoice_date }} — {{ formatRescueCardMoney(detail.invoice_amount) }}
       </p>
-      <div class="flex flex-wrap gap-2">
+      <div
+        v-if="showInvoiceDocumentActions"
+        class="flex flex-wrap gap-2"
+      >
         <UButton
           color="neutral"
           icon="i-lucide-file-text"

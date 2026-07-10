@@ -159,6 +159,7 @@ export function mapAdministrativeCardFromApi(
     invoice_folio:
       readString(raw, 'invoice_folio')
       ?? readString(raw, 'invoice_number'),
+    blocked: Boolean(raw.blocked),
   };
 }
 

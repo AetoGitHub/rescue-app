@@ -248,7 +248,7 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
               </UBadge>
             </div>
             <AdministrativeRescueDetailUnlockRescue
-              v-if="rescueId != null"
+              v-if="rescueId != null && !displayDetail.blocked"
               :rescue-id="rescueId"
               :unlocked-until="effectiveUnlockedUntil"
               @success="refresh()"

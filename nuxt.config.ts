@@ -17,18 +17,9 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: [
-    // '@nuxt/hints',
-    // '@nuxt/a11y',
-    '@nuxt/image',
-    '@nuxt/ui',
-    '@nuxt/eslint',
-    '@pinia/nuxt',
-    'nuxt-auth-utils',
-    'nuxt-authorization',
-    '@pinia/colada-nuxt',
-    '@nuxt/test-utils/module',
-  ],
+  modules: [// '@nuxt/hints',
+  // '@nuxt/a11y',
+  '@nuxt/image', '@nuxt/ui', '@nuxt/eslint', '@pinia/nuxt', 'nuxt-auth-utils', 'nuxt-authorization', '@pinia/colada-nuxt', '@nuxt/test-utils/module', 'nuxt-vuefire'],
 
   css: ['~/assets/css/main.css'],
 
@@ -92,6 +83,18 @@ export default defineNuxtConfig({
   typescript: {
     tsConfig: {
       include: ['../test/unit/**/*'],
+    },
+  },
+
+  vuefire: {
+    config: {
+      apiKey: process.env.NUXT_PUBLIC_VUEFIRE_API_KEY ?? '',
+      authDomain: process.env.NUXT_PUBLIC_VUEFIRE_AUTH_DOMAIN ?? '',
+      databaseURL: process.env.NUXT_PUBLIC_VUEFIRE_DATABASE_URL ?? '',
+      projectId: process.env.NUXT_PUBLIC_VUEFIRE_PROJECT_ID ?? '',
+      storageBucket: process.env.NUXT_PUBLIC_VUEFIRE_STORAGE_BUCKET ?? '',
+      messagingSenderId: process.env.NUXT_PUBLIC_VUEFIRE_MESSAGING_SENDER_ID ?? '',
+      appId: process.env.NUXT_PUBLIC_VUEFIRE_APP_ID ?? '',
     },
   },
 });
