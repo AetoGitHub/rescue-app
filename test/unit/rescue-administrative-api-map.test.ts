@@ -74,6 +74,18 @@ describe('mapAdministrativeCardFromApi', () => {
     expect(card.billing_status).toBe('unattended');
   });
 
+  it('uses fallback billing status when admin_status is absent on list cards', () => {
+    const card = mapAdministrativeCardFromApi(
+      {
+        id: 7,
+        folio: 'R-007',
+        operative_status: 'closed',
+      },
+      { fallbackBillingStatus: 'paid' },
+    );
+    expect(card.billing_status).toBe('paid');
+  });
+
   it('maps net_profit from administrative cards list payload', () => {
     const card = mapAdministrativeCardFromApi({
       id: 14,

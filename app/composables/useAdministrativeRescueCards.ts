@@ -49,7 +49,10 @@ export function useAdministrativeRescueCards(
 
   const rows = computed((): AdministrativeRescueCard[] =>
     flattenPaginatedPages<Record<string, unknown>>(data.value?.pages).map(
-      mapAdministrativeCardFromApi,
+      (raw) =>
+        mapAdministrativeCardFromApi(raw, {
+          fallbackBillingStatus: statusValue.value,
+        }),
     ),
   );
 

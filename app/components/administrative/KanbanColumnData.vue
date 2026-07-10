@@ -107,6 +107,7 @@ function retryColumn() {
     <template #default="{ item }">
       <AdministrativeKanbanCard
         :card="item"
+        :column-status="status"
         @select="emit('select', $event)"
         @admin-doc-send="emit('adminDocSend', $event)"
       />

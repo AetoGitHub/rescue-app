@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { AdministrativeBillingStatus } from '~/constants/administrative-kanban';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import { parseRescueAdminDocInput } from '~/schemas/rescue-admin-doc';
 
 const props = defineProps<{
   card: AdministrativeRescueCard;
+  columnStatus: AdministrativeBillingStatus;
 }>();
 
 const emit = defineEmits<{
@@ -45,27 +47,37 @@ const supplierBadgeColor = computed(() =>
   props.card.supplier_name?.trim() ? 'neutral' : 'error',
 );
 
+/** La columna del kanban es la fuente de verdad del estatus administrativo. */
+const docCard = computed((): AdministrativeRescueCard => ({
+  ...props.card,
+  billing_status: props.columnStatus,
+}));
+
 const showDocSection = computed(() =>
-  isKanbanAdminDocSectionVisible(props.card),
+  isKanbanAdminDocSectionVisible(docCard.value),
 );
 
 const canEditRemittance = computed(() =>
-  isKanbanRemittanceFolioEditable(props.card),
+  isKanbanRemittanceFolioEditable(docCard.value),
 );
 
 const canEditInvoice = computed(() =>
-  isKanbanInvoiceFolioEditable(props.card),
+  isKanbanInvoiceFolioEditable(docCard.value),
+);
+
+const showDocInputs = computed(() =>
+  isKanbanAdminDocInputVisible(docCard.value),
 );
 
 const savedRemittanceFolio = computed(() =>
-  shouldShowKanbanRemittanceReadOnly(props.card)
-    ? getKanbanRemittanceFolio(props.card)
+  shouldShowKanbanRemittanceReadOnly(docCard.value)
+    ? getKanbanRemittanceFolio(docCard.value)
     : null,
 );
 
 const savedInvoiceFolio = computed(() =>
-  shouldShowKanbanInvoiceReadOnly(props.card)
-    ? getKanbanInvoiceFolio(props.card)
+  shouldShowKanbanInvoiceReadOnly(docCard.value)
+    ? getKanbanInvoiceFolio(docCard.value)
     : null,
 );
 
@@ -184,7 +196,7 @@ function onSendDocs() {
       </p>
 
       <div
-        v-if="canEditRemittance || canEditInvoice"
+        v-if="showDocInputs"
         class="flex items-center gap-1.5"
       >
         <UInput

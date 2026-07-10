@@ -49,6 +49,7 @@ function normalizeBillingStatus(
 /** API `admin_status` on administrative cards (not gestor agent status). */
 function readBillingStatus(
   raw: Record<string, unknown>,
+  fallback?: AdministrativeBillingStatus,
 ): AdministrativeBillingStatus {
   const adminStatus = raw.admin_status;
   if (typeof adminStatus === 'string' && adminStatus.trim()) {
@@ -65,7 +66,7 @@ function readBillingStatus(
     return normalizeBillingStatus(legacy);
   }
 
-  return DEFAULT_BILLING_STATUS;
+  return fallback ?? DEFAULT_BILLING_STATUS;
 }
 
 function readString(raw: Record<string, unknown>, key: string): string | null {
@@ -114,6 +115,7 @@ export function unwrapAdministrativeDetailRecord(
 
 export function mapAdministrativeCardFromApi(
   raw: Record<string, unknown>,
+  options?: { fallbackBillingStatus?: AdministrativeBillingStatus },
 ): AdministrativeRescueCard {
   const subTotal =
     readString(raw, 'sub_total') ?? readString(raw, 'total');
@@ -143,7 +145,7 @@ export function mapAdministrativeCardFromApi(
     operative_status: String(
       raw.operative_status ?? 'closed',
     ) as OperationalRescueStatus,
-    billing_status: readBillingStatus(raw),
+    billing_status: readBillingStatus(raw, options?.fallbackBillingStatus),
     created_at: String(raw.created_at ?? ''),
     phase_started_at: phaseStartedAt,
     last_comment_at: readString(raw, 'last_comment_at'),

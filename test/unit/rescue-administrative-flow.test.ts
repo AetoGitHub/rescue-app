@@ -545,6 +545,15 @@ describe('kanban admin doc visibility', () => {
     expect(isKanbanAdminDocSectionVisible(sample)).toBe(false);
   });
 
+  it('never shows inputs when card billing_status is wrong but column is paid', () => {
+    const sample = card({
+      billing_status: 'unattended',
+    });
+    const columnPaid = { ...sample, billing_status: 'paid' as const };
+    expect(isKanbanAdminDocInputVisible(columnPaid)).toBe(false);
+    expect(isKanbanAdminDocSectionVisible(columnPaid)).toBe(false);
+  });
+
   it('shows read-only invoice in paid when present', () => {
     const sample = card({
       billing_status: 'paid',

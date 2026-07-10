@@ -112,6 +112,8 @@ export function shouldShowKanbanInvoiceReadOnly(
 export function isKanbanAdminDocInputVisible(
   card: AdministrativeRescueCard,
 ): boolean {
+  if (KANBAN_DOC_HIDDEN_STATUSES.has(card.billing_status)) return false;
+  if (KANBAN_DOC_READONLY_STATUSES.has(card.billing_status)) return false;
   return (
     isKanbanRemittanceFolioEditable(card)
     || isKanbanInvoiceFolioEditable(card)
