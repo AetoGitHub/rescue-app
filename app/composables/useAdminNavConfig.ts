@@ -66,12 +66,6 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     label: 'Catálogos',
     items: [
       {
-        label: 'Compañías',
-        to: '/admin/catalogs/companies',
-        icon: 'i-lucide-building',
-        ability: accessCatalogs,
-      },
-      {
         label: 'Clientes',
         to: '/admin/catalogs/clients',
         icon: 'i-lucide-users',

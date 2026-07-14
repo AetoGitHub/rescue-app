@@ -145,6 +145,14 @@ export function getOperationalChatBadgeState(
   settings: RescueGeneralSettings | null | undefined,
   nowMs: number,
 ): OperationalChatBadgeState {
+  if (card.operative_status === 'closed') {
+    return {
+      label: 'Chat —',
+      color: 'neutral',
+      tooltip: 'Alertas de chat no aplican en estatus Cerrado.',
+    };
+  }
+
   const serviceType = normalizeServiceType(card.service_type);
   const chatConfig = findUpdateChat(
     settings,
@@ -219,6 +227,15 @@ export function getOperationalSlaBadgeState(
   settings: RescueGeneralSettings | null | undefined,
   nowMs: number,
 ): OperationalSlaBadgeState {
+  if (card.operative_status === 'closed') {
+    return {
+      label: 'SLA —',
+      color: 'neutral',
+      customStyle: undefined,
+      tooltip: 'SLA no aplica en estatus Cerrado.',
+    };
+  }
+
   const serviceType = normalizeServiceType(card.service_type);
   const stageConfig = findTimePerStage(
     settings,

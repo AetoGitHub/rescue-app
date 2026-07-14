@@ -169,6 +169,13 @@ const columns: TableColumn<Client>[] = [
     description="Gestiona los clientes de tu empresa"
   >
     <template #actions>
+      <UButton
+        icon="i-lucide-building"
+        label="Compañías"
+        color="neutral"
+        variant="subtle"
+        to="/admin/catalogs/companies"
+      />
       <CatalogClientCreateSlideover ref="slideoverRef" />
     </template>
 

@@ -79,8 +79,8 @@ useScrollContainerInfiniteLoad({
 </script>
 
 <template>
-  <section class="space-y-4 rounded-lg border border-default bg-default p-4">
-    <div>
+  <section class="flex min-h-0 flex-1 flex-col space-y-4 rounded-lg border border-default bg-default p-4">
+    <div class="shrink-0">
       <h2 class="text-lg font-semibold text-highlighted">
         Overrides por gestor
       </h2>
@@ -91,7 +91,7 @@ useScrollContainerInfiniteLoad({
 
     <div
       v-if="isInitialLoading"
-      class="flex justify-center py-12"
+      class="flex flex-1 justify-center py-12"
     >
       <UIcon
         name="i-lucide-loader-circle"
@@ -101,7 +101,7 @@ useScrollContainerInfiniteLoad({
 
     <div
       v-else-if="operators.length === 0"
-      class="py-8 text-center text-sm text-muted"
+      class="flex-1 py-8 text-center text-sm text-muted"
     >
       No hay gestores operativos registrados.
     </div>
@@ -109,7 +109,7 @@ useScrollContainerInfiniteLoad({
     <div
       v-else
       ref="operatorsListRef"
-      class="max-h-[32rem] space-y-3 overflow-y-auto"
+      class="min-h-0 flex-1 space-y-3 overflow-y-auto"
     >
       <article
         v-for="operator in operators"

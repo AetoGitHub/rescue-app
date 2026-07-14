@@ -1,11 +1,12 @@
 import { useInfiniteQuery } from '@pinia/colada';
 import type { EntryKey } from '@pinia/colada';
+import type { MaybeRefOrGetter } from 'vue';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
 interface CatalogInfiniteListOptions {
   key: () => EntryKey;
   path: string;
-  query?: Record<string, string>;
+  query?: MaybeRefOrGetter<Record<string, string> | undefined>;
 }
 
 export function useCatalogInfiniteList<T>(options: CatalogInfiniteListOptions) {
@@ -22,7 +23,7 @@ export function useCatalogInfiniteList<T>(options: CatalogInfiniteListOptions) {
     initialPageParam: null,
     query: ({ pageParam }) =>
       apiFetch<PaginatedResponse<T>>(options.path, {
-        query: buildPaginatedQuery(options.query, pageParam),
+        query: buildPaginatedQuery(toValue(options.query), pageParam),
       }),
     getNextPageParam: getNextCursorPageParam,
   });

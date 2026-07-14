@@ -28,18 +28,6 @@ function onSubmit() {
   >
     <template #body>
       <div class="flex flex-col gap-4">
-        <UFormField
-          label="Fecha de cierre"
-          name="close_date"
-          required
-        >
-          <UInput
-            v-model="form.close_date"
-            type="date"
-            class="w-full"
-          />
-        </UFormField>
-
         <template v-if="isLoan">
           <UFormField
             label="Fecha de desembolso"

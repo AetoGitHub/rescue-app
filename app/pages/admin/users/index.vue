@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { refDebounced } from '@vueuse/core';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { User, UserRole } from '~/interfaces/auth/user';
 import { USER_ROLE_OPTIONS } from '~/constants/user-select-options';
@@ -10,6 +11,8 @@ useHead({
 
 const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
 const tableRef = useTemplateRef('table');
+const search = ref('');
+const debouncedName = refDebounced(search, 300);
 
 function userRoleLabel(role: UserRole | string) {
   return USER_ROLE_OPTIONS.find((o) => o.value === role)?.label ?? String(role);
@@ -29,8 +32,12 @@ const {
   loadNextPage,
   isInitialLoading,
 } = useCatalogInfiniteList<User>({
-  key: () => ['users'],
+  key: () => ['users', debouncedName.value.trim()],
   path: '/api/auth/user/list/',
+  query: () => {
+    const name = debouncedName.value.trim();
+    return name ? { name } : undefined;
+  },
 });
 
 usePaginatedTableInfiniteScroll({
@@ -84,6 +91,7 @@ const columns: TableColumn<User>[] = [
 
     <template #filters>
       <UInput
+        v-model="search"
         leading-icon="i-lucide-search"
         placeholder="Buscar usuario"
         class="flex-1"

@@ -30,7 +30,8 @@ export const SLA_SERVICE_TYPES: RescueServiceType[] = [
 ];
 
 export const SLA_ALL_STATUS_OPTIONS = OPERATIONAL_KANBAN_COLUMNS.filter(
-  (column) => column.status !== 'canceled',
+  (column) =>
+    column.status !== 'canceled' && column.status !== 'closed',
 ).map((column) => ({
   label: column.title,
   value: column.status as OperationalRescueStatus,
