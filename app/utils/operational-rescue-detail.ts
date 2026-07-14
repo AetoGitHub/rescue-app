@@ -111,6 +111,7 @@ export function mapRescueCardDetailFromApi(
       readDetailString(record, 'location_description')
       ?? readDetailString(record, 'description')
       ?? '',
+    internal_notes: readDetailString(record, 'internal_notes'),
   };
 }
 

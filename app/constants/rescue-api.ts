@@ -4,6 +4,10 @@ export const RESCUE_CARDS_PATH = '/api/rescue/cards/';
 /** Operational flat list (optional `status`, cursor pagination). */
 export const RESCUE_LIST_PATH = '/api/rescue/list/';
 
+/** Partial update: vehicle, service_description, internal_notes only. */
+export const RESCUE_UPDATE_PATH = (rescueId: number) =>
+  `/api/rescue/update/${rescueId}/`;
+
 /** Supplier list used by catalog CRUD and rescue request step 3 mockup. */
 export const SUPPLIER_LIST_PATH = '/api/supplier/list/';
 

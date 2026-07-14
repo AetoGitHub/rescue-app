@@ -34,6 +34,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'assign-supplier': [];
+  'edit-service': [];
 }>();
 
 const serviceTypeBadge = computed(() =>
@@ -141,9 +142,20 @@ watch(
       <section
         class="space-y-3 rounded-lg border border-default bg-default p-4"
       >
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
-          Servicio
-        </h3>
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
+            Servicio
+          </h3>
+          <UButton
+            v-if="editable"
+            color="neutral"
+            icon="i-lucide-pencil"
+            label="Editar"
+            size="xs"
+            variant="subtle"
+            @click="emit('edit-service')"
+          />
+        </div>
         <div class="grid gap-3 text-xs sm:grid-cols-2">
           <div>
             <p class="font-medium uppercase text-muted">Tipo</p>
@@ -177,7 +189,7 @@ watch(
           <div class="sm:col-span-2">
             <p class="font-medium uppercase text-muted">Notas internas</p>
             <p class="text-highlighted">
-              {{ formatDetailNotes(null) }}
+              {{ formatDetailNotes(detail.internal_notes) }}
             </p>
           </div>
         </div>
