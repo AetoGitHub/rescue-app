@@ -64,6 +64,15 @@ export function formatDetailOptionalText(
   return trimmed ? trimmed : placeholder;
 }
 
+export function formatDetailServiceDate(
+  isoDate: string | null | undefined,
+): string {
+  if (!isoDate?.trim()) return RESCUE_DETAIL_PLACEHOLDER_UNDEFINED;
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return RESCUE_DETAIL_PLACEHOLDER_UNDEFINED;
+  return date.toLocaleDateString('es-MX');
+}
+
 export function formatDetailPersonName(
   value: string | null | undefined,
 ): string {

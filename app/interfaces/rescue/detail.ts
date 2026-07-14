@@ -32,8 +32,8 @@ export interface RescueCardDetail {
   longitude: string | null;
   quote_count?: number;
   advance_amount?: string | number | null;
-  requires_advance?: boolean;
-  advance_received?: boolean;
+  advance_requested?: boolean;
+  advance_received?: boolean | null;
   advance_date?: string | null;
   advance_payment_method?: string | null;
   advance_reference?: string | null;

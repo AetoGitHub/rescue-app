@@ -245,6 +245,7 @@ function onSubmit() {
           <UInputNumber
             v-model="advanceAmountModel"
             v-bind="catalogCurrencyInputProps"
+            disabled
             class="w-full"
           />
         </UFormField>
@@ -257,6 +258,7 @@ function onSubmit() {
           <UInput
             v-model="form.advance_date"
             type="date"
+            disabled
             class="w-full"
           />
         </UFormField>

@@ -159,7 +159,7 @@ watch(
           <div>
             <p class="font-medium uppercase text-muted">Fecha de servicio</p>
             <p class="text-highlighted">
-              {{ formatDetailOptionalText(null) }}
+              {{ formatDetailServiceDate(detail.created_at) }}
             </p>
           </div>
           <div>

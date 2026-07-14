@@ -183,13 +183,19 @@ export function useRescueOperativeFlow(options: {
     };
   });
 
-  function resetAdvanceFormFromDetail(d: RescueCardDetail) {
+  function resetAdvanceFormFromDetail(
+    d: RescueCardDetail,
+    mode: RescueAdvancePanelMode,
+  ) {
     const amount = d.advance_amount;
     advanceForm.advance_amount =
       amount != null && String(amount).trim() !== ''
         ? String(amount)
         : '';
-    advanceForm.advance_date = d.advance_date?.trim() || todayIsoDate();
+    advanceForm.advance_date =
+      mode === 'confirm'
+        ? todayIsoDate()
+        : d.advance_date?.trim() || todayIsoDate();
     const method = d.advance_payment_method?.trim();
     advanceForm.advance_payment_method = method
       ? (method as NonNullable<RescueAdvanceFormState['advance_payment_method']>)
@@ -199,7 +205,7 @@ export function useRescueOperativeFlow(options: {
 
   function openAdvancePanel(mode: RescueAdvancePanelMode) {
     const d = detail.value;
-    if (d) resetAdvanceFormFromDetail(d);
+    if (d) resetAdvanceFormFromDetail(d, mode);
     advancePanelMode.value = mode;
     advancePanelOpen.value = true;
     options.setActiveTab('general');
@@ -418,6 +424,7 @@ export function useRescueOperativeFlow(options: {
       }
 
       if (mode === 'confirm') {
+        advanceForm.advance_date = todayIsoDate();
         const parsed = rescueAdvanceConfirmSchema.safeParse(advanceForm);
         if (!parsed.success) {
           toast.add({

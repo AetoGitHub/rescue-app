@@ -69,6 +69,7 @@ const modalFooterDetail = computed((): RescueCardDetail | null => {
     || isPending.value
     || errorMessage.value
     || activeTab.value === 'quote'
+    || advancePanelOpen.value
   ) {
     return null;
   }
