@@ -293,15 +293,16 @@ export function requiresQuoteBeforeAuthorization(
   return !hasRescueQuote(ctx);
 }
 
+export function canCancelOperativeService(
+  status: OperationalRescueStatus | string,
+): boolean {
+  return status !== 'closed' && status !== 'canceled';
+}
+
 export function getMoreOptionsActions(
   ctx: RescueOperativeFlowContext,
 ): RescueFooterAction[] {
-  const status = ctx.operative_status;
-  if (
-    status === 'active_without_quote'
-    || status === 'pending_authorization'
-    || status === 'waiting_advance_payment'
-  ) {
+  if (canCancelOperativeService(ctx.operative_status)) {
     return [CANCEL_SERVICE_ACTION];
   }
   return [];

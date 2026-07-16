@@ -107,6 +107,39 @@ describe('getMoreOptionsActions', () => {
     expect(options).toHaveLength(1);
     expect(options[0]?.id).toBe('cancel_service');
   });
+
+  it.each([
+    'requested',
+    'active_without_quote',
+    'pending_authorization',
+    'waiting_advance_payment',
+    'approved',
+    'in_progress',
+    'closed_unpaid',
+    'warranty_pending',
+  ] as const)('offers cancel_service in dropdown for %s', (status) => {
+    const options = getMoreOptionsActions(
+      ctx({
+        operative_status: status,
+        service_type: 'rescue',
+      }),
+    );
+    expect(options).toHaveLength(1);
+    expect(options[0]?.id).toBe('cancel_service');
+  });
+
+  it.each(['closed', 'canceled'] as const)(
+    'does not offer cancel_service for %s',
+    (status) => {
+      const options = getMoreOptionsActions(
+        ctx({
+          operative_status: status,
+          service_type: 'rescue',
+        }),
+      );
+      expect(options).toHaveLength(0);
+    },
+  );
 });
 
 describe('getRescueDetailFooterActions loan', () => {
