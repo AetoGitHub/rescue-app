@@ -174,6 +174,18 @@ const formRef = ref<{ submit: () => Promise<void>; $el?: HTMLElement } | null>(n
 const clientSlideoverScrollRoot = computed(() => formRef.value?.$el ?? null);
 const creditFormSectionRef = ref<{ submit: () => Promise<void> } | null>(null);
 const pendingClientData = ref<ZodInfer<typeof clientCreateSchema> | null>(null);
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({ state, creditState, clientCsfUrl: clientCsfUrl.value }),
+});
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -190,6 +202,7 @@ function resetForm() {
 function prepareCreate() {
   editingId.value = null;
   resetForm();
+  resetDirtySnapshot();
 }
 
 function syncCreditFromComposable() {
@@ -204,6 +217,7 @@ watch(
   () => clientCredit.view.value,
   () => {
     syncCreditFromComposable();
+    resetDirtySnapshot();
   },
 );
 
@@ -230,6 +244,7 @@ async function loadDetail(id: number) {
     });
   } finally {
     clientDetailPending.value = false;
+    resetDirtySnapshot();
   }
 }
 
@@ -391,7 +406,7 @@ const { mutate, asyncStatus } = useMutation({
       color: 'success',
     });
     await queryCache.invalidateQueries({ key: ['clients'] });
-    open.value = false;
+    closeWithoutConfirm();
     resetForm();
     editingId.value = null;
   },
@@ -511,7 +526,7 @@ function onCreditFormError() {
 }
 
 function cancel() {
-  open.value = false;
+  requestClose();
 }
 
 async function requestSubmit() {
@@ -521,7 +536,7 @@ async function requestSubmit() {
 
 <template>
   <USlideover
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :title="isEdit ? 'Editar cliente' : 'Nuevo cliente'"
     :ui="{
       content: `max-w-xl ${adminListSlideoverContentClass}`,
@@ -941,4 +956,10 @@ async function requestSubmit() {
       </div>
     </template>
   </USlideover>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

@@ -66,6 +66,18 @@ function emptyCreditState(): CreditFormState {
 
 const state = reactive(emptyState());
 const creditState = reactive(emptyCreditState());
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({ state, creditState }),
+});
 const commissionValueModel = useCommissionValueModel(
   toRef(state, 'commission_value'),
   toRef(state, 'commission_type'),
@@ -100,6 +112,7 @@ watch(
   () => companyCredit.view.value,
   () => {
     syncCreditFromComposable();
+    resetDirtySnapshot();
   },
 );
 
@@ -120,6 +133,7 @@ function resetForm() {
 function prepareCreate() {
   editingId.value = null;
   resetForm();
+  resetDirtySnapshot();
 }
 
 async function loadDetail(id: number) {
@@ -141,6 +155,7 @@ async function loadDetail(id: number) {
     });
   } finally {
     detailPending.value = false;
+    resetDirtySnapshot();
   }
 }
 
@@ -231,7 +246,7 @@ const { mutate, asyncStatus } = useMutation({
       color: 'success',
     });
     await queryCache.invalidateQueries({ key: ['companies'] });
-    open.value = false;
+    closeWithoutConfirm();
     resetForm();
     editingId.value = null;
   },
@@ -316,7 +331,7 @@ function onCreditFormError() {
 }
 
 function cancel() {
-  open.value = false;
+  requestClose();
 }
 
 async function requestSubmit() {
@@ -326,7 +341,7 @@ async function requestSubmit() {
 
 <template>
   <USlideover
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :title="isEdit ? 'Editar compañía' : 'Nueva compañía'"
     :ui="{
       content: adminListSlideoverContentClass,
@@ -460,4 +475,10 @@ async function requestSubmit() {
       </div>
     </template>
   </USlideover>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

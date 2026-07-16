@@ -43,6 +43,18 @@ function emptyState(): ServiceFormState {
 }
 
 const state = reactive(emptyState());
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({ state, linkedAlegraId: linkedAlegraId.value }),
+});
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -52,6 +64,7 @@ function resetForm() {
 function prepareCreate() {
   editingId.value = null;
   resetForm();
+  resetDirtySnapshot();
 }
 
 async function loadDetail(id: number) {
@@ -73,6 +86,7 @@ async function loadDetail(id: number) {
     });
   } finally {
     detailPending.value = false;
+    resetDirtySnapshot();
   }
 }
 
@@ -159,7 +173,7 @@ const { mutate, asyncStatus } = useMutation({
       color: 'success',
     });
     await queryCache.invalidateQueries({ key: ['services'] });
-    open.value = false;
+    closeWithoutConfirm();
     resetForm();
     editingId.value = null;
   },
@@ -178,7 +192,7 @@ const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 function onSubmit(payload: { data: ServiceFormState }) {
   if (isEdit.value) {
     const { alegra_id: _ignored, ...body } = payload.data;
-    mutate({ body, id: editingId.value });
+    mutate({ body: body as ServiceUpdateBody, id: editingId.value });
     return;
   }
 
@@ -193,7 +207,7 @@ function onFormError() {
 }
 
 function cancel() {
-  open.value = false;
+  requestClose();
 }
 
 async function requestSubmit() {
@@ -203,7 +217,7 @@ async function requestSubmit() {
 
 <template>
   <USlideover
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :title="isEdit ? 'Editar servicio' : 'Nuevo servicio'"
     :ui="{
       content: adminListSlideoverContentClass,
@@ -322,4 +336,10 @@ async function requestSubmit() {
       </div>
     </template>
   </USlideover>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

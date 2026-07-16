@@ -28,6 +28,19 @@ const currentStep = ref(0);
 const stepError = ref<string | null>(null);
 
 const state = reactive<RescueRequestFormState>(emptyRescueRequestState());
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({ currentStep: currentStep.value, state }),
+  alwaysConfirm: true,
+});
 
 const isManagerLocked = computed(() => isOperatorRole(user.value?.role));
 
@@ -95,6 +108,7 @@ function scheduleStepResetAfterClose() {
 function openCreate() {
   resetWizard();
   applyLockedManager();
+  resetDirtySnapshot();
   open.value = true;
 }
 
@@ -259,7 +273,7 @@ const { mutate, asyncStatus } = useMutation({
         await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });
         await queryCache.invalidateQueries({ key: ['operational-rescue-list'] });
         await queryCache.invalidateQueries({ key: ['operational-rescue-cards-summary'] });
-        open.value = false;
+        closeWithoutConfirm();
         return rescue;
       }
     }
@@ -276,7 +290,7 @@ const { mutate, asyncStatus } = useMutation({
     await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });
     await queryCache.invalidateQueries({ key: ['operational-rescue-list'] });
     await queryCache.invalidateQueries({ key: ['operational-rescue-cards-summary'] });
-    open.value = false;
+    closeWithoutConfirm();
     return rescue;
   },
   onError: (e) => {
@@ -391,7 +405,7 @@ function onFormError() {
 }
 
 function cancel() {
-  open.value = false;
+  requestClose();
 }
 
 async function requestSubmit() {
@@ -423,7 +437,7 @@ const wizardModalProps = computed(() => {
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     title="Nueva solicitud"
     v-bind="wizardModalProps"
@@ -538,4 +552,10 @@ const wizardModalProps = computed(() => {
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

@@ -18,6 +18,7 @@ const props = withDefaults(
     externalEvidences?: RescueEvidence[] | null;
   }>(),
   {
+    type: undefined,
     highlight: false,
     readonly: false,
     externalEvidences: undefined,
@@ -42,6 +43,20 @@ const pendingFiles = ref<File[]>([]);
 const isUploading = ref(false);
 const uploadProgress = ref<number | null>(null);
 const uploadLabel = ref('');
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose: requestGuardedClose,
+  confirmDiscard,
+  cancelDiscard,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({
+    pendingFiles: pendingFiles.value.map((file) => file.name),
+    isUploading: isUploading.value,
+  }),
+});
 
 const rescueIdRef = computed(() => props.rescueId);
 
@@ -196,6 +211,7 @@ watch(open, (isOpen, wasOpen) => {
   }
 
   if (isOpen) {
+    resetDirtySnapshot();
     if (!isGuestMode.value) void refresh();
     if (props.highlight && !props.readonly) scrollDropzoneIntoView();
   } else {
@@ -211,7 +227,7 @@ function requestClose() {
     });
     return;
   }
-  open.value = false;
+  requestGuardedClose();
 }
 
 watch(
@@ -238,7 +254,7 @@ function fileLabel(url: string, index: number) {
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     :title="modalTitle"
     :description="copy.subtitle"
@@ -390,5 +406,11 @@ function fileLabel(url: string, index: number) {
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>
 

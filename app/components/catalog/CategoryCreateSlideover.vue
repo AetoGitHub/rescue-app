@@ -46,6 +46,18 @@ function emptyState() {
 }
 
 const state = reactive(emptyState());
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => state,
+});
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -54,6 +66,7 @@ function resetForm() {
 function prepareCreate() {
   editingId.value = null;
   resetForm();
+  resetDirtySnapshot();
   open.value = true;
 }
 
@@ -61,6 +74,7 @@ function openEdit(id: number, name: string) {
   editingId.value = id;
   resetForm();
   state.name = normalizeCatalogName(name);
+  resetDirtySnapshot();
   open.value = true;
 }
 
@@ -101,7 +115,7 @@ const { mutate, asyncStatus } = useMutation({
     await queryCache.invalidateQueries({
       key: ['catalog-multipurpose', props.catalogueType],
     });
-    open.value = false;
+    closeWithoutConfirm();
     resetForm();
     editingId.value = null;
   },
@@ -138,7 +152,7 @@ function onFormError() {
 }
 
 function cancel() {
-  open.value = false;
+  requestClose();
 }
 
 async function requestSubmit() {
@@ -148,7 +162,7 @@ async function requestSubmit() {
 
 <template>
   <USlideover
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :title="slideoverTitle"
   >
     <UButton
@@ -191,4 +205,10 @@ async function requestSubmit() {
       </div>
     </template>
   </USlideover>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

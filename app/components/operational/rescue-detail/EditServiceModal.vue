@@ -23,6 +23,18 @@ const emit = defineEmits<{
 
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 const state = reactive<RescueServiceUpdateFormState>(emptyRescueServiceUpdateState());
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => state,
+});
 
 const { saveService, isUpdating } = useRescueServiceUpdate(() => props.rescueId);
 
@@ -31,6 +43,7 @@ watch(open, (isOpen) => {
   state.vehicle = props.vehicle?.trim() ?? '';
   state.service_description = props.serviceDescription?.trim() ?? '';
   state.internal_notes = props.internalNotes?.trim() ?? '';
+  resetDirtySnapshot();
 });
 
 async function onSubmit(
@@ -39,7 +52,7 @@ async function onSubmit(
   const body = rescueServiceUpdateToBody(event.data);
   const ok = await saveService(body);
   if (ok) {
-    open.value = false;
+    closeWithoutConfirm();
     emit('saved');
   }
 }
@@ -51,7 +64,7 @@ function onSaveClick() {
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     title="Editar servicio"
     :ui="{ content: 'max-w-md' }"
@@ -106,7 +119,7 @@ function onSaveClick() {
           label="Cancelar"
           variant="subtle"
           :disabled="isUpdating"
-          @click="() => { open = false }"
+          @click="requestClose"
         />
         <UButton
           color="primary"
@@ -118,4 +131,10 @@ function onSaveClick() {
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

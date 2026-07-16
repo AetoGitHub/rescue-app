@@ -31,6 +31,17 @@ function emptyState(): PaymentDebtCreateFormState {
 }
 
 const state = reactive<PaymentDebtCreateFormState>(emptyState());
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => state,
+});
 
 const amountSource = computed({
   get: () => String(state.amount || ''),
@@ -42,7 +53,11 @@ const amountSource = computed({
 const amountModel = useStringNumberModel(amountSource);
 
 watch(open, (isOpen) => {
-  if (!isOpen) Object.assign(state, emptyState());
+  if (isOpen) {
+    resetDirtySnapshot();
+    return;
+  }
+  Object.assign(state, emptyState());
 });
 
 async function onSubmit(event: FormSubmitEvent<PaymentDebtCreateFormState>) {
@@ -58,7 +73,7 @@ defineExpose({ requestSubmit });
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     title="Agregar deuda"
     :ui="{ content: 'max-w-md' }"
@@ -94,14 +109,14 @@ defineExpose({ requestSubmit });
       </UForm>
     </template>
 
-    <template #footer="{ close }">
+    <template #footer>
       <div class="flex w-full justify-end gap-2">
         <UButton
           type="button"
           color="neutral"
           label="Cancelar"
           variant="subtle"
-          @click="close()"
+          @click="requestClose"
         />
         <UButton
           type="button"
@@ -113,4 +128,10 @@ defineExpose({ requestSubmit });
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

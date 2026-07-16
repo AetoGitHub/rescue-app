@@ -37,6 +37,19 @@ const uploadProgress = ref<number | null>(null);
 const uploadLabel = ref('');
 /** URL de Firebase; no se muestra en pantalla, solo se envía al aplicar pago. */
 const uploadedEvidenceUrl = ref('');
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  confirmDiscard,
+  cancelDiscard,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({
+    paymentEvidenceUrl: form.value.payment_evidence_url,
+    uploadedEvidenceUrl: uploadedEvidenceUrl.value,
+  }),
+});
 
 const acceptAttribute = computed(() =>
   rescueEvidenceAcceptAttribute(RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER),
@@ -135,6 +148,11 @@ function resetUploadState() {
 }
 
 watch(open, (isOpen) => {
+  if (isOpen) {
+    resetDirtySnapshot();
+    return;
+  }
+
   if (!isOpen && isUploading.value) {
     open.value = true;
     toast.add({
@@ -152,7 +170,7 @@ watch(open, (isOpen) => {
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     title="Aplicar pago"
     :ui="{ content: 'max-w-md' }"
@@ -220,4 +238,10 @@ watch(open, (isOpen) => {
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

@@ -32,6 +32,18 @@ function emptyState(): SupplierCreateBody {
 }
 
 const state = reactive(emptyState());
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => state,
+});
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -41,6 +53,7 @@ function resetForm() {
 function prepareCreate() {
   editingId.value = null;
   resetForm();
+  resetDirtySnapshot();
   open.value = true;
 }
 
@@ -61,6 +74,7 @@ async function loadDetail(id: number) {
     });
   } finally {
     detailPending.value = false;
+    resetDirtySnapshot();
     await nextTick();
     mapLayoutKey.value += 1;
   }
@@ -112,7 +126,7 @@ const { mutate, asyncStatus } = useMutation({
       color: 'success',
     });
     await queryCache.invalidateQueries({ key: ['suppliers'] });
-    open.value = false;
+    closeWithoutConfirm();
     resetForm();
     editingId.value = null;
   },
@@ -153,7 +167,7 @@ function onFormError() {
 }
 
 function cancel() {
-  open.value = false;
+  requestClose();
 }
 
 async function onReviewSubmitted() {
@@ -169,7 +183,7 @@ async function requestSubmit() {
 
 <template>
   <USlideover
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :title="isEdit ? 'Editar proveedor' : 'Nuevo proveedor'"
     :description="
       isEdit
@@ -243,4 +257,10 @@ async function requestSubmit() {
       </div>
     </template>
   </USlideover>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

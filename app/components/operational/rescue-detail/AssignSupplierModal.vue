@@ -33,6 +33,18 @@ const mapLayoutKey = ref(0);
 const warnedSupplierIds = ref(new Set<number>());
 
 const state = reactive<RescueSupplierAssignFormState>({});
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({ supplier: state.supplier ?? null }),
+});
 
 const latRef = computed(() => props.latitude);
 const lngRef = computed(() => props.longitude);
@@ -138,6 +150,7 @@ watch(open, (isOpen) => {
   if (isOpen) {
     state.supplier = props.currentSupplierId ?? undefined;
     selectedLabel.value = props.currentSupplierName?.trim() ?? '';
+    resetDirtySnapshot();
     search.value = '';
     warnedSupplierIds.value.clear();
     nextTick(() => {
@@ -187,7 +200,7 @@ async function onSubmit(event: FormSubmitEvent<z.infer<typeof rescueSupplierAssi
 
   const ok = await saveSupplier(body);
   if (ok) {
-    open.value = false;
+    closeWithoutConfirm();
     emit('saved');
   }
 }
@@ -195,7 +208,7 @@ async function onSubmit(event: FormSubmitEvent<z.infer<typeof rescueSupplierAssi
 async function onRemoveSupplier() {
   const ok = await saveSupplier({ supplier: null });
   if (ok) {
-    open.value = false;
+    closeWithoutConfirm();
     emit('saved');
   }
 }
@@ -225,7 +238,7 @@ const assignSupplierModalProps = computed(() => ({
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     :title="modalTitle"
     description="Selecciona un proveedor de la lista o agrega uno nuevo."
@@ -293,7 +306,7 @@ const assignSupplierModalProps = computed(() => ({
             label="Cancelar"
             variant="subtle"
             :disabled="isBusy"
-            @click="() => { open = false }"
+            @click="requestClose"
           />
           <UButton
             color="primary"
@@ -307,4 +320,10 @@ const assignSupplierModalProps = computed(() => ({
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

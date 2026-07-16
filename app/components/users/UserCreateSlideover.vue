@@ -57,6 +57,7 @@ function resetForm() {
 function prepareCreate() {
   editingId.value = null;
   resetForm();
+  resetDirtySnapshot();
 }
 
 async function loadDetail(id: number) {
@@ -75,6 +76,7 @@ async function loadDetail(id: number) {
     });
   } finally {
     detailPending.value = false;
+    resetDirtySnapshot();
   }
 }
 
@@ -99,6 +101,18 @@ const passwordResetFormRef = ref<{ submit: () => Promise<void> } | null>(null);
 const showCreatePassword = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({ state, passwordResetState }),
+});
 
 function resetPasswordVisibility() {
   showCreatePassword.value = false;
@@ -144,7 +158,7 @@ const { mutate, asyncStatus } = useMutation({
       color: 'success',
     });
     await queryCache.invalidateQueries({ key: ['users'] });
-    open.value = false;
+    closeWithoutConfirm();
     resetForm();
     editingId.value = null;
   },
@@ -185,7 +199,7 @@ function onFormError() {
 }
 
 function cancel() {
-  open.value = false;
+  requestClose();
 }
 
 async function requestSubmit() {
@@ -248,6 +262,7 @@ async function onPasswordResetSubmit(payload: {
       color: 'success',
     });
     resetPasswordResetForm();
+    resetDirtySnapshot();
   } catch {
     // Error toast handled in mutation
   }
@@ -260,7 +275,7 @@ async function requestPasswordResetSubmit() {
 
 <template>
   <USlideover
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :title="isEdit ? 'Editar usuario' : 'Nuevo usuario'"
     :ui="{
       content: adminListSlideoverContentClass,
@@ -470,6 +485,12 @@ async function requestPasswordResetSubmit() {
       </div>
     </template>
   </USlideover>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>
 
 <style>

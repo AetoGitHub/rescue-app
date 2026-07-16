@@ -26,6 +26,18 @@ function emptyState(): RescueUnlockFormState {
 }
 
 const state = reactive<RescueUnlockFormState>(emptyState());
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => state,
+});
 
 const rescueIdRef = computed(() => props.rescueId);
 const { unlockRescue, isUnlocking } = useRescueUnlockMutation(rescueIdRef);
@@ -74,7 +86,11 @@ function openUnlockModal() {
 }
 
 watch(open, (isOpen) => {
-  if (!isOpen) resetForm();
+  if (isOpen) {
+    resetDirtySnapshot();
+    return;
+  }
+  resetForm();
 });
 
 watch(isCurrentlyUnlocked, (active) => {
@@ -88,7 +104,7 @@ async function onSubmit(event: FormSubmitEvent<RescueUnlockFormState>) {
     const body = toRescueUnlockApiBody(event.data);
     await unlockRescue(body);
     pendingUnlockedUntil.value = body.unlocked_until;
-    open.value = false;
+    closeWithoutConfirm();
     emit('success');
   } catch {
     // Toast handled in mutation
@@ -116,7 +132,7 @@ async function requestSubmit() {
   </UTooltip>
 
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     title="Desbloquear rescate"
     :ui="{ content: 'max-w-md' }"
@@ -163,7 +179,7 @@ async function requestSubmit() {
           color="neutral"
           label="Cancelar"
           variant="subtle"
-          @click="() => { open = false }"
+          @click="requestClose"
         />
         <UButton
           type="button"
@@ -174,4 +190,10 @@ async function requestSubmit() {
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

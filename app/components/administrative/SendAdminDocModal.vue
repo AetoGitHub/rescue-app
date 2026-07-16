@@ -40,6 +40,17 @@ const state = reactive<RescueAdminDocFormState>({
   invoice_folio: '',
   extra_rescues: [],
 });
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => ({ step: step.value, state }),
+});
 
 watch(open, (isOpen) => {
   if (isOpen) {
@@ -47,6 +58,7 @@ watch(open, (isOpen) => {
     state.remittance_folio = props.remittanceFolio;
     state.invoice_folio = props.invoiceFolio;
     state.extra_rescues = [];
+    resetDirtySnapshot();
   }
 });
 
@@ -90,7 +102,7 @@ function onApplySelected() {
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     title="Enviar documentos"
     :ui="{ content: 'max-w-lg' }"
@@ -159,7 +171,7 @@ function onApplySelected() {
             label="Cancelar"
             variant="subtle"
             :disabled="loading"
-            @click="open = false"
+            @click="requestClose"
           />
           <UButton
             color="neutral"
@@ -194,4 +206,10 @@ function onApplySelected() {
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

@@ -21,6 +21,20 @@ const emit = defineEmits<{
 }>();
 
 const form = defineModel<RescueInvoiceFormState>('form', { required: true });
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  confirmDiscard,
+  cancelDiscard,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => form.value,
+});
+
+watch(open, (isOpen) => {
+  if (isOpen) resetDirtySnapshot();
+});
 
 const invoiceAmountModel = useStringNumberModel(
   computed({
@@ -34,7 +48,7 @@ const invoiceAmountModel = useStringNumberModel(
 
 <template>
   <UModal
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :dismissible="false"
     :title="props.title"
     :ui="{ content: 'max-w-md' }"
@@ -94,4 +108,10 @@ const invoiceAmountModel = useStringNumberModel(
       </div>
     </template>
   </UModal>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

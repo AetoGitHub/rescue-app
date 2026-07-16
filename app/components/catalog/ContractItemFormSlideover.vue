@@ -51,6 +51,18 @@ const priceMultiplierModel = useStringNumberModel(
   toRef(state, 'price_multiplier'),
 );
 const percentajeModel = usePercentStringNumberModel(toRef(state, 'percentaje'));
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  closeWithoutConfirm,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => state,
+});
 
 function resetForm() {
   Object.assign(state, emptyState());
@@ -59,6 +71,7 @@ function resetForm() {
 function prepareCreate() {
   editingItemId.value = null;
   resetForm();
+  resetDirtySnapshot();
   open.value = true;
 }
 
@@ -71,6 +84,7 @@ function openEdit(item: ContractItem) {
     percentaje: item.percentaje,
     notes: item.notes,
   });
+  resetDirtySnapshot();
   open.value = true;
 }
 
@@ -119,7 +133,7 @@ const { mutate, asyncStatus } = useMutation({
     await queryCache.invalidateQueries({
       key: ['contract-items', props.contractId],
     });
-    open.value = false;
+    closeWithoutConfirm();
     resetForm();
     editingItemId.value = null;
   },
@@ -149,7 +163,7 @@ function onFormError() {
 }
 
 function cancel() {
-  open.value = false;
+  requestClose();
 }
 
 async function requestSubmit() {
@@ -159,7 +173,7 @@ async function requestSubmit() {
 
 <template>
   <USlideover
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :title="isEdit ? 'Editar convenio' : 'Nuevo convenio'"
     :ui="{
       content: adminListSlideoverContentClass,
@@ -229,4 +243,10 @@ async function requestSubmit() {
       </div>
     </template>
   </USlideover>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>

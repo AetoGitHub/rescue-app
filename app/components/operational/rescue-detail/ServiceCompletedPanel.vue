@@ -14,6 +14,21 @@ const emit = defineEmits<{
 }>();
 
 const form = defineModel<RescueServiceCompletedFormState>('form', { required: true });
+const {
+  guardedOpen,
+  discardConfirmOpen,
+  requestClose,
+  confirmDiscard,
+  cancelDiscard,
+  resetDirtySnapshot,
+} = useDiscardChangesGuard({
+  open,
+  snapshot: () => form.value,
+});
+
+watch(open, (isOpen) => {
+  if (isOpen) resetDirtySnapshot();
+});
 
 function onSubmit() {
   emit('submit');
@@ -22,7 +37,7 @@ function onSubmit() {
 
 <template>
   <USlideover
-    v-model:open="open"
+    v-model:open="guardedOpen"
     :title="RESCUE_SERVICE_COMPLETED_PANEL_TITLE"
     :ui="{ content: 'max-w-lg' }"
   >
@@ -98,7 +113,7 @@ function onSubmit() {
           color="neutral"
           label="Cancelar"
           variant="subtle"
-          @click="() => { open = false }"
+          @click="requestClose"
         />
         <UButton
           color="primary"
@@ -109,4 +124,10 @@ function onSubmit() {
       </div>
     </template>
   </USlideover>
+
+  <SharedDiscardChangesConfirmModal
+    v-model:open="discardConfirmOpen"
+    @confirm="confirmDiscard"
+    @cancel="cancelDiscard"
+  />
 </template>
