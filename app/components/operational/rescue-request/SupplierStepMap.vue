@@ -2,6 +2,7 @@
 import { AdvancedMarker, GoogleMap } from 'vue3-google-map';
 import type { RescueSupplierNearbyRow, SupplierMapPin } from '~/interfaces/rescue';
 import type { MapViewport } from '~/utils/map-viewport';
+import { DEFAULT_MAP_CENTER } from '~/utils/map-viewport';
 import { parseRescueCoord } from '~/schemas/rescue-create';
 import {
   RESCUE_SUPPLIER_MAP_LEGEND,
@@ -26,18 +27,22 @@ const emit = defineEmits<{
 const config = useRuntimeConfig();
 const mapId = '21013da77446513d35236d00';
 
-const DEFAULT_CENTER = { lat: 19.432608, lng: -99.133209 };
-const initialCenter = DEFAULT_CENTER;
-const initialZoom = 11;
-
-const mapRef = ref<{ map: google.maps.Map } | null>(null);
-
-const unitPosition = computed(() => {
+function resolveUnitPosition(): { lat: number; lng: number } | null {
   const lat = parseRescueCoord(props.unitLatitude);
   const lng = parseRescueCoord(props.unitLongitude);
   if (lat == null || lng == null) return null;
   return { lat, lng };
-});
+}
+
+/** Seed GoogleMap at the rescue unit so the first paint is not CDMX. */
+const initialUnitPosition = resolveUnitPosition();
+const initialCenter = initialUnitPosition ?? { ...DEFAULT_MAP_CENTER };
+const initialZoom = initialUnitPosition != null ? 14 : 11;
+
+const mapRef = ref<{ map: google.maps.Map } | null>(null);
+let fitRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+const unitPosition = computed(() => resolveUnitPosition());
 
 const supplierPosition = computed(() => {
   if (!props.selectedSupplier) return null;
@@ -79,12 +84,26 @@ function collectVisiblePoints(): { lat: number; lng: number }[] {
   return points;
 }
 
-function fitToMarkers() {
+function clearFitRetry() {
+  if (fitRetryTimer != null) {
+    clearTimeout(fitRetryTimer);
+    fitRetryTimer = null;
+  }
+}
+
+function fitToMarkers(attempt = 0) {
   const map = mapRef.value?.map;
-  if (!map) return;
+  if (!map) {
+    if (attempt < 20) {
+      clearFitRetry();
+      fitRetryTimer = setTimeout(() => fitToMarkers(attempt + 1), 80);
+    }
+    return;
+  }
+  clearFitRetry();
   const points = collectVisiblePoints();
   if (points.length === 0) {
-    map.panTo(DEFAULT_CENTER);
+    map.panTo(DEFAULT_MAP_CENTER);
     map.setZoom(11);
     return;
   }
@@ -102,8 +121,12 @@ watch(
   () => {
     nextTick(() => fitToMarkers());
   },
-  { deep: true },
+  { deep: true, immediate: true },
 );
+
+onBeforeUnmount(() => {
+  clearFitRetry();
+});
 
 function emitViewportChange() {
   const map = mapRef.value?.map;

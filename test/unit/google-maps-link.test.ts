@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseGoogleMapsUrl } from '~/utils/google-maps-link';
+import {
+  formatLatLngPair,
+  parseGoogleMapsUrl,
+  parseLatLngPair,
+} from '~/utils/google-maps-link';
 
 describe('parseGoogleMapsUrl', () => {
   it('parses @lat,lng from maps url', () => {
@@ -27,5 +31,37 @@ describe('parseGoogleMapsUrl', () => {
   it('returns null for invalid url', () => {
     expect(parseGoogleMapsUrl('not-a-map-link')).toBeNull();
     expect(parseGoogleMapsUrl('')).toBeNull();
+  });
+});
+
+describe('parseLatLngPair', () => {
+  it('parses lat, lng with space after comma', () => {
+    expect(
+      parseLatLngPair('18.0749639676887, -94.32269235997158'),
+    ).toEqual({
+      lat: 18.0749639676887,
+      lng: -94.32269235997158,
+    });
+  });
+
+  it('parses lat,lng without space', () => {
+    expect(parseLatLngPair('19.432608,-99.133209')).toEqual({
+      lat: 19.432608,
+      lng: -99.133209,
+    });
+  });
+
+  it('returns null for invalid or incomplete input', () => {
+    expect(parseLatLngPair('')).toBeNull();
+    expect(parseLatLngPair('18.07')).toBeNull();
+    expect(parseLatLngPair('18.07,')).toBeNull();
+    expect(parseLatLngPair('91, 0')).toBeNull();
+    expect(parseLatLngPair('0, -181')).toBeNull();
+  });
+
+  it('formatLatLngPair formats with 6 decimals', () => {
+    expect(formatLatLngPair(18.0749639676887, -94.32269235997158)).toBe(
+      '18.074964, -94.322692',
+    );
   });
 });

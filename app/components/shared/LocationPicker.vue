@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import {
   formatCoordinateString,
+  formatLatLngPair,
   parseGoogleMapsUrl,
+  parseLatLngPair,
 } from '~/utils/google-maps-link';
 import {
   fetchCoordsFromMapsLink,
@@ -36,19 +38,14 @@ const emit = defineEmits<{
 const apiFetch = useApiFetch();
 const toast = useToast();
 
-const locationTab = ref('map');
+const locationTab = ref('link');
 const mapsLink = ref('');
 const mapRemountKey = ref(0);
 const linkResolving = ref(false);
+const coordinatesInput = ref('');
 const mapPinPickerRef = ref<{ recenterFromModel: () => void } | null>(null);
 
 const locationTabItems = [
-  {
-    label: 'Marcar en mapa',
-    icon: 'i-lucide-map-pin',
-    slot: 'map' as const,
-    value: 'map',
-  },
   {
     label: 'Link de Google Maps',
     icon: 'i-lucide-link',
@@ -73,15 +70,6 @@ watch(
   },
 );
 
-watch(locationTab, (tab) => {
-  if (tab === 'map') {
-    nextTick(() => {
-      mapRemountKey.value += 1;
-      window.setTimeout(() => mapPinPickerRef.value?.recenterFromModel(), 150);
-    });
-  }
-});
-
 const hasCoordinates = computed(() =>
   readGeocodingLatLng(latitude.value, longitude.value) != null,
 );
@@ -93,6 +81,12 @@ const locationStatusLabel = computed(() => {
   return `Ubicación: ${latitude.value}, ${longitude.value}`;
 });
 
+function syncCoordinatesInputFromModel() {
+  const coords = readGeocodingLatLng(latitude.value, longitude.value);
+  coordinatesInput.value =
+    coords == null ? '' : formatLatLngPair(coords.lat, coords.lng);
+}
+
 function notifyCoordinatesChange() {
   const coords = readGeocodingLatLng(latitude.value, longitude.value);
   if (coords == null) return;
@@ -102,6 +96,7 @@ function notifyCoordinatesChange() {
 function applyParsedCoordinates(lat: number, lng: number) {
   latitude.value = formatCoordinateString(lat);
   longitude.value = formatCoordinateString(lng);
+  coordinatesInput.value = formatLatLngPair(lat, lng);
   nextTick(() => mapPinPickerRef.value?.recenterFromModel());
   notifyCoordinatesChange();
 }
@@ -139,42 +134,59 @@ async function applyMapsLink() {
   }
 }
 
+function onCoordinatesInput(value: string | number | null | undefined) {
+  const raw = value == null ? '' : String(value);
+  coordinatesInput.value = raw;
+
+  const trimmed = raw.trim();
+  if (trimmed === '') {
+    latitude.value = latitude.value == null ? null : '';
+    longitude.value = longitude.value == null ? null : '';
+    return;
+  }
+
+  const parsed = parseLatLngPair(trimmed);
+  if (parsed == null) return;
+  applyParsedCoordinates(parsed.lat, parsed.lng);
+}
+
 function clearCoordinates() {
   latitude.value = latitude.value == null ? null : '';
   longitude.value = longitude.value == null ? null : '';
+  coordinatesInput.value = '';
   mapsLink.value = '';
 }
 
 watch(
   () => [latitude.value, longitude.value] as const,
   () => {
+    syncCoordinatesInputFromModel();
     notifyCoordinatesChange();
   },
+  { immediate: true },
 );
 </script>
 
 <template>
   <div class="space-y-4">
+    <div class="min-h-72">
+      <p class="mb-2 text-sm text-muted">
+        {{ mapHint }}
+      </p>
+      <SharedMapPinPicker
+        ref="mapPinPickerRef"
+        :key="`location-map-${mapRemountKey}`"
+        v-model:latitude="latitude"
+        v-model:longitude="longitude"
+      />
+    </div>
+
     <UTabs
       v-model="locationTab"
       :items="locationTabItems"
       :unmount-on-hide="false"
       class="w-full"
     >
-      <template #map>
-        <div class="min-h-72 pt-2">
-          <p class="mb-2 text-sm text-muted">
-            {{ mapHint }}
-          </p>
-          <SharedMapPinPicker
-            ref="mapPinPickerRef"
-            :key="`location-map-${mapRemountKey}`"
-            v-model:latitude="latitude"
-            v-model:longitude="longitude"
-          />
-        </div>
-      </template>
-
       <template #link>
         <div class="flex flex-col gap-3 pt-2">
           <UFormField label="Enlace de Google Maps">
@@ -198,23 +210,21 @@ watch(
       </template>
 
       <template #coords>
-        <div class="grid gap-4 pt-2 sm:grid-cols-2">
-          <UFormField label="Latitud" :name="latitudeName">
+        <div class="pt-2">
+          <UFormField label="Coordenadas" :name="latitudeName">
             <UInput
-              :model-value="latitude ?? undefined"
+              :model-value="coordinatesInput"
               class="w-full"
-              placeholder="19.432608"
-              @update:model-value="(value) => (latitude = value ?? null)"
+              placeholder="18.074964, -94.322692"
+              icon="i-lucide-crosshair"
+              @update:model-value="onCoordinatesInput"
             />
           </UFormField>
-          <UFormField label="Longitud" :name="longitudeName">
-            <UInput
-              :model-value="longitude ?? undefined"
-              class="w-full"
-              placeholder="-99.133209"
-              @update:model-value="(value) => (longitude = value ?? null)"
-            />
-          </UFormField>
+          <!-- Keep longitude in the form tree for Zod / UForm error binding -->
+          <UFormField v-show="false" :name="longitudeName" />
+          <p class="mt-1.5 text-xs text-muted">
+            Formato: latitud, longitud (ej. 18.0749639676887, -94.32269235997158)
+          </p>
         </div>
       </template>
     </UTabs>
