@@ -15,6 +15,7 @@ import { abilityForAdminPath } from '../../shared/utils/admin-route-access';
 import {
   defaultHomeForRole,
   isAdminRole,
+  isOperatorRole,
   isStaffRole,
   isUnauthorizedRole,
   normalizeAuthRole,
@@ -45,6 +46,8 @@ async function canAccess(
 describe('auth-roles', () => {
   it('identifies staff and client roles', () => {
     expect(isAdminRole('admin')).toBe(true);
+    expect(isOperatorRole('operator')).toBe(true);
+    expect(isOperatorRole('admin')).toBe(false);
     expect(isStaffRole('operator')).toBe(true);
     expect(isStaffRole('seller')).toBe(true);
     expect(isUnauthorizedRole('client')).toBe(true);
@@ -97,6 +100,9 @@ describe('abilityForApiPath', () => {
       accessAdministrative,
     );
     expect(abilityForApiPath('/api/catalogue/client/list/')).toBe(accessCatalogs);
+    expect(abilityForApiPath('/api/credit/company/5/')).toBe(accessCatalogs);
+    expect(abilityForApiPath('/api/credit/company/create/')).toBe(accessCatalogs);
+    expect(abilityForApiPath('/api/credit/company/update/5/')).toBe(accessCatalogs);
     expect(
       abilityForApiPath('/api/catalogue/multipurpose/dropdown/?type=cancellation_reason'),
     ).toBe(accessDropdown);

@@ -12,6 +12,11 @@ import {
 } from '~/constants/catalog-select-options';
 import type { ClientCreditSummary, CreditFormState } from '~/interfaces/catalogs/credit';
 import { clientCreateSchema, creditFormSchema, creditFormToCreateBody } from '~/schemas/catalog-create';
+import {
+  adminListSlideoverBodyUi,
+  adminListSlideoverContentClass,
+  adminListSlideoverScrollClass,
+} from '~/constants/admin-list-layout';
 import { slideoverTabsUi } from '~/constants/tabs-layout';
 
 const toast = useToast();
@@ -101,9 +106,36 @@ const priceMultiplierModel = useStringNumberModel(
 
 const showEditCreditTabs = computed(() => isEdit.value);
 const showCreateCreditSection = computed(
-  () => !isEdit.value && state.client_type === 'CREDIT',
+  () =>
+    !isEdit.value
+    && (state.client_type === 'CREDIT' || companyCreditInherited.value),
 );
 const hasLinkedCredit = computed(() => editingCreditId.value != null);
+
+const companyCredit = useCompanyCredit({
+  companyId: computed(() => (isEdit.value ? null : state.company ?? null)),
+  enabled: computed(() => !isEdit.value && state.company != null),
+});
+
+/** Company already has its own credit line: show it read-only, never create client credit. */
+const companyCreditInherited = computed(
+  () =>
+    !isEdit.value
+    && state.company != null
+    && companyCredit.hasCreditLine.value,
+);
+
+watch(
+  () => [companyCreditInherited.value, companyCredit.form.value] as const,
+  ([inherited, form], [wasInherited]) => {
+    if (isEdit.value) return;
+    if (inherited) {
+      Object.assign(creditState, form);
+    } else if (wasInherited) {
+      Object.assign(creditState, emptyCreditState());
+    }
+  },
+);
 
 const clientCredit = useClientCredit({
   clientId: computed(() => editingId.value),
@@ -392,7 +424,10 @@ function isCreatingCredit(): boolean {
 
 function needsCreditValidation(data: ZodInfer<typeof clientCreateSchema>): boolean {
   const updatingCredit = isEdit.value && hasLinkedCredit.value;
-  const creditOnCreate = !isEdit.value && data.client_type === 'CREDIT';
+  const creditOnCreate =
+    !isEdit.value
+    && data.client_type === 'CREDIT'
+    && !companyCreditInherited.value;
   return isCreatingCredit() || updatingCredit || creditOnCreate;
 }
 
@@ -488,7 +523,10 @@ async function requestSubmit() {
   <USlideover
     v-model:open="open"
     :title="isEdit ? 'Editar cliente' : 'Nuevo cliente'"
-    :ui="{ content: 'max-w-xl' }"
+    :ui="{
+      content: `max-w-xl ${adminListSlideoverContentClass}`,
+      body: adminListSlideoverBodyUi.body,
+    }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -509,7 +547,7 @@ async function requestSubmit() {
         ref="formRef"
         :schema="clientCreateSchema"
         :state="state"
-        class="flex min-h-0 flex-1 flex-col overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        :class="adminListSlideoverScrollClass"
         @submit="onSubmit"
         @error="onFormError"
       >
@@ -517,7 +555,7 @@ async function requestSubmit() {
           v-if="showEditCreditTabs"
           v-model="editTab"
           :items="editTabItems"
-          class="flex min-h-0 flex-1 flex-col gap-6"
+          class="flex w-full flex-col gap-6"
           :ui="slideoverTabsUi"
         >
           <template #general>
@@ -859,6 +897,13 @@ async function requestSubmit() {
           v-if="showCreateCreditSection"
           ref="creditFormSectionRef"
           v-model:credit-state="creditState"
+          :heading="companyCreditInherited ? 'Crédito de la compañía' : 'Crédito'"
+          :readonly="companyCreditInherited"
+          :note="
+            companyCreditInherited
+              ? 'La compañía seleccionada ya tiene línea de crédito. El cliente usará este crédito y no se creará uno propio.'
+              : undefined
+          "
           @submit="onCreditSubmit"
           @error="onCreditFormError"
         />

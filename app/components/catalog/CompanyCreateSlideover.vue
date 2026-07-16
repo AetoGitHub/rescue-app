@@ -1,13 +1,28 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
+import type { FormSubmitEvent } from '@nuxt/ui';
 import type { CompanyCreateBody } from '~/interfaces/catalogs/company';
+import type { CreditFormState } from '~/interfaces/catalogs/credit';
 import type { infer as ZodInfer } from 'zod';
 import {
   BILLING_TYPE_OPTIONS,
   CLIENT_TYPE_OPTIONS,
   COMMISSION_TYPE_OPTIONS,
 } from '~/constants/catalog-select-options';
-import { companyCreateSchema } from '~/schemas/catalog-create';
+import {
+  companyCreateSchema,
+  creditFormSchema,
+  creditFormToCompanyCreateBody,
+} from '~/schemas/catalog-create';
+import {
+  companyCreditCreatePath,
+  companyCreditUpdatePath,
+} from '~/constants/client-credit-api';
+import {
+  adminListSlideoverBodyUi,
+  adminListSlideoverContentClass,
+  adminListSlideoverScrollClass,
+} from '~/constants/admin-list-layout';
 
 const toast = useToast();
 
@@ -15,7 +30,9 @@ type CompanyFormState = ZodInfer<typeof companyCreateSchema>;
 
 const open = ref(false);
 const editingId = ref<number | null>(null);
+const editingCreditId = ref<number | null>(null);
 const detailPending = ref(false);
+const detailLoaded = ref(false);
 
 const isEdit = computed(() => editingId.value != null);
 
@@ -36,7 +53,19 @@ function emptyState(): CompanyFormState {
   };
 }
 
+function emptyCreditState(): CreditFormState {
+  return {
+    limit: '50000.00',
+    days: 30,
+    extension: 15,
+    remision_tolerance: 3,
+    requires_purchase_order: false,
+    is_blocked: false,
+  };
+}
+
 const state = reactive(emptyState());
+const creditState = reactive(emptyCreditState());
 const commissionValueModel = useCommissionValueModel(
   toRef(state, 'commission_value'),
   toRef(state, 'commission_type'),
@@ -44,8 +73,48 @@ const commissionValueModel = useCommissionValueModel(
 const commissionFixedModel = useStringNumberModel(toRef(state, 'commission_fixed'));
 const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier'));
 
+const hasLinkedCredit = computed(() => editingCreditId.value != null);
+const showCreditSection = computed(
+  () =>
+    (!isEdit.value && state.client_type === 'CREDIT')
+    || (isEdit.value && (hasLinkedCredit.value || state.client_type === 'CREDIT')),
+);
+
+const companyCredit = useCompanyCredit({
+  companyId: computed(() => editingId.value),
+  enabled: computed(
+    () => isEdit.value && editingId.value != null && detailLoaded.value,
+  ),
+});
+
+function syncCreditFromComposable() {
+  const view = companyCredit.view.value;
+  if (!view) return;
+  editingCreditId.value = view.creditId;
+  if (view.creditId != null) {
+    Object.assign(creditState, view.form);
+  }
+}
+
+watch(
+  () => companyCredit.view.value,
+  () => {
+    syncCreditFromComposable();
+  },
+);
+
+const pendingDetail = computed(
+  () =>
+    detailPending.value
+    || (isEdit.value && detailLoaded.value && companyCredit.isPending.value),
+);
+
 function resetForm() {
   Object.assign(state, emptyState());
+  Object.assign(creditState, emptyCreditState());
+  editingCreditId.value = null;
+  detailLoaded.value = false;
+  pendingCompanyData.value = null;
 }
 
 function prepareCreate() {
@@ -55,11 +124,14 @@ function prepareCreate() {
 
 async function loadDetail(id: number) {
   detailPending.value = true;
+  detailLoaded.value = false;
+  editingCreditId.value = null;
   try {
     const raw = await $fetch<Record<string, unknown>>(
       `/api/catalogue/company/detail/${id}/`,
     );
     Object.assign(state, mapCompanyDetail(raw));
+    detailLoaded.value = true;
   } catch (e) {
     console.error(e);
     toast.add({
@@ -91,13 +163,67 @@ watch(open, (v) => {
 const queryCache = useQueryCache();
 
 const { mutate, asyncStatus } = useMutation({
-  mutation: ({ body, id }: { body: CompanyCreateBody; id: number | null }) =>
-    id != null
-      ? $fetch(`/api/catalogue/company/update/${id}/`, {
-          method: 'PUT',
-          body,
-        })
-      : $fetch('/api/catalogue/company/create/', { method: 'POST', body }),
+  mutation: async ({
+    body,
+    id,
+    credit,
+    createCredit,
+  }: {
+    body: CompanyCreateBody;
+    id: number | null;
+    credit?: ZodInfer<typeof creditFormSchema>;
+    createCredit?: boolean;
+  }) => {
+    if (id != null) {
+      await $fetch(`/api/catalogue/company/update/${id}/`, {
+        method: 'PUT',
+        body,
+      });
+      if (credit) {
+        if (createCredit) {
+          await $fetch(companyCreditCreatePath(), {
+            method: 'POST',
+            body: creditFormToCompanyCreateBody(id, credit),
+          });
+        } else {
+          const creditId = editingCreditId.value;
+          if (creditId == null) {
+            throw new Error(
+              'No se encontró el crédito de la compañía para actualizar.',
+            );
+          }
+          await $fetch(companyCreditUpdatePath(creditId), {
+            method: 'PUT',
+            body: creditFormToCompanyCreateBody(id, credit),
+          });
+        }
+        await companyCredit.refresh();
+        syncCreditFromComposable();
+      }
+      return;
+    }
+
+    const created = await $fetch<{ id: number }>(
+      '/api/catalogue/company/create/',
+      { method: 'POST', body },
+    );
+
+    if (body.client_type === 'CREDIT' && credit) {
+      try {
+        await $fetch(companyCreditCreatePath(), {
+          method: 'POST',
+          body: creditFormToCompanyCreateBody(created.id, credit),
+        });
+      } catch (error) {
+        await queryCache.invalidateQueries({ key: ['companies'] });
+        throw new Error(
+          `Compañía creada, pero no se pudo registrar el crédito. ${getFetchErrorMessage(error)}`,
+        );
+      }
+    }
+
+    return created;
+  },
   async onSuccess() {
     const wasEdit = editingId.value != null;
     toast.add({
@@ -120,13 +246,73 @@ const { mutate, asyncStatus } = useMutation({
 });
 
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
+const creditFormSectionRef = ref<{ submit: () => Promise<void> } | null>(null);
+const pendingCompanyData = ref<CompanyCreateBody | null>(null);
+
+function isCreatingCredit(): boolean {
+  return (
+    isEdit.value
+    && !hasLinkedCredit.value
+    && showCreditSection.value
+    && (parseClientMoney(creditState.limit) ?? 0) > 0
+  );
+}
+
+function needsCreditValidation(data: CompanyCreateBody): boolean {
+  const updatingCredit = isEdit.value && hasLinkedCredit.value;
+  const creditOnCreate = !isEdit.value && data.client_type === 'CREDIT';
+  return isCreatingCredit() || updatingCredit || creditOnCreate;
+}
 
 function onSubmit(payload: { data: CompanyCreateBody }) {
-  mutate({ body: payload.data, id: editingId.value });
+  if (!needsCreditValidation(payload.data)) {
+    mutate({ body: payload.data, id: editingId.value });
+    return;
+  }
+
+  pendingCompanyData.value = payload.data;
+  void creditFormSectionRef.value?.submit();
+}
+
+function onCreditSubmit(
+  payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>,
+) {
+  const companyData = pendingCompanyData.value;
+  if (companyData == null) return;
+  pendingCompanyData.value = null;
+
+  let body = companyData;
+  const creatingCredit = isCreatingCredit();
+  if (creatingCredit && body.client_type !== 'CREDIT') {
+    body = { ...body, client_type: 'CREDIT' };
+  }
+
+  mutate({
+    body,
+    id: editingId.value,
+    credit: payload.data,
+    createCredit: creatingCredit,
+  });
 }
 
 function onFormError() {
-  console.error('Validación de formulario de compañía');
+  const result = companyCreateSchema.safeParse(state);
+  const issue = result.success ? null : result.error.issues[0];
+  toast.add({
+    title: 'Revisa el formulario',
+    description: issue?.message ?? 'Completa los campos requeridos.',
+    color: 'error',
+  });
+}
+
+function onCreditFormError() {
+  const result = creditFormSchema.safeParse(creditState);
+  const issue = result.success ? null : result.error.issues[0];
+  toast.add({
+    title: 'Revisa los datos de crédito',
+    description: issue?.message ?? 'Completa los campos de crédito.',
+    color: 'error',
+  });
 }
 
 function cancel() {
@@ -142,6 +328,10 @@ async function requestSubmit() {
   <USlideover
     v-model:open="open"
     :title="isEdit ? 'Editar compañía' : 'Nueva compañía'"
+    :ui="{
+      content: adminListSlideoverContentClass,
+      body: adminListSlideoverBodyUi.body,
+    }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -151,15 +341,15 @@ async function requestSubmit() {
     />
 
     <template #body>
-      <div v-if="detailPending && isEdit" class="flex justify-center py-8">
+      <div v-if="pendingDetail && isEdit" class="flex justify-center py-8">
         <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-muted" />
       </div>
       <UForm
-        v-show="!detailPending || !isEdit"
+        v-show="!pendingDetail || !isEdit"
         ref="formRef"
         :schema="companyCreateSchema"
         :state="state"
-        class="space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        :class="['space-y-4', adminListSlideoverScrollClass]"
         @submit="onSubmit"
         @error="onFormError"
       >
@@ -244,6 +434,16 @@ async function requestSubmit() {
             v-bind="catalogNumberInputProps"
           />
         </UFormField>
+
+        <CatalogClientCreditFormSection
+          v-if="showCreditSection"
+          ref="creditFormSectionRef"
+          v-model:credit-state="creditState"
+          requires-purchase-order-label="La compañía requiere orden de compra"
+          block-label="Bloquear crédito de la compañía"
+          @submit="onCreditSubmit"
+          @error="onCreditFormError"
+        />
       </UForm>
     </template>
 
@@ -253,8 +453,8 @@ async function requestSubmit() {
         <UButton
           type="button"
           label="Guardar"
-          :loading="asyncStatus === 'loading' || (detailPending && isEdit)"
-          :disabled="asyncStatus === 'loading' || (detailPending && isEdit)"
+          :loading="asyncStatus === 'loading' || (pendingDetail && isEdit)"
+          :disabled="asyncStatus === 'loading' || (pendingDetail && isEdit)"
           @click="requestSubmit"
         />
       </div>

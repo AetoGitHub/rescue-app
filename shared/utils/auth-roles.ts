@@ -24,6 +24,10 @@ export function isAdminRole(role: string | null | undefined): boolean {
   return normalizeAuthRole(role) === 'admin';
 }
 
+export function isOperatorRole(role: string | null | undefined): boolean {
+  return normalizeAuthRole(role) === 'operator';
+}
+
 export function isStaffRole(role: string | null | undefined): boolean {
   const normalized = normalizeAuthRole(role);
   return normalized === 'admin'

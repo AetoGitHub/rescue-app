@@ -10,7 +10,10 @@ import type {
   ContractItemUpdateBody,
   ContractUpdateBody,
 } from '~/interfaces/catalogs/contract';
-import type { CreditCreateBody } from '~/interfaces/catalogs/credit';
+import type {
+  CompanyCreditCreateBody,
+  CreditCreateBody,
+} from '~/interfaces/catalogs/credit';
 import type {
   ClientContactCreateBody,
   ClientContactUpdateBody,
@@ -76,18 +79,36 @@ export const creditFormSchema = z.object({
   is_blocked: z.boolean(),
 });
 
-export function creditFormToCreateBody(
-  clientId: number,
+function creditFormToBodyFields(
   input: z.output<typeof creditFormSchema>,
-): CreditCreateBody {
+): Omit<CreditCreateBody, 'client'> {
   return {
-    client: clientId,
     limit: input.limit,
     days: input.days,
     extension: input.extension,
     remision_tolerance: input.remision_tolerance,
     requires_purchase_order: input.requires_purchase_order,
     is_blocked: input.is_blocked,
+  };
+}
+
+export function creditFormToCreateBody(
+  clientId: number,
+  input: z.output<typeof creditFormSchema>,
+): CreditCreateBody {
+  return {
+    client: clientId,
+    ...creditFormToBodyFields(input),
+  };
+}
+
+export function creditFormToCompanyCreateBody(
+  companyId: number,
+  input: z.output<typeof creditFormSchema>,
+): CompanyCreditCreateBody {
+  return {
+    company: companyId,
+    ...creditFormToBodyFields(input),
   };
 }
 

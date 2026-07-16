@@ -149,7 +149,7 @@ export function resolveCreditId(raw: Record<string, unknown>): number | null {
   }
   const selfId = raw.id;
   if (
-    raw.client_id != null &&
+    (raw.client_id != null || raw.company_id != null) &&
     selfId != null &&
     selfId !== '' &&
     (raw.limit != null || raw.credit_used != null)

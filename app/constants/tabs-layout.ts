@@ -19,7 +19,8 @@ export const modalTabsUi = {
 export const adminLinkTabsClass = 'flex flex-col gap-4';
 export const adminLinkTabsFlexClass = 'flex min-h-0 flex-1 flex-col gap-4';
 
+/** Tabs inside a scrolling slideover form — must not clip; parent form scrolls. */
 export const slideoverTabsUi = {
-  root: 'min-h-0 overflow-hidden',
+  root: 'w-full min-h-min shrink-0 overflow-visible',
   list: 'shrink-0 overflow-y-hidden',
 } as const;

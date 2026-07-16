@@ -15,6 +15,11 @@ import {
   type UserFormOutputCreate,
   type UserFormOutputUpdate,
 } from '~/schemas/user-create';
+import {
+  adminListSlideoverBodyUi,
+  adminListSlideoverContentClass,
+  adminListSlideoverScrollClass,
+} from '~/constants/admin-list-layout';
 
 const toast = useToast();
 
@@ -257,6 +262,10 @@ async function requestPasswordResetSubmit() {
   <USlideover
     v-model:open="open"
     :title="isEdit ? 'Editar usuario' : 'Nuevo usuario'"
+    :ui="{
+      content: adminListSlideoverContentClass,
+      body: adminListSlideoverBodyUi.body,
+    }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -274,7 +283,7 @@ async function requestPasswordResetSubmit() {
         ref="formRef"
         :schema="formSchema"
         :state="state"
-        class="space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        :class="['space-y-4', adminListSlideoverScrollClass]"
         @submit="onSubmit"
         @error="onFormError"
       >

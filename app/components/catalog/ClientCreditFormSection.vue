@@ -8,10 +8,18 @@ const props = withDefaults(
   defineProps<{
     heading?: string;
     intro?: string;
+    note?: string;
+    readonly?: boolean;
+    requiresPurchaseOrderLabel?: string;
+    blockLabel?: string;
   }>(),
   {
     heading: 'Crédito',
     intro: undefined,
+    note: undefined,
+    readonly: false,
+    requiresPurchaseOrderLabel: 'El cliente requiere orden de compra',
+    blockLabel: 'Bloquear crédito del cliente',
   },
 );
 
@@ -90,10 +98,14 @@ defineExpose({ submit });
     >
       {{ props.heading }}
     </h3>
+    <p v-if="props.note" class="text-sm text-muted">
+      {{ props.note }}
+    </p>
     <UFormField label="Límite de crédito" name="limit" required>
       <UInputNumber
         v-model="creditLimitModel"
         v-bind="catalogCurrencyInputProps"
+        :disabled="props.readonly"
       />
     </UFormField>
     <div class="grid grid-cols-1 gap-2">
@@ -101,31 +113,36 @@ defineExpose({ submit });
         <UInputNumber
           v-model="creditDaysModel"
           v-bind="catalogIntegerInputProps"
+          :disabled="props.readonly"
         />
       </UFormField>
       <UFormField label="Prórroga (días)" name="extension" required>
         <UInputNumber
           v-model="creditExtensionModel"
           v-bind="catalogIntegerInputProps"
+          :disabled="props.readonly"
         />
       </UFormField>
       <UFormField label="Tolerancia remisión (días)" name="remision_tolerance" required>
         <UInputNumber
           v-model="creditRemisionToleranceModel"
           v-bind="catalogIntegerInputProps"
+          :disabled="props.readonly"
         />
       </UFormField>
     </div>
     <UFormField name="requires_purchase_order">
       <UCheckbox
         v-model="creditState.requires_purchase_order"
-        label="El cliente requiere orden de compra"
+        :label="props.requiresPurchaseOrderLabel"
+        :disabled="props.readonly"
       />
     </UFormField>
     <UFormField name="is_blocked">
       <UCheckbox
         v-model="creditState.is_blocked"
-        label="Bloquear crédito del cliente"
+        :label="props.blockLabel"
+        :disabled="props.readonly"
       />
     </UFormField>
   </UForm>

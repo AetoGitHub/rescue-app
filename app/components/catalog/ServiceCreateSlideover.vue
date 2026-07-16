@@ -5,6 +5,11 @@ import type { AlegraItemDisplay } from '~/interfaces/alegra/item.interface';
 import type { ServiceCreateBody, ServiceUpdateBody } from '~/interfaces/catalogs/service';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
+import {
+  adminListSlideoverBodyUi,
+  adminListSlideoverContentClass,
+  adminListSlideoverScrollClass,
+} from '~/constants/admin-list-layout';
 import { serviceCreateSchema, serviceUpdateSchema } from '~/schemas/catalog-create';
 
 const toast = useToast();
@@ -200,6 +205,10 @@ async function requestSubmit() {
   <USlideover
     v-model:open="open"
     :title="isEdit ? 'Editar servicio' : 'Nuevo servicio'"
+    :ui="{
+      content: adminListSlideoverContentClass,
+      body: adminListSlideoverBodyUi.body,
+    }"
   >
     <UButton icon="i-lucide-plus" label="Nuevo servicio" size="lg" @click="prepareCreate" />
 
@@ -212,7 +221,7 @@ async function requestSubmit() {
         ref="formRef"
         :schema="activeSchema"
         :state="state"
-        class="space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        :class="['space-y-4', adminListSlideoverScrollClass]"
         @submit="onSubmit"
         @error="onFormError"
       >

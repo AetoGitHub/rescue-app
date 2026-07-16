@@ -2,6 +2,18 @@ export function clientCreditPath(clientId: number): string {
   return `/api/credit/client/${clientId}/`;
 }
 
+export function companyCreditPath(companyId: number): string {
+  return `/api/credit/company/${companyId}/`;
+}
+
+export function companyCreditCreatePath(): string {
+  return '/api/credit/company/create/';
+}
+
+export function companyCreditUpdatePath(creditId: number): string {
+  return `/api/credit/company/update/${creditId}/`;
+}
+
 export function clientCreditInvoicesPath(clientId: number): string {
   return `/api/credit/client/${clientId}/invoices/`;
 }

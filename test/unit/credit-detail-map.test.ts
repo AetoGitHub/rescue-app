@@ -6,6 +6,7 @@ import {
   mapClientCreditSummary,
   resolveCreditId,
 } from '../../app/utils/catalog-detail-map';
+import { creditFormToCompanyCreateBody } from '../../app/schemas/catalog-create';
 
 describe('resolveCreditId', () => {
   it('reads credit_id from client detail', () => {
@@ -29,6 +30,17 @@ describe('resolveCreditId', () => {
         credit_used: '0.00',
       }),
     ).toBe(1);
+  });
+
+  it('reads id from company credit detail payload', () => {
+    expect(
+      resolveCreditId({
+        id: 4,
+        company_id: 9,
+        limit: '80000.00',
+        credit_used: '0.00',
+      }),
+    ).toBe(4);
   });
 
   it('returns null when missing', () => {
@@ -89,6 +101,51 @@ describe('mapCreditDetail', () => {
     expect(result.summary.credit_used).toBe('7551.60');
     expect(result.summary.credit_available).toBe(42448.4);
     expect(result.form.extension).toBe(15);
+  });
+
+  it('maps GET /api/credit/company/{id}/ payload', () => {
+    const result = mapCreditDetail({
+      id: 3,
+      company_id: 8,
+      limit: '80000.00',
+      days: 45,
+      extension: 10,
+      remision_tolerance: 5,
+      requires_purchase_order: true,
+      is_blocked: false,
+      credit_used: '2500.00',
+      credit_available: 77500,
+    });
+
+    expect(result.creditId).toBe(3);
+    expect(result.form.limit).toBe('80000.00');
+    expect(result.form.days).toBe(45);
+    expect(result.form.requires_purchase_order).toBe(true);
+    expect(result.summary.credit_available).toBe(77500);
+  });
+});
+
+describe('creditFormToCompanyCreateBody', () => {
+  it('builds company credit body with owner company id', () => {
+    const body = creditFormToCompanyCreateBody(8, {
+      limit: '80000.00',
+      days: 45,
+      extension: 10,
+      remision_tolerance: 5,
+      requires_purchase_order: true,
+      is_blocked: false,
+    });
+
+    expect(body).toEqual({
+      company: 8,
+      limit: '80000.00',
+      days: 45,
+      extension: 10,
+      remision_tolerance: 5,
+      requires_purchase_order: true,
+      is_blocked: false,
+    });
+    expect('client' in body).toBe(false);
   });
 });
 

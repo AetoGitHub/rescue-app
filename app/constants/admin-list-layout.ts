@@ -34,3 +34,10 @@ export const administrativeKanbanColumnClass =
 export const adminListSlideoverBodyUi = {
   body: 'flex min-h-0 flex-1 flex-col overflow-hidden',
 } as const;
+
+/** Pair with `adminListSlideoverBodyUi` so content fills the slideover height. */
+export const adminListSlideoverContentClass = 'flex flex-col';
+
+/** Single scroll owner inside slideover body (avoid max-h / nested overflow). */
+export const adminListSlideoverScrollClass =
+  'min-h-0 flex-1 overflow-y-auto pe-1';

@@ -24,6 +24,7 @@ export function abilityForApiPath(path: string): AdminAbility {
   }
   if (path.startsWith('/api/catalogue/')) return accessCatalogs;
   if (path.startsWith('/api/alegra/')) return accessCatalogs;
+  if (path.startsWith('/api/credit/company/')) return accessCatalogs;
   if (path.startsWith('/api/auth/operative/commission/')) return accessConfig;
   if (path.startsWith('/api/auth/user/')) return accessUsers;
   if (path.startsWith('/api/invoicing/')) return accessAdministrative;

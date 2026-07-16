@@ -4,6 +4,7 @@ import type { MultipurposeCatalogueType } from '~/constants/multipurpose-catalog
 import type { Category } from '~/interfaces/catalogs/category';
 import {
   adminListSlideoverBodyUi,
+  adminListSlideoverContentClass,
   adminListTableClass,
 } from '~/constants/admin-list-layout';
 
@@ -88,7 +89,7 @@ const columns: TableColumn<Category>[] = [
     :title="title"
     :description="description"
     :ui="{
-      content: 'max-w-2xl flex flex-col',
+      content: `max-w-2xl ${adminListSlideoverContentClass}`,
       body: adminListSlideoverBodyUi.body,
     }"
   >

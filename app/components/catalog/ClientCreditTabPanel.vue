@@ -283,7 +283,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pe-1">
+  <div class="flex flex-col gap-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex flex-wrap items-center gap-2">
         <h2 class="text-lg font-semibold tracking-tight uppercase">

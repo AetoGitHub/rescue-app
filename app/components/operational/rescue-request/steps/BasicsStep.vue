@@ -7,6 +7,7 @@ const state = defineModel<RescueRequestFormState>({ required: true });
 defineProps<{
   fetchClientDropdown: CatalogDropdownFetcher;
   fetchManagerDropdown: CatalogDropdownFetcher;
+  managerLocked?: boolean;
 }>();
 </script>
 
@@ -35,7 +36,12 @@ defineProps<{
       <UInput v-model="state.serialNumber" class="w-full" />
     </UFormField>
 
-    <UFormField label="Gestor" name="manager" required>
+    <UFormField
+      v-if="!managerLocked"
+      label="Gestor"
+      name="manager"
+      required
+    >
       <CatalogDropdownSelect
         v-model="state.manager"
         placeholder="Buscar gestor"

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { SupplierCreateBody, SupplierRankingSummary } from '~/interfaces/catalogs/supplier';
+import {
+  adminListSlideoverBodyUi,
+  adminListSlideoverContentClass,
+  adminListSlideoverScrollClass,
+} from '~/constants/admin-list-layout';
 import { supplierCreateSchema, supplierCreateToCreateBody, type SupplierCreateFormOutput } from '~/schemas/catalog-create';
 
 const toast = useToast();
@@ -171,6 +176,10 @@ async function requestSubmit() {
         ? 'Actualiza los datos del operador o grúa.'
         : 'Registra un nuevo operador o grúa.'
     "
+    :ui="{
+      content: adminListSlideoverContentClass,
+      body: adminListSlideoverBodyUi.body,
+    }"
   >
     <UButton
       icon="i-lucide-plus"
@@ -188,7 +197,7 @@ async function requestSubmit() {
       </div>
       <div
         v-show="!detailPending || !isEdit"
-        class="space-y-8 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        :class="['space-y-8', adminListSlideoverScrollClass]"
       >
         <UForm
           ref="formRef"

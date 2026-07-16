@@ -10,6 +10,11 @@ export interface CreditCreateBody {
 
 export type CreditFormState = Omit<CreditCreateBody, 'client'>;
 
+/** Body for POST/PUT on /api/credit/company/ endpoints: same shape but owner is `company`. */
+export type CompanyCreditCreateBody = Omit<CreditCreateBody, 'client'> & {
+  company: number;
+};
+
 export interface CreditInfoBucket {
   amount: number;
   count: number;

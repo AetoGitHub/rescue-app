@@ -15,17 +15,29 @@ import {
   type RescueCreateFormOutput,
   type RescueRequestFormState,
 } from '~/schemas/rescue-create';
+import { isOperatorRole } from '#shared/utils/auth-roles';
 
 const toast = useToast();
 const queryCache = useQueryCache();
 const apiFetch = useApiFetch();
 const { assertClientCreditForQuote } = useCreditCheck();
+const { user } = useUserSession();
 
 const open = ref(false);
 const currentStep = ref(0);
 const stepError = ref<string | null>(null);
 
 const state = reactive<RescueRequestFormState>(emptyRescueRequestState());
+
+const isManagerLocked = computed(() => isOperatorRole(user.value?.role));
+
+function applyLockedManager() {
+  if (!isManagerLocked.value) return;
+  const id = user.value?.id;
+  if (id == null) return;
+  state.manager = id;
+  state.managerLabel = user.value?.name?.trim() || `Usuario #${id}`;
+}
 
 const stepItems = computed(() => getRescueStepItems(state.service_type));
 const lastStepIndex = computed(() => getRescueStepCount(state.service_type) - 1);
@@ -82,6 +94,7 @@ function scheduleStepResetAfterClose() {
 
 function openCreate() {
   resetWizard();
+  applyLockedManager();
   open.value = true;
 }
 
@@ -362,8 +375,12 @@ function skipSupplier() {
 }
 
 function onSubmit(payload: FormSubmitEvent<RescueCreateFormOutput>) {
+  applyLockedManager();
   mutate({
-    form: payload.data,
+    form: {
+      ...payload.data,
+      manager: state.manager,
+    },
     companySettings: state.company_settings,
     clientSellerId: state.client_seller_id,
   });
@@ -437,6 +454,7 @@ const wizardModalProps = computed(() => {
               v-model="state"
               :fetch-client-dropdown="fetchClientDropdown"
               :fetch-manager-dropdown="fetchManagerDropdown"
+              :manager-locked="isManagerLocked"
             />
 
             <OperationalRescueRequestClientCreditSelectionCard

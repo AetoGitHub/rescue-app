@@ -9,6 +9,11 @@ import {
   contractItemFormToCreateBody,
   contractItemFormToUpdateBody,
 } from '~/schemas/catalog-create';
+import {
+  adminListSlideoverBodyUi,
+  adminListSlideoverContentClass,
+  adminListSlideoverScrollClass,
+} from '~/constants/admin-list-layout';
 
 const props = defineProps<{
   contractId: number;
@@ -156,13 +161,17 @@ async function requestSubmit() {
   <USlideover
     v-model:open="open"
     :title="isEdit ? 'Editar convenio' : 'Nuevo convenio'"
+    :ui="{
+      content: adminListSlideoverContentClass,
+      body: adminListSlideoverBodyUi.body,
+    }"
   >
     <template #body>
       <UForm
         ref="formRef"
         :schema="contractItemFormSchema"
         :state="state"
-        class="space-y-4 overflow-y-auto max-h-[calc(100vh-12rem)] pe-1"
+        :class="['space-y-4', adminListSlideoverScrollClass]"
         @submit="onSubmit"
         @error="onFormError"
       >
