@@ -56,7 +56,8 @@ const { mutate, asyncStatus } = useMutation({
 function onSubmit(payload: FormSubmitEvent<Schema>) {
   loginErrorMessage.value = null;
   mutate({
-    ...payload.data,
+    username: formatUsernameInput(payload.data.username),
+    password: payload.data.password,
   });
 }
 </script>
@@ -83,7 +84,15 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
         <template #leading>
           <SharedAetoLogo class="size-16 mx-auto" />
         </template>
-    </UAuthForm>
+        <template #username-field="{ state }">
+          <UInput
+            :model-value="state.username"
+            class="w-full uppercase"
+            autocomplete="username"
+            @update:model-value="(v) => (state.username = formatUsernameInput(v))"
+          />
+        </template>
+      </UAuthForm>
       <UAlert
         v-if="loginErrorMessage"
         class="mb-4"

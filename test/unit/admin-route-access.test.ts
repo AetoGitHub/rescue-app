@@ -3,6 +3,7 @@ import {
   accessAdministrative,
   accessCatalogs,
   accessConfig,
+  accessDropdown,
   accessMyBalance,
   accessOperational,
   accessPaymentReceipts,
@@ -96,6 +97,13 @@ describe('abilityForApiPath', () => {
       accessAdministrative,
     );
     expect(abilityForApiPath('/api/catalogue/client/list/')).toBe(accessCatalogs);
+    expect(
+      abilityForApiPath('/api/catalogue/multipurpose/dropdown/?type=cancellation_reason'),
+    ).toBe(accessDropdown);
+    expect(abilityForApiPath('/api/catalogue/client/dropdown/')).toBe(accessDropdown);
+    expect(abilityForApiPath('/api/auth/user/dropdown/')).toBe(accessDropdown);
+    expect(abilityForApiPath('/api/rescue/dropdown/')).toBe(accessDropdown);
+    expect(abilityForApiPath('/api/catalogue/client/detail/1/')).toBe(accessOperational);
     expect(abilityForApiPath('/api/payment/balance/operative/')).toBe(accessMyBalance);
     expect(abilityForApiPath('/api/payment/operative/')).toBe(accessPayments);
     expect(abilityForApiPath('/api/payment/cart/')).toBe(accessPayments);
@@ -123,5 +131,9 @@ describe('abilities', () => {
     expect(await canAccess(accessPaymentReceipts, 'seller')).toBe(true);
     expect(await canAccess(accessPaymentReceipts, 'client')).toBe(false);
     expect(await canAccess(accessAdministrative, 'operator')).toBe(false);
+    expect(await canAccess(accessDropdown, 'admin')).toBe(true);
+    expect(await canAccess(accessDropdown, 'operator')).toBe(true);
+    expect(await canAccess(accessDropdown, 'seller')).toBe(true);
+    expect(await canAccess(accessDropdown, 'client')).toBe(true);
   });
 });

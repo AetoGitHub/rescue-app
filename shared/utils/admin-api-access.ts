@@ -3,6 +3,7 @@ import {
   accessAdministrative,
   accessCatalogs,
   accessConfig,
+  accessDropdown,
   accessMyBalance,
   accessOperational,
   accessPaymentReceipts,
@@ -11,7 +12,16 @@ import {
   type AdminAbility,
 } from '../abilities';
 
+/** Read-only catalogue details used by operational/admin rescue flows. */
+function isCatalogueDetailPath(path: string): boolean {
+  return path.includes('/detail/');
+}
+
 export function abilityForApiPath(path: string): AdminAbility {
+  if (path.includes('/dropdown')) return accessDropdown;
+  if (path.startsWith('/api/catalogue/') && isCatalogueDetailPath(path)) {
+    return accessOperational;
+  }
   if (path.startsWith('/api/catalogue/')) return accessCatalogs;
   if (path.startsWith('/api/alegra/')) return accessCatalogs;
   if (path.startsWith('/api/auth/operative/commission/')) return accessConfig;

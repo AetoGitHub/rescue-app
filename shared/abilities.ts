@@ -42,6 +42,9 @@ export const accessPaymentReceipts = defineAbility(
   withAdminBypass((user: AuthUser) => isStaffRole(user.role)),
 );
 
+/** Any authenticated role may consume dropdown lookup endpoints. */
+export const accessDropdown = defineAbility((user: AuthUser) => Boolean(user));
+
 export type AdminAbility =
   | typeof accessAdminApp
   | typeof accessOperational
@@ -51,4 +54,5 @@ export type AdminAbility =
   | typeof accessUsers
   | typeof accessConfig
   | typeof accessPayments
-  | typeof accessPaymentReceipts;
+  | typeof accessPaymentReceipts
+  | typeof accessDropdown;
