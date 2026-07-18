@@ -8,6 +8,10 @@ const config = useRuntimeConfig();
 const toast = useToast();
 
 const DEFAULT_CENTER = { lat: 19.432608, lng: -99.133209 };
+/** Wide CDMX overview when the user has no coordinates yet. */
+const DEFAULT_ZOOM = 10;
+/** Slightly closer after the user picks or loads a point. */
+const SELECTED_ZOOM = 12;
 const initialCenter = ref({ ...DEFAULT_CENTER });
 const geolocationPending = ref(false);
 const sharedMapRef = ref<{ getMap: () => google.maps.Map | null } | null>(null);
@@ -36,7 +40,7 @@ const markerLatLng = computed(() => {
   return null;
 });
 
-function panToOnce(lat: number, lng: number, zoom = 14, attempt = 0) {
+function panToOnce(lat: number, lng: number, zoom = SELECTED_ZOOM, attempt = 0) {
   const map = sharedMapRef.value?.getMap();
   if (map) {
     map.panTo({ lat, lng });
@@ -159,7 +163,7 @@ defineExpose({ recenterFromModel });
         <SharedMap
           ref="sharedMapRef"
           :center="initialCenter"
-          :zoom="14"
+          :zoom="hasCoordinates ? SELECTED_ZOOM : DEFAULT_ZOOM"
           map-class="h-72 w-full"
           @click="onMapClick"
         >

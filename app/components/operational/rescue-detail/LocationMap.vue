@@ -59,7 +59,7 @@ const locationDescription = computed(() =>
           :map-id="mapId"
           :api-key="config.public.googleMapsApiKey"
           :center="mapCenter"
-          :zoom="position ? 15 : 11"
+          :zoom="position ? 13 : 10"
           class="h-full w-full"
           :map-type-control="false"
           :street-view-control="false"
