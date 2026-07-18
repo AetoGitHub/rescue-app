@@ -182,6 +182,7 @@ watch(
         continue;
       }
       if (isContractLine(line)) continue;
+      if (line.service_label.trim()) continue;
 
       try {
         const raw = await $fetch<Record<string, unknown>>(
@@ -289,6 +290,7 @@ watch(
                   >
                     <CatalogDropdownSelect
                       v-model="line.service_id"
+                      v-model:label="line.service_label"
                       placeholder="Buscar servicio"
                       :fetcher="fetchServiceDropdown"
                     />

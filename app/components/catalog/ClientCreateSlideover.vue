@@ -27,6 +27,8 @@ type ClientFormState = Omit<
 > & {
   company?: number;
   seller?: number;
+  companyLabel: string;
+  sellerLabel: string;
 };
 
 const open = ref(false);
@@ -85,6 +87,8 @@ function emptyState(): ClientFormState {
     price_multiplier: '1.00',
     company: undefined,
     seller: undefined,
+    companyLabel: '',
+    sellerLabel: '',
     notes: '',
     is_active: true,
   };
@@ -231,7 +235,10 @@ async function loadDetail(id: number) {
       `/api/catalogue/client/detail/${id}/`,
     );
     const mapped = mapClientDetail(raw);
-    Object.assign(state, emptyState(), mapped);
+    Object.assign(state, emptyState(), mapped, {
+      companyLabel: String(raw.company_name ?? '').trim(),
+      sellerLabel: String(raw.seller_name ?? '').trim(),
+    });
     clientDetailRaw.value = raw;
     clientCsfUrl.value = mapClientCsfUrl(raw);
     clientDetailLoaded.value = true;
@@ -584,6 +591,7 @@ async function requestSubmit() {
                 <UFormField label="Compañía" name="company">
                   <CatalogDropdownSelect
                     v-model="state.company"
+                    v-model:label="state.companyLabel"
                     placeholder="Buscar compañía (opcional)"
                     :fetcher="fetchCompanyDropdown"
                   />
@@ -660,6 +668,7 @@ async function requestSubmit() {
                 <UFormField label="Vendedor asignado" name="seller">
                   <CatalogDropdownSelect
                     v-model="state.seller"
+                    v-model:label="state.sellerLabel"
                     placeholder="Buscar vendedor"
                     :fetcher="fetchSellerDropdown"
                   />
@@ -778,6 +787,7 @@ async function requestSubmit() {
           <UFormField label="Compañía" name="company">
             <CatalogDropdownSelect
               v-model="state.company"
+              v-model:label="state.companyLabel"
               placeholder="Buscar compañía (opcional)"
               :fetcher="fetchCompanyDropdown"
             />
@@ -854,6 +864,7 @@ async function requestSubmit() {
           <UFormField label="Vendedor asignado" name="seller" required>
             <CatalogDropdownSelect
               v-model="state.seller"
+              v-model:label="state.sellerLabel"
               placeholder="Buscar vendedor"
               :fetcher="fetchSellerDropdown"
             />

@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { RescueDropdownQuery } from '~/composables/useRescueDropdown';
 
+type RescueSelectItem = {
+  id: number;
+  label: string;
+  folio?: string;
+  client_name?: string;
+};
+
 const props = withDefaults(
   defineProps<{
     modelValue: number[];
@@ -37,9 +44,63 @@ const {
   excludeRescueId: () => props.excludeRescueId,
 });
 
+const selectedRowsById = ref<Map<number, RescueSelectItem>>(new Map());
+
 const selected = computed({
   get: () => props.modelValue,
-  set: (value: number[]) => emit('update:modelValue', value),
+  set: (value: number[]) => {
+    const nextMap = new Map<number, RescueSelectItem>();
+    for (const id of value) {
+      const fromItems = items.value.find((row) => row.id === id);
+      const cached = selectedRowsById.value.get(id);
+      if (fromItems != null) {
+        nextMap.set(id, fromItems);
+      } else if (cached != null) {
+        nextMap.set(id, cached);
+      } else {
+        nextMap.set(id, { id, label: `Rescate #${id}` });
+      }
+    }
+    selectedRowsById.value = nextMap;
+    emit('update:modelValue', value);
+  },
+});
+
+watch(
+  items,
+  (list) => {
+    if (props.modelValue.length === 0) return;
+    const next = new Map(selectedRowsById.value);
+    let changed = false;
+    for (const id of props.modelValue) {
+      const row = list.find((item) => item.id === id);
+      if (row != null) {
+        next.set(id, row);
+        changed = true;
+      }
+    }
+    if (changed) selectedRowsById.value = next;
+  },
+  { deep: true },
+);
+
+const displayItems = computed((): RescueSelectItem[] => {
+  const list = items.value;
+  const byId = new Map(list.map((row) => [row.id, row]));
+  for (const id of props.modelValue) {
+    if (byId.has(id)) continue;
+    const cached = selectedRowsById.value.get(id);
+    if (cached != null) {
+      byId.set(id, cached);
+    } else {
+      byId.set(id, { id, label: `Rescate #${id}` });
+    }
+  }
+  const selectedFirst = props.modelValue
+    .map((id) => byId.get(id))
+    .filter((row): row is RescueSelectItem => row != null);
+  const rest = list.filter((row) => !props.modelValue.includes(row.id));
+  return [...selectedFirst, ...rest];
 });
 
 const selectKey = computed(() => selected.value.join(',') || 'empty');
@@ -61,7 +122,7 @@ function onOpenChange(open: boolean) {
       multiple
       value-key="id"
       label-key="label"
-      :items="items"
+      :items="displayItems"
       :loading="loading"
       :placeholder="placeholder"
       :disabled="disabled"

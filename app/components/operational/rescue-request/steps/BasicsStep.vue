@@ -20,6 +20,7 @@ defineProps<{
     <UFormField label="Cliente" name="client" required>
       <CatalogDropdownSelect
         v-model="state.client"
+        v-model:label="state.clientLabel"
         placeholder="Buscar cliente"
         :fetcher="fetchClientDropdown"
       />
@@ -44,6 +45,7 @@ defineProps<{
     >
       <CatalogDropdownSelect
         v-model="state.manager"
+        v-model:label="state.managerLabel"
         placeholder="Buscar gestor"
         :fetcher="fetchManagerDropdown"
       />

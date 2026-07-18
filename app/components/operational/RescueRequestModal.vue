@@ -160,7 +160,9 @@ watch(
       );
       if (!active) return;
       const summary = mapClientCreditSummary(raw);
-      state.clientLabel = String(raw.name ?? '').trim() || `Cliente #${id}`;
+      if (!state.clientLabel.trim()) {
+        state.clientLabel = String(raw.name ?? '').trim() || `Cliente #${id}`;
+      }
       state.client_seller_id = parseClientSellerId(raw);
       state.client_credit_snapshot = {
         client_type: normalizeClientType(raw.client_type),
@@ -169,7 +171,9 @@ watch(
       };
     } catch {
       if (!active) return;
-      state.clientLabel = `Cliente #${id}`;
+      if (!state.clientLabel.trim()) {
+        state.clientLabel = `Cliente #${id}`;
+      }
       state.client_credit_snapshot = null;
       state.client_seller_id = null;
     }

@@ -18,6 +18,8 @@ const apiFetch = useApiFetch();
 type ServiceFormState = Omit<ServiceCreateBody, 'category' | 'alegra_id'> & {
   category?: number;
   alegra_id?: number;
+  categoryLabel: string;
+  alegraLabel: string;
 };
 
 const open = ref(false);
@@ -36,9 +38,11 @@ function emptyState(): ServiceFormState {
     name: '',
     description: '',
     category: undefined,
+    categoryLabel: '',
     unit: 'service',
     warranty: false,
     alegra_id: undefined,
+    alegraLabel: '',
   };
 }
 
@@ -75,7 +79,9 @@ async function loadDetail(id: number) {
     );
     const detail = mapServiceDetailApi(raw);
     linkedAlegraId.value = detail.alegra_id;
-    Object.assign(state, emptyState(), mapServiceDetail(raw));
+    Object.assign(state, emptyState(), mapServiceDetail(raw), {
+      categoryLabel: detail.category_name.trim(),
+    });
     delete state.alegra_id;
   } catch (e) {
     console.error(e);
@@ -191,13 +197,15 @@ const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function onSubmit(payload: { data: ServiceFormState }) {
   if (isEdit.value) {
-    const { alegra_id: _ignored, ...body } = payload.data;
+    const { alegra_id: _ignored, categoryLabel: _c, alegraLabel: _a, ...body } =
+      payload.data;
     mutate({ body: body as ServiceUpdateBody, id: editingId.value });
     return;
   }
 
+  const { categoryLabel: _c, alegraLabel: _a, ...body } = payload.data;
   mutate({
-    body: payload.data as ServiceCreateBody,
+    body: body as ServiceCreateBody,
     id: editingId.value,
   });
 }
@@ -250,6 +258,7 @@ async function requestSubmit() {
         <UFormField label="Categoría" name="category" required>
           <CatalogDropdownSelect
             v-model="state.category"
+            v-model:label="state.categoryLabel"
             placeholder="Buscar categoría"
             :fetcher="fetchCategoryDropdown"
           />
@@ -263,6 +272,7 @@ async function requestSubmit() {
         >
           <CatalogDropdownSelect
             v-model="state.alegra_id"
+            v-model:label="state.alegraLabel"
             placeholder="Buscar ítem en Alegra..."
             :fetcher="fetchAlegraItemsDropdown"
             infinite="offset"

@@ -6,7 +6,7 @@ export function createEmptyQuoteLine(): RescueQuoteLine {
     id: crypto.randomUUID(),
     service_id: null,
     service_label: '',
-    quantity: 0,
+    quantity: 1,
     unit_cost: 0,
     contract_item_id: null,
   };

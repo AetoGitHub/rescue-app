@@ -24,6 +24,7 @@ const queryCache = useQueryCache();
 
 type ContractItemFormState = {
   service?: number;
+  serviceLabel: string;
   price: string;
   price_multiplier: string;
   percentaje: string;
@@ -38,6 +39,7 @@ const isEdit = computed(() => editingItemId.value != null);
 function emptyState(): ContractItemFormState {
   return {
     service: undefined,
+    serviceLabel: '',
     price: '',
     price_multiplier: '',
     percentaje: '',
@@ -79,6 +81,7 @@ function openEdit(item: ContractItem) {
   editingItemId.value = item.id;
   Object.assign(state, emptyState(), {
     service: item.service_id,
+    serviceLabel: item.service_name?.trim() ?? '',
     price: item.price,
     price_multiplier: item.price_multiplier,
     percentaje: item.percentaje,
@@ -193,6 +196,7 @@ async function requestSubmit() {
           <CatalogDropdownSelect
             :key="editingItemId ?? 'create'"
             v-model="state.service"
+            v-model:label="state.serviceLabel"
             placeholder="Buscar servicio"
             :fetcher="fetchServiceDropdown"
           />

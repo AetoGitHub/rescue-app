@@ -4,9 +4,11 @@ import type {
   CatalogDropdownFetcher,
   CatalogDropdownInfiniteMode,
 } from '~/composables/useCatalogDropdown';
+import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 
 const props = defineProps<{
   modelValue?: number | null;
+  label?: string | null;
   placeholder?: string;
   fetcher: CatalogDropdownFetcher;
   disabled?: boolean;
@@ -15,6 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined];
+  'update:label': [value: string];
 }>();
 
 const selectMenu = useTemplateRef('selectMenu');
@@ -36,9 +39,28 @@ const {
   asyncStatus,
 } = dropdown;
 
+const displayItems = computed((): CatalogDropdownRow[] => {
+  const list = items.value;
+  const id = props.modelValue;
+  const name = props.label?.trim() ?? '';
+  if (id == null || !name) return list;
+  if (list.some((row) => row.id === id)) return list;
+  return [{ id, name }, ...list];
+});
+
 const inner = computed({
   get: () => props.modelValue ?? undefined,
-  set: (v: number | undefined) => emit('update:modelValue', v),
+  set: (v: number | undefined) => {
+    emit('update:modelValue', v);
+    if (v == null) {
+      emit('update:label', '');
+      return;
+    }
+    const row = items.value.find((item) => item.id === v);
+    if (row != null) {
+      emit('update:label', row.name);
+    }
+  },
 });
 
 const selectKey = computed(() => String(inner.value ?? 'empty'));
@@ -48,6 +70,9 @@ watch(
   (value) => {
     if (value == null) {
       searchTerm.value = '';
+      if ((props.label?.trim() ?? '') !== '') {
+        emit('update:label', '');
+      }
     }
   },
 );
@@ -78,7 +103,7 @@ onMounted(() => {
       ignore-filter
       value-key="id"
       label-key="name"
-      :items="items"
+      :items="displayItems"
       :loading="loading"
       :placeholder="placeholder"
       :disabled="disabled"
