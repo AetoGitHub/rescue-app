@@ -37,7 +37,7 @@ function resolveUnitPosition(): { lat: number; lng: number } | null {
 /** Seed GoogleMap at the rescue unit so the first paint is not CDMX. */
 const initialUnitPosition = resolveUnitPosition();
 const initialCenter = initialUnitPosition ?? { ...DEFAULT_MAP_CENTER };
-const initialZoom = initialUnitPosition != null ? 14 : 11;
+const initialZoom = initialUnitPosition != null ? 12 : 11;
 
 const mapRef = ref<{ map: google.maps.Map } | null>(null);
 let fitRetryTimer: ReturnType<typeof setTimeout> | null = null;

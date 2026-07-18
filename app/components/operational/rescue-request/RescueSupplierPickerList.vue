@@ -26,6 +26,7 @@ const serviceTypeFilter = defineModel<SupplierServiceType | 'all'>(
   'serviceTypeFilter',
   { default: 'all' },
 );
+const trustedOnly = defineModel<boolean>('trustedOnly', { default: false });
 
 const serviceTypeFilterItems = [
   { label: 'Todos los tipos', value: 'all' as const },
@@ -77,6 +78,10 @@ function cardClasses(row: RescueSupplierNearbyRow, trustedSection: boolean) {
 function onSortPill(value: RescueSupplierSort) {
   sort.value = value;
 }
+
+function toggleTrustedOnly() {
+  trustedOnly.value = !trustedOnly.value;
+}
 </script>
 
 <template>
@@ -108,6 +113,14 @@ function onSortPill(value: RescueSupplierSort) {
         :icon="sortPillIcon[option.value]"
         :label="option.label"
         @click="onSortPill(option.value)"
+      />
+      <UButton
+        size="sm"
+        :color="trustedOnly ? 'warning' : 'neutral'"
+        :variant="trustedOnly ? 'solid' : 'subtle'"
+        icon="i-lucide-star"
+        label="Solo confianza"
+        @click="toggleTrustedOnly"
       />
     </div>
 

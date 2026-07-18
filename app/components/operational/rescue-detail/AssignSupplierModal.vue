@@ -55,6 +55,7 @@ const { queryParams, displayQueryParams, setViewport } = useSupplierMapViewport(
 const {
   search,
   sort,
+  trustedOnly,
   suppliers,
   loading: searchLoading,
   errorMessage,
@@ -260,6 +261,7 @@ const assignSupplierModalProps = computed(() => ({
               v-model:search="search"
               v-model:service-type-filter="serviceTypeFilter"
               v-model:sort="sort"
+              v-model:trusted-only="trustedOnly"
               :suppliers="suppliers"
               :selected-id="state.supplier"
               :loading="searchLoading"

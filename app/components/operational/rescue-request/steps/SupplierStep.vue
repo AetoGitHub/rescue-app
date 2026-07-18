@@ -25,6 +25,7 @@ const { queryParams, displayQueryParams, setViewport } = useSupplierMapViewport(
 const {
   search,
   sort,
+  trustedOnly,
   suppliers,
   loading,
   errorMessage,
@@ -241,6 +242,7 @@ function toggleInlineForm() {
           v-model:search="search"
           v-model:service-type-filter="serviceTypeFilter"
           v-model:sort="sort"
+          v-model:trusted-only="trustedOnly"
           :suppliers="suppliers"
           :selected-id="state.supplier"
           :loading="loading"

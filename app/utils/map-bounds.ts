@@ -11,8 +11,8 @@ export function fitMapToPoints(
     if (!point) return;
     map.panTo(point);
     const zoom = map.getZoom();
-    if (zoom == null || zoom < 14) {
-      map.setZoom(14);
+    if (zoom == null || zoom < 12) {
+      map.setZoom(12);
     }
     return;
   }

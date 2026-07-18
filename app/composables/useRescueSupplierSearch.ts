@@ -33,6 +33,7 @@ export function useRescueSupplierSearch(options: {
   const apiFetch = useApiFetch();
   const search = ref('');
   const sort = ref<RescueSupplierSort>('ranking');
+  const trustedOnly = ref(false);
   const debouncedSearch = refDebounced(search, 300);
 
   const unitCoords = computed(() => ({
@@ -74,7 +75,7 @@ export function useRescueSupplierSearch(options: {
       bounds: fetchBounds.value,
       zoom: fetchZoom.value,
       name: debouncedSearch.value,
-      trustedOnly: false,
+      trustedOnly: trustedOnly.value,
       serviceType: options.serviceTypeFilter.value,
       orderBy: sort.value,
     });
@@ -86,6 +87,7 @@ export function useRescueSupplierSearch(options: {
       cacheStore.sessionHash,
       sort.value,
       debouncedSearch.value,
+      trustedOnly.value,
       options.serviceTypeFilter.value,
       unitCoords.value.lat ?? '',
       unitCoords.value.lng ?? '',
@@ -118,7 +120,7 @@ export function useRescueSupplierSearch(options: {
       displayBounds.value,
       {
         name: debouncedSearch.value,
-        trustedOnly: false,
+        trustedOnly: trustedOnly.value,
         serviceType: options.serviceTypeFilter.value,
       },
     );
@@ -128,7 +130,7 @@ export function useRescueSupplierSearch(options: {
       unitLat: unitCoords.value.lat ?? null,
       unitLng: unitCoords.value.lng ?? null,
       serviceType: 'all',
-      trustedOnly: false,
+      trustedOnly: trustedOnly.value,
     });
   });
 
@@ -141,6 +143,7 @@ export function useRescueSupplierSearch(options: {
   return {
     search,
     sort,
+    trustedOnly,
     suppliers,
     loading,
     errorMessage,
