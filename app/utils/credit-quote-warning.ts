@@ -1,5 +1,5 @@
 import type { ClientCreditSnapshot } from '~/schemas/rescue-create';
-import type { RescueQuoteLine } from '~/interfaces/rescue';
+import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import {
   formatClientMoney,
   isWizardCreditClient,
@@ -38,12 +38,14 @@ export function getWizardQuoteCreditWarning(
   quoteLines: RescueQuoteLine[],
   companySettings: Parameters<typeof computeQuotePricing>[1],
   clientSellerId?: number | null,
+  serviceType?: RescueServiceType | null,
 ): ClientQuoteCreditWarning | null {
   const hasFilledLines = quoteLinesHaveFilledEntries(quoteLines);
   if (!hasFilledLines) return null;
 
   const pricing = computeQuotePricing(quoteLines, companySettings, {
     clientSellerId,
+    serviceType,
   });
   return getClientQuoteCreditWarning(
     snapshot,

@@ -79,6 +79,7 @@ describe('mapRescueCompanySettings', () => {
         commission_value: 0,
         commission_fixed: 0,
         price_multiplier: 1,
+        loan_multiplier: 1.75,
       },
       contract: {
         id: 1,
@@ -109,6 +110,7 @@ describe('mapRescueCompanySettings', () => {
     expect(settings.contract?.items).toHaveLength(1);
     expect(settings.contract?.items[0]!.id).toBe(1);
     expect(settings.contract?.items[0]!.price).toBe(100);
+    expect(settings.commissions.loan_multiplier).toBe(1.75);
   });
 });
 
@@ -133,6 +135,7 @@ describe('findContractItemForService', () => {
         commission_value: 0,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: {
         id: 1,

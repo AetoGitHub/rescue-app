@@ -49,6 +49,7 @@ export function mapRescueCompanySettings(
       commission_value: toNumber(commissionsRaw.commission_value),
       commission_fixed: toNumber(commissionsRaw.commission_fixed),
       price_multiplier: toNumber(commissionsRaw.price_multiplier, 1),
+      loan_multiplier: toNumber(commissionsRaw.loan_multiplier, 1),
     },
     contract,
   };

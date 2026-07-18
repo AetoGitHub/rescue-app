@@ -196,6 +196,12 @@ const totalChargedDetail = computed(() => {
               {{ settings.commissions.price_multiplier }}
             </strong>
           </li>
+          <li>
+            Multiplicador de préstamo:
+            <strong class="tabular-nums text-default">
+              {{ settings.commissions.loan_multiplier }}
+            </strong>
+          </li>
           <li v-if="settings.contract">
             Convenio #{{ settings.contract.id }} ({{
               settings.contract.items.length

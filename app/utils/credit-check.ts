@@ -1,6 +1,6 @@
 import { creditCheckPath } from '~/constants/client-credit-api';
 import type { CreditCheckResponse } from '~/interfaces/catalogs/credit';
-import type { RescueQuoteLine } from '~/interfaces/rescue';
+import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import { buildRescueQuoteCreateBody } from '~/utils/rescue-quote-create';
 
@@ -28,9 +28,11 @@ export async function assertClientCreditForQuote(
   lines: RescueQuoteLine[],
   settings: RescueCompanySettings | null | undefined,
   clientSellerId?: number | null,
+  serviceType?: RescueServiceType | null,
 ): Promise<CreditCheckGateResult> {
   const quoteBody = buildRescueQuoteCreateBody(0, lines, settings, {
     clientSellerId,
+    serviceType,
   });
   if (quoteBody == null) {
     return { ok: true };

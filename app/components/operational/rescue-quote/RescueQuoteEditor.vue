@@ -50,7 +50,10 @@ const showCreditBadge = computed(
 );
 
 const priceMultiplierLabel = computed(() => {
-  const multiplier = settings.value?.commissions.price_multiplier ?? 1;
+  const multiplier = resolveQuotePriceMultiplier(
+    settings.value,
+    props.serviceType,
+  );
   return `${Number(multiplier).toFixed(2)}x`;
 });
 
@@ -87,6 +90,7 @@ const previousCalculatedByLineId = ref(new Map<string, number>());
 const pricing = computed(() =>
   computeQuotePricing(quoteLines.value, settings.value, {
     clientSellerId: props.clientSellerId,
+    serviceType: props.serviceType,
   }),
 );
 
@@ -271,7 +275,11 @@ watch(
         />
       </div>
       <UBadge color="primary" variant="subtle" size="md">
-        Multiplicador: {{ priceMultiplierLabel }}
+        {{
+          serviceType === 'loan'
+            ? 'Multiplicador préstamo'
+            : 'Multiplicador'
+        }}: {{ priceMultiplierLabel }}
       </UBadge>
     </div>
 

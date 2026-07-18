@@ -20,4 +20,5 @@ export interface CompanyCreateBody {
   commission_value: string;
   commission_fixed: string;
   price_multiplier: string;
+  loan_multiplier: string;
 }

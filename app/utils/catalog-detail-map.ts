@@ -29,6 +29,7 @@ export function mapCompanyDetail(raw: Record<string, unknown>): CompanyCreateBod
     commission_value: String(raw.commission_value ?? '0.00'),
     commission_fixed: String(raw.commission_fixed ?? '0.00'),
     price_multiplier: String(raw.price_multiplier ?? '1.00'),
+    loan_multiplier: String(raw.loan_multiplier ?? '1.00'),
   };
 }
 
@@ -47,6 +48,7 @@ export function applyCompanyDetailToClientDraft<
     | 'commission_value'
     | 'commission_fixed'
     | 'price_multiplier'
+    | 'loan_multiplier'
   >,
 >(target: T, company: CompanyCreateBody): void {
   target.business_name = company.business_name;
@@ -60,6 +62,7 @@ export function applyCompanyDetailToClientDraft<
   target.commission_value = company.commission_value;
   target.commission_fixed = company.commission_fixed;
   target.price_multiplier = company.price_multiplier;
+  target.loan_multiplier = company.loan_multiplier;
 }
 
 function mapCreditInfoBuckets(raw: Record<string, unknown>): {
@@ -302,6 +305,7 @@ export function mapClientDetail(raw: Record<string, unknown>): Omit<
     commission_value: String(raw.commission_value ?? '0.00'),
     commission_fixed: String(raw.commission_fixed ?? '0.00'),
     price_multiplier: String(raw.price_multiplier ?? '1.00'),
+    loan_multiplier: String(raw.loan_multiplier ?? '1.00'),
     company: company != null && company !== '' ? Number(company) : undefined,
     seller: seller != null && seller !== '' ? Number(seller) : undefined,
     notes: String(raw.notes ?? ''),

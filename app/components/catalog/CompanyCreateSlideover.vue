@@ -50,6 +50,7 @@ function emptyState(): CompanyFormState {
     commission_value: '0.00',
     commission_fixed: '0.00',
     price_multiplier: '1.00',
+    loan_multiplier: '1.00',
   };
 }
 
@@ -84,6 +85,7 @@ const commissionValueModel = useCommissionValueModel(
 );
 const commissionFixedModel = useStringNumberModel(toRef(state, 'commission_fixed'));
 const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier'));
+const loanMultiplierModel = useStringNumberModel(toRef(state, 'loan_multiplier'));
 
 const hasLinkedCredit = computed(() => editingCreditId.value != null);
 const showCreditSection = computed(
@@ -446,6 +448,12 @@ async function requestSubmit() {
         <UFormField label="Multiplicador de precio" name="price_multiplier" required>
           <UInputNumber
             v-model="priceMultiplierModel"
+            v-bind="catalogNumberInputProps"
+          />
+        </UFormField>
+        <UFormField label="Multiplicador de préstamo" name="loan_multiplier" required>
+          <UInputNumber
+            v-model="loanMultiplierModel"
             v-bind="catalogNumberInputProps"
           />
         </UFormField>

@@ -40,6 +40,7 @@ const baseSettings: RescueCompanySettings = {
     commission_value: 5,
     commission_fixed: 500,
     price_multiplier: 1.1,
+    loan_multiplier: 1,
   },
   contract: {
     id: 1,
@@ -146,6 +147,7 @@ describe('buildRescueQuoteCreateBody', () => {
         commission_value: 0,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -172,6 +174,7 @@ describe('buildRescueQuoteCreateBody', () => {
         commission_value: 0,
         commission_fixed: 500,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -193,6 +196,7 @@ describe('buildRescueQuoteCreateBody', () => {
         commission_value: 100,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };

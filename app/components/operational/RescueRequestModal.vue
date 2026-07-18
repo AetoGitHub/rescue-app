@@ -238,6 +238,7 @@ const { mutate, asyncStatus } = useMutation({
       payload.form.quote_lines,
       payload.companySettings,
       payload.clientSellerId,
+      payload.form.service_type,
     );
     if (!creditGate.ok) {
       toast.add({
@@ -260,6 +261,7 @@ const { mutate, asyncStatus } = useMutation({
       payload.companySettings,
       {
         clientSellerId: payload.clientSellerId,
+        serviceType: payload.form.service_type,
       },
     );
 
@@ -350,6 +352,7 @@ function validateQuoteCredit(): boolean {
     state.quote_lines,
     state.company_settings,
     state.client_seller_id,
+    state.service_type,
   );
   if (warning) {
     stepError.value = warning.description;

@@ -51,6 +51,7 @@ export const companyCreateSchema = z.object({
   commission_value: requiredStr('El valor de comisión'),
   commission_fixed: requiredStr('La comisión fija'),
   price_multiplier: requiredStr('El multiplicador de precio'),
+  loan_multiplier: requiredStr('El multiplicador de préstamo'),
 });
 
 export const clientCreateSchema = companyCreateSchema.extend({

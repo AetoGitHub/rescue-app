@@ -9,6 +9,7 @@ const baseSettings: RescueCompanySettings = {
     commission_value: 5,
     commission_fixed: 500,
     price_multiplier: 1.1,
+    loan_multiplier: 1,
   },
   contract: {
     id: 1,

@@ -1,4 +1,4 @@
-import type { RescueQuoteLine } from '~/interfaces/rescue';
+import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import {
   assertClientCreditForQuote as assertClientCreditForQuoteUtil,
@@ -16,6 +16,7 @@ export function useCreditCheck() {
     lines: RescueQuoteLine[],
     settings: RescueCompanySettings | null | undefined,
     clientSellerId?: number | null,
+    serviceType?: RescueServiceType | null,
   ): Promise<CreditCheckGateResult> {
     return assertClientCreditForQuoteUtil(
       apiFetch as Parameters<typeof assertClientCreditForQuoteUtil>[0],
@@ -23,6 +24,7 @@ export function useCreditCheck() {
       lines,
       settings,
       clientSellerId,
+      serviceType,
     );
   }
 

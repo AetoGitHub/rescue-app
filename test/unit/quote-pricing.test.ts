@@ -66,6 +66,7 @@ const baseSettings: RescueCompanySettings = {
     commission_value: 5,
     commission_fixed: 500,
     price_multiplier: 1.1,
+    loan_multiplier: 1,
   },
   contract: {
     id: 1,
@@ -160,6 +161,7 @@ describe('computeQuotePricing', () => {
         commission_value: 5,
         commission_fixed: 200,
         price_multiplier: 1.1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -214,6 +216,7 @@ describe('computeQuotePricing', () => {
         commission_value: 100,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -243,6 +246,7 @@ describe('computeQuotePricing', () => {
         commission_value: 100,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -275,6 +279,7 @@ describe('computeQuotePricing', () => {
         commission_value: 100,
         commission_fixed: 200,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -312,6 +317,7 @@ describe('computeQuotePricing', () => {
         commission_value: 100,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: baseSettings.contract,
     };
@@ -337,6 +343,7 @@ describe('computeQuotePricing', () => {
         commission_value: 5,
         commission_fixed: 0,
         price_multiplier: 0.8,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -361,6 +368,7 @@ describe('computeQuotePricing', () => {
         commission_value: 0,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -386,6 +394,7 @@ describe('computeQuotePricing', () => {
         commission_value: 0,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -411,6 +420,7 @@ describe('computeQuotePricing', () => {
         commission_value: 0,
         commission_fixed: 0,
         price_multiplier: 1,
+    loan_multiplier: 1,
       },
       contract: null,
     };
@@ -503,5 +513,35 @@ describe('computeQuotePricing', () => {
     expect(result.totalBeforeTax).toBe(3600);
     expect(result.ivaAmount).toBe(576);
     expect(result.totalCharged).toBe(4176);
+  });
+
+  it('uses loan_multiplier when serviceType is loan', () => {
+    const settings: RescueCompanySettings = {
+      commissions: {
+        commission_type: 'PERCENTAGE',
+        commission_value: 0,
+        commission_fixed: 0,
+        price_multiplier: 1.1,
+        loan_multiplier: 2,
+      },
+      contract: null,
+    };
+    const lines = [line({ quantity: 1, unit_cost: 1000 })];
+
+    const rescuePricing = computeQuotePricing(lines, settings, {
+      ivaRate: 0,
+      roundToTen: false,
+      serviceType: 'rescue',
+    });
+    const loanPricing = computeQuotePricing(lines, settings, {
+      ivaRate: 0,
+      roundToTen: false,
+      serviceType: 'loan',
+    });
+
+    expect(rescuePricing.lines[0]!.afterMultiplier).toBe(1100);
+    expect(rescuePricing.subtotalLines).toBe(1100);
+    expect(loanPricing.lines[0]!.afterMultiplier).toBe(2000);
+    expect(loanPricing.subtotalLines).toBe(2000);
   });
 });

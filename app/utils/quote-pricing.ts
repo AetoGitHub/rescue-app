@@ -8,14 +8,16 @@ import type {
   RescueCompanySettings,
 } from '~/interfaces/rescue/company-settings';
 import { isContractLine } from '~/utils/rescue-company-settings';
-import type { RescueQuoteLine } from '~/interfaces/rescue';
+import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 
 export interface QuotePricingOptions {
   ivaRate?: number;
   /** Round each filled line total up to the next $10 (default true). */
   roundToTen?: boolean;
-  /** When null, seller commission fields are zeroed; price_multiplier unchanged. */
+  /** When null, seller commission fields are zeroed; price/loan multiplier unchanged. */
   clientSellerId?: number | null;
+  /** When `loan`, uses loan_multiplier; otherwise price_multiplier. */
+  serviceType?: RescueServiceType | null;
 }
 
 export interface QuoteLinePricing {
@@ -62,9 +64,22 @@ const DEFAULT_COMMISSIONS = {
   commission_value: 0,
   commission_fixed: 0,
   price_multiplier: 1,
+  loan_multiplier: 1,
 };
 
 const MONEY_FACTOR = 10 ** QUOTE_MONEY_DECIMALS;
+
+/** Active price multiplier for quote lines (loan → loan_multiplier). */
+export function resolveQuotePriceMultiplier(
+  settings: RescueCompanySettings | null | undefined,
+  serviceType?: RescueServiceType | null,
+): number {
+  const commissions = settings?.commissions ?? DEFAULT_COMMISSIONS;
+  if (serviceType === 'loan') {
+    return commissions.loan_multiplier;
+  }
+  return commissions.price_multiplier;
+}
 
 export function resolveSellerCommissions(
   settings: RescueCompanySettings | null | undefined,
@@ -213,12 +228,14 @@ export function computeQuotePricing(
 ): QuotePricingSummary {
   const ivaRate = options.ivaRate ?? DEFAULT_IVA_RATE;
   const roundToTen = options.roundToTen ?? DEFAULT_QUOTE_ROUND_TO_TEN;
-  const baseCommissions = settings?.commissions ?? DEFAULT_COMMISSIONS;
   const sellerCommissions = resolveSellerCommissions(
     settings,
     options.clientSellerId,
   );
-  const priceMultiplier = baseCommissions.price_multiplier;
+  const priceMultiplier = resolveQuotePriceMultiplier(
+    settings,
+    options.serviceType,
+  );
   const commissionFixedPool = sellerCommissions.commission_fixed;
 
   const standardIndices: number[] = [];

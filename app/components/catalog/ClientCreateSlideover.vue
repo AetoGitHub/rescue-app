@@ -85,6 +85,7 @@ function emptyState(): ClientFormState {
     commission_value: '0.00',
     commission_fixed: '0.00',
     price_multiplier: '1.00',
+    loan_multiplier: '1.00',
     company: undefined,
     seller: undefined,
     companyLabel: '',
@@ -106,6 +107,9 @@ const commissionFixedModel = useStringNumberModel(
 );
 const priceMultiplierModel = useStringNumberModel(
   toRef(state, 'price_multiplier'),
+);
+const loanMultiplierModel = useStringNumberModel(
+  toRef(state, 'loan_multiplier'),
 );
 
 const showEditCreditTabs = computed(() => isEdit.value);
@@ -725,6 +729,23 @@ async function requestSubmit() {
                     <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>
                   </template>
                 </UFormField>
+                <UFormField
+                  label="Multiplicador de préstamo"
+                  name="loan_multiplier"
+                  required
+                >
+                  <UInputNumber
+                    v-model="loanMultiplierModel"
+                    v-bind="catalogNumberInputProps"
+                  />
+                  <template #help>
+                    <span
+                      >Precio final en préstamo = precio base × multiplicador de
+                      préstamo.</span
+                    >
+                    <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>
+                  </template>
+                </UFormField>
               </section>
 
               <section class="space-y-4">
@@ -913,6 +934,19 @@ async function requestSubmit() {
             <template #help>
               <span
                 >Precio final = precio base del servicio × multiplicador.</span
+              >
+              <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>
+            </template>
+          </UFormField>
+          <UFormField label="Multiplicador de préstamo" name="loan_multiplier" required>
+            <UInputNumber
+              v-model="loanMultiplierModel"
+              v-bind="catalogNumberInputProps"
+            />
+            <template #help>
+              <span
+                >Precio final en préstamo = precio base × multiplicador de
+                préstamo.</span
               >
               <span class="text-primary"> Ej: $1,000 × 1.00 = $1,000</span>
             </template>

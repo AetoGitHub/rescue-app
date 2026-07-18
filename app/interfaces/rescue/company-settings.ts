@@ -5,6 +5,7 @@ export interface RescueCompanyCommissions {
   commission_value: number;
   commission_fixed: number;
   price_multiplier: number;
+  loan_multiplier: number;
 }
 
 export interface RescueContractItem {

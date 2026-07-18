@@ -115,6 +115,7 @@ export function useRescueQuoteSave(
       validated.parsed.company_settings,
       {
         clientSellerId: payload.clientSellerId,
+        serviceType: payload.serviceType,
       },
     );
     if (body == null) {
@@ -130,6 +131,7 @@ export function useRescueQuoteSave(
       validated.parsed.quote_lines,
       validated.parsed.company_settings,
       payload.clientSellerId,
+      payload.serviceType,
     );
     if (!creditGate.ok) {
       toast.add({
@@ -169,6 +171,7 @@ export function useRescueQuoteSave(
       validated.parsed.company_settings,
       {
         clientSellerId: payload.clientSellerId,
+        serviceType: payload.serviceType,
       },
     );
     if (body == null) {
