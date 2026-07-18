@@ -35,6 +35,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   'assign-supplier': [];
   'edit-service': [];
+  'edit-location': [];
 }>();
 
 const serviceTypeBadge = computed(() =>
@@ -297,6 +298,8 @@ watch(
       <LazyOperationalRescueDetailLocationMap
         hydrate-on-visible
         :detail="detail"
+        :editable="editable"
+        @edit="emit('edit-location')"
       />
         </div>
       </div>

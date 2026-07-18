@@ -16,6 +16,7 @@ export function useCreditCheck() {
     lines: RescueQuoteLine[],
     settings: RescueCompanySettings | null | undefined,
     clientSellerId?: number | null,
+    appliedPrice?: number,
   ): Promise<CreditCheckGateResult> {
     return assertClientCreditForQuoteUtil(
       apiFetch as Parameters<typeof assertClientCreditForQuoteUtil>[0],
@@ -23,6 +24,7 @@ export function useCreditCheck() {
       lines,
       settings,
       clientSellerId,
+      appliedPrice,
     );
   }
 

@@ -29,6 +29,7 @@ const quoteLines = defineModel<RescueQuoteLine[]>('quoteLines', { required: true
 const companySettings = defineModel<RescueCompanySettings | null>('companySettings', {
   default: null,
 });
+const appliedPrice = defineModel<number>('appliedPrice', { default: 0 });
 
 const toast = useToast();
 const activeEditorTab = ref<QuoteEditorTabValue>('lines');
@@ -82,11 +83,42 @@ watch(
   },
 );
 
-const pricing = computed(() =>
+const linePricing = computed(() =>
   computeQuotePricing(quoteLines.value, settings.value, {
     clientSellerId: props.clientSellerId,
   }),
 );
+
+const previousCalculatedSubtotal = ref<number | null>(null);
+
+watch(
+  () => linePricing.value.subtotalLines,
+  (next) => {
+    const prev = previousCalculatedSubtotal.value;
+    previousCalculatedSubtotal.value = next;
+    if (prev == null) {
+      if (appliedPrice.value <= 0) {
+        appliedPrice.value = next;
+      }
+      return;
+    }
+    if (roundQuoteMoney(appliedPrice.value) === roundQuoteMoney(prev)) {
+      appliedPrice.value = next;
+    }
+  },
+  { immediate: true },
+);
+
+const pricing = computed(() =>
+  computeQuotePricing(quoteLines.value, settings.value, {
+    clientSellerId: props.clientSellerId,
+    appliedPrice: appliedPrice.value,
+  }),
+);
+
+function resetAppliedPrice() {
+  appliedPrice.value = linePricing.value.subtotalLines;
+}
 
 const {
   showBreakdown: showQuotePricingDevBreakdown,
@@ -267,7 +299,7 @@ watch(
               <th class="px-3 py-2 font-medium">Servicio</th>
               <th class="w-24 px-3 py-2 font-medium">Cantidad</th>
               <th class="hidden px-3 py-2 font-medium sm:table-cell sm:w-36">Costo unit.</th>
-              <th class="w-40 px-3 py-2 font-medium">P. unitario</th>
+              <th class="w-40 px-3 py-2 font-medium">Tras multiplic.</th>
               <th class="w-32 px-3 py-2 font-medium text-right">Total</th>
               <th class="w-10 px-2 py-2" />
             </tr>
@@ -326,9 +358,6 @@ watch(
                 </UFormField>
               </td>
               <td class="px-3 py-2 align-top">
-                <span class="block text-[10px] font-medium uppercase tracking-wide text-muted">
-                  Multiplic.
-                </span>
                 <span class="font-medium tabular-nums">
                   {{ formatQuoteMoney(lineRow(line)?.afterMultiplier ?? 0) }}
                 </span>
@@ -381,10 +410,39 @@ watch(
           </span>
         </div>
         <div class="flex justify-between gap-4">
-          <span class="text-muted">Subtotal</span>
+          <span class="text-muted">Subtotal líneas</span>
           <span class="tabular-nums">
             {{ formatQuoteMoney(pricing.subtotalLines) }}
           </span>
+        </div>
+        <div class="space-y-1">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-muted">Precio a aplicar</span>
+            <div class="flex min-w-0 items-center gap-1">
+              <UInputNumber
+                v-model="appliedPrice"
+                v-bind="catalogCurrencyInputProps"
+                :min="0"
+                class="w-36"
+              />
+              <UButton
+                type="button"
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-rotate-ccw"
+                size="xs"
+                :disabled="!pricing.isAppliedPriceCustom"
+                aria-label="Restablecer precio a aplicar"
+                @click="resetAppliedPrice"
+              />
+            </div>
+          </div>
+          <p
+            v-if="pricing.isAppliedPriceCustom"
+            class="text-right text-xs text-muted"
+          >
+            Calculado: {{ formatQuoteMoney(pricing.subtotalLines) }}
+          </p>
         </div>
         <div class="flex justify-between gap-4">
           <span class="text-muted">IVA ({{ ivaPercentLabel }})</span>

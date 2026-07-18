@@ -452,4 +452,29 @@ describe('computeQuotePricing', () => {
     expect(withoutSeller.lines[2]!.fixedShare).toBe(0);
     expectAllMoneyRounded(withoutSeller);
   });
+
+  it('uses appliedPrice for totalBeforeTax (ceil to 10) without changing subtotalLines', () => {
+    const lines = [line({ quantity: 1, unit_cost: 1000 })];
+    const calculated = computeQuotePricing(lines, baseSettings, {
+      ivaRate: 0.16,
+      roundToTen: false,
+    });
+
+    expect(calculated.subtotalLines).toBe(1600);
+    expect(calculated.totalBeforeTax).toBe(1600);
+    expect(calculated.isAppliedPriceCustom).toBe(false);
+
+    const overridden = computeQuotePricing(lines, baseSettings, {
+      ivaRate: 0.16,
+      roundToTen: false,
+      appliedPrice: 3592.85,
+    });
+
+    expect(overridden.subtotalLines).toBe(1600);
+    expect(overridden.isAppliedPriceCustom).toBe(true);
+    expect(overridden.totalBeforeTax).toBe(3600);
+    expect(overridden.ivaAmount).toBe(576);
+    expect(overridden.totalCharged).toBe(4176);
+    expectAllMoneyRounded(overridden);
+  });
 });

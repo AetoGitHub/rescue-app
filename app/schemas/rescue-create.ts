@@ -341,6 +341,8 @@ export type RescueRequestFormState = {
   client_seller_id: number | null;
   quote_lines: RescueQuoteLine[];
   company_settings: RescueCompanySettings | null;
+  /** Precio a aplicar (before IVA); always calculated, user may edit. */
+  applied_price: number;
 };
 
 export function emptyRescueRequestState(): RescueRequestFormState {
@@ -363,6 +365,7 @@ export function emptyRescueRequestState(): RescueRequestFormState {
     client_seller_id: null,
     quote_lines: initialQuoteLinesForServiceType('rescue'),
     company_settings: null,
+    applied_price: 0,
   };
 }
 

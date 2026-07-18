@@ -127,6 +127,7 @@ watch(
     currentStep.value = 0;
     stepError.value = null;
     state.quote_lines = initialQuoteLinesForServiceType(state.service_type);
+    state.applied_price = 0;
     if (!hasExtendedRescueWizardFlow(state.service_type)) {
       state.supplier = null;
       state.supplierLabel = '';
@@ -232,12 +233,14 @@ const { mutate, asyncStatus } = useMutation({
     form: RescueCreateFormOutput;
     companySettings: RescueRequestFormState['company_settings'];
     clientSellerId: number | null;
+    appliedPrice: number;
   }) => {
     const creditGate = await assertClientCreditForQuote(
       payload.form.client,
       payload.form.quote_lines,
       payload.companySettings,
       payload.clientSellerId,
+      payload.appliedPrice,
     );
     if (!creditGate.ok) {
       toast.add({
@@ -258,7 +261,10 @@ const { mutate, asyncStatus } = useMutation({
       rescue.id,
       payload.form.quote_lines,
       payload.companySettings,
-      { clientSellerId: payload.clientSellerId },
+      {
+        clientSellerId: payload.clientSellerId,
+        appliedPrice: payload.appliedPrice,
+      },
     );
 
     if (quoteBody) {
@@ -348,6 +354,7 @@ function validateQuoteCredit(): boolean {
     state.quote_lines,
     state.company_settings,
     state.client_seller_id,
+    state.applied_price,
   );
   if (warning) {
     stepError.value = warning.description;
@@ -401,6 +408,7 @@ function onSubmit(payload: FormSubmitEvent<RescueCreateFormOutput>) {
     },
     companySettings: state.company_settings,
     clientSellerId: state.client_seller_id,
+    appliedPrice: state.applied_price,
   });
 }
 

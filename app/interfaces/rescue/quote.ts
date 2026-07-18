@@ -15,6 +15,8 @@ export interface RescueQuoteCreateBody {
   rescue: number;
   technical_cost: string;
   sub_total: string;
+  /** Precio a aplicar (before IVA), always sent. */
+  applied_price: string;
   total: string;
   seller_commission_type: RescueCommissionType;
   seller_commission_value: string;
@@ -50,6 +52,7 @@ export interface RescueQuoteDetail {
   rescue_id: number;
   technical_cost: string;
   sub_total: string;
+  applied_price?: string | null;
   total: string;
   comissions_apply: string;
   iva: number;

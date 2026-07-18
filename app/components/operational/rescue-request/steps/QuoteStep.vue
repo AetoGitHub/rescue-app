@@ -13,6 +13,7 @@ defineProps<{
   <OperationalRescueQuoteEditor
     v-model:quote-lines="state.quote_lines"
     v-model:company-settings="state.company_settings"
+    v-model:applied-price="state.applied_price"
     :client-id="state.client"
     :client-seller-id="state.client_seller_id"
     :client-name="state.clientLabel"

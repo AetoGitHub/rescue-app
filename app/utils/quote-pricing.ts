@@ -16,6 +16,11 @@ export interface QuotePricingOptions {
   roundToTen?: boolean;
   /** When null, seller commission fields are zeroed; price_multiplier unchanged. */
   clientSellerId?: number | null;
+  /**
+   * Precio a aplicar (before IVA). When omitted, uses Σ line totals.
+   * Always rounded up to the next $10 for totalBeforeTax / IVA / total.
+   */
+  appliedPrice?: number;
 }
 
 export interface QuoteLinePricing {
@@ -34,6 +39,7 @@ export interface QuoteLinePricing {
 
 export interface QuotePricingSummary {
   costSubtotal: number;
+  /** Σ rounded line totals (calculated; reset target for applied price). */
   subtotalLines: number;
   profit: number;
   /** Seller commission (PERCENTAGE from profit or FIXED amount). */
@@ -43,7 +49,10 @@ export interface QuotePricingSummary {
   /** Whether seller commission is added to the client-facing total. */
   sellerCommissionAddsToTotal: boolean;
   roundingAddTotal: number;
+  /** Applied price after ceil-to-$10 (basis for IVA and total). */
   totalBeforeTax: number;
+  /** True when applied price (pre-round) differs from subtotalLines. */
+  isAppliedPriceCustom: boolean;
   ivaAmount: number;
   totalCharged: number;
   lines: QuoteLinePricing[];
@@ -332,7 +341,13 @@ export function computeQuotePricing(
           sellerCommissions.commission_value,
         );
   const sellerCommissionAddsToTotal = false;
-  const totalBeforeTax = roundQuoteMoney(subtotalLines);
+  const rawApplied =
+    options.appliedPrice != null && Number.isFinite(options.appliedPrice)
+      ? options.appliedPrice
+      : subtotalLines;
+  const isAppliedPriceCustom =
+    roundQuoteMoney(rawApplied) !== roundQuoteMoney(subtotalLines);
+  const totalBeforeTax = roundQuoteToNearestTen(rawApplied);
   const ivaAmount = roundQuoteMoney(totalBeforeTax * ivaRate);
   const totalCharged = roundQuoteMoney(totalBeforeTax + ivaAmount);
 
@@ -345,6 +360,7 @@ export function computeQuotePricing(
     sellerCommissionAddsToTotal,
     roundingAddTotal,
     totalBeforeTax,
+    isAppliedPriceCustom,
     ivaAmount,
     totalCharged,
     lines: pricingLines,

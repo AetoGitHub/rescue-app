@@ -79,7 +79,8 @@ export function buildRescueQuoteCreateBody(
   const body: RescueQuoteCreateBody = {
     rescue: rescueId,
     technical_cost: formatQuoteDecimal(pricing.costSubtotal),
-    sub_total: formatQuoteDecimal(pricing.totalBeforeTax),
+    sub_total: formatQuoteDecimal(pricing.subtotalLines),
+    applied_price: formatQuoteDecimal(pricing.totalBeforeTax),
     total: formatQuoteDecimal(pricing.totalCharged),
     seller_commission_type: sellerCommissions.commission_type,
     seller_commission_value: formatQuoteDecimal(sellerCommissions.commission_value),

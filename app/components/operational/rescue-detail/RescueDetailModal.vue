@@ -17,6 +17,7 @@ const evidenceModalOpen = ref(false);
 const evidenceModalType = ref<RescueEvidenceType>(RESCUE_EVIDENCE_TYPE_SERVICE);
 const assignSupplierModalOpen = ref(false);
 const editServiceModalOpen = ref(false);
+const editLocationModalOpen = ref(false);
 /** Blocks UTabs from re-opening the evidence modal after close (tab sync). */
 const ignoreEvidenceTabSelection = ref(false);
 
@@ -271,6 +272,7 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
               :supplier-highlight="supplierSectionHighlight"
               @assign-supplier="assignSupplierModalOpen = true"
               @edit-service="editServiceModalOpen = true"
+              @edit-location="editLocationModalOpen = true"
             >
               <template #afterChat>
                 <OperationalRescueDetailAdvancePanel
@@ -375,6 +377,16 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
     :vehicle="detail.vehicle"
     :service-description="detail.service_description"
     :internal-notes="detail.internal_notes"
+    @saved="refresh()"
+  />
+
+  <LazyOperationalRescueDetailEditLocationModal
+    v-if="detail && rescueId != null && editLocationModalOpen"
+    v-model:open="editLocationModalOpen"
+    :rescue-id="rescueId"
+    :latitude="detail.latitude"
+    :longitude="detail.longitude"
+    :location-description="detail.location_description"
     @saved="refresh()"
   />
 </template>

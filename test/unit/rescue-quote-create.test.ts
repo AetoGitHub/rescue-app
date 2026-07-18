@@ -85,6 +85,7 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.rescue).toBe(42);
     expect(body!.technical_cost).toBe('1000.00');
     expect(body!.sub_total).toBe('1600.00');
+    expect(body!.applied_price).toBe('1600.00');
     expect(body!.total).toBe('1600.00');
     expect(body!.iva).toBe(16);
     expect(body!.seller_commission_type).toBe('PERCENTAGE');
@@ -156,6 +157,7 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.seller_commission_value).toBe('0.00');
     expect(body!.seller_commission_fixed).toBe('0.00');
     expect(body!.sub_total).toBe('100.00');
+    expect(body!.applied_price).toBe('100.00');
   });
 
   it('includes commission_fixed in comissions_apply when seller commission is zero', () => {
@@ -248,6 +250,7 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
 
     expect(body).not.toBeNull();
     expect(body!.sub_total).toBe('1100.00');
+    expect(body!.applied_price).toBe('1100.00');
     expect(body!.seller_commission_type).toBe('PERCENTAGE');
     expect(body!.seller_commission_value).toBe('0.00');
     expect(body!.seller_commission_fixed).toBe('0.00');
@@ -273,8 +276,27 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
     });
 
     expect(body!.sub_total).toBe('1600.00');
+    expect(body!.applied_price).toBe('1600.00');
     expect(body!.seller_commission_value).toBe('5.00');
     expect(body!.seller_commission_fixed).toBe('500.00');
     expect(body!.comissions_apply).toBe('530.00');
+  });
+
+  it('sends applied_price separately from calculated sub_total', () => {
+    const lines = [
+      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
+      line({ quantity: 1, unit_cost: 300, service_id: 2 }),
+      line({ quantity: 1, unit_cost: 200, service_id: 3 }),
+    ];
+
+    const body = buildRescueQuoteCreateBody(42, lines, baseSettings, {
+      ivaRate: 0.16,
+      roundToTen: false,
+      appliedPrice: 3592.85,
+    });
+
+    expect(body!.sub_total).toBe('1600.00');
+    expect(body!.applied_price).toBe('3600.00');
+    expect(body!.total).toBe('4176.00');
   });
 });
