@@ -124,10 +124,16 @@ export function parseRescueCoordinates(
   latitude: string | number | null | undefined,
   longitude: string | number | null | undefined,
 ): { lat: number; lng: number } | null {
-  const lat = Number(String(latitude ?? '').trim());
-  const lng = Number(String(longitude ?? '').trim());
+  const latRaw = String(latitude ?? '').trim();
+  const lngRaw = String(longitude ?? '').trim();
+  if (latRaw === '' || lngRaw === '') return null;
+
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  // Backend placeholder when location was never set (Null Island).
+  if (lat === 0 && lng === 0) return null;
 
   return { lat, lng };
 }

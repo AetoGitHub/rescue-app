@@ -23,7 +23,7 @@ const position = computed(() =>
   parseRescueCoordinates(props.detail.latitude, props.detail.longitude),
 );
 
-const mapCenter = computed(() => position.value ?? { lat: 19.432608, lng: -99.133209 });
+const hasMapPosition = computed(() => position.value != null);
 
 const coordinatesLabel = computed(() => {
   if (!position.value) return '—';
@@ -32,6 +32,14 @@ const coordinatesLabel = computed(() => {
 
 const locationDescription = computed(() =>
   formatDetailDescription(props.detail.location_description),
+);
+
+const locationActionLabel = computed(() =>
+  hasMapPosition.value ? 'Editar' : 'Agregar',
+);
+
+const locationActionIcon = computed(() =>
+  hasMapPosition.value ? 'i-lucide-pencil' : 'i-lucide-map-pin-plus',
 );
 </script>
 
@@ -44,22 +52,25 @@ const locationDescription = computed(() =>
       <UButton
         v-if="editable"
         color="neutral"
-        icon="i-lucide-pencil"
-        label="Editar"
+        :icon="locationActionIcon"
+        :label="locationActionLabel"
         size="xs"
         variant="ghost"
         @click="emit('edit')"
       />
     </div>
 
-    <div class="h-44 overflow-hidden rounded-lg border border-default">
+    <div
+      v-if="hasMapPosition"
+      class="h-44 overflow-hidden rounded-lg border border-default"
+    >
       <ClientOnly>
         <GoogleMap
-          v-if="config.public.googleMapsApiKey"
+          v-if="config.public.googleMapsApiKey && position"
           :map-id="mapId"
           :api-key="config.public.googleMapsApiKey"
-          :center="mapCenter"
-          :zoom="position ? 13 : 10"
+          :center="position"
+          :zoom="13"
           class="h-full w-full"
           :map-type-control="false"
           :street-view-control="false"
@@ -67,7 +78,6 @@ const locationDescription = computed(() =>
           gesture-handling="cooperative"
         >
           <AdvancedMarker
-            v-if="position"
             :options="{
               position,
               title: detail.client_name,
@@ -86,6 +96,23 @@ const locationDescription = computed(() =>
           Mapa no disponible
         </div>
       </ClientOnly>
+    </div>
+    <div
+      v-else
+      class="flex flex-col items-center gap-3 rounded-lg border border-dashed border-default px-3 py-6 text-center"
+    >
+      <p class="text-xs text-muted">
+        Sin ubicación registrada
+      </p>
+      <UButton
+        v-if="editable"
+        color="primary"
+        variant="soft"
+        size="sm"
+        icon="i-lucide-map-pin-plus"
+        label="Agregar ubicación"
+        @click="emit('edit')"
+      />
     </div>
 
     <div class="space-y-0.5">

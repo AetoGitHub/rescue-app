@@ -89,8 +89,8 @@ export interface RescueCreateBody {
   service_description: string;
   supplier: number | null;
   operator?: number | null;
-  location_latitude: string;
-  location_longitude: string;
+  location_latitude: string | null;
+  location_longitude: string | null;
   location_description: string;
   internal_notes: string;
 }

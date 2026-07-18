@@ -396,6 +396,10 @@ export function rescueFormToCreateBody(
   data: RescueCreateFormOutput,
 ): RescueCreateBody {
   const serial = String(data.serialNumber ?? '').trim();
+  const skipLocation =
+    data.service_type === 'loan' || data.service_type === 'direct_budget';
+  const latitude = String(data.location_latitude ?? '').trim();
+  const longitude = String(data.location_longitude ?? '').trim();
 
   return {
     service_type: data.service_type,
@@ -405,8 +409,8 @@ export function rescueFormToCreateBody(
     service_description: data.service_description,
     supplier: data.supplier ?? null,
     operator: data.manager ?? null,
-    location_latitude: String(data.location_latitude ?? '').trim(),
-    location_longitude: String(data.location_longitude ?? '').trim(),
+    location_latitude: skipLocation ? null : latitude || null,
+    location_longitude: skipLocation ? null : longitude || null,
     location_description: data.location_description,
     internal_notes: data.internal_notes,
   };
