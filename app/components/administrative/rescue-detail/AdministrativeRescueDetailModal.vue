@@ -284,17 +284,12 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
               <span class="sr-only" />
             </template>
             <template #quote>
-              <Suspense>
-                <LazyOperationalRescueDetailQuoteTab
-                  v-if="activeTab === 'quote' && quoteDetail"
-                  :detail="quoteDetail"
-                  :rescue-id="rescueId!"
-                  @saved="refresh()"
-                />
-                <template #fallback>
-                  <OperationalRescueQuoteLoadingState />
-                </template>
-              </Suspense>
+              <LazyOperationalRescueDetailQuoteTab
+                v-if="activeTab === 'quote' && quoteDetail"
+                :detail="quoteDetail"
+                :rescue-id="rescueId!"
+                @saved="refresh()"
+              />
             </template>
             <template #pdf_report>
               <OperationalRescueDetailPlaceholderTab />

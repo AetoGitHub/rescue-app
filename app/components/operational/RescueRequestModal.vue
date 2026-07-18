@@ -483,15 +483,11 @@ const wizardModalProps = computed(() => {
             />
           </template>
 
-          <Suspense v-else-if="currentStepKind === 'quote'">
-            <LazyOperationalRescueRequestStepsQuoteStep
-              v-model="state"
-              :fetch-service-dropdown="fetchServiceDropdown"
-            />
-            <template #fallback>
-              <OperationalRescueQuoteLoadingState />
-            </template>
-          </Suspense>
+          <LazyOperationalRescueRequestStepsQuoteStep
+            v-else-if="currentStepKind === 'quote'"
+            v-model="state"
+            :fetch-service-dropdown="fetchServiceDropdown"
+          />
 
           <LazyOperationalRescueRequestStepsLocationStep
             v-else-if="currentStepKind === 'location'"
