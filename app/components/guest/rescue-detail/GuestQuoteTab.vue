@@ -25,13 +25,7 @@ function formatMoney(value: string | number | null | undefined): string {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div v-if="isPending" class="flex items-center justify-center gap-2 py-12">
-      <UIcon
-        name="i-lucide-loader-circle"
-        class="size-6 animate-spin text-muted"
-      />
-      <span class="text-sm text-muted">Cargando cotización…</span>
-    </div>
+    <OperationalRescueQuoteLoadingState v-if="isPending" />
 
     <UAlert
       v-else-if="errorMessage"

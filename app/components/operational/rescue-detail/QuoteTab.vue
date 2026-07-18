@@ -150,10 +150,7 @@ function formatApiMoney(value: string | number | null | undefined): string {
       :show-expired-hint="Boolean(unlockSessionUntil?.trim())"
     />
 
-    <div v-if="isPending" class="flex items-center justify-center gap-2 py-12">
-      <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-muted" />
-      <span class="text-sm text-muted">Cargando cotización…</span>
-    </div>
+    <OperationalRescueQuoteLoadingState v-if="isPending" />
 
     <UAlert
       v-else-if="errorMessage"
@@ -258,6 +255,11 @@ function formatApiMoney(value: string | number | null | undefined): string {
         :client-credit-snapshot="clientCreditSnapshot"
         :service-type="serviceType"
         :fetch-service-dropdown="fetchServiceDropdown"
+      />
+
+      <OperationalRescueQuoteLoadingState
+        v-else-if="editable && !linesHydrated"
+        message="Preparando editor de cotización…"
       />
 
       <div

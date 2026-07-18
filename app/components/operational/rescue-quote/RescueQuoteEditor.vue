@@ -209,13 +209,10 @@ watch(
     No hay cliente asociado a esta solicitud.
   </div>
 
-  <div
+  <OperationalRescueQuoteLoadingState
     v-else-if="pending && settings == null"
-    class="flex items-center gap-2 text-sm text-muted"
-  >
-    <UIcon name="i-lucide-loader-circle" class="size-4 animate-spin" />
-    Cargando ajustes del cliente…
-  </div>
+    message="Cargando ajustes de cotización…"
+  />
 
   <div v-else class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
