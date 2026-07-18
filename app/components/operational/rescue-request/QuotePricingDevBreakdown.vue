@@ -264,6 +264,10 @@ const totalChargedDetail = computed(() => {
               Total calculado (antes de redondeo):
               {{ formatQuoteMoney(row.lineTotalCalculated) }}
             </li>
+            <li v-if="row.isAppliedPriceCustom">
+              Precio a aplicar (custom):
+              {{ formatQuoteMoney(row.appliedPrice) }}
+            </li>
             <li v-if="row.roundingAdd !== 0">
               Redondeo al diez:
               {{ row.roundingAdd > 0 ? '+' : ''

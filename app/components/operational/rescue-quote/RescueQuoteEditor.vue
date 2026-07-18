@@ -29,7 +29,6 @@ const quoteLines = defineModel<RescueQuoteLine[]>('quoteLines', { required: true
 const companySettings = defineModel<RescueCompanySettings | null>('companySettings', {
   default: null,
 });
-const appliedPrice = defineModel<number>('appliedPrice', { default: 0 });
 
 const toast = useToast();
 const activeEditorTab = ref<QuoteEditorTabValue>('lines');
@@ -83,41 +82,51 @@ watch(
   },
 );
 
-const linePricing = computed(() =>
-  computeQuotePricing(quoteLines.value, settings.value, {
-    clientSellerId: props.clientSellerId,
-  }),
-);
-
-const previousCalculatedSubtotal = ref<number | null>(null);
-
-watch(
-  () => linePricing.value.subtotalLines,
-  (next) => {
-    const prev = previousCalculatedSubtotal.value;
-    previousCalculatedSubtotal.value = next;
-    if (prev == null) {
-      if (appliedPrice.value <= 0) {
-        appliedPrice.value = next;
-      }
-      return;
-    }
-    if (roundQuoteMoney(appliedPrice.value) === roundQuoteMoney(prev)) {
-      appliedPrice.value = next;
-    }
-  },
-  { immediate: true },
-);
+const previousCalculatedByLineId = ref(new Map<string, number>());
 
 const pricing = computed(() =>
   computeQuotePricing(quoteLines.value, settings.value, {
     clientSellerId: props.clientSellerId,
-    appliedPrice: appliedPrice.value,
   }),
 );
 
-function resetAppliedPrice() {
-  appliedPrice.value = linePricing.value.subtotalLines;
+watch(
+  () =>
+    pricing.value.lines.map((row) => ({
+      id: row.line.id,
+      calc: row.lineTotalCalculated,
+    })),
+  (rows) => {
+    const prevMap = previousCalculatedByLineId.value;
+    const nextMap = new Map<string, number>();
+
+    for (const row of rows) {
+      const line = quoteLines.value.find((entry) => entry.id === row.id);
+      if (line == null) continue;
+
+      const prev = prevMap.get(row.id);
+      nextMap.set(row.id, row.calc);
+
+      if (prev == null) {
+        if (!(line.applied_price > 0)) {
+          line.applied_price = row.calc;
+        }
+        continue;
+      }
+
+      if (roundQuoteMoney(line.applied_price) === roundQuoteMoney(prev)) {
+        line.applied_price = row.calc;
+      }
+    }
+
+    previousCalculatedByLineId.value = nextMap;
+  },
+  { immediate: true },
+);
+
+function resetLineAppliedPrice(line: RescueQuoteLine) {
+  const row = pricing.value.lines.find((entry) => entry.line.id === line.id);
+  line.applied_price = row?.lineTotalCalculated ?? 0;
 }
 
 const {
@@ -293,13 +302,14 @@ watch(
         v-if="hasQuoteLines"
         class="overflow-x-auto rounded-lg border border-default"
       >
-        <table class="w-full min-w-[640px] text-sm sm:min-w-[960px]">
+        <table class="w-full min-w-[640px] text-sm sm:min-w-[1100px]">
           <thead>
             <tr class="border-b border-default bg-elevated/50 text-left text-xs uppercase tracking-wide text-muted">
               <th class="px-3 py-2 font-medium">Servicio</th>
               <th class="w-24 px-3 py-2 font-medium">Cantidad</th>
               <th class="hidden px-3 py-2 font-medium sm:table-cell sm:w-36">Costo unit.</th>
-              <th class="w-40 px-3 py-2 font-medium">Tras multiplic.</th>
+              <th class="w-36 px-3 py-2 font-medium">Tras multiplic.</th>
+              <th class="w-44 px-3 py-2 font-medium">Precio a aplicar</th>
               <th class="w-32 px-3 py-2 font-medium text-right">Total</th>
               <th class="w-10 px-2 py-2" />
             </tr>
@@ -362,6 +372,39 @@ watch(
                   {{ formatQuoteMoney(lineRow(line)?.afterMultiplier ?? 0) }}
                 </span>
               </td>
+              <td class="px-3 py-2 align-top">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-1">
+                    <UFormField
+                      :name="`quote_lines.${index}.applied_price`"
+                      class="min-w-0 flex-1"
+                    >
+                      <UInputNumber
+                        v-model="line.applied_price"
+                        v-bind="catalogCurrencyInputProps"
+                        :min="0"
+                      />
+                    </UFormField>
+                    <UButton
+                      type="button"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-rotate-ccw"
+                      size="xs"
+                      :disabled="!lineRow(line)?.isAppliedPriceCustom"
+                      aria-label="Restablecer precio a aplicar"
+                      @click="resetLineAppliedPrice(line)"
+                    />
+                  </div>
+                  <p
+                    v-if="lineRow(line)?.isAppliedPriceCustom"
+                    class="text-xs text-muted tabular-nums"
+                  >
+                    Calculado:
+                    {{ formatQuoteMoney(lineRow(line)!.lineTotalCalculated) }}
+                  </p>
+                </div>
+              </td>
               <td class="px-3 py-2 align-top text-right">
                 <span class="font-semibold tabular-nums text-primary">
                   {{ formatQuoteMoney(lineRow(line)?.lineTotal ?? 0) }}
@@ -414,35 +457,6 @@ watch(
           <span class="tabular-nums">
             {{ formatQuoteMoney(pricing.subtotalLines) }}
           </span>
-        </div>
-        <div class="space-y-1">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-muted">Precio a aplicar</span>
-            <div class="flex min-w-0 items-center gap-1">
-              <UInputNumber
-                v-model="appliedPrice"
-                v-bind="catalogCurrencyInputProps"
-                :min="0"
-                class="w-36"
-              />
-              <UButton
-                type="button"
-                color="neutral"
-                variant="ghost"
-                icon="i-lucide-rotate-ccw"
-                size="xs"
-                :disabled="!pricing.isAppliedPriceCustom"
-                aria-label="Restablecer precio a aplicar"
-                @click="resetAppliedPrice"
-              />
-            </div>
-          </div>
-          <p
-            v-if="pricing.isAppliedPriceCustom"
-            class="text-right text-xs text-muted"
-          >
-            Calculado: {{ formatQuoteMoney(pricing.subtotalLines) }}
-          </p>
         </div>
         <div class="flex justify-between gap-4">
           <span class="text-muted">IVA ({{ ivaPercentLabel }})</span>

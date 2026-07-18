@@ -9,7 +9,6 @@ const state = defineModel<RescueRequestFormState>({ required: true });
 const quotePricing = computed(() =>
   computeQuotePricing(state.value.quote_lines, state.value.company_settings, {
     clientSellerId: state.value.client_seller_id,
-    appliedPrice: state.value.applied_price,
   }),
 );
 

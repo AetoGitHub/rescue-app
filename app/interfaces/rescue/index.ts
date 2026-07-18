@@ -74,6 +74,11 @@ export interface RescueQuoteLine {
   unit_cost: number;
   /** Set when the line uses a contract/convenio item variant. */
   contract_item_id: number | null;
+  /**
+   * Precio a aplicar for this line (before per-line $10 rounding).
+   * When 0 / unset, pricing uses the calculated line total.
+   */
+  applied_price: number;
 }
 
 export interface RescueCreateBody {

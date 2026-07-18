@@ -27,6 +27,7 @@ function quoteLine(
     quantity: 1,
     unit_cost: 0,
     contract_item_id: null,
+    applied_price: 0,
     ...partial,
   };
 }

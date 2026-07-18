@@ -13,6 +13,7 @@ const emptyQuoteLine = {
   quantity: 1,
   unit_cost: 0,
   contract_item_id: null as number | null,
+  applied_price: 0,
 };
 
 const validQuoteLine = {
@@ -22,6 +23,7 @@ const validQuoteLine = {
   quantity: 2,
   unit_cost: 500,
   contract_item_id: null as number | null,
+  applied_price: 0,
 };
 
 const baseFormFields = {

@@ -50,7 +50,6 @@ const quoteLines = ref<RescueQuoteLine[]>(
   initialQuoteLinesForServiceType(serviceType.value),
 );
 const companySettings = ref<RescueCompanySettings | null>(null);
-const appliedPrice = ref(0);
 const linesHydrated = ref(false);
 
 const { quoteDetail, isPending, errorMessage, refresh } = useRescueQuoteDetail(
@@ -81,7 +80,6 @@ const {
 function hydrateQuoteLines(detail: RescueQuoteDetail | null) {
   if (detail == null) {
     quoteLines.value = initialQuoteLinesForServiceType(serviceType.value);
-    appliedPrice.value = 0;
     linesHydrated.value = true;
     return;
   }
@@ -90,16 +88,6 @@ function hydrateQuoteLines(detail: RescueQuoteDetail | null) {
     detail,
     companySettings.value,
   );
-
-  const fromApplied = Number.parseFloat(String(detail.applied_price ?? ''));
-  const fromSubtotal = Number.parseFloat(String(detail.sub_total ?? ''));
-  if (Number.isFinite(fromApplied) && fromApplied > 0) {
-    appliedPrice.value = fromApplied;
-  } else if (Number.isFinite(fromSubtotal) && fromSubtotal > 0) {
-    appliedPrice.value = fromSubtotal;
-  } else {
-    appliedPrice.value = 0;
-  }
 
   linesHydrated.value = true;
 }
@@ -135,7 +123,6 @@ async function onSaveQuote() {
     companySettings: companySettings.value,
     serviceType: serviceType.value,
     clientSellerId: props.detail.seller_id,
-    appliedPrice: appliedPrice.value,
   };
 
   const ok = isUpdateMode.value
@@ -263,7 +250,6 @@ function formatApiMoney(value: string | number | null | undefined): string {
         v-else-if="linesHydrated && editable"
         v-model:quote-lines="quoteLines"
         v-model:company-settings="companySettings"
-        v-model:applied-price="appliedPrice"
         :client-id="detail.client_id"
         :client-seller-id="detail.seller_id"
         :client-name="detail.client_name"

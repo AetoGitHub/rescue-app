@@ -95,6 +95,7 @@ export function mapClassifierLineToQuoteLine(
     quantity: Number.isFinite(Number(raw.quantity)) ? Number(raw.quantity) : 0,
     unit_cost: Number.isFinite(Number(raw.unit_cost)) ? Number(raw.unit_cost) : 0,
     contract_item_id: null,
+    applied_price: 0,
   };
 }
 

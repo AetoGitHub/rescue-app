@@ -10,6 +10,7 @@ function filledLine(): RescueQuoteLine {
     quantity: 1,
     unit_cost: 1000,
     contract_item_id: null,
+    applied_price: 0,
   };
 }
 

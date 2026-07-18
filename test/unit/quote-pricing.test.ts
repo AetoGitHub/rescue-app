@@ -19,6 +19,7 @@ function line(
     quantity: partial.quantity,
     unit_cost: partial.unit_cost,
     contract_item_id: partial.contract_item_id ?? null,
+    applied_price: partial.applied_price ?? 0,
   };
 }
 
@@ -30,6 +31,7 @@ function emptyLine(): RescueQuoteLine {
     quantity: 0,
     unit_cost: 0,
     contract_item_id: null,
+    applied_price: 0,
   };
 }
 
@@ -52,6 +54,7 @@ function expectAllMoneyRounded(result: QuotePricingSummary) {
     expectAtMostTwoDecimals(row.fixedShare);
     expectAtMostTwoDecimals(row.sellerFixedShare);
     expectAtMostTwoDecimals(row.lineTotalCalculated);
+    expectAtMostTwoDecimals(row.appliedPrice);
     expectAtMostTwoDecimals(row.roundingAdd);
     expectAtMostTwoDecimals(row.lineTotal);
   }
@@ -453,28 +456,52 @@ describe('computeQuotePricing', () => {
     expectAllMoneyRounded(withoutSeller);
   });
 
-  it('uses appliedPrice for totalBeforeTax (ceil to 10) without changing subtotalLines', () => {
-    const lines = [line({ quantity: 1, unit_cost: 1000 })];
-    const calculated = computeQuotePricing(lines, baseSettings, {
-      ivaRate: 0.16,
-      roundToTen: false,
-    });
+  it('uses per-line applied_price for lineTotal and totalBeforeTax', () => {
+    const lines = [
+      line({ quantity: 1, unit_cost: 1000, applied_price: 3592.85 }),
+    ];
+    const calculated = computeQuotePricing(
+      [line({ quantity: 1, unit_cost: 1000 })],
+      baseSettings,
+      {
+        ivaRate: 0.16,
+        roundToTen: false,
+      },
+    );
 
     expect(calculated.subtotalLines).toBe(1600);
     expect(calculated.totalBeforeTax).toBe(1600);
     expect(calculated.isAppliedPriceCustom).toBe(false);
+    expect(calculated.lines[0]!.isAppliedPriceCustom).toBe(false);
 
     const overridden = computeQuotePricing(lines, baseSettings, {
       ivaRate: 0.16,
       roundToTen: false,
-      appliedPrice: 3592.85,
     });
 
-    expect(overridden.subtotalLines).toBe(1600);
+    expect(overridden.lines[0]!.lineTotalCalculated).toBe(1600);
+    expect(overridden.lines[0]!.appliedPrice).toBe(3592.85);
+    expect(overridden.lines[0]!.isAppliedPriceCustom).toBe(true);
+    expect(overridden.lines[0]!.lineTotal).toBe(3592.85);
+    expect(overridden.subtotalLines).toBe(3592.85);
     expect(overridden.isAppliedPriceCustom).toBe(true);
-    expect(overridden.totalBeforeTax).toBe(3600);
-    expect(overridden.ivaAmount).toBe(576);
-    expect(overridden.totalCharged).toBe(4176);
+    expect(overridden.totalBeforeTax).toBe(3592.85);
+    expect(overridden.ivaAmount).toBe(574.86);
+    expect(overridden.totalCharged).toBe(4167.71);
     expectAllMoneyRounded(overridden);
+  });
+
+  it('ceils per-line applied_price to the next $10 when roundToTen', () => {
+    const result = computeQuotePricing(
+      [line({ quantity: 1, unit_cost: 1000, applied_price: 3592.85 })],
+      baseSettings,
+      { ivaRate: 0.16, roundToTen: true },
+    );
+
+    expect(result.lines[0]!.lineTotal).toBe(3600);
+    expect(result.lines[0]!.roundingAdd).toBe(7.15);
+    expect(result.totalBeforeTax).toBe(3600);
+    expect(result.ivaAmount).toBe(576);
+    expect(result.totalCharged).toBe(4176);
   });
 });

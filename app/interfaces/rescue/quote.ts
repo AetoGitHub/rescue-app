@@ -5,6 +5,8 @@ export interface RescueQuoteServiceCreateBody {
   quantity: number;
   real_cost: string;
   pre_total: string;
+  /** Precio a aplicar for this line (before IVA / after money round). */
+  applied_price: string;
   percenaje_apply?: string;
   amount_applied?: string;
   amount_rounded?: string;
@@ -15,8 +17,6 @@ export interface RescueQuoteCreateBody {
   rescue: number;
   technical_cost: string;
   sub_total: string;
-  /** Precio a aplicar (before IVA), always sent. */
-  applied_price: string;
   total: string;
   seller_commission_type: RescueCommissionType;
   seller_commission_value: string;
@@ -41,6 +41,7 @@ export interface RescueQuoteServiceDetail {
   quantity: number;
   real_cost: string;
   pre_total: string;
+  applied_price?: string | null;
   percenaje_apply: string;
   amount_applied: string;
   amount_rounded: string;
@@ -52,6 +53,7 @@ export interface RescueQuoteDetail {
   rescue_id: number;
   technical_cost: string;
   sub_total: string;
+  /** @deprecated Quote-level override; prefer per-service applied_price. */
   applied_price?: string | null;
   total: string;
   comissions_apply: string;

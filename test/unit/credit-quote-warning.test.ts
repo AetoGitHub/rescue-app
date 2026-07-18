@@ -20,6 +20,7 @@ function filledLine(): RescueQuoteLine {
     quantity: 1,
     unit_cost: 1000,
     contract_item_id: null,
+    applied_price: 0,
   };
 }
 
@@ -68,6 +69,7 @@ describe('quoteLinesHaveFilledEntries', () => {
           quantity: 0,
           unit_cost: 0,
           contract_item_id: null,
+          applied_price: 0,
         },
       ]),
     ).toBe(false);

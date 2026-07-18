@@ -138,6 +138,7 @@ const rescueQuoteLineSchema = z.object({
   quantity: z.number(),
   unit_cost: z.number(),
   contract_item_id: z.number().int().positive().nullable(),
+  applied_price: z.number(),
 });
 
 type RescueQuoteLineInput = z.infer<typeof rescueQuoteLineSchema>;
@@ -341,8 +342,6 @@ export type RescueRequestFormState = {
   client_seller_id: number | null;
   quote_lines: RescueQuoteLine[];
   company_settings: RescueCompanySettings | null;
-  /** Precio a aplicar (before IVA); always calculated, user may edit. */
-  applied_price: number;
 };
 
 export function emptyRescueRequestState(): RescueRequestFormState {
@@ -365,7 +364,6 @@ export function emptyRescueRequestState(): RescueRequestFormState {
     client_seller_id: null,
     quote_lines: initialQuoteLinesForServiceType('rescue'),
     company_settings: null,
-    applied_price: 0,
   };
 }
 

@@ -73,13 +73,32 @@ describe('mapRescueQuoteDetailFromApi', () => {
       service_label: 'Grúa plana',
       quantity: 1,
       unit_cost: 500,
+      applied_price: 850,
     });
     expect(lines[1]).toMatchObject({
       service_id: 2,
       service_label: 'Maniobra',
       quantity: 2,
       unit_cost: 300,
+      applied_price: 900,
     });
+  });
+
+  it('prefers service applied_price when present', () => {
+    const detail: RescueQuoteDetail = {
+      ...sampleDetail,
+      services: [
+        {
+          ...sampleDetail.services[0]!,
+          applied_price: '920.50',
+          pre_total: '850.00',
+          total: '930.00',
+        },
+      ],
+    };
+
+    const lines = mapRescueQuoteDetailFromApi(detail);
+    expect(lines[0]!.applied_price).toBe(920.5);
   });
 
   it('infers contract_item_id when unit cost matches convenio price', () => {

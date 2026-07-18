@@ -16,11 +16,6 @@ export interface QuotePricingOptions {
   roundToTen?: boolean;
   /** When null, seller commission fields are zeroed; price_multiplier unchanged. */
   clientSellerId?: number | null;
-  /**
-   * Precio a aplicar (before IVA). When omitted, uses Σ line totals.
-   * Always rounded up to the next $10 for totalBeforeTax / IVA / total.
-   */
-  appliedPrice?: number;
 }
 
 export interface QuoteLinePricing {
@@ -33,13 +28,17 @@ export interface QuoteLinePricing {
   /** Seller FIXED commission share embedded in this line (proportional to afterMultiplier). */
   sellerFixedShare: number;
   lineTotalCalculated: number;
+  /** Applied price used before line rounding (defaults to calculated). */
+  appliedPrice: number;
+  /** True when applied price differs from lineTotalCalculated. */
+  isAppliedPriceCustom: boolean;
   roundingAdd: number;
   lineTotal: number;
 }
 
 export interface QuotePricingSummary {
   costSubtotal: number;
-  /** Σ rounded line totals (calculated; reset target for applied price). */
+  /** Σ rounded line totals (client-facing before IVA). */
   subtotalLines: number;
   profit: number;
   /** Seller commission (PERCENTAGE from profit or FIXED amount). */
@@ -49,9 +48,9 @@ export interface QuotePricingSummary {
   /** Whether seller commission is added to the client-facing total. */
   sellerCommissionAddsToTotal: boolean;
   roundingAddTotal: number;
-  /** Applied price after ceil-to-$10 (basis for IVA and total). */
+  /** Σ line totals after per-line applied price + rounding (basis for IVA). */
   totalBeforeTax: number;
-  /** True when applied price (pre-round) differs from subtotalLines. */
+  /** True when any filled line has a custom applied price. */
   isAppliedPriceCustom: boolean;
   ivaAmount: number;
   totalCharged: number;
@@ -126,6 +125,25 @@ function applyLineRounding(
   };
 }
 
+function resolveLineAppliedPrice(
+  line: Pick<RescueQuoteLine, 'applied_price'>,
+  lineTotalCalculated: number,
+): { appliedPrice: number; isAppliedPriceCustom: boolean } {
+  const raw = line.applied_price;
+  if (raw != null && Number.isFinite(raw) && raw > 0) {
+    const appliedPrice = roundQuoteMoney(raw);
+    return {
+      appliedPrice,
+      isAppliedPriceCustom:
+        appliedPrice !== roundQuoteMoney(lineTotalCalculated),
+    };
+  }
+  return {
+    appliedPrice: lineTotalCalculated,
+    isAppliedPriceCustom: false,
+  };
+}
+
 function emptyLinePricing(line: RescueQuoteLine): QuoteLinePricing {
   return {
     line,
@@ -136,6 +154,8 @@ function emptyLinePricing(line: RescueQuoteLine): QuoteLinePricing {
     fixedShare: 0,
     sellerFixedShare: 0,
     lineTotalCalculated: 0,
+    appliedPrice: 0,
+    isAppliedPriceCustom: false,
     roundingAdd: 0,
     lineTotal: 0,
   };
@@ -279,8 +299,12 @@ export function computeQuotePricing(
 
     if (draft.isContractLine) {
       const costSubtotal = roundQuoteMoney(draft.costSubtotal);
-      const { lineTotal, roundingAdd } = applyLineRounding(
+      const { appliedPrice, isAppliedPriceCustom } = resolveLineAppliedPrice(
+        draft.line,
         costSubtotal,
+      );
+      const { lineTotal, roundingAdd } = applyLineRounding(
+        appliedPrice,
         roundToTen,
       );
       return {
@@ -292,6 +316,8 @@ export function computeQuotePricing(
         fixedShare: 0,
         sellerFixedShare: 0,
         lineTotalCalculated: costSubtotal,
+        appliedPrice,
+        isAppliedPriceCustom,
         roundingAdd,
         lineTotal,
       };
@@ -305,8 +331,12 @@ export function computeQuotePricing(
     const lineTotalCalculated = roundQuoteMoney(
       afterMultiplier + fixedShare + sellerFixedShare,
     );
-    const { lineTotal, roundingAdd } = applyLineRounding(
+    const { appliedPrice, isAppliedPriceCustom } = resolveLineAppliedPrice(
+      draft.line,
       lineTotalCalculated,
+    );
+    const { lineTotal, roundingAdd } = applyLineRounding(
+      appliedPrice,
       roundToTen,
     );
 
@@ -319,6 +349,8 @@ export function computeQuotePricing(
       fixedShare,
       sellerFixedShare,
       lineTotalCalculated,
+      appliedPrice,
+      isAppliedPriceCustom,
       roundingAdd,
       lineTotal,
     };
@@ -341,13 +373,10 @@ export function computeQuotePricing(
           sellerCommissions.commission_value,
         );
   const sellerCommissionAddsToTotal = false;
-  const rawApplied =
-    options.appliedPrice != null && Number.isFinite(options.appliedPrice)
-      ? options.appliedPrice
-      : subtotalLines;
-  const isAppliedPriceCustom =
-    roundQuoteMoney(rawApplied) !== roundQuoteMoney(subtotalLines);
-  const totalBeforeTax = roundQuoteToNearestTen(rawApplied);
+  const totalBeforeTax = roundQuoteMoney(subtotalLines);
+  const isAppliedPriceCustom = pricingLines.some(
+    (row) => row.isAppliedPriceCustom,
+  );
   const ivaAmount = roundQuoteMoney(totalBeforeTax * ivaRate);
   const totalCharged = roundQuoteMoney(totalBeforeTax + ivaAmount);
 
@@ -389,6 +418,7 @@ export function computeQuoteLineTotals(
     quantity: line.quantity,
     unit_cost: line.unit_cost,
     contract_item_id: line.contract_item_id ?? null,
+    applied_price: 0,
   };
   const summary = computeQuotePricing([fullLine], settings, options);
   const row = summary.lines[0]!;

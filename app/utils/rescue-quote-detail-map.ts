@@ -29,6 +29,18 @@ export function mapRescueQuoteDetailFromApi(
     const realCost = parseApiMoney(service.real_cost);
     const unitCost =
       quantity > 0 ? roundQuoteMoney(realCost / quantity) : 0;
+    const fromApplied =
+      service.applied_price != null
+        ? parseApiMoney(service.applied_price)
+        : 0;
+    const fromPreTotal = parseApiMoney(service.pre_total);
+    const fromTotal = parseApiMoney(service.total);
+    const appliedPrice =
+      fromApplied > 0
+        ? fromApplied
+        : fromPreTotal > 0
+          ? fromPreTotal
+          : fromTotal;
 
     return {
       id: crypto.randomUUID(),
@@ -41,6 +53,7 @@ export function mapRescueQuoteDetailFromApi(
         unitCost,
         settings,
       ),
+      applied_price: appliedPrice,
     };
   });
 }

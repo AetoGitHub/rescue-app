@@ -18,6 +18,7 @@ function line(
     quantity: partial.quantity,
     unit_cost: partial.unit_cost,
     contract_item_id: partial.contract_item_id ?? null,
+    applied_price: partial.applied_price ?? 0,
   };
 }
 
@@ -29,6 +30,7 @@ function emptyLine(): RescueQuoteLine {
     quantity: 0,
     unit_cost: 0,
     contract_item_id: null,
+    applied_price: 0,
   };
 }
 
@@ -85,8 +87,8 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.rescue).toBe(42);
     expect(body!.technical_cost).toBe('1000.00');
     expect(body!.sub_total).toBe('1600.00');
-    expect(body!.applied_price).toBe('1600.00');
     expect(body!.total).toBe('1600.00');
+    expect(body!).not.toHaveProperty('applied_price');
     expect(body!.iva).toBe(16);
     expect(body!.seller_commission_type).toBe('PERCENTAGE');
     expect(body!.seller_commission_value).toBe('5.00');
@@ -98,14 +100,17 @@ describe('buildRescueQuoteCreateBody', () => {
     const [s0, s1, s2] = body!.services;
     expect(s0!.real_cost).toBe('500.00');
     expect(s0!.pre_total).toBe('800.00');
+    expect(s0!.applied_price).toBe('800.00');
     expect(s0!.amount_applied).toBe('250.00');
     expect(s0!.percenaje_apply).toBe('50.00');
     expect(s0!.amount_rounded).toBe('0.00');
     expect(s0!.total).toBe('800.00');
 
     expect(s1!.amount_applied).toBe('150.00');
+    expect(s1!.applied_price).toBe('480.00');
     expect(s1!.percenaje_apply).toBe('30.00');
     expect(s2!.amount_applied).toBe('100.00');
+    expect(s2!.applied_price).toBe('320.00');
     expect(s2!.percenaje_apply).toBe('20.00');
   });
 
@@ -157,7 +162,7 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.seller_commission_value).toBe('0.00');
     expect(body!.seller_commission_fixed).toBe('0.00');
     expect(body!.sub_total).toBe('100.00');
-    expect(body!.applied_price).toBe('100.00');
+    expect(body!.services[0]!.applied_price).toBe('100.00');
   });
 
   it('includes commission_fixed in comissions_apply when seller commission is zero', () => {
@@ -250,7 +255,7 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
 
     expect(body).not.toBeNull();
     expect(body!.sub_total).toBe('1100.00');
-    expect(body!.applied_price).toBe('1100.00');
+    expect(body!).not.toHaveProperty('applied_price');
     expect(body!.seller_commission_type).toBe('PERCENTAGE');
     expect(body!.seller_commission_value).toBe('0.00');
     expect(body!.seller_commission_fixed).toBe('0.00');
@@ -276,15 +281,19 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
     });
 
     expect(body!.sub_total).toBe('1600.00');
-    expect(body!.applied_price).toBe('1600.00');
     expect(body!.seller_commission_value).toBe('5.00');
     expect(body!.seller_commission_fixed).toBe('500.00');
     expect(body!.comissions_apply).toBe('530.00');
   });
 
-  it('sends applied_price separately from calculated sub_total', () => {
+  it('sends per-line applied_price separately from pre_total', () => {
     const lines = [
-      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
+      line({
+        quantity: 1,
+        unit_cost: 500,
+        service_id: 1,
+        applied_price: 900,
+      }),
       line({ quantity: 1, unit_cost: 300, service_id: 2 }),
       line({ quantity: 1, unit_cost: 200, service_id: 3 }),
     ];
@@ -292,11 +301,13 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
     const body = buildRescueQuoteCreateBody(42, lines, baseSettings, {
       ivaRate: 0.16,
       roundToTen: false,
-      appliedPrice: 3592.85,
     });
 
-    expect(body!.sub_total).toBe('1600.00');
-    expect(body!.applied_price).toBe('3600.00');
-    expect(body!.total).toBe('4176.00');
+    expect(body!.services[0]!.pre_total).toBe('800.00');
+    expect(body!.services[0]!.applied_price).toBe('900.00');
+    expect(body!.services[0]!.total).toBe('900.00');
+    expect(body!.sub_total).toBe('1700.00');
+    expect(body!.total).toBe('1972.00');
+    expect(body!).not.toHaveProperty('applied_price');
   });
 });

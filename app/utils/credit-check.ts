@@ -28,11 +28,9 @@ export async function assertClientCreditForQuote(
   lines: RescueQuoteLine[],
   settings: RescueCompanySettings | null | undefined,
   clientSellerId?: number | null,
-  appliedPrice?: number,
 ): Promise<CreditCheckGateResult> {
   const quoteBody = buildRescueQuoteCreateBody(0, lines, settings, {
     clientSellerId,
-    appliedPrice,
   });
   if (quoteBody == null) {
     return { ok: true };
