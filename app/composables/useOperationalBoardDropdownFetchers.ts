@@ -14,6 +14,31 @@ export function useOperationalBoardDropdownFetchers() {
       { query: { name }, signal: options?.signal },
     );
 
+  const fetchOperationalClientDropdown: CatalogDropdownFetcher = async (
+    name,
+    options,
+  ) => {
+    try {
+      return await apiFetch<PaginatedResponse<CatalogDropdownRow>>(
+        '/api/catalogue/client/dropdown/',
+        { query: { name }, signal: options?.signal },
+      );
+    } catch {
+      const res = await apiFetch<PaginatedResponse<{ id: number; name: string }>>(
+        '/api/catalogue/client/list/',
+        { query: { name }, signal: options?.signal },
+      );
+      return {
+        next: res.next,
+        previous: res.previous,
+        results: (res.results ?? []).map((row) => ({
+          id: row.id,
+          name: row.name,
+        })),
+      };
+    }
+  };
+
   const fetchOperationalManagerDropdown: CatalogDropdownFetcher = (
     name,
     options,
@@ -29,6 +54,7 @@ export function useOperationalBoardDropdownFetchers() {
 
   return {
     fetchOperationalCompanyDropdown,
+    fetchOperationalClientDropdown,
     fetchOperationalManagerDropdown,
   };
 }

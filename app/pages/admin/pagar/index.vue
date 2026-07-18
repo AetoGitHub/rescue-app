@@ -28,7 +28,7 @@ const { fetchOperativeDropdown, fetchSellerDropdown } = usePaymentBoardFetchers(
 
 const {
   recipientType,
-  userId,
+  user,
   folio,
   fromDate,
   toDate,
@@ -83,14 +83,14 @@ function cartHasItems(): boolean {
 
 function selectionMatchesCart(): boolean {
   if (!cartHasItems()) return true;
-  if (userId.value == null) return true;
+  if (user.value.value == null) return true;
 
   const active = resolveActivePaymentCart(cart.value!);
   if (active == null || isInvalidPaymentCart(active)) return false;
 
   return (
     active.type === recipientType.value
-    && recipient.value?.userId === userId.value
+    && recipient.value?.userId === user.value.value
   );
 }
 
@@ -119,18 +119,21 @@ watch(recipientType, async (_newType, oldType) => {
   await resetCartForContextChange();
 });
 
-watch(userId, async (newId, oldId) => {
-  if (oldId === undefined) return;
-  if (newId === oldId) return;
+watch(
+  () => user.value.value,
+  async (newId, oldId) => {
+    if (oldId === undefined) return;
+    if (newId === oldId) return;
 
-  if (newId == null && oldId != null) {
+    if (newId == null && oldId != null) {
+      await resetCartForContextChange();
+      return;
+    }
+
+    if (selectionMatchesCart()) return;
     await resetCartForContextChange();
-    return;
-  }
-
-  if (selectionMatchesCart()) return;
-  await resetCartForContextChange();
-});
+  },
+);
 
 usePaginatedTableInfiniteScroll({
   tableRef,
@@ -509,7 +512,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
           class="sm:col-span-2"
         >
           <CatalogDropdownSelect
-            v-model="userId"
+            v-model="user"
             class="w-full"
             :placeholder="userPlaceholder"
             :fetcher="userDropdownFetcher"

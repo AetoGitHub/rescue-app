@@ -8,6 +8,7 @@ import type {
   RescueCompanySettings,
 } from '~/interfaces/rescue/company-settings';
 import { isContractLine } from '~/utils/rescue-company-settings';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 
 export interface QuotePricingOptions {
@@ -104,9 +105,9 @@ export function resolveSellerCommissions(
 }
 
 export function isFilledQuoteLine(
-  line: Pick<RescueQuoteLine, 'service_id'>,
+  line: Pick<RescueQuoteLine, 'service'>,
 ): boolean {
-  return line.service_id != null;
+  return line.service.value != null;
 }
 
 export function roundQuoteMoney(value: number): number {
@@ -415,7 +416,7 @@ export function computeQuotePricing(
 
 /** @deprecated Use computeQuotePricing — kept for gradual migration */
 export function computeQuoteLineTotals(
-  line: Pick<RescueQuoteLine, 'quantity' | 'unit_cost' | 'contract_item_id' | 'service_id'>,
+  line: Pick<RescueQuoteLine, 'quantity' | 'unit_cost' | 'contract_item_id' | 'service'>,
   settings?: RescueCompanySettings | null,
   options?: QuotePricingOptions,
 ): Pick<
@@ -430,8 +431,7 @@ export function computeQuoteLineTotals(
 > {
   const fullLine: RescueQuoteLine = {
     id: '',
-    service_id: line.service_id ?? null,
-    service_label: '',
+    service: line.service ?? emptyCatalogDropdownSelection(),
     quantity: line.quantity,
     unit_cost: line.unit_cost,
     contract_item_id: line.contract_item_id ?? null,

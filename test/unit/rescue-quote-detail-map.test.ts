@@ -70,15 +70,13 @@ describe('mapRescueQuoteDetailFromApi', () => {
 
     expect(lines).toHaveLength(2);
     expect(lines[0]).toMatchObject({
-      service_id: 1,
-      service_label: 'Grúa plana',
+      service: { value: 1, label: 'Grúa plana' },
       quantity: 1,
       unit_cost: 500,
       applied_price: 850,
     });
     expect(lines[1]).toMatchObject({
-      service_id: 2,
-      service_label: 'Maniobra',
+      service: { value: 2, label: 'Maniobra' },
       quantity: 2,
       unit_cost: 300,
       applied_price: 900,

@@ -80,7 +80,10 @@ onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
         <div>
           <dt class="text-muted">Cliente</dt>
           <dd class="font-medium">
-            {{ state.clientLabel || (state.client ? `Cliente #${state.client}` : '—') }}
+            {{
+              state.client.label
+              || (state.client.value != null ? `Cliente #${state.client.value}` : '—')
+            }}
           </dd>
         </div>
         <div v-if="state.serialNumber">
@@ -91,10 +94,10 @@ onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
           <dt class="text-muted">Público en general</dt>
           <dd class="font-medium">Sí</dd>
         </div>
-        <div v-if="state.manager">
+        <div v-if="state.manager.value != null">
           <dt class="text-muted">Gestor</dt>
           <dd class="font-medium">
-            {{ state.managerLabel || `Usuario #${state.manager}` }}
+            {{ state.manager.label || `Usuario #${state.manager.value}` }}
           </dd>
         </div>
         <div class="sm:col-span-2">
@@ -142,7 +145,7 @@ onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
           class="flex flex-wrap items-baseline justify-between gap-2 py-2 first:pt-0 last:pb-0"
         >
           <span class="font-medium">
-            {{ row.line.service_label || `Servicio #${row.line.service_id}` }}
+            {{ row.line.service.label || `Servicio #${row.line.service.value}` }}
             <span class="font-normal text-muted">
               × {{ row.line.quantity }}
             </span>

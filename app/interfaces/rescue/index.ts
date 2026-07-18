@@ -1,3 +1,5 @@
+import type { CatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
+
 export type {
   RescueChatMessage,
   RescueChatMessageCreateBody,
@@ -68,8 +70,7 @@ export interface SupplierMapPin {
 
 export interface RescueQuoteLine {
   id: string;
-  service_id: number | null;
-  service_label: string;
+  service: CatalogDropdownSelection;
   quantity: number;
   unit_cost: number;
   /** Set when the line uses a contract/convenio item variant. */

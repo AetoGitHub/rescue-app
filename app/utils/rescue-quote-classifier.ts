@@ -4,6 +4,7 @@ import {
   QUOTE_CLASSIFIER_VOICE_FILENAME_PREFIX,
   QUOTE_CLASSIFIER_VOICE_MAX_BYTES,
 } from '~/constants/quote-classifier-api';
+import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 import type {
   QuoteClassifierLineRaw,
@@ -90,8 +91,10 @@ export function mapClassifierLineToQuoteLine(
 
   return {
     id: crypto.randomUUID(),
-    service_id: serviceId,
-    service_label: String(raw.service_label ?? '').trim(),
+    service: catalogDropdownSelection(
+      serviceId,
+      String(raw.service_label ?? ''),
+    ),
     quantity: Number.isFinite(Number(raw.quantity)) ? Number(raw.quantity) : 0,
     unit_cost: Number.isFinite(Number(raw.unit_cost)) ? Number(raw.unit_cost) : 0,
     contract_item_id: null,

@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 import {
+  catalogDropdownSelection,
+  emptyCatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
+import {
   buildRescueQuoteCreateBody,
   buildRescueQuoteUpdateBody,
   formatQuoteDecimal,
@@ -12,9 +16,7 @@ function line(
 ): RescueQuoteLine {
   return {
     id: partial.id ?? crypto.randomUUID(),
-    service_id:
-      partial.service_id !== undefined ? partial.service_id : 1,
-    service_label: partial.service_label ?? 'Servicio',
+    service: partial.service ?? catalogDropdownSelection(1, 'Servicio'),
     quantity: partial.quantity,
     unit_cost: partial.unit_cost,
     contract_item_id: partial.contract_item_id ?? null,
@@ -25,8 +27,7 @@ function line(
 function emptyLine(): RescueQuoteLine {
   return {
     id: crypto.randomUUID(),
-    service_id: null,
-    service_label: '',
+    service: emptyCatalogDropdownSelection(),
     quantity: 0,
     unit_cost: 0,
     contract_item_id: null,
@@ -74,9 +75,9 @@ describe('buildRescueQuoteCreateBody', () => {
 
   it('maps header totals and three standard lines', () => {
     const lines = [
-      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
-      line({ quantity: 1, unit_cost: 300, service_id: 2 }),
-      line({ quantity: 1, unit_cost: 200, service_id: 3 }),
+      line({ quantity: 1, unit_cost: 500, service: catalogDropdownSelection(1) }),
+      line({ quantity: 1, unit_cost: 300, service: catalogDropdownSelection(2) }),
+      line({ quantity: 1, unit_cost: 200, service: catalogDropdownSelection(3) }),
     ];
 
     const body = buildRescueQuoteCreateBody(42, lines, baseSettings, {
@@ -120,10 +121,10 @@ describe('buildRescueQuoteCreateBody', () => {
       line({
         quantity: 3,
         unit_cost: 500,
-        service_id: 1,
+        service: catalogDropdownSelection(1),
         contract_item_id: 10,
       }),
-      line({ quantity: 1, unit_cost: 200, service_id: 2 }),
+      line({ quantity: 1, unit_cost: 200, service: catalogDropdownSelection(2) }),
     ];
 
     const body = buildRescueQuoteCreateBody(7, lines, baseSettings, {
@@ -222,7 +223,7 @@ describe('buildRescueQuoteCreateBody', () => {
 describe('buildRescueQuoteUpdateBody', () => {
   it('omits rescue field from create body', () => {
     const lines = [
-      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
+      line({ quantity: 1, unit_cost: 500, service: catalogDropdownSelection(1) }),
     ];
     const updateBody = buildRescueQuoteUpdateBody(lines, baseSettings, {
       ivaRate: 0,
@@ -246,9 +247,9 @@ describe('buildRescueQuoteUpdateBody', () => {
 describe('buildRescueQuoteCreateBody without client seller', () => {
   it('zeros seller fields and omits comissions_apply when clientSellerId is null', () => {
     const lines = [
-      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
-      line({ quantity: 1, unit_cost: 300, service_id: 2 }),
-      line({ quantity: 1, unit_cost: 200, service_id: 3 }),
+      line({ quantity: 1, unit_cost: 500, service: catalogDropdownSelection(1) }),
+      line({ quantity: 1, unit_cost: 300, service: catalogDropdownSelection(2) }),
+      line({ quantity: 1, unit_cost: 200, service: catalogDropdownSelection(3) }),
     ];
 
     const body = buildRescueQuoteCreateBody(42, lines, baseSettings, {
@@ -273,9 +274,9 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
 
   it('keeps seller commissions when clientSellerId is set', () => {
     const lines = [
-      line({ quantity: 1, unit_cost: 500, service_id: 1 }),
-      line({ quantity: 1, unit_cost: 300, service_id: 2 }),
-      line({ quantity: 1, unit_cost: 200, service_id: 3 }),
+      line({ quantity: 1, unit_cost: 500, service: catalogDropdownSelection(1) }),
+      line({ quantity: 1, unit_cost: 300, service: catalogDropdownSelection(2) }),
+      line({ quantity: 1, unit_cost: 200, service: catalogDropdownSelection(3) }),
     ];
 
     const body = buildRescueQuoteCreateBody(42, lines, baseSettings, {
@@ -295,11 +296,11 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
       line({
         quantity: 1,
         unit_cost: 500,
-        service_id: 1,
+        service: catalogDropdownSelection(1),
         applied_price: 900,
       }),
-      line({ quantity: 1, unit_cost: 300, service_id: 2 }),
-      line({ quantity: 1, unit_cost: 200, service_id: 3 }),
+      line({ quantity: 1, unit_cost: 300, service: catalogDropdownSelection(2) }),
+      line({ quantity: 1, unit_cost: 200, service: catalogDropdownSelection(3) }),
     ];
 
     const body = buildRescueQuoteCreateBody(42, lines, baseSettings, {

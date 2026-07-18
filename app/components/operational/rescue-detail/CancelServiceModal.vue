@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { CatalogDropdownFetcher } from '~/composables/useCatalogDropdown';
-import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import {
+  emptyCatalogDropdownSelection,
+  type CatalogDropdownRow,
+  type CatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
 const open = defineModel<boolean>('open', { required: true });
@@ -13,9 +17,13 @@ const emit = defineEmits<{
   submit: [];
 }>();
 
-const cancellationReasonId = defineModel<number | null>('cancellationReasonId', {
-  required: true,
-});
+const cancellationReason = defineModel<CatalogDropdownSelection>(
+  'cancellationReason',
+  {
+    required: true,
+    default: () => emptyCatalogDropdownSelection(),
+  },
+);
 
 const apiFetch = useApiFetch();
 
@@ -51,7 +59,7 @@ function onSubmit() {
           required
         >
           <CatalogDropdownSelect
-            v-model="cancellationReasonId"
+            v-model="cancellationReason"
             placeholder="Selecciona un motivo"
             :fetcher="fetchCancellationReasonDropdown"
           />

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import {
   applyContractToLine,
   dedupeContractItemsByService,
@@ -22,8 +23,7 @@ function quoteLine(
 ): RescueQuoteLine {
   return {
     id: 'line-1',
-    service_id: null,
-    service_label: '',
+    service: emptyCatalogDropdownSelection(),
     quantity: 1,
     unit_cost: 0,
     contract_item_id: null,

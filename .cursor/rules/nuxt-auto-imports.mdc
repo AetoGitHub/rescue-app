@@ -28,7 +28,7 @@ const summary = computeQuoteSummary(state.quote_lines);
 ```vue
 <!-- GOOD — auto-imported component -->
 <CatalogDropdownSelect
-  v-model="line.service_id"
+  v-model="line.service"
   :fetcher="fetchServiceDropdown"
 />
 ```

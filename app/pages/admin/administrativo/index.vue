@@ -10,6 +10,7 @@ import {
 } from '~/constants/administrative-kanban';
 import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
 import type { AdministrativeBoardFilters } from '~/interfaces/administrative/board-filters';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import type { RescueServiceType } from '~/interfaces/rescue';
 import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
@@ -101,7 +102,7 @@ async function onSendAdminDocSubmit(body: RescueAdminDocBody) {
 
 const folioSearch = ref('');
 const debouncedFolio = refDebounced(folioSearch, 300);
-const companyId = ref<number | null>(null);
+const company = ref(emptyCatalogDropdownSelection());
 const createdFrom = ref('');
 const createdTo = ref('');
 const selectedServiceTypes = ref<RescueServiceType[]>([]);
@@ -109,8 +110,9 @@ const selectedOperativeStatus = ref<AdministrativeEligibleOperativeStatus | null
   null,
 );
 const selectedBillingStatus = ref<AdministrativeBillingStatus | null>(null);
-const managerId = ref<number | null>(null);
-const sellerId = ref<number | null>(null);
+const manager = ref(emptyCatalogDropdownSelection());
+const seller = ref(emptyCatalogDropdownSelection());
+const client = ref(emptyCatalogDropdownSelection());
 
 const boardFilters = computed<AdministrativeBoardFilters>(() => ({
   folio: debouncedFolio.value,
@@ -119,9 +121,10 @@ const boardFilters = computed<AdministrativeBoardFilters>(() => ({
   serviceTypes: selectedServiceTypes.value,
   operativeStatus: selectedOperativeStatus.value,
   billingStatus: selectedBillingStatus.value,
-  companyId: companyId.value,
-  managerId: managerId.value,
-  sellerId: sellerId.value,
+  company: company.value,
+  manager: manager.value,
+  seller: seller.value,
+  client: client.value,
 }));
 
 const administrativeServiceTypeOptions = RESCUE_SERVICE_TYPE_OPTIONS.filter(
@@ -252,9 +255,10 @@ function clearFilters() {
   selectedServiceTypes.value = [];
   selectedOperativeStatus.value = null;
   selectedBillingStatus.value = null;
-  companyId.value = null;
-  managerId.value = null;
-  sellerId.value = null;
+  company.value = emptyCatalogDropdownSelection();
+  manager.value = emptyCatalogDropdownSelection();
+  seller.value = emptyCatalogDropdownSelection();
+  client.value = emptyCatalogDropdownSelection();
 }
 
 function exportCsv() {
@@ -273,6 +277,7 @@ function exportCsv() {
 
 const {
   fetchAdministrativeCompanyDropdown,
+  fetchAdministrativeClientDropdown,
   fetchAdministrativeManagerDropdown,
   fetchAdministrativeSellerDropdown,
 } = useAdministrativeBoardDropdownFetchers();
@@ -379,7 +384,7 @@ const {
                 :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
               >
                 <CatalogDropdownSelect
-                  v-model="managerId"
+                  v-model="manager"
                   class="w-full"
                   placeholder="Todos"
                   :fetcher="fetchAdministrativeManagerDropdown"
@@ -391,7 +396,7 @@ const {
                 :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
               >
                 <CatalogDropdownSelect
-                  v-model="sellerId"
+                  v-model="seller"
                   class="w-full"
                   placeholder="Todos"
                   :fetcher="fetchAdministrativeSellerDropdown"
@@ -403,10 +408,22 @@ const {
                 :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
               >
                 <CatalogDropdownSelect
-                  v-model="companyId"
+                  v-model="company"
                   class="w-full"
                   placeholder="Todas"
                   :fetcher="fetchAdministrativeCompanyDropdown"
+                />
+              </UFormField>
+
+              <UFormField
+                label="Cliente"
+                :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
+              >
+                <CatalogDropdownSelect
+                  v-model="client"
+                  class="w-full"
+                  placeholder="Todos"
+                  :fetcher="fetchAdministrativeClientDropdown"
                 />
               </UFormField>
             </template>
@@ -623,7 +640,7 @@ const {
                   :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
                 >
                   <CatalogDropdownSelect
-                    v-model="managerId"
+                    v-model="manager"
                     class="w-full"
                     placeholder="Todos"
                     :fetcher="fetchAdministrativeManagerDropdown"
@@ -635,7 +652,7 @@ const {
                   :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
                 >
                   <CatalogDropdownSelect
-                    v-model="sellerId"
+                    v-model="seller"
                     class="w-full"
                     placeholder="Todos"
                     :fetcher="fetchAdministrativeSellerDropdown"
@@ -644,14 +661,26 @@ const {
 
                 <UFormField
                   label="Compañía"
-                  class="sm:col-span-2 lg:col-span-3"
                   :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
                 >
                   <CatalogDropdownSelect
-                    v-model="companyId"
+                    v-model="company"
                     class="w-full"
                     placeholder="Todas"
                     :fetcher="fetchAdministrativeCompanyDropdown"
+                  />
+                </UFormField>
+
+                <UFormField
+                  label="Cliente"
+                  class="sm:col-span-2 lg:col-span-2"
+                  :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
+                >
+                  <CatalogDropdownSelect
+                    v-model="client"
+                    class="w-full"
+                    placeholder="Todos"
+                    :fetcher="fetchAdministrativeClientDropdown"
                   />
                 </UFormField>
               </div>

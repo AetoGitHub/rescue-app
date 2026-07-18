@@ -3,6 +3,10 @@ import { useMutation, useQueryCache } from '@pinia/colada';
 import type { FormSubmitEvent } from '@nuxt/ui';
 import type { ClientCreateBody } from '~/interfaces/catalogs/client';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import {
+  catalogDropdownSelection,
+  emptyCatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type { infer as ZodInfer } from 'zod';
 import {
@@ -21,15 +25,7 @@ import { slideoverTabsUi } from '~/constants/tabs-layout';
 
 const toast = useToast();
 
-type ClientFormState = Omit<
-  ZodInfer<typeof clientCreateSchema>,
-  'company' | 'seller'
-> & {
-  company?: number;
-  seller?: number;
-  companyLabel: string;
-  sellerLabel: string;
-};
+type ClientFormState = ZodInfer<typeof clientCreateSchema>;
 
 const open = ref(false);
 const editingId = ref<number | null>(null);
@@ -86,10 +82,8 @@ function emptyState(): ClientFormState {
     commission_fixed: '0.00',
     price_multiplier: '1.00',
     loan_multiplier: '1.00',
-    company: undefined,
-    seller: undefined,
-    companyLabel: '',
-    sellerLabel: '',
+    company: emptyCatalogDropdownSelection(),
+    seller: emptyCatalogDropdownSelection(),
     notes: '',
     is_active: true,
   };
@@ -121,15 +115,17 @@ const showCreateCreditSection = computed(
 const hasLinkedCredit = computed(() => editingCreditId.value != null);
 
 const companyCredit = useCompanyCredit({
-  companyId: computed(() => (isEdit.value ? null : state.company ?? null)),
-  enabled: computed(() => !isEdit.value && state.company != null),
+  companyId: computed(() =>
+    isEdit.value ? null : state.company.value ?? null,
+  ),
+  enabled: computed(() => !isEdit.value && state.company.value != null),
 });
 
 /** Company already has its own credit line: show it read-only, never create client credit. */
 const companyCreditInherited = computed(
   () =>
     !isEdit.value
-    && state.company != null
+    && state.company.value != null
     && companyCredit.hasCreditLine.value,
 );
 
@@ -239,9 +235,16 @@ async function loadDetail(id: number) {
       `/api/catalogue/client/detail/${id}/`,
     );
     const mapped = mapClientDetail(raw);
-    Object.assign(state, emptyState(), mapped, {
-      companyLabel: String(raw.company_name ?? '').trim(),
-      sellerLabel: String(raw.seller_name ?? '').trim(),
+    Object.assign(state, emptyState(), {
+      ...mapped,
+      company: catalogDropdownSelection(
+        mapped.company,
+        String(raw.company_name ?? '').trim(),
+      ),
+      seller: catalogDropdownSelection(
+        mapped.seller,
+        String(raw.seller_name ?? '').trim(),
+      ),
     });
     clientDetailRaw.value = raw;
     clientCsfUrl.value = mapClientCsfUrl(raw);
@@ -283,7 +286,7 @@ watch(open, (v) => {
 });
 
 watch(
-  () => state.company,
+  () => state.company.value,
   async (companyId, prev, onCleanup) => {
     if (isEdit.value || companyId == null || companyId === prev) return;
 
@@ -432,10 +435,11 @@ const { mutate, asyncStatus } = useMutation({
 });
 
 function buildSubmitBody(data: ZodInfer<typeof clientCreateSchema>): ClientCreateBody {
+  const { company, seller, ...rest } = data;
   return {
-    ...data,
-    company: data.company ?? null,
-    seller: data.seller ?? null,
+    ...rest,
+    company: company.value ?? null,
+    seller: seller.value ?? null,
     is_active: data.is_active ?? true,
   };
 }
@@ -595,7 +599,6 @@ async function requestSubmit() {
                 <UFormField label="Compañía" name="company">
                   <CatalogDropdownSelect
                     v-model="state.company"
-                    v-model:label="state.companyLabel"
                     placeholder="Buscar compañía (opcional)"
                     :fetcher="fetchCompanyDropdown"
                   />
@@ -672,7 +675,6 @@ async function requestSubmit() {
                 <UFormField label="Vendedor asignado" name="seller">
                   <CatalogDropdownSelect
                     v-model="state.seller"
-                    v-model:label="state.sellerLabel"
                     placeholder="Buscar vendedor"
                     :fetcher="fetchSellerDropdown"
                   />
@@ -766,7 +768,7 @@ async function requestSubmit() {
               v-model:is-active="state.is_active!"
               v-model:credit-state="creditState"
               :client-id="editingId"
-              :company-id="state.company ?? null"
+              :company-id="state.company.value ?? null"
               :credit-id="editingCreditId"
               :client-name="state.name"
               :client-type="state.client_type"
@@ -808,7 +810,6 @@ async function requestSubmit() {
           <UFormField label="Compañía" name="company">
             <CatalogDropdownSelect
               v-model="state.company"
-              v-model:label="state.companyLabel"
               placeholder="Buscar compañía (opcional)"
               :fetcher="fetchCompanyDropdown"
             />
@@ -885,7 +886,6 @@ async function requestSubmit() {
           <UFormField label="Vendedor asignado" name="seller" required>
             <CatalogDropdownSelect
               v-model="state.seller"
-              v-model:label="state.sellerLabel"
               placeholder="Buscar vendedor"
               :fetcher="fetchSellerDropdown"
             />

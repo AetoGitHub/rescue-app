@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
+import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import { assertClientCreditForQuote } from '~/utils/credit-check';
 
 function filledLine(): RescueQuoteLine {
   return {
     id: 'line-1',
-    service_id: 1,
-    service_label: 'Servicio',
+    service: catalogDropdownSelection(1, 'Servicio'),
     quantity: 1,
     unit_cost: 1000,
     contract_item_id: null,

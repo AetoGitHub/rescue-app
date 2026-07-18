@@ -5,6 +5,10 @@ import {
   quoteLinesHaveFilledEntries,
 } from '~/utils/credit-quote-warning';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
+import {
+  catalogDropdownSelection,
+  emptyCatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 
 const creditSnapshot: ClientCreditSnapshot = {
   client_type: 'CREDIT',
@@ -15,8 +19,7 @@ const creditSnapshot: ClientCreditSnapshot = {
 function filledLine(): RescueQuoteLine {
   return {
     id: 'line-1',
-    service_id: 1,
-    service_label: 'Servicio',
+    service: catalogDropdownSelection(1, 'Servicio'),
     quantity: 1,
     unit_cost: 1000,
     contract_item_id: null,
@@ -64,8 +67,7 @@ describe('quoteLinesHaveFilledEntries', () => {
       quoteLinesHaveFilledEntries([
         {
           id: 'empty',
-          service_id: null,
-          service_label: '',
+          service: emptyCatalogDropdownSelection(),
           quantity: 0,
           unit_cost: 0,
           contract_item_id: null,

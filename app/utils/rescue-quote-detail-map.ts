@@ -1,3 +1,4 @@
+import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import type { RescueQuoteDetail } from '~/interfaces/rescue/quote';
@@ -44,8 +45,10 @@ export function mapRescueQuoteDetailFromApi(
 
     return {
       id: crypto.randomUUID(),
-      service_id: service.service_id,
-      service_label: String(service.service_name ?? '').trim(),
+      service: catalogDropdownSelection(
+        service.service_id,
+        String(service.service_name ?? ''),
+      ),
       quantity,
       unit_cost: unitCost,
       contract_item_id: inferContractItemId(

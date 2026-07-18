@@ -1,14 +1,16 @@
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import type { RescueServiceType } from '~/interfaces/rescue';
 import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 
 export function emptyOperationalBoardFilters(): OperationalBoardFilters {
   return {
     folio: '',
     serviceTypes: [],
     operativeStatus: null,
-    companyId: null,
-    managerId: null,
+    company: emptyCatalogDropdownSelection(),
+    manager: emptyCatalogDropdownSelection(),
+    client: emptyCatalogDropdownSelection(),
     pendingAdvance: false,
     slaAlert: false,
     commentAlert: false,
@@ -30,12 +32,16 @@ export function buildOperationalCardsQuery(
     query.service_type = filters.serviceTypes.join(',');
   }
 
-  if (filters.companyId != null) {
-    query.company = String(filters.companyId);
+  if (filters.company.value != null) {
+    query.company = String(filters.company.value);
   }
 
-  if (filters.managerId != null) {
-    query.manager = String(filters.managerId);
+  if (filters.manager.value != null) {
+    query.manager = String(filters.manager.value);
+  }
+
+  if (filters.client.value != null) {
+    query.client = String(filters.client.value);
   }
 
   if (filters.pendingAdvance) {
@@ -55,7 +61,7 @@ export function buildOperationalCardsQuery(
 
 /**
  * Query for GET /api/rescue/list/
- * Optional: `status`, `folio`, `service_type`, `company`, `manager`.
+ * Optional: `status`, `folio`, `service_type`, `company`, `manager`, `client`.
  */
 export function buildOperationalListQuery(
   filters: OperationalBoardFilters,
@@ -75,12 +81,16 @@ export function buildOperationalListQuery(
     query.service_type = filters.serviceTypes.join(',');
   }
 
-  if (filters.companyId != null) {
-    query.company = String(filters.companyId);
+  if (filters.company.value != null) {
+    query.company = String(filters.company.value);
   }
 
-  if (filters.managerId != null) {
-    query.manager = String(filters.managerId);
+  if (filters.manager.value != null) {
+    query.manager = String(filters.manager.value);
+  }
+
+  if (filters.client.value != null) {
+    query.client = String(filters.client.value);
   }
 
   return query;
@@ -96,21 +106,23 @@ export function operationalListApiFiltersKey(
     filters.operativeStatus ?? '',
     filters.folio.trim(),
     serviceTypes,
-    filters.companyId != null ? String(filters.companyId) : '',
-    filters.managerId != null ? String(filters.managerId) : '',
+    filters.company.value != null ? String(filters.company.value) : '',
+    filters.manager.value != null ? String(filters.manager.value) : '',
+    filters.client.value != null ? String(filters.client.value) : '',
   ];
 }
 
 export function operationalBoardFiltersKey(
   filters: OperationalBoardFilters,
-): [string, string, string, string, string, string, string] {
+): string[] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
 
   return [
     filters.folio.trim(),
     serviceTypes,
-    filters.companyId != null ? String(filters.companyId) : '',
-    filters.managerId != null ? String(filters.managerId) : '',
+    filters.company.value != null ? String(filters.company.value) : '',
+    filters.manager.value != null ? String(filters.manager.value) : '',
+    filters.client.value != null ? String(filters.client.value) : '',
     filters.pendingAdvance ? '1' : '0',
     filters.slaAlert ? '1' : '0',
     filters.commentAlert ? '1' : '0',

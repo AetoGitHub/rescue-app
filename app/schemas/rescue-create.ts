@@ -5,6 +5,10 @@ import type {
   RescueServiceType,
 } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
+import {
+  emptyCatalogDropdownSelection,
+  type CatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import { getContractItemById } from '~/utils/rescue-company-settings';
 import {
   hasExtendedRescueWizardFlow,
@@ -16,6 +20,18 @@ const RESCUE_SERVICE_TYPES = [
   'proyect',
   'direct_budget',
 ] as const;
+
+const catalogSelectionSchema = z.object({
+  value: z.number().int().positive().nullable(),
+  label: z.string(),
+});
+
+const clientField = catalogSelectionSchema.refine(
+  (s) => s.value != null,
+  { error: 'Selecciona un cliente' },
+);
+
+const managerFieldOptional = catalogSelectionSchema;
 
 export function parseRescueCoord(
   value: string | null | undefined,
@@ -89,15 +105,11 @@ const serviceTypeField = z.enum(RESCUE_SERVICE_TYPES, {
   error: 'Selecciona un tipo de servicio',
 });
 
-const clientField = z.number().int().positive({ error: 'Selecciona un cliente' });
-
 const serialNumberField = z
   .string()
   .transform((s) => s.trim())
   .optional()
   .default('');
-
-const managerFieldOptional = z.number().int().positive().optional();
 
 export const rescueStepBasicsSchema = z
   .object({
@@ -108,7 +120,7 @@ export const rescueStepBasicsSchema = z
     manager: managerFieldOptional,
   })
   .superRefine((data, ctx) => {
-    if (data.manager == null) {
+    if (data.manager.value == null) {
       ctx.addIssue({
         code: 'custom',
         message: 'Selecciona un gestor',
@@ -133,8 +145,7 @@ export const rescueStepSupplierSchema = z.object({
 
 const rescueQuoteLineSchema = z.object({
   id: z.string(),
-  service_id: z.number().int().positive().nullable(),
-  service_label: z.string(),
+  service: catalogSelectionSchema,
   quantity: z.number(),
   unit_cost: z.number(),
   contract_item_id: z.number().int().positive().nullable(),
@@ -149,11 +160,11 @@ function validateQuoteLineAtIndex(
   settings: RescueCompanySettings | null | undefined,
   ctx: z.RefinementCtx,
 ) {
-  if (line.service_id == null) {
+  if (line.service.value == null) {
     ctx.addIssue({
       code: 'custom',
       message: 'Selecciona un servicio',
-      path: ['quote_lines', index, 'service_id'],
+      path: ['quote_lines', index, 'service', 'value'],
     });
   }
   if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
@@ -178,11 +189,14 @@ function validateQuoteLineAtIndex(
           message: 'La variante de convenio ya no está disponible',
           path: ['quote_lines', index, 'contract_item_id'],
         });
-      } else if (line.service_id != null && item.service_id !== line.service_id) {
+      } else if (
+        line.service.value != null
+        && item.service_id !== line.service.value
+      ) {
         ctx.addIssue({
           code: 'custom',
           message: 'El servicio no coincide con el convenio seleccionado',
-          path: ['quote_lines', index, 'service_id'],
+          path: ['quote_lines', index, 'service', 'value'],
         });
       }
     }
@@ -194,7 +208,7 @@ function refineQuoteLines(
   ctx: z.RefinementCtx,
   options: { required: boolean },
 ) {
-  const hasFilledLine = quoteLines.some((line) => line.service_id != null);
+  const hasFilledLine = quoteLines.some((line) => line.service.value != null);
   if (!hasFilledLine) {
     if (options.required) {
       ctx.addIssue({
@@ -207,7 +221,7 @@ function refineQuoteLines(
   }
 
   quoteLines.forEach((line, index) => {
-    if (line.service_id == null) return;
+    if (line.service.value == null) return;
     validateQuoteLineAtIndex(line, index, settings, ctx);
   });
 }
@@ -277,7 +291,7 @@ export const rescueCreateFormSchema = z
     quote_lines: z.array(rescueQuoteLineSchema),
   })
   .superRefine((data, ctx) => {
-    if (data.manager == null) {
+    if (data.manager.value == null) {
       ctx.addIssue({
         code: 'custom',
         message: 'Selecciona un gestor',
@@ -324,7 +338,7 @@ export type ClientCreditSnapshot = {
 
 export type RescueRequestFormState = {
   service_type: RescueServiceType;
-  client: number | undefined;
+  client: CatalogDropdownSelection;
   general_public: boolean;
   serialNumber: string;
   service_description: string;
@@ -333,10 +347,8 @@ export type RescueRequestFormState = {
   location_description: string;
   supplier: number | null;
   supplierLabel: string;
-  manager: number | undefined;
-  managerLabel: string;
+  manager: CatalogDropdownSelection;
   internal_notes: string;
-  clientLabel: string;
   client_credit_snapshot: ClientCreditSnapshot | null;
   /** Client's assigned seller; null when none — zeros seller commissions in quotes. */
   client_seller_id: number | null;
@@ -347,7 +359,7 @@ export type RescueRequestFormState = {
 export function emptyRescueRequestState(): RescueRequestFormState {
   return {
     service_type: 'rescue',
-    client: undefined,
+    client: emptyCatalogDropdownSelection(),
     general_public: false,
     serialNumber: '',
     service_description: '',
@@ -356,10 +368,8 @@ export function emptyRescueRequestState(): RescueRequestFormState {
     location_description: '',
     supplier: null,
     supplierLabel: '',
-    manager: undefined,
-    managerLabel: '',
+    manager: emptyCatalogDropdownSelection(),
     internal_notes: '',
-    clientLabel: '',
     client_credit_snapshot: null,
     client_seller_id: null,
     quote_lines: initialQuoteLinesForServiceType('rescue'),
@@ -403,12 +413,12 @@ export function rescueFormToCreateBody(
 
   return {
     service_type: data.service_type,
-    client: data.client,
+    client: data.client.value!,
     general_public: data.general_public,
     ...(serial ? { serial_number: serial } : {}),
     service_description: data.service_description,
     supplier: data.supplier ?? null,
-    operator: data.manager ?? null,
+    operator: data.manager.value,
     location_latitude: skipLocation ? null : latitude || null,
     location_longitude: skipLocation ? null : longitude || null,
     location_description: data.location_description,

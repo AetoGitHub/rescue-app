@@ -5,11 +5,14 @@ import {
   rescueCreateFormSchema,
   rescueStepSupplierSchema,
 } from '~/schemas/rescue-create';
+import {
+  catalogDropdownSelection,
+  emptyCatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 
 const emptyQuoteLine = {
   id: 'line-1',
-  service_id: null as number | null,
-  service_label: '',
+  service: emptyCatalogDropdownSelection(),
   quantity: 1,
   unit_cost: 0,
   contract_item_id: null as number | null,
@@ -18,8 +21,7 @@ const emptyQuoteLine = {
 
 const validQuoteLine = {
   id: 'line-1',
-  service_id: 1,
-  service_label: 'Grúa',
+  service: catalogDropdownSelection(1, 'Grúa'),
   quantity: 2,
   unit_cost: 500,
   contract_item_id: null as number | null,
@@ -27,10 +29,10 @@ const validQuoteLine = {
 };
 
 const baseFormFields = {
-  client: 1,
+  client: { value: 1, label: 'Cliente' },
   general_public: false,
   serialNumber: '',
-  manager: 1,
+  manager: { value: 1, label: 'Gestor' },
   location_latitude: '',
   location_longitude: '',
   location_description: '',

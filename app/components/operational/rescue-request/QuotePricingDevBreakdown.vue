@@ -225,9 +225,9 @@ const totalChargedDetail = computed(() => {
         >
           <p class="font-medium">
             {{
-              row.line.service_label
-                || (row.line.service_id
-                  ? `Servicio #${row.line.service_id}`
+              row.line.service.label
+                || (row.line.service.value
+                  ? `Servicio #${row.line.service.value}`
                   : 'Sin servicio')
             }}
             <UBadge

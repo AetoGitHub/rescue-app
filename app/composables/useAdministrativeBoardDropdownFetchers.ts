@@ -40,9 +40,35 @@ export function useAdministrativeBoardDropdownFetchers() {
       { query: { name }, signal: options?.signal },
     );
 
+  const fetchAdministrativeClientDropdown: CatalogDropdownFetcher = async (
+    name,
+    options,
+  ) => {
+    try {
+      return await apiFetch<PaginatedResponse<CatalogDropdownRow>>(
+        '/api/catalogue/client/dropdown/',
+        { query: { name }, signal: options?.signal },
+      );
+    } catch {
+      const res = await apiFetch<PaginatedResponse<{ id: number; name: string }>>(
+        '/api/catalogue/client/list/',
+        { query: { name }, signal: options?.signal },
+      );
+      return {
+        next: res.next,
+        previous: res.previous,
+        results: (res.results ?? []).map((row) => ({
+          id: row.id,
+          name: row.name,
+        })),
+      };
+    }
+  };
+
   return {
     fetchAdministrativeManagerDropdown,
     fetchAdministrativeSellerDropdown,
     fetchAdministrativeCompanyDropdown,
+    fetchAdministrativeClientDropdown,
   };
 }

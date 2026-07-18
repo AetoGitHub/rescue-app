@@ -28,21 +28,21 @@ const {
     />
 
     <CatalogDropdownSelect
-      v-model="filters.companyId"
+      v-model="filters.company"
       class="w-full"
       placeholder="Todas las compañías"
       :fetcher="fetchAdministrativeCompanyDropdown"
     />
 
     <CatalogDropdownSelect
-      v-model="filters.sellerId"
+      v-model="filters.seller"
       class="w-full"
       placeholder="Todos los responsables"
       :fetcher="fetchAdministrativeSellerDropdown"
     />
 
     <CatalogDropdownSelect
-      v-model="filters.operatorId"
+      v-model="filters.operator"
       class="w-full"
       placeholder="Todos los operadores"
       :fetcher="fetchAdministrativeManagerDropdown"

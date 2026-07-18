@@ -4,6 +4,11 @@ import { SERVICE_UNIT_OPTIONS } from '~/constants/catalog-select-options';
 import type { AlegraItemDisplay } from '~/interfaces/alegra/item.interface';
 import type { ServiceCreateBody, ServiceUpdateBody } from '~/interfaces/catalogs/service';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import {
+  catalogDropdownSelection,
+  emptyCatalogDropdownSelection,
+  type CatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import {
   adminListSlideoverBodyUi,
@@ -15,11 +20,13 @@ import { serviceCreateSchema, serviceUpdateSchema } from '~/schemas/catalog-crea
 const toast = useToast();
 const apiFetch = useApiFetch();
 
-type ServiceFormState = Omit<ServiceCreateBody, 'category' | 'alegra_id'> & {
-  category?: number;
-  alegra_id?: number;
-  categoryLabel: string;
-  alegraLabel: string;
+type ServiceFormState = {
+  name: string;
+  description: string;
+  category: CatalogDropdownSelection;
+  unit: ServiceCreateBody['unit'];
+  warranty: boolean;
+  alegra_id: CatalogDropdownSelection;
 };
 
 const open = ref(false);
@@ -37,12 +44,10 @@ function emptyState(): ServiceFormState {
   return {
     name: '',
     description: '',
-    category: undefined,
-    categoryLabel: '',
+    category: emptyCatalogDropdownSelection(),
     unit: 'service',
     warranty: false,
-    alegra_id: undefined,
-    alegraLabel: '',
+    alegra_id: emptyCatalogDropdownSelection(),
   };
 }
 
@@ -78,11 +83,18 @@ async function loadDetail(id: number) {
       `/api/catalogue/service/detail/${id}/`,
     );
     const detail = mapServiceDetailApi(raw);
+    const mapped = mapServiceDetail(raw);
     linkedAlegraId.value = detail.alegra_id;
-    Object.assign(state, emptyState(), mapServiceDetail(raw), {
-      categoryLabel: detail.category_name.trim(),
+    Object.assign(state, emptyState(), {
+      name: mapped.name,
+      description: mapped.description,
+      unit: mapped.unit,
+      warranty: mapped.warranty,
+      category: catalogDropdownSelection(
+        detail.category_id > 0 ? detail.category_id : null,
+        detail.category_name.trim(),
+      ),
     });
-    delete state.alegra_id;
   } catch (e) {
     console.error(e);
     toast.add({
@@ -197,15 +209,28 @@ const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function onSubmit(payload: { data: ServiceFormState }) {
   if (isEdit.value) {
-    const { alegra_id: _ignored, categoryLabel: _c, alegraLabel: _a, ...body } =
-      payload.data;
-    mutate({ body: body as ServiceUpdateBody, id: editingId.value });
+    mutate({
+      body: {
+        name: payload.data.name,
+        description: payload.data.description,
+        category: payload.data.category.value!,
+        unit: payload.data.unit,
+        warranty: payload.data.warranty,
+      },
+      id: editingId.value,
+    });
     return;
   }
 
-  const { categoryLabel: _c, alegraLabel: _a, ...body } = payload.data;
   mutate({
-    body: body as ServiceCreateBody,
+    body: {
+      name: payload.data.name,
+      description: payload.data.description,
+      category: payload.data.category.value!,
+      unit: payload.data.unit,
+      warranty: payload.data.warranty,
+      alegra_id: payload.data.alegra_id.value!,
+    },
     id: editingId.value,
   });
 }
@@ -258,7 +283,6 @@ async function requestSubmit() {
         <UFormField label="Categoría" name="category" required>
           <CatalogDropdownSelect
             v-model="state.category"
-            v-model:label="state.categoryLabel"
             placeholder="Buscar categoría"
             :fetcher="fetchCategoryDropdown"
           />
@@ -272,7 +296,6 @@ async function requestSubmit() {
         >
           <CatalogDropdownSelect
             v-model="state.alegra_id"
-            v-model:label="state.alegraLabel"
             placeholder="Buscar ítem en Alegra..."
             :fetcher="fetchAlegraItemsDropdown"
             infinite="offset"

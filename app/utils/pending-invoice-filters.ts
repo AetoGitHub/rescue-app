@@ -3,14 +3,18 @@ import type {
   PendingInvoiceDetailFilters,
   PendingInvoiceStatusFilter,
 } from '~/interfaces/invoicing/pending-invoice-filters';
+import {
+  catalogDropdownSelection,
+  emptyCatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import type { LocationQuery } from 'vue-router';
 
 export function emptyPendingInvoiceDetailFilters(): PendingInvoiceDetailFilters {
   return {
     search: '',
-    companyId: null,
-    sellerId: null,
-    operatorId: null,
+    company: emptyCatalogDropdownSelection(),
+    seller: emptyCatalogDropdownSelection(),
+    operator: emptyCatalogDropdownSelection(),
     month: null,
     year: null,
     status: null,
@@ -59,16 +63,16 @@ export function buildPendingInvoiceDetailQuery(
     query.search = search;
   }
 
-  if (filters.companyId != null) {
-    query.company = String(filters.companyId);
+  if (filters.company.value != null) {
+    query.company = String(filters.company.value);
   }
 
-  if (filters.sellerId != null) {
-    query.seller = String(filters.sellerId);
+  if (filters.seller.value != null) {
+    query.seller = String(filters.seller.value);
   }
 
-  if (filters.operatorId != null) {
-    query.operator = String(filters.operatorId);
+  if (filters.operator.value != null) {
+    query.operator = String(filters.operator.value);
   }
 
   if (filters.month != null) {
@@ -95,9 +99,9 @@ export function pendingInvoiceDetailFiltersKey(
 ): string[] {
   return [
     filters.search.trim(),
-    filters.companyId != null ? String(filters.companyId) : '',
-    filters.sellerId != null ? String(filters.sellerId) : '',
-    filters.operatorId != null ? String(filters.operatorId) : '',
+    filters.company.value != null ? String(filters.company.value) : '',
+    filters.seller.value != null ? String(filters.seller.value) : '',
+    filters.operator.value != null ? String(filters.operator.value) : '',
     filters.month != null ? String(filters.month) : '',
     filters.year != null ? String(filters.year) : '',
     filters.status ?? '',
@@ -122,9 +126,9 @@ export function parsePendingInvoiceDetailFiltersFromRoute(
 
   return {
     search: read('search')?.trim() ?? '',
-    companyId: parsePositiveInt(read('company')),
-    sellerId: parsePositiveInt(read('seller')),
-    operatorId: parsePositiveInt(read('operator')),
+    company: catalogDropdownSelection(parsePositiveInt(read('company'))),
+    seller: catalogDropdownSelection(parsePositiveInt(read('seller'))),
+    operator: catalogDropdownSelection(parsePositiveInt(read('operator'))),
     month: parseMonth(read('month')),
     year: parseYear(read('year')),
     status: parseStatus(read('status')),

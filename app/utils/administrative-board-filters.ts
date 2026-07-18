@@ -5,6 +5,7 @@ import {
 } from '~/constants/administrative-kanban';
 import type { AdministrativeBoardFilters } from '~/interfaces/administrative/board-filters';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 
 import type { RescueServiceType } from '~/interfaces/rescue';
 
@@ -16,9 +17,10 @@ export function emptyAdministrativeBoardFilters(): AdministrativeBoardFilters {
     serviceTypes: [],
     operativeStatus: null,
     billingStatus: null,
-    companyId: null,
-    managerId: null,
-    sellerId: null,
+    company: emptyCatalogDropdownSelection(),
+    manager: emptyCatalogDropdownSelection(),
+    seller: emptyCatalogDropdownSelection(),
+    client: emptyCatalogDropdownSelection(),
   };
 }
 
@@ -36,7 +38,7 @@ function administrativeServiceTypesForApi(
 
 /**
  * Query for GET /api/rescue/administrative/cards/
- * Required: `status`. Optional: `folio`, `service_type`, `company`.
+ * Required: `status`. Optional: `folio`, `service_type`, `company`, `client`.
  */
 export function buildAdministrativeCardsQuery(
   columnStatus: AdministrativeBillingStatus | null,
@@ -66,8 +68,12 @@ export function buildAdministrativeCardsQuery(
     }
   }
 
-  if (filters.companyId != null) {
-    query.company = String(filters.companyId);
+  if (filters.company.value != null) {
+    query.company = String(filters.company.value);
+  }
+
+  if (filters.client.value != null) {
+    query.client = String(filters.client.value);
   }
 
   return query;
@@ -75,7 +81,7 @@ export function buildAdministrativeCardsQuery(
 
 /**
  * Query for GET /api/rescue/administrative/list/
- * Optional: `status`, `folio`, `service_type`, `company`.
+ * Optional: `status`, `folio`, `service_type`, `company`, `client`.
  */
 export function buildAdministrativeListQuery(
   filters: AdministrativeBoardFilters,
@@ -98,8 +104,12 @@ export function buildAdministrativeListQuery(
     }
   }
 
-  if (filters.companyId != null) {
-    query.company = String(filters.companyId);
+  if (filters.company.value != null) {
+    query.company = String(filters.company.value);
+  }
+
+  if (filters.client.value != null) {
+    query.client = String(filters.client.value);
   }
 
   return query;
@@ -116,7 +126,8 @@ export function administrativeListApiFiltersKey(
     billing,
     filters.folio.trim(),
     serviceTypes,
-    filters.companyId != null ? String(filters.companyId) : '',
+    filters.company.value != null ? String(filters.company.value) : '',
+    filters.client.value != null ? String(filters.client.value) : '',
   ];
 }
 
@@ -133,7 +144,8 @@ export function administrativeCardsApiFiltersKey(
     billing,
     filters.folio.trim(),
     serviceTypes,
-    filters.companyId != null ? String(filters.companyId) : '',
+    filters.company.value != null ? String(filters.company.value) : '',
+    filters.client.value != null ? String(filters.client.value) : '',
   ];
 }
 
@@ -166,12 +178,12 @@ export function filterAdministrativeCardsLocally(
     );
   }
 
-  if (filters.managerId != null) {
-    result = result.filter((card) => card.operator_id === filters.managerId);
+  if (filters.manager.value != null) {
+    result = result.filter((card) => card.operator_id === filters.manager.value);
   }
 
-  if (filters.sellerId != null) {
-    result = result.filter((card) => card.seller_id === filters.sellerId);
+  if (filters.seller.value != null) {
+    result = result.filter((card) => card.seller_id === filters.seller.value);
   }
 
   const searchTerm = filters.folio.trim().toLowerCase();

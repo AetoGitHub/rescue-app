@@ -29,6 +29,16 @@ const catalogNameField = (label: string) =>
 const catalogRfcField = (label: string) =>
   requiredStr(label).transform((value) => normalizeCatalogName(value));
 
+const catalogSelectionSchema = z.object({
+  value: z.number().int().positive().nullable(),
+  label: z.string(),
+});
+
+const requiredCatalogSelection = (message: string) =>
+  catalogSelectionSchema.refine((s) => s.value != null, { error: message });
+
+const optionalCatalogSelectionSchema = catalogSelectionSchema;
+
 export const companyCreateSchema = z.object({
   name: catalogNameField('El nombre'),
   business_name: requiredStr('La razón social'),
@@ -55,8 +65,8 @@ export const companyCreateSchema = z.object({
 });
 
 export const clientCreateSchema = companyCreateSchema.extend({
-  company: z.number().int().positive().optional(),
-  seller: z.number().int().positive({ error: 'Selecciona un vendedor' }).optional(),
+  company: optionalCatalogSelectionSchema,
+  seller: optionalCatalogSelectionSchema,
   notes: z.string(),
   is_active: z.boolean().optional(),
 });
@@ -168,10 +178,10 @@ export const serviceCreateSchema = z.object({
     z.string().max(200, 'El nombre admite máximo 200 caracteres'),
   ),
   description: z.string().transform((s) => s.trim()).default(''),
-  category: z.number().int().positive({ error: 'Selecciona una categoría' }),
+  category: requiredCatalogSelection('Selecciona una categoría'),
   unit: z.enum(SERVICE_UNIT_VALUES, { error: 'Selecciona una unidad' }),
   warranty: z.boolean(),
-  alegra_id: z.number().int().positive({ error: 'Selecciona un ítem de Alegra' }),
+  alegra_id: requiredCatalogSelection('Selecciona un ítem de Alegra'),
 });
 
 export const serviceUpdateSchema = serviceCreateSchema.omit({ alegra_id: true });
@@ -269,7 +279,7 @@ export const supplierReviewSchema = z
   });
 
 export const contractItemFormSchema = z.object({
-  service: z.number().int().positive({ error: 'Selecciona un servicio' }),
+  service: requiredCatalogSelection('Selecciona un servicio'),
   price: z
     .string()
     .transform((s) => s.trim())
@@ -287,7 +297,7 @@ export function contractItemFormToCreateBody(
   input: z.output<typeof contractItemFormSchema>,
 ): ContractItemCreateBody {
   const body: ContractItemCreateBody = {
-    service: input.service,
+    service: input.service.value!,
     price: input.price,
   };
   const pm = input.price_multiplier.trim();

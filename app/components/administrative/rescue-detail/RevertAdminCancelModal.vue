@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { CatalogDropdownFetcher } from '~/composables/useCatalogDropdown';
-import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import {
+  emptyCatalogDropdownSelection,
+  type CatalogDropdownRow,
+  type CatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
 const open = defineModel<boolean>('open', { required: true });
@@ -13,9 +17,13 @@ const emit = defineEmits<{
   submit: [];
 }>();
 
-const reacceptanceReasonId = defineModel<number | null>('reacceptanceReasonId', {
-  required: true,
-});
+const reacceptanceReason = defineModel<CatalogDropdownSelection>(
+  'reacceptanceReason',
+  {
+    required: true,
+    default: () => emptyCatalogDropdownSelection(),
+  },
+);
 
 const apiFetch = useApiFetch();
 
@@ -47,7 +55,7 @@ const fetchReacceptanceReasonDropdown: CatalogDropdownFetcher = (
           required
         >
           <CatalogDropdownSelect
-            v-model="reacceptanceReasonId"
+            v-model="reacceptanceReason"
             :fetcher="fetchReacceptanceReasonDropdown"
             placeholder="Selecciona motivo"
           />
@@ -57,7 +65,7 @@ const fetchReacceptanceReasonDropdown: CatalogDropdownFetcher = (
           block
           color="primary"
           label="Revertir cancelación"
-          :disabled="reacceptanceReasonId == null"
+          :disabled="reacceptanceReason.value == null"
           :loading="loading"
           @click="emit('submit')"
         />

@@ -5,20 +5,21 @@ import type {
   CatalogDropdownInfiniteMode,
 } from '~/composables/useCatalogDropdown';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import {
+  emptyCatalogDropdownSelection,
+  type CatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 
 const props = defineProps<{
-  modelValue?: number | null;
-  label?: string | null;
   placeholder?: string;
   fetcher: CatalogDropdownFetcher;
   disabled?: boolean;
   infinite?: CatalogDropdownInfiniteMode;
 }>();
 
-const emit = defineEmits<{
-  'update:modelValue': [value: number | undefined];
-  'update:label': [value: string];
-}>();
+const model = defineModel<CatalogDropdownSelection>({
+  default: () => emptyCatalogDropdownSelection(),
+});
 
 const selectMenu = useTemplateRef('selectMenu');
 
@@ -41,37 +42,37 @@ const {
 
 const displayItems = computed((): CatalogDropdownRow[] => {
   const list = items.value;
-  const id = props.modelValue;
-  const name = props.label?.trim() ?? '';
+  const id = model.value.value;
+  const name = model.value.label.trim();
   if (id == null || !name) return list;
   if (list.some((row) => row.id === id)) return list;
   return [{ id, name }, ...list];
 });
 
 const inner = computed({
-  get: () => props.modelValue ?? undefined,
+  get: () => model.value.value ?? undefined,
   set: (v: number | undefined) => {
-    emit('update:modelValue', v);
     if (v == null) {
-      emit('update:label', '');
+      model.value = emptyCatalogDropdownSelection();
       return;
     }
     const row = items.value.find((item) => item.id === v);
-    if (row != null) {
-      emit('update:label', row.name);
-    }
+    model.value = {
+      value: v,
+      label: row?.name ?? model.value.label,
+    };
   },
 });
 
 const selectKey = computed(() => String(inner.value ?? 'empty'));
 
 watch(
-  () => props.modelValue,
+  () => model.value.value,
   (value) => {
     if (value == null) {
       searchTerm.value = '';
-      if ((props.label?.trim() ?? '') !== '') {
-        emit('update:label', '');
+      if (model.value.label.trim() !== '') {
+        model.value = emptyCatalogDropdownSelection();
       }
     }
   },

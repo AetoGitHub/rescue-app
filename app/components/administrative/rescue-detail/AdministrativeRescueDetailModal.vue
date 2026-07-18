@@ -62,8 +62,8 @@ const {
   remittanceForm,
   invoiceForm,
   paymentForm,
-  cancellationReasonId,
-  reacceptanceReasonId,
+  cancellationReason,
+  reacceptanceReason,
   purchaseOrderNumber,
   flowContext,
   handleAction,
@@ -347,7 +347,7 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
   <LazyAdministrativeRescueDetailRevertAdminCancelModal
     v-if="revertCancelModalOpen"
     v-model:open="revertCancelModalOpen"
-    v-model:reacceptance-reason-id="reacceptanceReasonId"
+    v-model:reacceptance-reason="reacceptanceReason"
     :loading="isUpdating"
     @submit="submitRevertAdminCancel"
   />
@@ -355,7 +355,7 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-6xl' });
   <LazyAdministrativeRescueDetailAdminCancelModal
     v-if="cancelModalOpen"
     v-model:open="cancelModalOpen"
-    v-model:cancellation-reason-id="cancellationReasonId"
+    v-model:cancellation-reason="cancellationReason"
     :loading="isUpdating"
     @submit="submitAdminCancel"
   />

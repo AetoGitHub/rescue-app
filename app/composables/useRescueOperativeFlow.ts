@@ -35,6 +35,7 @@ import {
 import {
   hasRescueSupplierAssigned,
 } from '~/utils/rescue-supplier-assign';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 
 export function useRescueOperativeFlow(options: {
   rescueId: MaybeRefOrGetter<number | null>;
@@ -70,8 +71,8 @@ export function useRescueOperativeFlow(options: {
     ratings: [],
   });
 
-  const cancellationReasonId = ref<number | null>(null);
-  const reacceptanceReasonId = ref<number | null>(null);
+  const cancellationReason = ref(emptyCatalogDropdownSelection());
+  const reacceptanceReason = ref(emptyCatalogDropdownSelection());
 
   const creditOverlay = ref<{
     credit_limit: string | null;
@@ -321,13 +322,13 @@ export function useRescueOperativeFlow(options: {
     }
 
     if (actionId === 'cancel_service') {
-      cancellationReasonId.value = null;
+      cancellationReason.value = emptyCatalogDropdownSelection();
       cancelModalOpen.value = true;
       return;
     }
 
     if (actionId === 'revert_cancellation') {
-      reacceptanceReasonId.value = null;
+      reacceptanceReason.value = emptyCatalogDropdownSelection();
       revertModalOpen.value = true;
       return;
     }
@@ -516,7 +517,7 @@ export function useRescueOperativeFlow(options: {
 
   async function submitCancelService() {
     const parsed = rescueCancelServiceSchema.safeParse({
-      cancellation_reason: cancellationReasonId.value,
+      cancellation_reason: cancellationReason.value.value,
     });
     if (!parsed.success) {
       toast.add({
@@ -533,7 +534,7 @@ export function useRescueOperativeFlow(options: {
 
   async function submitRevertCancellation() {
     const parsed = rescueRevertCancellationSchema.safeParse({
-      reacceptance_reason: reacceptanceReasonId.value,
+      reacceptance_reason: reacceptanceReason.value.value,
     });
     if (!parsed.success) {
       toast.add({
@@ -583,8 +584,8 @@ export function useRescueOperativeFlow(options: {
     revertModalOpen,
     advanceForm,
     completedForm,
-    cancellationReasonId,
-    reacceptanceReasonId,
+    cancellationReason,
+    reacceptanceReason,
     isUpdating: isUpdatingOperative,
     quoteTotalForAdvance,
     handleAction,

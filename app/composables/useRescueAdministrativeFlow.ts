@@ -24,6 +24,7 @@ import {
   isPurchaseOrderBlockingInvoice,
 } from '~/utils/rescue-administrative-flow';
 import { todayIsoDate } from '~/utils/rescue-operative-flow';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 
 export function useRescueAdministrativeFlow(options: {
   rescueId: MaybeRefOrGetter<number | null>;
@@ -62,8 +63,8 @@ export function useRescueAdministrativeFlow(options: {
     payment_evidence_url: '',
   });
 
-  const cancellationReasonId = ref<number | null>(null);
-  const reacceptanceReasonId = ref<number | null>(null);
+  const cancellationReason = ref(emptyCatalogDropdownSelection());
+  const reacceptanceReason = ref(emptyCatalogDropdownSelection());
   const purchaseOrderNumber = ref('');
 
   const flowContext = computed(() => {
@@ -160,14 +161,14 @@ export function useRescueAdministrativeFlow(options: {
         paymentModalOpen.value = true;
         break;
       case 'admin_cancel':
-        cancellationReasonId.value = null;
+        cancellationReason.value = emptyCatalogDropdownSelection();
         cancelModalOpen.value = true;
         break;
       case 'open_warranty':
         warrantyModalOpen.value = true;
         break;
       case 'revert_admin_cancellation':
-        reacceptanceReasonId.value = null;
+        reacceptanceReason.value = emptyCatalogDropdownSelection();
         revertCancelModalOpen.value = true;
         break;
       default:
@@ -220,7 +221,7 @@ export function useRescueAdministrativeFlow(options: {
 
   async function submitAdminCancel() {
     const parsed = rescueAdminCancelSchema.safeParse({
-      cancellation_reason_id: cancellationReasonId.value,
+      cancellation_reason_id: cancellationReason.value.value,
     });
     if (!parsed.success) {
       toast.add({
@@ -242,7 +243,7 @@ export function useRescueAdministrativeFlow(options: {
 
   async function submitRevertAdminCancel() {
     const parsed = rescueAdminRevertCancelSchema.safeParse({
-      reacceptance_reason_id: reacceptanceReasonId.value,
+      reacceptance_reason_id: reacceptanceReason.value.value,
     });
     if (!parsed.success) {
       toast.add({
@@ -304,8 +305,8 @@ export function useRescueAdministrativeFlow(options: {
     remittanceForm,
     invoiceForm,
     paymentForm,
-    cancellationReasonId,
-    reacceptanceReasonId,
+    cancellationReason,
+    reacceptanceReason,
     purchaseOrderNumber,
     flowContext,
     handleAction,

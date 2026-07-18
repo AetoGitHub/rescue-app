@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 import {
+  catalogDropdownSelection,
+  emptyCatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
+import {
   computeQuotePricing,
   roundQuoteMoney,
   roundQuoteToNearestTen,
@@ -13,9 +17,7 @@ function line(
 ): RescueQuoteLine {
   return {
     id: partial.id ?? crypto.randomUUID(),
-    service_id:
-      partial.service_id !== undefined ? partial.service_id : 1,
-    service_label: partial.service_label ?? 'Servicio',
+    service: partial.service ?? catalogDropdownSelection(1, 'Servicio'),
     quantity: partial.quantity,
     unit_cost: partial.unit_cost,
     contract_item_id: partial.contract_item_id ?? null,
@@ -26,8 +28,7 @@ function line(
 function emptyLine(): RescueQuoteLine {
   return {
     id: crypto.randomUUID(),
-    service_id: null,
-    service_label: '',
+    service: emptyCatalogDropdownSelection(),
     quantity: 0,
     unit_cost: 0,
     contract_item_id: null,
@@ -184,10 +185,10 @@ describe('computeQuotePricing', () => {
       line({
         quantity: 3,
         unit_cost: 500,
-        service_id: 1,
+        service: catalogDropdownSelection(1),
         contract_item_id: 10,
       }),
-      line({ quantity: 1, unit_cost: 200, service_id: 2 }),
+      line({ quantity: 1, unit_cost: 200, service: catalogDropdownSelection(2) }),
     ];
 
     const result = computeQuotePricing(lines, baseSettings, {
@@ -237,8 +238,8 @@ describe('computeQuotePricing', () => {
 
   it('splits fixed seller commission proportionally across standard lines', () => {
     const lines = [
-      line({ quantity: 5, unit_cost: 1500, service_id: 1 }),
-      line({ quantity: 2, unit_cost: 500, service_id: 2 }),
+      line({ quantity: 5, unit_cost: 1500, service: catalogDropdownSelection(1) }),
+      line({ quantity: 2, unit_cost: 500, service: catalogDropdownSelection(2) }),
     ];
     const settings: RescueCompanySettings = {
       commissions: {
@@ -306,10 +307,10 @@ describe('computeQuotePricing', () => {
       line({
         quantity: 1,
         unit_cost: 500,
-        service_id: 1,
+        service: catalogDropdownSelection(1),
         contract_item_id: 10,
       }),
-      line({ quantity: 1, unit_cost: 500, service_id: 2 }),
+      line({ quantity: 1, unit_cost: 500, service: catalogDropdownSelection(2) }),
     ];
     const settings: RescueCompanySettings = {
       commissions: {
@@ -361,7 +362,7 @@ describe('computeQuotePricing', () => {
   });
 
   it('rounds line total up to next ten and stores rounding_add', () => {
-    const lines = [line({ quantity: 1, unit_cost: 999, service_id: 1 })];
+    const lines = [line({ quantity: 1, unit_cost: 999, service: catalogDropdownSelection(1) })];
     const settings: RescueCompanySettings = {
       commissions: {
         commission_type: 'PERCENTAGE',
@@ -387,7 +388,7 @@ describe('computeQuotePricing', () => {
   });
 
   it('rounds 171 up to 180 with rounding_add 9', () => {
-    const lines = [line({ quantity: 1, unit_cost: 171, service_id: 1 })];
+    const lines = [line({ quantity: 1, unit_cost: 171, service: catalogDropdownSelection(1) })];
     const settings: RescueCompanySettings = {
       commissions: {
         commission_type: 'PERCENTAGE',
@@ -413,7 +414,7 @@ describe('computeQuotePricing', () => {
   });
 
   it('skips round-to-ten when disabled', () => {
-    const lines = [line({ quantity: 1, unit_cost: 999, service_id: 1 })];
+    const lines = [line({ quantity: 1, unit_cost: 999, service: catalogDropdownSelection(1) })];
     const settings: RescueCompanySettings = {
       commissions: {
         commission_type: 'PERCENTAGE',

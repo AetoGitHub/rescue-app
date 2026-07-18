@@ -40,8 +40,8 @@ const {
   completedForm,
   cancelModalOpen,
   revertModalOpen,
-  cancellationReasonId,
-  reacceptanceReasonId,
+  cancellationReason,
+  reacceptanceReason,
   handleAction,
   submitAdvancePanel,
   submitCompletedPanel,
@@ -337,7 +337,7 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
   <LazyOperationalRescueDetailCancelServiceModal
     v-if="cancelModalOpen"
     v-model:open="cancelModalOpen"
-    v-model:cancellation-reason-id="cancellationReasonId"
+    v-model:cancellation-reason="cancellationReason"
     :loading="isUpdatingOperative"
     @submit="submitCancelService"
   />
@@ -345,7 +345,7 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
   <LazyOperationalRescueDetailRevertCancellationModal
     v-if="revertModalOpen"
     v-model:open="revertModalOpen"
-    v-model:reacceptance-reason-id="reacceptanceReasonId"
+    v-model:reacceptance-reason="reacceptanceReason"
     :loading="isUpdatingOperative"
     @submit="submitRevertCancellation"
   />

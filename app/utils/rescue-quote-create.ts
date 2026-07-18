@@ -39,7 +39,7 @@ function mapServiceLine(
 ): RescueQuoteServiceCreateBody {
   const { line } = row;
   return {
-    service: line.service_id as number,
+    service: line.service.value as number,
     quantity: Math.trunc(line.quantity),
     real_cost: formatQuoteDecimal(row.costSubtotal),
     pre_total: formatQuoteDecimal(row.lineTotalCalculated),

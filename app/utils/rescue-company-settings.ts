@@ -3,6 +3,7 @@ import type {
   RescueCompanySettings,
   RescueContractItem,
 } from '~/interfaces/rescue/company-settings';
+import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 
 function toNumber(value: unknown, fallback = 0): number {
@@ -97,8 +98,10 @@ export function applyContractToLine(
 ): void {
   const alreadyLinked = line.contract_item_id === contractItem.id;
   line.contract_item_id = contractItem.id;
-  line.service_id = contractItem.service_id;
-  line.service_label = contractItem.service_name;
+  line.service = catalogDropdownSelection(
+    contractItem.service_id,
+    contractItem.service_name,
+  );
   if (!alreadyLinked) {
     line.unit_cost = contractItem.price;
   }

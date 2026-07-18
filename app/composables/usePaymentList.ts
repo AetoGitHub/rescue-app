@@ -7,6 +7,7 @@ import {
   type PaymentRecipientType,
 } from '~/constants/payment-api';
 import type { PaymentListItem } from '~/interfaces/payment/payment-list';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import {
   buildPaymentListQuery,
@@ -33,7 +34,7 @@ export function usePaymentList() {
   const apiFetch = useApiFetch();
 
   const recipientType = ref<PaymentRecipientType>('operative');
-  const userId = ref<number | null>(null);
+  const user = ref(emptyCatalogDropdownSelection());
   const folio = ref('');
   const debouncedFolio = refDebounced(folio, 300);
   const fromDate = ref<CalendarDateParts | null>(null);
@@ -98,8 +99,9 @@ export function usePaymentList() {
 
   function syncAppliedFilters(options?: { folio?: string }) {
     const folioValue = options?.folio ?? debouncedFolio.value;
+    const userId = user.value.value;
 
-    if (userId.value == null) {
+    if (userId == null) {
       appliedFilters.value = {
         ...emptyAppliedFilters(),
         type: recipientType.value,
@@ -112,7 +114,7 @@ export function usePaymentList() {
 
     appliedFilters.value = {
       type: recipientType.value,
-      userId: userId.value,
+      userId,
       folio: folioValue,
       fromDate: fromDate.value,
       toDate: toDate.value,
@@ -159,27 +161,30 @@ export function usePaymentList() {
 
   const selectedIdList = computed(() => [...selectedIds.value]);
 
-  watch(userId, () => {
-    syncAppliedFilters(userId.value == null ? { folio: '' } : undefined);
-  });
+  watch(
+    () => user.value.value,
+    () => {
+      syncAppliedFilters(user.value.value == null ? { folio: '' } : undefined);
+    },
+  );
 
   watch(debouncedFolio, () => {
-    if (userId.value == null) return;
+    if (user.value.value == null) return;
     syncAppliedFilters();
   });
 
   watch([fromDate, toDate], () => {
-    if (userId.value == null) return;
+    if (user.value.value == null) return;
     syncAppliedFilters();
   });
 
   watch(paymentStatus, () => {
-    if (userId.value == null) return;
+    if (user.value.value == null) return;
     syncAppliedFilters();
   });
 
   watch(recipientType, () => {
-    userId.value = null;
+    user.value = emptyCatalogDropdownSelection();
     folio.value = '';
     fromDate.value = null;
     toDate.value = null;
@@ -206,7 +211,7 @@ export function usePaymentList() {
 
   return {
     recipientType,
-    userId,
+    user,
     folio,
     fromDate,
     toDate,

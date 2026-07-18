@@ -2,6 +2,11 @@
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { ContractItem } from '~/interfaces/catalogs/contract';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import {
+  catalogDropdownSelection,
+  emptyCatalogDropdownSelection,
+  type CatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type { infer as ZodInfer } from 'zod';
 import {
@@ -23,8 +28,7 @@ const toast = useToast();
 const queryCache = useQueryCache();
 
 type ContractItemFormState = {
-  service?: number;
-  serviceLabel: string;
+  service: CatalogDropdownSelection;
   price: string;
   price_multiplier: string;
   percentaje: string;
@@ -38,8 +42,7 @@ const isEdit = computed(() => editingItemId.value != null);
 
 function emptyState(): ContractItemFormState {
   return {
-    service: undefined,
-    serviceLabel: '',
+    service: emptyCatalogDropdownSelection(),
     price: '',
     price_multiplier: '',
     percentaje: '',
@@ -80,8 +83,10 @@ function prepareCreate() {
 function openEdit(item: ContractItem) {
   editingItemId.value = item.id;
   Object.assign(state, emptyState(), {
-    service: item.service_id,
-    serviceLabel: item.service_name?.trim() ?? '',
+    service: catalogDropdownSelection(
+      item.service_id,
+      item.service_name?.trim() ?? '',
+    ),
     price: item.price,
     price_multiplier: item.price_multiplier,
     percentaje: item.percentaje,
@@ -196,7 +201,6 @@ async function requestSubmit() {
           <CatalogDropdownSelect
             :key="editingItemId ?? 'create'"
             v-model="state.service"
-            v-model:label="state.serviceLabel"
             placeholder="Buscar servicio"
             :fetcher="fetchServiceDropdown"
           />

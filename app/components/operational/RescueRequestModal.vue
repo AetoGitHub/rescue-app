@@ -5,6 +5,7 @@ import type { Client } from '~/interfaces/catalogs/client';
 import type { RescueCreateResponse } from '~/interfaces/rescue';
 import type { RescueQuoteCreateResponse } from '~/interfaces/rescue/quote';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import {
   emptyRescueRequestState,
@@ -48,8 +49,10 @@ function applyLockedManager() {
   if (!isManagerLocked.value) return;
   const id = user.value?.id;
   if (id == null) return;
-  state.manager = id;
-  state.managerLabel = user.value?.name?.trim() || `Usuario #${id}`;
+  state.manager = catalogDropdownSelection(
+    id,
+    user.value?.name?.trim() || `Usuario #${id}`,
+  );
 }
 
 const stepItems = computed(() => getRescueStepItems(state.service_type));
@@ -73,11 +76,11 @@ const modalContentClass = computed(() =>
 );
 
 const showWizardCreditCard = computed(() =>
-  shouldShowWizardCreditCard(state.client, state.client_credit_snapshot),
+  shouldShowWizardCreditCard(state.client.value, state.client_credit_snapshot),
 );
 
 const clientCreditPending = computed(
-  () => state.client != null && state.client_credit_snapshot == null,
+  () => state.client.value != null && state.client_credit_snapshot == null,
 );
 
 function parseClientSellerId(raw: Record<string, unknown>): number | null {
@@ -139,7 +142,7 @@ watch(
 );
 
 watch(
-  () => state.client,
+  () => state.client.value,
   async (id, _prev, onCleanup) => {
     let active = true;
     onCleanup(() => {
@@ -148,7 +151,6 @@ watch(
 
     if (id == null) {
       if (active) {
-        state.clientLabel = '';
         state.client_credit_snapshot = null;
         state.client_seller_id = null;
       }
@@ -160,8 +162,11 @@ watch(
       );
       if (!active) return;
       const summary = mapClientCreditSummary(raw);
-      if (!state.clientLabel.trim()) {
-        state.clientLabel = String(raw.name ?? '').trim() || `Cliente #${id}`;
+      if (!state.client.label.trim()) {
+        state.client = catalogDropdownSelection(
+          id,
+          String(raw.name ?? '').trim() || `Cliente #${id}`,
+        );
       }
       state.client_seller_id = parseClientSellerId(raw);
       state.client_credit_snapshot = {
@@ -171,8 +176,8 @@ watch(
       };
     } catch {
       if (!active) return;
-      if (!state.clientLabel.trim()) {
-        state.clientLabel = `Cliente #${id}`;
+      if (!state.client.label.trim()) {
+        state.client = catalogDropdownSelection(id, `Cliente #${id}`);
       }
       state.client_credit_snapshot = null;
       state.client_seller_id = null;
@@ -234,7 +239,7 @@ const { mutate, asyncStatus } = useMutation({
     clientSellerId: number | null;
   }) => {
     const creditGate = await assertClientCreditForQuote(
-      payload.form.client,
+      payload.form.client.value!,
       payload.form.quote_lines,
       payload.companySettings,
       payload.clientSellerId,
@@ -482,7 +487,7 @@ const wizardModalProps = computed(() => {
 
             <OperationalRescueRequestClientCreditSelectionCard
               v-if="showWizardCreditCard"
-              :client-name="state.clientLabel || `Cliente #${state.client}`"
+              :client-name="state.client.label || `Cliente #${state.client.value}`"
               :snapshot="state.client_credit_snapshot"
               :pending="clientCreditPending"
             />

@@ -5,6 +5,7 @@ import {
   emptyOperationalBoardFilters,
   operationalBoardFiltersKey,
 } from '~/utils/operational-board-filters';
+import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 
 describe('emptyOperationalBoardFilters', () => {
   it('initializes alert flags as false', () => {
@@ -12,8 +13,9 @@ describe('emptyOperationalBoardFilters', () => {
       folio: '',
       serviceTypes: [],
       operativeStatus: null,
-      companyId: null,
-      managerId: null,
+      company: { value: null, label: '' },
+      manager: { value: null, label: '' },
+      client: { value: null, label: '' },
       pendingAdvance: false,
       slaAlert: false,
       commentAlert: false,
@@ -68,13 +70,14 @@ describe('buildOperationalListQuery', () => {
     expect(query.status).toBe('closed');
   });
 
-  it('sends folio, service_type, company and manager', () => {
+  it('sends folio, service_type, company, manager and client', () => {
     const query = buildOperationalListQuery({
       ...emptyOperationalBoardFilters(),
       folio: ' RES-1 ',
       serviceTypes: ['rescue', 'loan'],
-      companyId: 3,
-      managerId: 7,
+      company: catalogDropdownSelection(3, 'Co'),
+      manager: catalogDropdownSelection(7, 'Gestor'),
+      client: catalogDropdownSelection(11, 'Cliente'),
     });
 
     expect(query).toEqual({
@@ -82,6 +85,7 @@ describe('buildOperationalListQuery', () => {
       service_type: 'rescue,loan',
       company: '3',
       manager: '7',
+      client: '11',
     });
     expect(query).not.toHaveProperty('pending_advance');
     expect(query).not.toHaveProperty('sla_alert');
@@ -99,7 +103,17 @@ describe('operationalBoardFiltersKey', () => {
     });
 
     expect(baseKey).not.toEqual(withPending);
-    expect(baseKey[4]).toBe('0');
-    expect(withPending[4]).toBe('1');
+    expect(baseKey[5]).toBe('0');
+    expect(withPending[5]).toBe('1');
+  });
+
+  it('includes client id in the key', () => {
+    const base = emptyOperationalBoardFilters();
+    const withClient = operationalBoardFiltersKey({
+      ...base,
+      client: catalogDropdownSelection(42, 'Acme'),
+    });
+
+    expect(withClient[4]).toBe('42');
   });
 });

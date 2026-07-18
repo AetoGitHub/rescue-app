@@ -27,7 +27,7 @@ const { fetchOperativeDropdown, fetchSellerDropdown } =
 const {
   canFilterByRecipient,
   paymentType,
-  userId,
+  user,
   fromDate,
   toDate,
   rows,
@@ -210,7 +210,7 @@ const columns: TableColumn<PaymentReceiptListItem>[] = [
           class="sm:col-span-2"
         >
           <CatalogDropdownSelect
-            v-model="userId"
+            v-model="user"
             class="w-full"
             :placeholder="userPlaceholder"
             :fetcher="userDropdownFetcher"

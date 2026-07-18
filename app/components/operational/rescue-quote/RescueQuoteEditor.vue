@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CatalogDropdownFetcher } from '~/composables/useCatalogDropdown';
+import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import type { QuoteClassifierApplyPayload } from '~/interfaces/rescue/quote-classifier';
@@ -168,12 +169,12 @@ function lineRow(line: RescueQuoteLine) {
 }
 
 function syncLineContract(line: RescueQuoteLine) {
-  if (line.service_id == null) {
+  if (line.service.value == null) {
     clearContractFromLine(line);
     return;
   }
 
-  const item = findContractItemForService(settings.value, line.service_id);
+  const item = findContractItemForService(settings.value, line.service.value);
   if (item) {
     applyContractToLine(line, item);
     return;
@@ -203,7 +204,7 @@ function onApplyClassifierLines(payload: QuoteClassifierApplyPayload) {
 }
 
 watch(
-  () => quoteLines.value.map((line) => line.service_id),
+  () => quoteLines.value.map((line) => line.service.value),
   () => {
     for (const line of quoteLines.value) {
       syncLineContract(line);
@@ -213,7 +214,7 @@ watch(
 );
 
 watch(
-  () => quoteLines.value.map((l) => l.service_id),
+  () => quoteLines.value.map((l) => l.service.value),
   async (ids, _prev, onCleanup) => {
     let active = true;
     onCleanup(() => {
@@ -222,23 +223,22 @@ watch(
 
     for (const [i, line] of quoteLines.value.entries()) {
       const id = ids[i];
-      if (id == null) {
-        if (active) line.service_label = '';
-        continue;
-      }
+      if (id == null) continue;
       if (isContractLine(line)) continue;
-      if (line.service_label.trim()) continue;
+      if (line.service.label.trim()) continue;
 
       try {
         const raw = await $fetch<Record<string, unknown>>(
           `/api/catalogue/service/detail/${id}/`,
         );
         if (!active) return;
-        line.service_label =
-          String(raw.name ?? '').trim() || `Servicio #${id}`;
+        line.service = catalogDropdownSelection(
+          id,
+          String(raw.name ?? '').trim() || `Servicio #${id}`,
+        );
       } catch {
         if (!active) return;
-        line.service_label = `Servicio #${id}`;
+        line.service = catalogDropdownSelection(id, `Servicio #${id}`);
       }
     }
   },
@@ -331,22 +331,21 @@ watch(
               <td class="px-3 py-2 align-top">
                 <div class="space-y-2">
                   <UFormField
-                    :name="`quote_lines.${index}.service_id`"
+                    :name="`quote_lines.${index}.service.value`"
                     class="min-w-48"
                     required
                   >
                     <CatalogDropdownSelect
-                      v-model="line.service_id"
-                      v-model:label="line.service_label"
+                      v-model="line.service"
                       placeholder="Buscar servicio"
                       :fetcher="fetchServiceDropdown"
                     />
                   </UFormField>
                   <p
-                    v-if="line.service_id == null && line.service_label.trim()"
+                    v-if="line.service.value == null && line.service.label.trim()"
                     class="text-xs text-muted"
                   >
-                    Sugerido: {{ line.service_label }}
+                    Sugerido: {{ line.service.label }}
                   </p>
                   <UBadge
                     v-if="isContractLine(line)"

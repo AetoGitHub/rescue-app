@@ -59,17 +59,19 @@ describe('buildAdministrativeCardsQuery', () => {
     );
   });
 
-  it('sends folio, service_type and company', () => {
+  it('sends folio, service_type, company and client', () => {
     const query = buildAdministrativeCardsQuery('paid', {
       ...emptyAdministrativeBoardFilters(),
       folio: 'ABC-99',
       serviceTypes: ['rescue', 'loan', 'direct_budget'],
-      companyId: 5,
+      company: { value: 5, label: 'Co' },
+      client: { value: 9, label: 'Cliente' },
     });
     expect(query.status).toBe('paid');
     expect(query.folio).toBe('ABC-99');
     expect(query.service_type).toBe('rescue,loan');
     expect(query.company).toBe('5');
+    expect(query.client).toBe('9');
   });
 });
 
@@ -91,18 +93,20 @@ describe('buildAdministrativeListQuery', () => {
     expect(query.status).toBe('paid');
   });
 
-  it('sends folio, service_type and company', () => {
+  it('sends folio, service_type, company and client', () => {
     const query = buildAdministrativeListQuery({
       ...emptyAdministrativeBoardFilters(),
       folio: 'ABC-99',
       serviceTypes: ['rescue', 'loan', 'direct_budget'],
-      companyId: 5,
+      company: { value: 5, label: 'Co' },
+      client: { value: 9, label: 'Cliente' },
     });
 
     expect(query).toEqual({
       folio: 'ABC-99',
       service_type: 'rescue,loan',
       company: '5',
+      client: '9',
     });
   });
 });

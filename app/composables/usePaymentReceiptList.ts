@@ -2,6 +2,7 @@ import { useInfiniteQuery } from '@pinia/colada';
 import { PAYMENT_RECEIPT_PATH } from '~/constants/payment-api';
 import type { PaymentRecipientType } from '~/constants/payment-api';
 import type { PaymentReceiptListItem } from '~/interfaces/payment/receipt';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { isAdminRole } from '#shared/utils/auth-roles';
 import {
@@ -22,12 +23,14 @@ function emptyAppliedFilters(): PaymentReceiptListFilterInput {
 
 export function usePaymentReceiptList() {
   const apiFetch = useApiFetch();
-  const { user } = useUserSession();
+  const { user: sessionUser } = useUserSession();
 
-  const canFilterByRecipient = computed(() => isAdminRole(user.value?.role));
+  const canFilterByRecipient = computed(() =>
+    isAdminRole(sessionUser.value?.role),
+  );
 
   const paymentType = ref<PaymentRecipientType | null>(null);
-  const userId = ref<number | null>(null);
+  const user = ref(emptyCatalogDropdownSelection());
   const fromDate = ref<CalendarDateParts | null>(null);
   const toDate = ref<CalendarDateParts | null>(null);
   const appliedFilters = ref<PaymentReceiptListFilterInput>(emptyAppliedFilters());
@@ -63,7 +66,7 @@ export function usePaymentReceiptList() {
   function syncAppliedFilters() {
     appliedFilters.value = {
       paymentType: canFilterByRecipient.value ? paymentType.value : null,
-      userId: canFilterByRecipient.value ? userId.value : null,
+      userId: canFilterByRecipient.value ? user.value.value : null,
       fromDate: fromDate.value,
       toDate: toDate.value,
     };
@@ -71,14 +74,17 @@ export function usePaymentReceiptList() {
 
   watch(paymentType, () => {
     if (!canFilterByRecipient.value) return;
-    userId.value = null;
+    user.value = emptyCatalogDropdownSelection();
     syncAppliedFilters();
   });
 
-  watch(userId, () => {
-    if (!canFilterByRecipient.value) return;
-    syncAppliedFilters();
-  });
+  watch(
+    () => user.value.value,
+    () => {
+      if (!canFilterByRecipient.value) return;
+      syncAppliedFilters();
+    },
+  );
 
   watch([fromDate, toDate], () => {
     syncAppliedFilters();
@@ -91,7 +97,7 @@ export function usePaymentReceiptList() {
   return {
     canFilterByRecipient,
     paymentType,
-    userId,
+    user,
     fromDate,
     toDate,
     appliedFilters,

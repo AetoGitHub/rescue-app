@@ -1,6 +1,7 @@
 import type { AdministrativeBillingStatus, AdministrativeEligibleOperativeStatus  } from '~/constants/administrative-kanban';
 
 import type { RescueServiceType } from '~/interfaces/rescue';
+import type { CatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 
 export interface AdministrativeBoardFilters {
   folio: string;
@@ -9,7 +10,8 @@ export interface AdministrativeBoardFilters {
   serviceTypes: RescueServiceType[];
   operativeStatus: AdministrativeEligibleOperativeStatus | null;
   billingStatus: AdministrativeBillingStatus | null;
-  companyId: number | null;
-  managerId: number | null;
-  sellerId: number | null;
+  company: CatalogDropdownSelection;
+  manager: CatalogDropdownSelection;
+  seller: CatalogDropdownSelection;
+  client: CatalogDropdownSelection;
 }

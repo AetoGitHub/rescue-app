@@ -82,8 +82,8 @@ describe('mapClassifierLineToQuoteLine', () => {
       unit_cost: 2500,
     });
 
-    expect(line.service_id).toBe(101);
-    expect(line.service_label).toBe('GRUA PLATAFORMA');
+    expect(line.service.value).toBe(101);
+    expect(line.service.label).toBe('GRUA PLATAFORMA');
     expect(line.quantity).toBe(1);
     expect(line.unit_cost).toBe(2500);
     expect(line.contract_item_id).toBeNull();
@@ -100,8 +100,8 @@ describe('mapClassifierLineToQuoteLine', () => {
       unit_cost: 200,
     });
 
-    expect(line.service_id).toBeNull();
-    expect(line.service_label).toBe('MANIOBRAS EN COCHERA');
+    expect(line.service.value).toBeNull();
+    expect(line.service.label).toBe('MANIOBRAS EN COCHERA');
   });
 
   it('defaults unit_cost to 0 when omitted', () => {
@@ -111,7 +111,7 @@ describe('mapClassifierLineToQuoteLine', () => {
       quantity: 1,
     });
 
-    expect(line.service_id).toBe(2);
+    expect(line.service.value).toBe(2);
     expect(line.unit_cost).toBe(0);
   });
 });
@@ -139,8 +139,8 @@ describe('mapClassifierResponseToQuoteLines', () => {
   it('maps all lines from successful response', () => {
     const lines = mapClassifierResponseToQuoteLines(successResponse);
     expect(lines).toHaveLength(2);
-    expect(lines[0]?.service_id).toBe(101);
-    expect(lines[1]?.service_id).toBeNull();
+    expect(lines[0]?.service.value).toBe(101);
+    expect(lines[1]?.service.value).toBeNull();
   });
 
   it('throws when success is false', () => {
@@ -168,8 +168,8 @@ describe('mapClassifierResponseToQuoteLines', () => {
     });
 
     expect(lines).toHaveLength(1);
-    expect(lines[0]?.service_id).toBe(2);
-    expect(lines[0]?.service_label).toBe('REMOLQUE');
+    expect(lines[0]?.service.value).toBe(2);
+    expect(lines[0]?.service.label).toBe('REMOLQUE');
     expect(lines[0]?.quantity).toBe(1);
     expect(lines[0]?.unit_cost).toBe(0);
   });

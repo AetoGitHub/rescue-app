@@ -7,6 +7,7 @@ import {
   parsePendingInvoiceMatrixMonths,
   pendingInvoiceDetailFiltersKey,
 } from '../../app/utils/pending-invoice-filters';
+import { catalogDropdownSelection } from '../../app/interfaces/shared/catalog-dropdown.interface';
 
 describe('pending-invoice-filters', () => {
   it('buildPendingInvoiceDetailQuery omits empty values', () => {
@@ -19,9 +20,9 @@ describe('pending-invoice-filters', () => {
     expect(
       buildPendingInvoiceDetailQuery({
         search: 'RES-2026',
-        companyId: 1,
-        sellerId: 3,
-        operatorId: 5,
+        company: catalogDropdownSelection(1),
+        seller: catalogDropdownSelection(3),
+        operator: catalogDropdownSelection(5),
         month: 7,
         year: 2026,
         status: 'in_remittance',
@@ -53,9 +54,9 @@ describe('pending-invoice-filters', () => {
       }),
     ).toEqual({
       search: 'ACME',
-      companyId: 5,
-      sellerId: 2,
-      operatorId: 8,
+      company: catalogDropdownSelection(5),
+      seller: catalogDropdownSelection(2),
+      operator: catalogDropdownSelection(8),
       month: 9,
       year: 2026,
       status: 'unattended',
@@ -67,9 +68,9 @@ describe('pending-invoice-filters', () => {
     expect(
       pendingInvoiceDetailFiltersKey({
         search: 'x',
-        companyId: 1,
-        sellerId: null,
-        operatorId: null,
+        company: catalogDropdownSelection(1),
+        seller: catalogDropdownSelection(null),
+        operator: catalogDropdownSelection(null),
         month: null,
         year: null,
         status: null,

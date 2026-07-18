@@ -8,6 +8,7 @@ import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
 import type { RescueCard, RescueServiceType  } from '~/interfaces/rescue';
 
 import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 
 useHead({
   title: 'Operacional',
@@ -100,8 +101,9 @@ const folioSearch = ref('');
 const debouncedFolio = refDebounced(folioSearch, 300);
 const selectedServiceTypes = ref<RescueServiceType[]>([]);
 const selectedOperativeStatus = ref<OperationalRescueStatus | null>(null);
-const companyId = ref<number | null>(null);
-const managerId = ref<number | null>(null);
+const company = ref(emptyCatalogDropdownSelection());
+const manager = ref(emptyCatalogDropdownSelection());
+const client = ref(emptyCatalogDropdownSelection());
 const pendingAdvance = ref(false);
 const slaAlert = ref(false);
 const commentAlert = ref(false);
@@ -110,8 +112,9 @@ const boardFilters = computed<OperationalBoardFilters>(() => ({
   folio: debouncedFolio.value,
   serviceTypes: selectedServiceTypes.value,
   operativeStatus: selectedOperativeStatus.value,
-  companyId: companyId.value,
-  managerId: managerId.value,
+  company: company.value,
+  manager: manager.value,
+  client: client.value,
   pendingAdvance: pendingAdvance.value,
   slaAlert: slaAlert.value,
   commentAlert: commentAlert.value,
@@ -143,8 +146,9 @@ function clearBoardFilters() {
   folioSearch.value = '';
   selectedServiceTypes.value = [];
   selectedOperativeStatus.value = null;
-  companyId.value = null;
-  managerId.value = null;
+  company.value = emptyCatalogDropdownSelection();
+  manager.value = emptyCatalogDropdownSelection();
+  client.value = emptyCatalogDropdownSelection();
   pendingAdvance.value = false;
   slaAlert.value = false;
   commentAlert.value = false;
@@ -173,8 +177,11 @@ const operativeStatusFilterItems = [
   })),
 ];
 
-const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
-  useOperationalBoardDropdownFetchers();
+const {
+  fetchOperationalCompanyDropdown,
+  fetchOperationalClientDropdown,
+  fetchOperationalManagerDropdown,
+} = useOperationalBoardDropdownFetchers();
 </script>
 
 <template>
@@ -315,14 +322,21 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
               </UFormField>
 
               <CatalogDropdownSelect
-                v-model="companyId"
+                v-model="company"
                 class="w-full"
                 placeholder="Compañía: todas"
                 :fetcher="fetchOperationalCompanyDropdown"
               />
 
               <CatalogDropdownSelect
-                v-model="managerId"
+                v-model="client"
+                class="w-full"
+                placeholder="Cliente: todos"
+                :fetcher="fetchOperationalClientDropdown"
+              />
+
+              <CatalogDropdownSelect
+                v-model="manager"
                 class="w-full"
                 placeholder="Gestor: todos"
                 :fetcher="fetchOperationalManagerDropdown"
@@ -493,14 +507,21 @@ const { fetchOperationalCompanyDropdown, fetchOperationalManagerDropdown } =
                   <template #body>
                     <div class="flex flex-col gap-3">
                       <CatalogDropdownSelect
-                        v-model="companyId"
+                        v-model="company"
                         class="w-full"
                         placeholder="Compañía: todas"
                         :fetcher="fetchOperationalCompanyDropdown"
                       />
 
                       <CatalogDropdownSelect
-                        v-model="managerId"
+                        v-model="client"
+                        class="w-full"
+                        placeholder="Cliente: todos"
+                        :fetcher="fetchOperationalClientDropdown"
+                      />
+
+                      <CatalogDropdownSelect
+                        v-model="manager"
                         class="w-full"
                         placeholder="Gestor: todos"
                         :fetcher="fetchOperationalManagerDropdown"
