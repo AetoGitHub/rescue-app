@@ -7,7 +7,7 @@ const filtersOpen = ref(false);
 </script>
 
 <template>
-  <div class="flex w-full flex-col gap-3 md:hidden">
+  <div class="flex w-full flex-col gap-3 xl:hidden">
     <slot name="primary" />
 
     <div class="flex flex-wrap items-center gap-2">
@@ -33,7 +33,7 @@ const filtersOpen = ref(false);
     </div>
   </div>
 
-  <div class="hidden w-full md:block">
+  <div class="hidden w-full xl:block">
     <slot />
   </div>
 </template>
