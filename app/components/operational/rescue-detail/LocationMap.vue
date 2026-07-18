@@ -27,18 +27,9 @@ const locationDescription = computed(() =>
 
 <template>
   <section class="space-y-3 rounded-lg border border-default bg-default p-4">
-    <div class="flex items-center justify-between gap-2">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
-        Ubicación
-      </h3>
-      <UButton
-        color="neutral"
-        icon="i-lucide-pencil"
-        label="Editar"
-        size="xs"
-        variant="ghost"
-      />
-    </div>
+    <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
+      Ubicación
+    </h3>
 
     <div class="h-44 overflow-hidden rounded-lg border border-default">
       <ClientOnly>
