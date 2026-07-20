@@ -127,3 +127,11 @@ export function getRescueCardAdvanceAmount(card: {
 export function hasRescueCardSupplier(supplierName: string | null | undefined): boolean {
   return Boolean(supplierName?.trim());
 }
+
+/** Número económico for cards; null when missing or blank. */
+export function getRescueCardVehicleLabel(
+  vehicle: string | null | undefined,
+): string | null {
+  const trimmed = vehicle?.trim();
+  return trimmed ? trimmed : null;
+}

@@ -66,6 +66,10 @@ const supplierBadgeColor = computed(() =>
   props.card.supplier_name?.trim() ? 'neutral' : 'error',
 );
 
+const vehicleLabel = computed(() =>
+  getRescueCardVehicleLabel(props.card.vehicle),
+);
+
 function onCardClick() {
   emit('select', props.card.id);
 }
@@ -99,6 +103,13 @@ function onCardClick() {
     <div class="space-y-0.5">
       <p class="text-sm font-semibold text-highlighted leading-snug">
         {{ card.client_name ?? 'Sin cliente' }}
+      </p>
+      <p
+        v-if="vehicleLabel"
+        class="text-xs text-muted"
+      >
+        Núm. económico:
+        <span class="font-medium text-highlighted">{{ vehicleLabel }}</span>
       </p>
     </div>
 

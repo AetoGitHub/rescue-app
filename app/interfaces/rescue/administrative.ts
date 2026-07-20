@@ -25,6 +25,8 @@ export interface AdministrativeRescueCard {
   client_name: string;
   service_description: string;
   location_description: string;
+  /** Número económico; null o vacío si no aplica. */
+  vehicle: string | null;
   operator_id: number | null;
   operator_name: string | null;
   supplier_id: number | null;
@@ -72,7 +74,6 @@ export interface AdministrativeRescueDetail extends AdministrativeRescueCard {
   admin_cancellation_reason: string | null;
   admin_cancellation_reason_id: number | null;
   provider_cost: string | null;
-  vehicle: string | null;
   latitude: string | null;
   longitude: string | null;
   supplier_score: number | null;

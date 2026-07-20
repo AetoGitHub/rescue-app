@@ -133,6 +133,7 @@ export function mapAdministrativeCardFromApi(
       readString(raw, 'location_description')
       ?? readString(raw, 'description')
       ?? '',
+    vehicle: readString(raw, 'vehicle'),
     operator_id: readNumber(raw, 'operator_id') ?? readNumber(raw, 'operator'),
     operator_name: readString(raw, 'operator_name'),
     supplier_id: readNumber(raw, 'supplier_id') ?? readNumber(raw, 'supplier'),
@@ -249,7 +250,6 @@ export function cardToAdministrativePreviewDetail(
     admin_cancellation_reason: null,
     admin_cancellation_reason_id: null,
     provider_cost: null,
-    vehicle: null,
     latitude: null,
     longitude: null,
     supplier_score: null,

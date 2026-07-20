@@ -47,6 +47,10 @@ const supplierBadgeColor = computed(() =>
   props.card.supplier_name?.trim() ? 'neutral' : 'error',
 );
 
+const vehicleLabel = computed(() =>
+  getRescueCardVehicleLabel(props.card.vehicle),
+);
+
 /** La columna del kanban es la fuente de verdad del estatus administrativo. */
 const docCard = computed((): AdministrativeRescueCard => ({
   ...props.card,
@@ -171,9 +175,18 @@ function onSendDocs() {
       </div>
     </div>
 
-    <p class="text-sm font-semibold text-highlighted leading-snug">
-      {{ card.client_name }}
-    </p>
+    <div class="space-y-0.5">
+      <p class="text-sm font-semibold text-highlighted leading-snug">
+        {{ card.client_name }}
+      </p>
+      <p
+        v-if="vehicleLabel"
+        class="text-xs text-muted"
+      >
+        Núm. económico:
+        <span class="font-medium text-highlighted">{{ vehicleLabel }}</span>
+      </p>
+    </div>
 
     <div
       v-if="showDocSection"

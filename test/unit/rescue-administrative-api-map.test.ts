@@ -156,6 +156,31 @@ describe('mapAdministrativeCardFromApi', () => {
     });
     expect(unblocked.blocked).toBe(false);
   });
+
+  it('maps vehicle and treats empty string as null', () => {
+    const withVehicle = mapAdministrativeCardFromApi({
+      id: 22,
+      folio: 'R-022',
+      operative_status: 'closed',
+      vehicle: 'TR-8842',
+    });
+    expect(withVehicle.vehicle).toBe('TR-8842');
+
+    const emptyVehicle = mapAdministrativeCardFromApi({
+      id: 23,
+      folio: 'R-023',
+      operative_status: 'closed',
+      vehicle: '',
+    });
+    expect(emptyVehicle.vehicle).toBeNull();
+
+    const missingVehicle = mapAdministrativeCardFromApi({
+      id: 24,
+      folio: 'R-024',
+      operative_status: 'closed',
+    });
+    expect(missingVehicle.vehicle).toBeNull();
+  });
 });
 
 const ADMINISTRATIVE_DETAIL_API_EXAMPLE = {

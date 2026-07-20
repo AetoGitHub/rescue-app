@@ -8,6 +8,8 @@ export interface RescueCardBase {
   client_name: string;
   service_description: string;
   location_description: string;
+  /** Número económico; null o vacío si no aplica. */
+  vehicle: string | null;
   total: string | null;
   operative_status: OperationalRescueStatus;
   operator_id: number | null;
