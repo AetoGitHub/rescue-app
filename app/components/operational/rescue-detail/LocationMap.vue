@@ -207,50 +207,53 @@ onBeforeUnmount(() => {
 
     <div
       v-if="hasMapPosition"
-      class="relative h-44 overflow-hidden rounded-lg border border-default"
+      class="space-y-2"
     >
-      <ClientOnly>
-        <GoogleMap
-          v-if="config.public.googleMapsApiKey && unitPosition"
-          ref="mapRef"
-          :map-id="mapId"
-          :api-key="config.public.googleMapsApiKey"
-          :center="unitPosition"
-          :zoom="13"
-          class="h-full w-full"
-          :map-type-control="false"
-          :street-view-control="false"
-          :fullscreen-control="false"
-          gesture-handling="cooperative"
-          @idle="onMapIdle"
-        >
-          <AdvancedMarker
-            :options="{
-              position: unitPosition,
-              title: 'Ubicación del rescate',
-            }"
-            :pin-options="SUPPLIER_MAP_UNIT_PIN"
-          />
-          <AdvancedMarker
-            v-if="supplierPosition"
-            :options="{
-              position: supplierPosition,
-              title: supplierTitle,
-            }"
-            :pin-options="SUPPLIER_MAP_SELECTED_PIN"
-          />
-        </GoogleMap>
-        <div
-          v-else
-          class="flex h-full items-center justify-center text-xs text-muted"
-        >
-          Mapa no disponible
-        </div>
-        <SharedMapPinLegend
-          v-if="showRouteLegend"
-          :items="RESCUE_DETAIL_ROUTE_MAP_LEGEND"
-        />
-      </ClientOnly>
+      <SharedMapPinLegend
+        v-if="showRouteLegend"
+        inline
+        :items="RESCUE_DETAIL_ROUTE_MAP_LEGEND"
+      />
+      <div class="relative h-44 overflow-hidden rounded-lg border border-default">
+        <ClientOnly>
+          <GoogleMap
+            v-if="config.public.googleMapsApiKey && unitPosition"
+            ref="mapRef"
+            :map-id="mapId"
+            :api-key="config.public.googleMapsApiKey"
+            :center="unitPosition"
+            :zoom="13"
+            class="h-full w-full"
+            :map-type-control="false"
+            :street-view-control="false"
+            :fullscreen-control="false"
+            gesture-handling="cooperative"
+            @idle="onMapIdle"
+          >
+            <AdvancedMarker
+              :options="{
+                position: unitPosition,
+                title: 'Ubicación del rescate',
+              }"
+              :pin-options="SUPPLIER_MAP_UNIT_PIN"
+            />
+            <AdvancedMarker
+              v-if="supplierPosition"
+              :options="{
+                position: supplierPosition,
+                title: supplierTitle,
+              }"
+              :pin-options="SUPPLIER_MAP_SELECTED_PIN"
+            />
+          </GoogleMap>
+          <div
+            v-else
+            class="flex h-full items-center justify-center text-xs text-muted"
+          >
+            Mapa no disponible
+          </div>
+        </ClientOnly>
+      </div>
     </div>
     <div
       v-else

@@ -1,19 +1,38 @@
 <script setup lang="ts">
 import type { MapPinLegendItem } from '~/constants/supplier-map-pins';
 
-defineProps<{
-  items: MapPinLegendItem[];
-}>();
+withDefaults(
+  defineProps<{
+    items: MapPinLegendItem[];
+    /** When true, renders as a static bar (e.g. above a small map) instead of an overlay. */
+    inline?: boolean;
+  }>(),
+  {
+    inline: false,
+  },
+);
 </script>
 
 <template>
   <div
-    class="pointer-events-none absolute bottom-3 left-3 z-10 max-w-[min(100%,14rem)] rounded-lg border border-default bg-default/95 px-3 py-2 shadow-sm"
+    :class="
+      inline
+        ? 'rounded-lg border border-default bg-default px-3 py-2'
+        : 'pointer-events-none absolute bottom-3 left-3 z-10 max-w-[min(100%,14rem)] rounded-lg border border-default bg-default/95 px-3 py-2 shadow-sm'
+    "
   >
-    <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+    <p
+      class="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted"
+    >
       Leyenda
     </p>
-    <ul class="space-y-1">
+    <ul
+      :class="
+        inline
+          ? 'flex flex-wrap gap-x-4 gap-y-1'
+          : 'space-y-1'
+      "
+    >
       <li
         v-for="item in items"
         :key="item.label"
