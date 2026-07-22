@@ -242,7 +242,9 @@ export function useRescueOperativeFlow(options: {
 
   function ensureSupplierBeforeCloseOrRedirect(): boolean {
     const d = detail.value;
-    if (d == null || hasRescueSupplierAssigned(d)) return true;
+    if (d == null || d.service_type === 'loan' || hasRescueSupplierAssigned(d)) {
+      return true;
+    }
 
     toast.add({
       title: RESCUE_OPERATIVE_TOAST.supplierRequiredBeforeClose,

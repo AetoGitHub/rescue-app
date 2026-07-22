@@ -25,6 +25,7 @@ export function canAssignRescueSupplier(detail: RescueCardDetail): boolean {
 export function getCloseSupplierDisabledReason(
   detail: RescueCardDetail,
 ): string | undefined {
+  if (detail.service_type === 'loan') return undefined;
   if (hasRescueSupplierAssigned(detail)) return undefined;
   return RESCUE_OPERATIVE_TOAST.supplierRequiredBeforeClose;
 }

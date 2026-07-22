@@ -94,6 +94,20 @@ describe('rescue supplier assign helpers', () => {
     expect(actions[1]?.disabled).toBeUndefined();
   });
 
+  it('applyCloseSupplierGuard leaves loan close enabled without supplier', () => {
+    const actions = applyCloseSupplierGuard(
+      [{ id: 'confirm_disbursement', label: 'Cerrar', primary: true }],
+      minimalDetail({
+        operative_status: 'in_progress',
+        service_type: 'loan',
+        supplier_id: null,
+      }),
+    );
+
+    expect(actions[0]?.disabled).toBeUndefined();
+    expect(actions[0]?.disabledReason).toBeUndefined();
+  });
+
   it('applyCloseSupplierGuard leaves actions enabled with supplier', () => {
     const actions = applyCloseSupplierGuard(
       [{ id: 'complete_service', label: 'Cerrar', primary: true }],

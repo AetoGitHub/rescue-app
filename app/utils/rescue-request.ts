@@ -8,16 +8,11 @@ export type RescueWizardStepKind =
   | 'supplier'
   | 'summary';
 
-export function hasExtendedRescueWizardFlow(
-  serviceType: RescueServiceType,
-): boolean {
-  return serviceType === 'rescue' || serviceType === 'proyect';
-}
-
+/** Quote is optional only for rescue and proyect; required for loan and direct_budget. */
 export function isQuoteOptionalForServiceType(
   serviceType: RescueServiceType,
 ): boolean {
-  return hasExtendedRescueWizardFlow(serviceType);
+  return serviceType === 'rescue' || serviceType === 'proyect';
 }
 
 function quoteStepItemFor(serviceType: RescueServiceType): StepperItem {
@@ -33,54 +28,18 @@ function quoteStepItemFor(serviceType: RescueServiceType): StepperItem {
 
 export function getWizardStepKind(
   stepIndex: number,
-  serviceType: RescueServiceType,
+  _serviceType: RescueServiceType,
 ): RescueWizardStepKind {
   if (stepIndex === 0) return 'basics';
-
-  if (hasExtendedRescueWizardFlow(serviceType)) {
-    if (stepIndex === 1) return 'location';
-    if (stepIndex === 2) return 'supplier';
-    if (stepIndex === 3) return 'quote';
-    return 'summary';
-  }
-
-  if (stepIndex === 1) return 'quote';
+  if (stepIndex === 1) return 'location';
+  if (stepIndex === 2) return 'supplier';
+  if (stepIndex === 3) return 'quote';
   return 'summary';
 }
 
 export function getRescueStepItems(
   serviceType: RescueServiceType,
 ): StepperItem[] {
-  if (hasExtendedRescueWizardFlow(serviceType)) {
-    return [
-      {
-        title: 'Datos',
-        description: 'Tipo y cliente',
-        icon: 'i-lucide-clipboard-list',
-        value: 0,
-      },
-      {
-        title: 'Ubicación',
-        description: 'Unidad en mapa',
-        icon: 'i-lucide-map-pin',
-        value: 1,
-      },
-      {
-        title: 'Proveedor',
-        description: 'Opcional',
-        icon: 'i-lucide-truck',
-        value: 2,
-      },
-      { ...quoteStepItemFor(serviceType), value: 3 },
-      {
-        title: 'Resumen',
-        description: 'Confirmar',
-        icon: 'i-lucide-check-circle',
-        value: 4,
-      },
-    ];
-  }
-
   return [
     {
       title: 'Datos',
@@ -88,12 +47,24 @@ export function getRescueStepItems(
       icon: 'i-lucide-clipboard-list',
       value: 0,
     },
-    { ...quoteStepItemFor(serviceType), value: 1 },
+    {
+      title: 'Ubicación',
+      description: 'Opcional',
+      icon: 'i-lucide-map-pin',
+      value: 1,
+    },
+    {
+      title: 'Proveedor',
+      description: 'Opcional',
+      icon: 'i-lucide-truck',
+      value: 2,
+    },
+    { ...quoteStepItemFor(serviceType), value: 3 },
     {
       title: 'Resumen',
       description: 'Confirmar',
       icon: 'i-lucide-check-circle',
-      value: 2,
+      value: 4,
     },
   ];
 }

@@ -67,6 +67,10 @@ const isSupplierStep = computed(
   () => currentStepKind.value === 'supplier',
 );
 
+const isLocationStep = computed(
+  () => currentStepKind.value === 'location',
+);
+
 const isWideStep = computed(
   () => currentStepKind.value === 'supplier' || currentStepKind.value === 'quote',
 );
@@ -130,14 +134,6 @@ watch(
     currentStep.value = 0;
     stepError.value = null;
     state.quote_lines = initialQuoteLinesForServiceType(state.service_type);
-    if (!hasExtendedRescueWizardFlow(state.service_type)) {
-      state.supplier = null;
-      state.supplierLabel = '';
-      state.service_description = '';
-      state.location_latitude = null;
-      state.location_longitude = null;
-      state.location_description = '';
-    }
   },
 );
 
@@ -402,6 +398,13 @@ function skipSupplier() {
   goNext();
 }
 
+function skipLocation() {
+  state.location_latitude = null;
+  state.location_longitude = null;
+  state.location_description = '';
+  goNext();
+}
+
 function onSubmit(payload: FormSubmitEvent<RescueCreateFormOutput>) {
   applyLockedManager();
   mutate({
@@ -536,6 +539,14 @@ const wizardModalProps = computed(() => {
           @click="cancel"
         />
         <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+          <UButton
+            v-if="isLocationStep"
+            type="button"
+            color="neutral"
+            variant="ghost"
+            label="Omitir ubicación"
+            @click="skipLocation"
+          />
           <UButton
             v-if="isSupplierStep"
             type="button"

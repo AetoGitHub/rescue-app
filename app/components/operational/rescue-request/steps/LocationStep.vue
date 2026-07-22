@@ -59,17 +59,17 @@ watchDebounced(
 
 <template>
   <div class="space-y-4">
-    <UFormField label="Ubicación de la unidad" name="location_latitude" required>
+    <UFormField label="Ubicación de la unidad" name="location_latitude">
       <SharedLocationPicker
         v-model:latitude="state.location_latitude"
         v-model:longitude="state.location_longitude"
         latitude-name="location_latitude"
         longitude-name="location_longitude"
-        empty-status-label="Indica la ubicación de la unidad"
+        empty-status-label="Indica la ubicación de la unidad (opcional)"
       />
     </UFormField>
 
-    <UFormField label="Descripción del lugar" name="location_description" required>
+    <UFormField label="Descripción del lugar" name="location_description">
       <div class="space-y-2">
         <UInput v-model="state.location_description" class="w-full" />
         <p

@@ -109,10 +109,7 @@ onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
             </span>
           </dd>
         </div>
-        <div
-          v-if="hasExtendedRescueWizardFlow(state.service_type)"
-          class="sm:col-span-2"
-        >
+        <div class="sm:col-span-2">
           <dt class="text-muted">Descripción del servicio</dt>
           <dd class="font-medium whitespace-pre-wrap">
             {{ state.service_description || '—' }}

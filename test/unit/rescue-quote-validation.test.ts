@@ -41,12 +41,6 @@ const baseFormFields = {
   internal_notes: '',
 };
 
-const extendedFlowLocationFields = {
-  location_latitude: '19.4326',
-  location_longitude: '-99.1332',
-  location_description: 'CDMX',
-};
-
 describe('getRescueStepQuoteSchema', () => {
   it('allows empty quote_lines for rescue', () => {
     const result = getRescueStepQuoteSchema('rescue').safeParse({
@@ -114,11 +108,19 @@ describe('rescueStepSupplierSchema', () => {
 });
 
 describe('rescueCreateFormSchema quote_lines', () => {
-  it('allows empty quote on proyect submit with required location', () => {
+  it('allows empty quote on proyect submit without location', () => {
     const result = rescueCreateFormSchema.safeParse({
       ...baseFormFields,
-      ...extendedFlowLocationFields,
       service_type: 'proyect',
+      quote_lines: [],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('allows empty location on rescue submit', () => {
+    const result = rescueCreateFormSchema.safeParse({
+      ...baseFormFields,
+      service_type: 'rescue',
       quote_lines: [],
     });
     expect(result.success).toBe(true);
@@ -131,5 +133,23 @@ describe('rescueCreateFormSchema quote_lines', () => {
       quote_lines: [],
     });
     expect(result.success).toBe(false);
+  });
+
+  it('rejects empty quote on loan submit', () => {
+    const result = rescueCreateFormSchema.safeParse({
+      ...baseFormFields,
+      service_type: 'loan',
+      quote_lines: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('allows loan submit with filled quote and no location', () => {
+    const result = rescueCreateFormSchema.safeParse({
+      ...baseFormFields,
+      service_type: 'loan',
+      quote_lines: [validQuoteLine],
+    });
+    expect(result.success).toBe(true);
   });
 });
