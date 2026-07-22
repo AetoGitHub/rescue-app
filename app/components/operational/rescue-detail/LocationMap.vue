@@ -1,6 +1,12 @@
 <script setup lang="ts">
+import { useQuery } from '@pinia/colada';
 import { AdvancedMarker, GoogleMap } from 'vue3-google-map';
 import type { RescueCardDetail } from '~/interfaces/rescue';
+import {
+  RESCUE_DETAIL_ROUTE_MAP_LEGEND,
+  SUPPLIER_MAP_SELECTED_PIN,
+  SUPPLIER_MAP_UNIT_PIN,
+} from '~/constants/supplier-map-pins';
 
 const props = withDefaults(
   defineProps<{
@@ -19,15 +25,56 @@ const emit = defineEmits<{
 const config = useRuntimeConfig();
 const mapId = '21013da77446513d35236d00';
 
-const position = computed(() =>
+const mapRef = ref<{ map: google.maps.Map } | null>(null);
+let routePolylines: google.maps.Polyline[] = [];
+let routeRequestId = 0;
+let fitRetryTimer: ReturnType<typeof setTimeout> | null = null;
+let lastRouteKey = '';
+let mapHasSynced = false;
+
+const unitPosition = computed(() =>
   parseRescueCoordinates(props.detail.latitude, props.detail.longitude),
 );
 
-const hasMapPosition = computed(() => position.value != null);
+const hasMapPosition = computed(() => unitPosition.value != null);
+
+const supplierId = computed(() => props.detail.supplier_id);
+
+const {
+  data: supplierDetail,
+} = useQuery<Record<string, unknown>, Error>({
+  key: () => ['supplier-detail', supplierId.value],
+  query: async ({ signal }) =>
+    $fetch<Record<string, unknown>>(
+      `/api/supplier/detail/${supplierId.value}/`,
+      { signal },
+    ),
+  enabled: () => supplierId.value != null,
+});
+
+const supplierPosition = computed(() => {
+  const raw = supplierDetail.value;
+  if (raw == null) return null;
+  return parseRescueCoordinates(
+    raw.latitude != null ? String(raw.latitude) : null,
+    raw.longitude != null ? String(raw.longitude) : null,
+  );
+});
+
+const supplierTitle = computed(() => {
+  const name = props.detail.supplier_name?.trim();
+  if (name) return name;
+  if (supplierId.value != null) return `Proveedor #${supplierId.value}`;
+  return 'Proveedor';
+});
+
+const showRouteLegend = computed(
+  () => unitPosition.value != null && supplierPosition.value != null,
+);
 
 const coordinatesLabel = computed(() => {
-  if (!position.value) return '—';
-  return `${position.value.lat.toFixed(5)}, ${position.value.lng.toFixed(5)}`;
+  if (!unitPosition.value) return '—';
+  return `${unitPosition.value.lat.toFixed(5)}, ${unitPosition.value.lng.toFixed(5)}`;
 });
 
 const locationDescription = computed(() =>
@@ -41,6 +88,104 @@ const locationActionLabel = computed(() =>
 const locationActionIcon = computed(() =>
   hasMapPosition.value ? 'i-lucide-pencil' : 'i-lucide-map-pin-plus',
 );
+
+function clearFitRetry() {
+  if (fitRetryTimer != null) {
+    clearTimeout(fitRetryTimer);
+    fitRetryTimer = null;
+  }
+}
+
+function routeKeyFor(
+  origin: { lat: number; lng: number } | null,
+  destination: { lat: number; lng: number } | null,
+) {
+  if (origin == null || destination == null) return '';
+  return `${origin.lat},${origin.lng}|${destination.lat},${destination.lng}`;
+}
+
+function clearRoute() {
+  clearRoutePolylines(routePolylines);
+  routePolylines = [];
+  lastRouteKey = '';
+}
+
+function fitMarkers(attempt = 0) {
+  const map = mapRef.value?.map;
+  if (!map) {
+    if (attempt < 20) {
+      clearFitRetry();
+      fitRetryTimer = setTimeout(() => fitMarkers(attempt + 1), 80);
+    }
+    return;
+  }
+  clearFitRetry();
+
+  const points = [unitPosition.value, supplierPosition.value].filter(
+    (point): point is { lat: number; lng: number } => point != null,
+  );
+  if (points.length === 0) return;
+  fitMapToPoints(map, points);
+}
+
+async function syncRoute() {
+  const map = mapRef.value?.map;
+  const origin = unitPosition.value;
+  const destination = supplierPosition.value;
+  const nextKey = routeKeyFor(origin, destination);
+  const requestId = ++routeRequestId;
+
+  if (map == null || origin == null || destination == null) {
+    clearRoute();
+    return;
+  }
+
+  if (nextKey === lastRouteKey && routePolylines.length > 0) {
+    return;
+  }
+
+  const route = await requestDrivingRoute(origin, destination);
+  if (requestId !== routeRequestId) return;
+
+  clearRoute();
+
+  if (route == null) {
+    return;
+  }
+
+  routePolylines = drawDrivingRoutePolylines(map, route);
+  lastRouteKey = nextKey;
+}
+
+function onMapIdle() {
+  const map = mapRef.value?.map;
+  if (map) {
+    google.maps.event.trigger(map, 'resize');
+  }
+  if (mapHasSynced) return;
+  mapHasSynced = true;
+  fitMarkers();
+  void syncRoute();
+}
+
+watch(
+  () => [unitPosition.value, supplierPosition.value] as const,
+  () => {
+    lastRouteKey = '';
+    nextTick(() => {
+      fitMarkers();
+      void syncRoute();
+    });
+  },
+  { deep: true },
+);
+
+onBeforeUnmount(() => {
+  clearFitRetry();
+  routeRequestId += 1;
+  mapHasSynced = false;
+  clearRoute();
+});
 </script>
 
 <template>
@@ -62,31 +207,37 @@ const locationActionIcon = computed(() =>
 
     <div
       v-if="hasMapPosition"
-      class="h-44 overflow-hidden rounded-lg border border-default"
+      class="relative h-44 overflow-hidden rounded-lg border border-default"
     >
       <ClientOnly>
         <GoogleMap
-          v-if="config.public.googleMapsApiKey && position"
+          v-if="config.public.googleMapsApiKey && unitPosition"
+          ref="mapRef"
           :map-id="mapId"
           :api-key="config.public.googleMapsApiKey"
-          :center="position"
+          :center="unitPosition"
           :zoom="13"
           class="h-full w-full"
           :map-type-control="false"
           :street-view-control="false"
           :fullscreen-control="false"
           gesture-handling="cooperative"
+          @idle="onMapIdle"
         >
           <AdvancedMarker
             :options="{
-              position,
-              title: detail.client_name,
+              position: unitPosition,
+              title: 'Ubicación del rescate',
             }"
-            :pin-options="{
-              background: '#ef4444',
-              borderColor: '#b91c1c',
-              glyphColor: '#ffffff',
+            :pin-options="SUPPLIER_MAP_UNIT_PIN"
+          />
+          <AdvancedMarker
+            v-if="supplierPosition"
+            :options="{
+              position: supplierPosition,
+              title: supplierTitle,
             }"
+            :pin-options="SUPPLIER_MAP_SELECTED_PIN"
           />
         </GoogleMap>
         <div
@@ -95,6 +246,10 @@ const locationActionIcon = computed(() =>
         >
           Mapa no disponible
         </div>
+        <SharedMapPinLegend
+          v-if="showRouteLegend"
+          :items="RESCUE_DETAIL_ROUTE_MAP_LEGEND"
+        />
       </ClientOnly>
     </div>
     <div

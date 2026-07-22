@@ -70,6 +70,19 @@ export const CATALOG_SUPPLIER_MAP_LEGEND: MapPinLegendItem[] = [
   },
 ];
 
+export const RESCUE_DETAIL_ROUTE_MAP_LEGEND: MapPinLegendItem[] = [
+  {
+    color: SUPPLIER_MAP_UNIT_PIN.background,
+    borderColor: SUPPLIER_MAP_UNIT_PIN.borderColor,
+    label: 'Ubicación del rescate',
+  },
+  {
+    color: SUPPLIER_MAP_SELECTED_PIN.background,
+    borderColor: SUPPLIER_MAP_SELECTED_PIN.borderColor,
+    label: 'Proveedor',
+  },
+];
+
 export function trustedSupplierPinOptions(isTrusted: boolean): SupplierMapPinColors {
   return isTrusted ? SUPPLIER_MAP_TRUSTED_PIN : SUPPLIER_MAP_REGULAR_PIN;
 }
