@@ -247,6 +247,7 @@ async function onDownloadAll() {
   const body = buildRescueEvidenceZipPayload({
     rescueId: props.rescueId,
     folio: props.folio,
+    type: evidenceType.value,
     urls: items.value.map((item) => item.url),
   });
 

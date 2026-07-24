@@ -5,7 +5,7 @@ import {
   RESCUE_EVIDENCE_STORAGE_PREFIX,
   RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
   RESCUE_EVIDENCE_TYPE_SERVICE,
-  RESCUE_EVIDENCE_ZIP_COMPLEMENT_PLACEHOLDER,
+  rescueEvidenceZipComplement,
 } from '~/constants/rescue-evidence-api';
 import type {
   RescueEvidenceType,
@@ -207,13 +207,15 @@ export function getRescueEvidenceFileIcon(url: string): string {
 export function buildRescueEvidenceZipPayload(input: {
   rescueId: number;
   folio: string;
-  complement?: string;
+  type: RescueEvidenceType;
   urls: string[];
+  complement?: string;
 }): RescueEvidenceZipDownloadBody {
   return {
     rescue_id: input.rescueId,
     folio: input.folio,
-    complement: input.complement ?? RESCUE_EVIDENCE_ZIP_COMPLEMENT_PLACEHOLDER,
+    complement:
+      input.complement ?? rescueEvidenceZipComplement(input.type),
     urls: input.urls.filter((url) => url.trim().length > 0),
   };
 }

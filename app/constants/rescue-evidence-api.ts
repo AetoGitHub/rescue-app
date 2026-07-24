@@ -6,15 +6,21 @@ export const RESCUE_EVIDENCE_LIST_PATH = (rescueId: number) =>
 export const RESCUE_EVIDENCE_CREATE_PATH = (rescueId: number) =>
   `/api/rescue/evidence/${rescueId}/create/`;
 
-/**
- * Temporary placeholder until the zip web service defines `complement`.
- * Swap this (or pass a real value) when wiring the download endpoint.
- */
-export const RESCUE_EVIDENCE_ZIP_COMPLEMENT_PLACEHOLDER = 'xx';
-
 export const RESCUE_EVIDENCE_TYPE_SERVICE = 'service' as const satisfies RescueEvidenceType;
 export const RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER =
   'payment_provider' as const satisfies RescueEvidenceType;
+
+/** Slug sent as `complement` on the future zip-download payload. */
+export const RESCUE_EVIDENCE_ZIP_COMPLEMENT_BY_TYPE = {
+  [RESCUE_EVIDENCE_TYPE_SERVICE]: 'evidencia-rescate',
+  [RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER]: 'evidencia-pago',
+} as const satisfies Record<RescueEvidenceType, string>;
+
+export function rescueEvidenceZipComplement(
+  type: RescueEvidenceType,
+): string {
+  return RESCUE_EVIDENCE_ZIP_COMPLEMENT_BY_TYPE[type];
+}
 
 export const RESCUE_EVIDENCE_SERVICE_MAX_BYTES = 50 * 1024 * 1024;
 export const RESCUE_EVIDENCE_PAYMENT_MAX_BYTES = 25 * 1024 * 1024;
