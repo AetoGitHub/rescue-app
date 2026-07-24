@@ -180,7 +180,15 @@ defineExpose({ recenterFromModel });
           @click="onMapClick"
         >
           <CustomControl position="TOP_LEFT">
-            <SharedMapPlacesSearch @select="onPlaceSelect" />
+            <div
+              class="m-2 w-[min(20rem,70vw)]"
+              @mousedown.stop
+              @click.stop
+              @dblclick.stop
+              @touchstart.stop
+            >
+              <SharedMapPlacesSearch @select="onPlaceSelect" />
+            </div>
           </CustomControl>
           <AdvancedMarker
             v-if="markerLatLng"

@@ -10,7 +10,7 @@ export const RESCUE_EVIDENCE_TYPE_SERVICE = 'service' as const satisfies RescueE
 export const RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER =
   'payment_provider' as const satisfies RescueEvidenceType;
 
-/** Slug sent as `complement` on the future zip-download payload. */
+/** Slug sent as `complement` on the zip-download payload. */
 export const RESCUE_EVIDENCE_ZIP_COMPLEMENT_BY_TYPE = {
   [RESCUE_EVIDENCE_TYPE_SERVICE]: 'evidencia-rescate',
   [RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER]: 'evidencia-pago',
@@ -27,6 +27,9 @@ export const RESCUE_EVIDENCE_PAYMENT_MAX_BYTES = 25 * 1024 * 1024;
 
 export const RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT =
   'https://n8n.srv1137762.hstgr.cloud/webhook/upload-firebase-general';
+
+export const RESCUE_EVIDENCE_ZIP_WEBHOOK_DEFAULT =
+  'https://n8n.srv1137762.hstgr.cloud/webhook/zip-rescates';
 
 export const RESCUE_EVIDENCE_STORAGE_PREFIX = 'rescue-2/rescue';
 
@@ -65,6 +68,8 @@ export const RESCUE_EVIDENCE_MODAL_COPY = {
     invalidFile: 'Solo imágenes o PDF dentro del tamaño máximo',
   },
   downloadAll: 'Descargar todo',
+  downloadingZip: 'Descargando…',
+  downloadZipError: 'No se pudo descargar el ZIP de evidencia',
   uploading: 'Subiendo…',
   uploadingFile: (fileName: string, index: number, total: number) =>
     total > 1

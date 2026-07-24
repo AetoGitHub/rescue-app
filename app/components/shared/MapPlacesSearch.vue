@@ -1,15 +1,29 @@
 <script setup lang="ts">
+import { refDebounced } from '@vueuse/core';
 import type { MapPlaceSelectPayload } from '~/interfaces/maps/geocoding';
+
+interface PlacePredictionItem {
+  id: string;
+  label: string;
+  description?: string;
+}
 
 const emit = defineEmits<{
   select: [payload: MapPlaceSelectPayload];
 }>();
 
-const inputRef = ref<HTMLInputElement | null>(null);
+const selected = ref<PlacePredictionItem | undefined>();
+const searchTerm = ref('');
+const debouncedSearch = refDebounced(searchTerm, 300);
+const items = ref<PlacePredictionItem[]>([]);
+const loading = ref(false);
+const resolving = ref(false);
 const failed = ref(false);
 
-let autocomplete: google.maps.places.Autocomplete | null = null;
-let placeListener: google.maps.MapsEventListener | null = null;
+let autocompleteService: google.maps.places.AutocompleteService | null = null;
+let placesService: google.maps.places.PlacesService | null = null;
+let placesHost: HTMLDivElement | null = null;
+let searchRequestId = 0;
 
 async function waitForPlacesLibrary(attempt = 0): Promise<boolean> {
   if (!import.meta.client) return false;
@@ -29,90 +43,198 @@ async function waitForPlacesLibrary(attempt = 0): Promise<boolean> {
   return waitForPlacesLibrary(attempt + 1);
 }
 
-function detachAutocomplete() {
-  if (placeListener) {
-    placeListener.remove();
-    placeListener = null;
-  }
-  autocomplete = null;
-}
-
-async function attachAutocomplete() {
-  const input = inputRef.value;
-  if (!input || autocomplete) return;
+async function ensurePlacesServices(): Promise<boolean> {
+  if (autocompleteService && placesService) return true;
 
   const loaded = await waitForPlacesLibrary();
-  if (!loaded || !inputRef.value) {
+  if (!loaded) {
     failed.value = true;
+    return false;
+  }
+
+  autocompleteService = new google.maps.places.AutocompleteService();
+  placesHost = document.createElement('div');
+  placesService = new google.maps.places.PlacesService(placesHost);
+  failed.value = false;
+  return true;
+}
+
+function getPlacePredictions(
+  input: string,
+): Promise<google.maps.places.AutocompletePrediction[]> {
+  return new Promise((resolve) => {
+    if (!autocompleteService) {
+      resolve([]);
+      return;
+    }
+
+    autocompleteService.getPlacePredictions(
+      {
+        input,
+        componentRestrictions: { country: 'mx' },
+      },
+      (predictions, status) => {
+        if (
+          status !== google.maps.places.PlacesServiceStatus.OK
+          || !predictions?.length
+        ) {
+          resolve([]);
+          return;
+        }
+        resolve(predictions);
+      },
+    );
+  });
+}
+
+function getPlaceDetails(
+  placeId: string,
+): Promise<google.maps.places.PlaceResult | null> {
+  return new Promise((resolve) => {
+    if (!placesService) {
+      resolve(null);
+      return;
+    }
+
+    placesService.getDetails(
+      {
+        placeId,
+        fields: ['geometry', 'formatted_address', 'name'],
+      },
+      (place, status) => {
+        if (
+          status !== google.maps.places.PlacesServiceStatus.OK
+          || !place
+        ) {
+          resolve(null);
+          return;
+        }
+        resolve(place);
+      },
+    );
+  });
+}
+
+async function searchPlaces(term: string) {
+  const requestId = ++searchRequestId;
+  const trimmed = term.trim();
+
+  if (trimmed.length < 2) {
+    items.value = [];
+    loading.value = false;
     return;
   }
 
-  detachAutocomplete();
+  loading.value = true;
+  const ready = await ensurePlacesServices();
+  if (!ready || requestId !== searchRequestId) {
+    if (requestId === searchRequestId) loading.value = false;
+    return;
+  }
 
-  autocomplete = new google.maps.places.Autocomplete(inputRef.value, {
-    fields: ['geometry', 'formatted_address', 'name'],
-    componentRestrictions: { country: 'mx' },
-  });
+  try {
+    const predictions = await getPlacePredictions(trimmed);
+    if (requestId !== searchRequestId) return;
 
-  placeListener = autocomplete.addListener('place_changed', () => {
-    const place = autocomplete?.getPlace();
+    items.value = predictions.map((prediction) => ({
+      id: prediction.place_id,
+      label:
+        prediction.structured_formatting?.main_text?.trim()
+        || prediction.description,
+      description:
+        prediction.structured_formatting?.secondary_text?.trim()
+        || prediction.description,
+    }));
+  } finally {
+    if (requestId === searchRequestId) {
+      loading.value = false;
+    }
+  }
+}
+
+watch(debouncedSearch, (term) => {
+  void searchPlaces(term);
+});
+
+watch(selected, async (item) => {
+  if (!item?.id) return;
+
+  resolving.value = true;
+  try {
+    const ready = await ensurePlacesServices();
+    if (!ready) return;
+
+    const place = await getPlaceDetails(item.id);
     const location = place?.geometry?.location;
     if (!location) return;
 
-    const lat = location.lat();
-    const lng = location.lng();
     const address =
       place.formatted_address?.trim()
       || place.name?.trim()
-      || '';
+      || item.label;
 
-    emit('select', { lat, lng, address });
-  });
-
-  failed.value = false;
-}
+    emit('select', {
+      lat: location.lat(),
+      lng: location.lng(),
+      address,
+    });
+  } finally {
+    resolving.value = false;
+  }
+});
 
 onMounted(() => {
-  void attachAutocomplete();
+  void ensurePlacesServices();
 });
 
 onBeforeUnmount(() => {
-  detachAutocomplete();
+  autocompleteService = null;
+  placesService = null;
+  placesHost = null;
 });
 </script>
 
 <template>
-  <div
-    class="map-places-search m-2 w-[min(20rem,70vw)]"
-    @mousedown.stop
-    @click.stop
-    @dblclick.stop
-    @touchstart.stop
+  <UInputMenu
+    v-model="selected"
+    v-model:search-term="searchTerm"
+    :items="items"
+    ignore-filter
+    by="id"
+    label-key="label"
+    description-key="description"
+    :loading="loading || resolving"
+    :disabled="failed"
+    icon="i-lucide-search"
+    placeholder="Buscar lugar…"
+    size="sm"
+    variant="subtle"
+    clear
+    open-on-focus
+    class="w-full"
+    :portal="true"
+    :ui="{
+      base: 'bg-default shadow-md',
+      content: 'z-[100000]',
+    }"
+    :content="{
+      side: 'bottom',
+      sideOffset: 4,
+    }"
+    :aria-label="failed ? 'Búsqueda de lugares no disponible' : 'Buscar lugar'"
   >
-    <div
-      class="flex items-center gap-2 rounded-md border border-default bg-default px-2.5 py-1.5 shadow-md"
-      :class="failed ? 'opacity-60' : ''"
-    >
-      <UIcon
-        name="i-lucide-search"
-        class="size-4 shrink-0 text-muted"
-      />
-      <input
-        ref="inputRef"
-        type="text"
-        class="min-w-0 flex-1 border-0 bg-transparent text-sm text-highlighted outline-none placeholder:text-muted"
-        placeholder="Buscar lugar…"
-        autocomplete="off"
-        :disabled="failed"
-        :aria-label="failed ? 'Búsqueda de lugares no disponible' : 'Buscar lugar'"
-      >
-    </div>
-  </div>
+    <template #empty>
+      <p class="px-2 py-1.5 text-sm text-muted">
+        {{
+          failed
+            ? 'Búsqueda no disponible'
+            : searchTerm.trim().length < 2
+              ? 'Escribe al menos 2 caracteres'
+              : loading
+                ? 'Buscando…'
+                : 'Sin resultados'
+        }}
+      </p>
+    </template>
+  </UInputMenu>
 </template>
-
-<style>
-/* pac-container is appended to document.body; keep it above modals/maps. */
-.pac-container {
-  z-index: 100000 !important;
-}
-</style>

@@ -2,6 +2,7 @@
 import {
   RESCUE_EVIDENCE_MODAL_COPY,
   RESCUE_EVIDENCE_TYPE_SERVICE,
+  RESCUE_EVIDENCE_ZIP_WEBHOOK_DEFAULT,
   RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
 } from '~/constants/rescue-evidence-api';
 import type { RescueEvidence, RescueEvidenceType } from '~/interfaces/rescue/evidence';
@@ -37,10 +38,16 @@ const webhookUrl = computed(
     runtimeConfig.public.firebaseUploadWebhookUrl ||
     RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
 );
+const zipWebhookUrl = computed(
+  () =>
+    runtimeConfig.public.evidenceZipWebhookUrl ||
+    RESCUE_EVIDENCE_ZIP_WEBHOOK_DEFAULT,
+);
 
 const toast = useToast();
 const pendingFiles = ref<File[]>([]);
 const isUploading = ref(false);
+const isDownloadingZip = ref(false);
 const uploadProgress = ref<number | null>(null);
 const uploadLabel = ref('');
 const {
@@ -57,7 +64,6 @@ const {
     isUploading: isUploading.value,
   }),
 });
-
 const rescueIdRef = computed(() => props.rescueId);
 
 const isGuestMode = computed(
@@ -242,7 +248,7 @@ function openEvidenceUrl(url: string) {
 }
 
 async function onDownloadAll() {
-  if (!canDownloadAll.value) return;
+  if (!canDownloadAll.value || isDownloadingZip.value) return;
 
   const body = buildRescueEvidenceZipPayload({
     rescueId: props.rescueId,
@@ -251,7 +257,18 @@ async function onDownloadAll() {
     urls: items.value.map((item) => item.url),
   });
 
-  await requestRescueEvidenceZipDownload(body);
+  isDownloadingZip.value = true;
+  try {
+    await requestRescueEvidenceZipDownload(body, zipWebhookUrl.value);
+  } catch (error) {
+    toast.add({
+      title: RESCUE_EVIDENCE_MODAL_COPY.downloadZipError,
+      description: getFetchErrorMessage(error),
+      color: 'error',
+    });
+  } finally {
+    isDownloadingZip.value = false;
+  }
 }
 
 function fileLabel(url: string, index: number) {
@@ -403,9 +420,15 @@ function fileLabel(url: string, index: number) {
             v-if="canDownloadAll"
             color="primary"
             icon="i-lucide-archive"
-            :label="RESCUE_EVIDENCE_MODAL_COPY.downloadAll"
+            :label="
+              isDownloadingZip
+                ? RESCUE_EVIDENCE_MODAL_COPY.downloadingZip
+                : RESCUE_EVIDENCE_MODAL_COPY.downloadAll
+            "
             variant="solid"
             size="sm"
+            :loading="isDownloadingZip"
+            :disabled="isDownloadingZip"
             @click="() => void onDownloadAll()"
           />
           <UButton

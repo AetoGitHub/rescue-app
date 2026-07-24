@@ -216,19 +216,50 @@ export function buildRescueEvidenceZipPayload(input: {
     folio: input.folio,
     complement:
       input.complement ?? rescueEvidenceZipComplement(input.type),
-    urls: input.urls.filter((url) => url.trim().length > 0),
+    urls: input.urls
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0),
   };
 }
 
-/**
- * Temporary: logs the zip payload. Replace the body with the real web
- * service call when the download-zip endpoint is ready.
- */
+export function buildRescueEvidenceZipFilename(
+  body: Pick<RescueEvidenceZipDownloadBody, 'folio' | 'complement'>,
+): string {
+  const safeFolio = body.folio.trim().replace(/[^\w.-]+/g, '_') || 'rescate';
+  const safeComplement =
+    body.complement.trim().replace(/[^\w.-]+/g, '_') || 'evidencia';
+  return `${safeFolio}-${safeComplement}.zip`;
+}
+
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
+/** POST to n8n zip webhook and trigger a browser ZIP download. */
 export async function requestRescueEvidenceZipDownload(
   body: RescueEvidenceZipDownloadBody,
+  webhookUrl: string,
 ): Promise<void> {
-  // TODO(evidence-zip): POST body to the zip web service and trigger download.
-  console.log('[rescue-evidence-zip]', body);
+  if (body.urls.length === 0) {
+    throw new Error('No hay archivos para descargar');
+  }
+
+  const blob = await $fetch<Blob>(webhookUrl, {
+    method: 'POST',
+    body,
+    responseType: 'blob',
+  });
+
+  if (!(blob instanceof Blob) || blob.size === 0) {
+    throw new Error('Respuesta ZIP vacía');
+  }
+
+  triggerBlobDownload(blob, buildRescueEvidenceZipFilename(body));
 }
 
 /** @deprecated Prefer requestRescueEvidenceZipDownload with the zip payload. */
