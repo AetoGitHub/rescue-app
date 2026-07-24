@@ -26,10 +26,15 @@ const props = defineProps<{
   fetchServiceDropdown: CatalogDropdownFetcher;
 }>();
 
-const quoteLines = defineModel<RescueQuoteLine[]>('quoteLines', { required: true });
-const companySettings = defineModel<RescueCompanySettings | null>('companySettings', {
-  default: null,
+const quoteLines = defineModel<RescueQuoteLine[]>('quoteLines', {
+  required: true,
 });
+const companySettings = defineModel<RescueCompanySettings | null>(
+  'companySettings',
+  {
+    default: null,
+  },
+);
 
 const toast = useToast();
 const activeEditorTab = ref<QuoteEditorTabValue>('lines');
@@ -46,8 +51,8 @@ const hasQuoteLines = computed(() => quoteLines.value.length > 0);
 
 const showCreditBadge = computed(
   () =>
-    props.clientCreditSnapshot != null
-    && isWizardCreditClient(props.clientCreditSnapshot),
+    props.clientCreditSnapshot != null &&
+    isWizardCreditClient(props.clientCreditSnapshot),
 );
 
 const priceMultiplierLabel = computed(() => {
@@ -274,9 +279,7 @@ watch(
       </div>
       <UBadge color="primary" variant="subtle" size="md">
         {{
-          serviceType === 'loan'
-            ? 'Multiplicador préstamo'
-            : 'Multiplicador'
+          serviceType === 'loan' ? 'Multiplicador préstamo' : 'Multiplicador'
         }}: {{ priceMultiplierLabel }}
       </UBadge>
     </div>
@@ -308,9 +311,11 @@ watch(
         v-if="hasQuoteLines"
         class="overflow-x-auto rounded-lg border border-default"
       >
-        <table class="w-full min-w-[640px] text-sm sm:min-w-[1100px]">
+        <table class="w-full min-w-160 text-sm sm:min-w-275">
           <thead>
-            <tr class="border-b border-default bg-elevated/50 text-left text-xs uppercase tracking-wide text-muted">
+            <tr
+              class="border-b border-default bg-elevated/50 text-left text-xs uppercase tracking-wide text-muted"
+            >
               <th class="px-3 py-2 font-medium">Servicio</th>
               <th class="w-24 px-3 py-2 font-medium">Cantidad</th>
               <th class="w-36 px-3 py-2 font-medium">Costo unit.</th>
@@ -340,7 +345,9 @@ watch(
                     />
                   </UFormField>
                   <p
-                    v-if="line.service.value == null && line.service.label.trim()"
+                    v-if="
+                      line.service.value == null && line.service.label.trim()
+                    "
                     class="text-xs text-muted"
                   >
                     Sugerido: {{ line.service.label }}
