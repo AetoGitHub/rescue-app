@@ -84,6 +84,7 @@ export const rescueStepBasicsSchema = z
     general_public: z.boolean(),
     serialNumber: serialNumberField,
     manager: managerFieldOptional,
+    service_description: z.string().transform((s) => s.trim()),
   })
   .superRefine((data, ctx) => {
     if (data.manager.value == null) {
@@ -99,7 +100,6 @@ export const rescueStepLocationSchema = z.object({
   location_latitude: coordFromNullable('La latitud', -90, 90),
   location_longitude: coordFromNullable('La longitud', -180, 180),
   location_description: z.string().transform((s) => s.trim()),
-  service_description: z.string().transform((s) => s.trim()),
 });
 
 export const rescueStepSupplierSchema = z.object({

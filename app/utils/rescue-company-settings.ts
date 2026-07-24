@@ -96,15 +96,18 @@ export function applyContractToLine(
   line: RescueQuoteLine,
   contractItem: RescueContractItem,
 ): void {
-  const alreadyLinked = line.contract_item_id === contractItem.id;
+  // Idempotent: reassigning `service` on every sync retriggers quote-line
+  // watchers and freezes the cotización UI when the service has a convenio.
+  if (line.contract_item_id === contractItem.id) {
+    return;
+  }
+
   line.contract_item_id = contractItem.id;
   line.service = catalogDropdownSelection(
     contractItem.service_id,
     contractItem.service_name,
   );
-  if (!alreadyLinked) {
-    line.unit_cost = contractItem.price;
-  }
+  line.unit_cost = contractItem.price;
 }
 
 export function clearContractFromLine(line: RescueQuoteLine): void {

@@ -5,23 +5,21 @@ import {
 } from '~/utils/rescue-board-view-query';
 
 describe('parseRescueBoardViewMode', () => {
-  it('returns list only for the list query value', () => {
+  it('returns the explicit mode from the query value', () => {
     expect(parseRescueBoardViewMode('list')).toBe('list');
+    expect(parseRescueBoardViewMode('kanban')).toBe('kanban');
   });
 
-  it('defaults to kanban for missing or invalid values', () => {
-    expect(parseRescueBoardViewMode(undefined)).toBe('kanban');
-    expect(parseRescueBoardViewMode('kanban')).toBe('kanban');
-    expect(parseRescueBoardViewMode('grid')).toBe('kanban');
+  it('returns null for missing or invalid values', () => {
+    expect(parseRescueBoardViewMode(undefined)).toBeNull();
+    expect(parseRescueBoardViewMode('grid')).toBeNull();
+    expect(parseRescueBoardViewMode('')).toBeNull();
   });
 });
 
 describe('rescueBoardViewQueryValue', () => {
-  it('omits query param for kanban', () => {
-    expect(rescueBoardViewQueryValue('kanban')).toBeUndefined();
-  });
-
-  it('uses list for list mode', () => {
+  it('keeps the query param explicit for both modes', () => {
+    expect(rescueBoardViewQueryValue('kanban')).toBe('kanban');
     expect(rescueBoardViewQueryValue('list')).toBe('list');
   });
 });

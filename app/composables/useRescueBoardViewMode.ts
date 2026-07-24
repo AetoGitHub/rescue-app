@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { ComputedRef } from 'vue';
 import {
   parseRescueBoardViewMode,
   rescueBoardViewQueryValue,
@@ -6,57 +6,26 @@ import {
 } from '~/utils/rescue-board-view-query';
 
 export function useRescueBoardViewMode(): {
-  viewMode: Ref<RescueBoardViewMode>;
+  viewMode: ComputedRef<RescueBoardViewMode>;
   setViewMode: (mode: RescueBoardViewMode) => Promise<void>;
 } {
   const route = useRoute();
   const router = useRouter();
-  const isSyncing = ref(false);
+  const { isMobile } = useResponsive();
 
-  const viewMode = ref<RescueBoardViewMode>(
-    parseRescueBoardViewMode(route.query.view),
-  );
-
-  watch(
-    () => route.query.view,
-    (raw) => {
-      if (isSyncing.value) return;
-      const parsed = parseRescueBoardViewMode(raw);
-      if (viewMode.value !== parsed) {
-        viewMode.value = parsed;
-      }
-    },
-  );
+  const viewMode = computed<RescueBoardViewMode>(() => {
+    const explicit = parseRescueBoardViewMode(route.query.view);
+    if (explicit) return explicit;
+    return isMobile.value ? 'list' : 'kanban';
+  });
 
   async function setViewMode(mode: RescueBoardViewMode) {
-    if (viewMode.value === mode) {
-      const queryValue = rescueBoardViewQueryValue(mode);
-      const current = route.query.view;
-      if (queryValue === undefined && (current == null || current === '')) {
-        return;
-      }
-      if (current === queryValue) {
-        return;
-      }
-    }
-
-    viewMode.value = mode;
-
-    const query = { ...route.query };
     const nextValue = rescueBoardViewQueryValue(mode);
+    if (route.query.view === nextValue) return;
 
-    if (nextValue == null) {
-      delete query.view;
-    } else {
-      query.view = nextValue;
-    }
-
-    isSyncing.value = true;
-    try {
-      await router.replace({ query });
-    } finally {
-      isSyncing.value = false;
-    }
+    await router.replace({
+      query: { ...route.query, view: nextValue },
+    });
   }
 
   return {

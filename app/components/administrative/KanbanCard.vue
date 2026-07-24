@@ -186,6 +186,12 @@ function onSendDocs() {
         Núm. económico:
         <span class="font-medium text-highlighted">{{ vehicleLabel }}</span>
       </p>
+      <p
+        v-if="card.service_description?.trim()"
+        class="line-clamp-2 text-xs text-muted"
+      >
+        {{ card.service_description }}
+      </p>
     </div>
 
     <div

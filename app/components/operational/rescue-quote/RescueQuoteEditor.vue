@@ -204,25 +204,24 @@ function onApplyClassifierLines(payload: QuoteClassifierApplyPayload) {
 }
 
 watch(
-  () => quoteLines.value.map((line) => line.service.value),
+  () => quoteLines.value.map((line) => line.service.value ?? '').join(','),
   () => {
     for (const line of quoteLines.value) {
       syncLineContract(line);
     }
   },
-  { deep: true },
 );
 
 watch(
-  () => quoteLines.value.map((l) => l.service.value),
-  async (ids, _prev, onCleanup) => {
+  () => quoteLines.value.map((l) => l.service.value ?? '').join(','),
+  async (_idsKey, _prev, onCleanup) => {
     let active = true;
     onCleanup(() => {
       active = false;
     });
 
-    for (const [i, line] of quoteLines.value.entries()) {
-      const id = ids[i];
+    for (const line of quoteLines.value) {
+      const id = line.service.value;
       if (id == null) continue;
       if (isContractLine(line)) continue;
       if (line.service.label.trim()) continue;
@@ -242,7 +241,6 @@ watch(
       }
     }
   },
-  { deep: true },
 );
 </script>
 
@@ -315,7 +313,7 @@ watch(
             <tr class="border-b border-default bg-elevated/50 text-left text-xs uppercase tracking-wide text-muted">
               <th class="px-3 py-2 font-medium">Servicio</th>
               <th class="w-24 px-3 py-2 font-medium">Cantidad</th>
-              <th class="hidden px-3 py-2 font-medium sm:table-cell sm:w-36">Costo unit.</th>
+              <th class="w-36 px-3 py-2 font-medium">Costo unit.</th>
               <th class="w-36 px-3 py-2 font-medium">Tras multiplic.</th>
               <th class="w-44 px-3 py-2 font-medium">Precio a aplicar</th>
               <th class="w-32 px-3 py-2 font-medium text-right">Total</th>
@@ -358,18 +356,17 @@ watch(
               </td>
               <td class="px-3 py-2 align-top">
                 <UFormField :name="`quote_lines.${index}.quantity`" required>
-                  <UInputNumber
+                  <OperationalRescueQuoteLiveNumberInput
                     v-model="line.quantity"
-                    v-bind="catalogIntegerInputProps"
+                    integer
                     :min="0"
                   />
                 </UFormField>
               </td>
-              <td class="hidden px-3 py-2 align-top sm:table-cell">
+              <td class="px-3 py-2 align-top sm:w-36">
                 <UFormField :name="`quote_lines.${index}.unit_cost`" required>
-                  <UInputNumber
+                  <OperationalRescueQuoteLiveNumberInput
                     v-model="line.unit_cost"
-                    v-bind="catalogCurrencyInputProps"
                     :min="0"
                   />
                 </UFormField>
@@ -386,9 +383,8 @@ watch(
                       :name="`quote_lines.${index}.applied_price`"
                       class="min-w-0 flex-1"
                     >
-                      <UInputNumber
+                      <OperationalRescueQuoteLiveNumberInput
                         v-model="line.applied_price"
-                        v-bind="catalogCurrencyInputProps"
                         :min="0"
                       />
                     </UFormField>

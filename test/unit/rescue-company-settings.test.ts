@@ -120,10 +120,14 @@ describe('applyContractToLine', () => {
     applyContractToLine(line, contractItem);
     expect(line.unit_cost).toBe(500);
     expect(line.contract_item_id).toBe(10);
+    expect(line.service.value).toBe(3);
+    expect(line.service.label).toBe('Servicio convenio');
 
+    const serviceRef = line.service;
     line.unit_cost = 620;
     applyContractToLine(line, contractItem);
     expect(line.unit_cost).toBe(620);
+    expect(line.service).toBe(serviceRef);
   });
 });
 

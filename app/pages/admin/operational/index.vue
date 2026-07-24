@@ -215,7 +215,7 @@ const {
                 {{ resultCountLabel }}
               </span>
 
-              <UFieldGroup class="hidden sm:flex">
+              <UFieldGroup>
                 <UButton
                   :color="viewMode === 'kanban' ? 'primary' : 'neutral'"
                   icon="i-lucide-grid"
@@ -558,7 +558,7 @@ const {
                   </template>
                 </UDropdownMenu>
 
-                <UFieldGroup class="hidden sm:flex">
+                <UFieldGroup>
                   <UButton
                     :color="viewMode === 'kanban' ? 'primary' : 'neutral'"
                     icon="i-lucide-grid"

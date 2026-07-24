@@ -48,5 +48,13 @@ defineProps<{
         :fetcher="fetchManagerDropdown"
       />
     </UFormField>
+
+    <UFormField label="Descripción del servicio" name="service_description">
+      <UTextarea
+        v-model="state.service_description"
+        class="w-full"
+        :rows="4"
+      />
+    </UFormField>
   </div>
 </template>

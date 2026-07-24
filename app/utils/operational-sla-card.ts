@@ -140,7 +140,7 @@ function hexToSubtleBadgeStyle(hex: string): Record<string, string> {
 export function getOperationalChatBadgeState(
   card: Pick<
     RescueCard,
-    'last_comment_at' | 'service_type' | 'operative_status'
+    'last_comment_at' | 'phase_started_at' | 'service_type' | 'operative_status'
   >,
   settings: RescueGeneralSettings | null | undefined,
   nowMs: number,
@@ -160,27 +160,22 @@ export function getOperationalChatBadgeState(
     card.operative_status,
   );
 
-  if (!card.last_comment_at) {
-    return {
-      label: 'Sin chat',
-      color: 'neutral',
-      tooltip: chatConfig
-        ? `Sin mensajes en chat. Alerta amarilla a los ${formatChatThresholdLabel(chatConfig.yellow_time, chatConfig.yellow_unit)} y roja a los ${formatChatThresholdLabel(chatConfig.red_time, chatConfig.red_unit)}.`
-        : 'Sin mensajes registrados en el chat de esta solicitud.',
-    };
-  }
-
-  const elapsedMinutes = elapsedMinutesSince(card.last_comment_at, nowMs);
-  const label =
-    elapsedMinutes != null
+  const referenceAt = card.last_comment_at || card.phase_started_at;
+  const hasChatMessage = Boolean(card.last_comment_at);
+  const elapsedMinutes = elapsedMinutesSince(referenceAt, nowMs);
+  const label = hasChatMessage
+    ? elapsedMinutes != null
       ? formatElapsedDuration(elapsedMinutes)
-      : formatElapsedSince(card.last_comment_at);
+      : formatElapsedSince(card.last_comment_at)
+    : 'Sin chat';
 
   if (!chatConfig) {
     return {
       label,
       color: 'neutral',
-      tooltip: `Último mensaje en chat hace ${label}. No hay umbrales de alerta configurados para este estatus.`,
+      tooltip: hasChatMessage
+        ? `Último mensaje en chat hace ${label}. No hay umbrales de alerta configurados para este estatus.`
+        : 'Sin mensajes registrados en el chat de esta solicitud.',
     };
   }
 
@@ -210,6 +205,18 @@ export function getOperationalChatBadgeState(
   } else if (elapsedMinutes != null && elapsedMinutes >= yellowMinutes) {
     color = 'warning';
     statusText = 'Alerta amarilla — gestor sin escribir en chat';
+  }
+
+  if (!hasChatMessage) {
+    const elapsedLabel =
+      elapsedMinutes != null
+        ? formatElapsedDuration(elapsedMinutes)
+        : '—';
+    return {
+      label: 'Sin chat',
+      color,
+      tooltip: `Sin mensajes en chat. Transcurrido desde el inicio de la etapa: ${elapsedLabel}. Umbrales: amarillo ${yellowLabel}, rojo ${redLabel}. Estado: ${statusText}.`,
+    };
   }
 
   return {
