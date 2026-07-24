@@ -9,6 +9,7 @@ import {
   fetchCoordsFromMapsLink,
   readGeocodingLatLng,
 } from '~/utils/maps-geocoding';
+import type { MapPlaceSelectPayload } from '~/interfaces/maps/geocoding';
 
 const props = withDefaults(
   defineProps<{
@@ -33,6 +34,7 @@ const longitude = defineModel<string | null>('longitude', { default: null });
 
 const emit = defineEmits<{
   coordinatesChange: [coords: { lat: number; lng: number }];
+  placeSelect: [payload: MapPlaceSelectPayload];
 }>();
 
 const apiFetch = useApiFetch();
@@ -157,6 +159,12 @@ function clearCoordinates() {
   mapsLink.value = '';
 }
 
+function onPlaceSelect(payload: MapPlaceSelectPayload) {
+  coordinatesInput.value = formatLatLngPair(payload.lat, payload.lng);
+  notifyCoordinatesChange();
+  emit('placeSelect', payload);
+}
+
 watch(
   () => [latitude.value, longitude.value] as const,
   () => {
@@ -178,6 +186,7 @@ watch(
         :key="`location-map-${mapRemountKey}`"
         v-model:latitude="latitude"
         v-model:longitude="longitude"
+        @place-select="onPlaceSelect"
       />
     </div>
 

@@ -12,6 +12,7 @@ import {
   fetchAddressFromCoords,
   readGeocodingLatLng,
 } from '~/utils/maps-geocoding';
+import type { MapPlaceSelectPayload } from '~/interfaces/maps/geocoding';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -34,6 +35,7 @@ const state = reactive<RescueLocationUpdateFormState>(
 );
 const geocodingPending = ref(false);
 let geocodingRequestId = 0;
+let skipNextReverseGeocode = false;
 const mapLayoutKey = ref(0);
 
 const {
@@ -95,10 +97,24 @@ watchDebounced(
     readGeocodingLatLng(state.location_latitude, state.location_longitude),
   (coords) => {
     if (!open.value || coords == null) return;
+    if (skipNextReverseGeocode) {
+      skipNextReverseGeocode = false;
+      return;
+    }
     void resolveLocationDescription(coords);
   },
   { debounce: 400, maxWait: 1200 },
 );
+
+function onPlaceSelect(payload: MapPlaceSelectPayload) {
+  skipNextReverseGeocode = true;
+  geocodingRequestId += 1;
+  geocodingPending.value = false;
+  const address = payload.address.trim();
+  if (address) {
+    state.location_description = address;
+  }
+}
 
 async function onSubmit(
   event: FormSubmitEvent<z.infer<typeof rescueLocationUpdateSchema>>,
@@ -137,12 +153,13 @@ function onSaveClick() {
           required
         >
           <SharedLocationPicker
-            :map-layout-key="mapLayoutKey"
             v-model:latitude="state.location_latitude"
             v-model:longitude="state.location_longitude"
+            :map-layout-key="mapLayoutKey"
             latitude-name="location_latitude"
             longitude-name="location_longitude"
             empty-status-label="Indica la ubicación de la unidad"
+            @place-select="onPlaceSelect"
           />
         </UFormField>
 

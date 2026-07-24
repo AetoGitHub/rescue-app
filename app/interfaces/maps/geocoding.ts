@@ -32,3 +32,9 @@ export interface MapsCoordsToAddressBody {
 export interface MapsLinkToCoordsBody {
   maps_url: string;
 }
+
+export interface MapPlaceSelectPayload {
+  lat: number;
+  lng: number;
+  address: string;
+}

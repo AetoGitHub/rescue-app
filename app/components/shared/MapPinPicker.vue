@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { AdvancedMarker } from 'vue3-google-map';
+import { AdvancedMarker, CustomControl } from 'vue3-google-map';
+import type { MapPlaceSelectPayload } from '~/interfaces/maps/geocoding';
 
 const latitude = defineModel<string | null>('latitude', { default: null });
 const longitude = defineModel<string | null>('longitude', { default: null });
+
+const emit = defineEmits<{
+  placeSelect: [payload: MapPlaceSelectPayload];
+}>();
 
 const config = useRuntimeConfig();
 const toast = useToast();
@@ -12,6 +17,7 @@ const DEFAULT_CENTER = { lat: 19.432608, lng: -99.133209 };
 const DEFAULT_ZOOM = 10;
 /** Slightly closer after the user picks or loads a point. */
 const SELECTED_ZOOM = 12;
+const PLACES_LIBRARIES = ['maps', 'marker', 'places'] as const;
 const initialCenter = ref({ ...DEFAULT_CENTER });
 const geolocationPending = ref(false);
 const sharedMapRef = ref<{ getMap: () => google.maps.Map | null } | null>(null);
@@ -67,6 +73,11 @@ function onMapClick(event: google.maps.MapMouseEvent) {
 
 function onMarkerDragEnd(event: google.maps.MapMouseEvent) {
   onMapClick(event);
+}
+
+function onPlaceSelect(payload: MapPlaceSelectPayload) {
+  setCoordinates(payload.lat, payload.lng);
+  emit('placeSelect', payload);
 }
 
 function recenterFromModel() {
@@ -146,7 +157,7 @@ defineExpose({ recenterFromModel });
     <template v-else>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <p class="text-sm text-muted">
-          Haz clic en el mapa para marcar la ubicación.
+          Busca un lugar o haz clic en el mapa para marcar la ubicación.
         </p>
         <UButton
           type="button"
@@ -164,9 +175,13 @@ defineExpose({ recenterFromModel });
           ref="sharedMapRef"
           :center="initialCenter"
           :zoom="hasCoordinates ? SELECTED_ZOOM : DEFAULT_ZOOM"
+          :libraries="[...PLACES_LIBRARIES]"
           map-class="h-72 w-full"
           @click="onMapClick"
         >
+          <CustomControl position="TOP_LEFT">
+            <SharedMapPlacesSearch @select="onPlaceSelect" />
+          </CustomControl>
           <AdvancedMarker
             v-if="markerLatLng"
             :options="{

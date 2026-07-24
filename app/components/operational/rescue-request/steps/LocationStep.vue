@@ -5,6 +5,7 @@ import {
   fetchAddressFromCoords,
   readGeocodingLatLng,
 } from '~/utils/maps-geocoding';
+import type { MapPlaceSelectPayload } from '~/interfaces/maps/geocoding';
 
 const state = defineModel<RescueRequestFormState>({ required: true });
 
@@ -12,6 +13,8 @@ const apiFetch = useApiFetch();
 const toast = useToast();
 const geocodingPending = ref(false);
 let geocodingRequestId = 0;
+/** Skip reverse geocode once after Places autocomplete fills the address. */
+let skipNextReverseGeocode = false;
 
 async function resolveLocationDescription(coords: { lat: number; lng: number }) {
   const requestId = ++geocodingRequestId;
@@ -51,10 +54,24 @@ watchDebounced(
     ),
   (coords) => {
     if (coords == null) return;
+    if (skipNextReverseGeocode) {
+      skipNextReverseGeocode = false;
+      return;
+    }
     void resolveLocationDescription(coords);
   },
   { debounce: 400, maxWait: 1200 },
 );
+
+function onPlaceSelect(payload: MapPlaceSelectPayload) {
+  skipNextReverseGeocode = true;
+  geocodingRequestId += 1;
+  geocodingPending.value = false;
+  const address = payload.address.trim();
+  if (address) {
+    state.value.location_description = address;
+  }
+}
 </script>
 
 <template>
@@ -66,6 +83,7 @@ watchDebounced(
         latitude-name="location_latitude"
         longitude-name="location_longitude"
         empty-status-label="Indica la ubicación de la unidad (opcional)"
+        @place-select="onPlaceSelect"
       />
     </UFormField>
 

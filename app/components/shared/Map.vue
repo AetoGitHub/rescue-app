@@ -12,12 +12,14 @@ withDefaults(
     zoom?: number;
     gestureHandling?: 'auto' | 'cooperative' | 'greedy' | 'none';
     mapClass?: string;
+    libraries?: string[];
   }>(),
   {
     center: () => ({ lat: 19.432608, lng: -99.133209 }),
     zoom: 10,
     gestureHandling: 'greedy',
     mapClass: 'h-full w-full',
+    libraries: () => [],
   },
 );
 
@@ -63,6 +65,7 @@ defineExpose({ getMap });
         :api-key="config.public.googleMapsApiKey"
         :center="center"
         :zoom="zoom"
+        :libraries="libraries"
         :gesture-handling="gestureHandling"
         class="h-full w-full"
         :map-type-control="false"
