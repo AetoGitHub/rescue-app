@@ -325,6 +325,7 @@ function pickStepPayload(stepIndex: number) {
         general_public: state.general_public,
         serialNumber: state.serialNumber,
         manager: state.manager,
+        service_description: state.service_description,
       };
     case 'quote':
       return {
@@ -336,7 +337,6 @@ function pickStepPayload(stepIndex: number) {
         location_latitude: state.location_latitude,
         location_longitude: state.location_longitude,
         location_description: state.location_description,
-        service_description: state.service_description,
       };
     case 'supplier':
       return { supplier: state.supplier };
