@@ -128,15 +128,20 @@ onBeforeUnmount(() => {
   clearFitRetry();
 });
 
-function emitViewportChange() {
+function emitViewport() {
+  const viewport = getMapViewport(mapRef.value?.map);
+  if (viewport) {
+    emit('viewportChange', viewport);
+  }
+}
+
+/** `resize` only on idle: firing it during `bounds_changed` fights the user gesture. */
+function onMapIdle() {
   const map = mapRef.value?.map;
   if (map) {
     google.maps.event.trigger(map, 'resize');
   }
-  const viewport = getMapViewport(map);
-  if (viewport) {
-    emit('viewportChange', viewport);
-  }
+  emitViewport();
 }
 </script>
 
@@ -159,8 +164,8 @@ function emitViewportChange() {
         class="h-full min-h-48 w-full lg:min-h-72"
         :map-type-control="false"
         :street-view-control="false"
-        @idle="emitViewportChange"
-        @bounds_changed="emitViewportChange"
+        @idle="onMapIdle"
+        @bounds_changed="emitViewport"
       >
         <AdvancedMarker
           v-if="unitPosition"
