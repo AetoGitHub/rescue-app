@@ -5,8 +5,12 @@ import {
   RESCUE_EVIDENCE_STORAGE_PREFIX,
   RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER,
   RESCUE_EVIDENCE_TYPE_SERVICE,
+  RESCUE_EVIDENCE_ZIP_COMPLEMENT_PLACEHOLDER,
 } from '~/constants/rescue-evidence-api';
-import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
+import type {
+  RescueEvidenceType,
+  RescueEvidenceZipDownloadBody,
+} from '~/interfaces/rescue/evidence';
 
 const SERVICE_EXTENSIONS = new Set([
   'jpg',
@@ -200,6 +204,32 @@ export function getRescueEvidenceFileIcon(url: string): string {
   return 'i-lucide-file';
 }
 
+export function buildRescueEvidenceZipPayload(input: {
+  rescueId: number;
+  folio: string;
+  complement?: string;
+  urls: string[];
+}): RescueEvidenceZipDownloadBody {
+  return {
+    rescue_id: input.rescueId,
+    folio: input.folio,
+    complement: input.complement ?? RESCUE_EVIDENCE_ZIP_COMPLEMENT_PLACEHOLDER,
+    urls: input.urls.filter((url) => url.trim().length > 0),
+  };
+}
+
+/**
+ * Temporary: logs the zip payload. Replace the body with the real web
+ * service call when the download-zip endpoint is ready.
+ */
+export async function requestRescueEvidenceZipDownload(
+  body: RescueEvidenceZipDownloadBody,
+): Promise<void> {
+  // TODO(evidence-zip): POST body to the zip web service and trigger download.
+  console.log('[rescue-evidence-zip]', body);
+}
+
+/** @deprecated Prefer requestRescueEvidenceZipDownload with the zip payload. */
 export function downloadAllEvidenceUrls(urls: string[]) {
   for (const url of urls) {
     window.open(url, '_blank', 'noopener,noreferrer');

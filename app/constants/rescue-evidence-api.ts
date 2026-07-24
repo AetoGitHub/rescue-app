@@ -6,6 +6,12 @@ export const RESCUE_EVIDENCE_LIST_PATH = (rescueId: number) =>
 export const RESCUE_EVIDENCE_CREATE_PATH = (rescueId: number) =>
   `/api/rescue/evidence/${rescueId}/create/`;
 
+/**
+ * Temporary placeholder until the zip web service defines `complement`.
+ * Swap this (or pass a real value) when wiring the download endpoint.
+ */
+export const RESCUE_EVIDENCE_ZIP_COMPLEMENT_PLACEHOLDER = 'xx';
+
 export const RESCUE_EVIDENCE_TYPE_SERVICE = 'service' as const satisfies RescueEvidenceType;
 export const RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER =
   'payment_provider' as const satisfies RescueEvidenceType;

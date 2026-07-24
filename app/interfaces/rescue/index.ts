@@ -14,6 +14,7 @@ export type {
   RescueEvidenceCreateBody,
   RescueEvidenceItemInput,
   RescueEvidenceType,
+  RescueEvidenceZipDownloadBody,
 } from './evidence';
 
 export type {

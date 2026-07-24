@@ -241,6 +241,18 @@ function openEvidenceUrl(url: string) {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+async function onDownloadAll() {
+  if (!canDownloadAll.value) return;
+
+  const body = buildRescueEvidenceZipPayload({
+    rescueId: props.rescueId,
+    folio: props.folio,
+    urls: items.value.map((item) => item.url),
+  });
+
+  await requestRescueEvidenceZipDownload(body);
+}
+
 function fileLabel(url: string, index: number) {
   try {
     const pathname = new URL(url).pathname;
@@ -393,7 +405,7 @@ function fileLabel(url: string, index: number) {
             :label="RESCUE_EVIDENCE_MODAL_COPY.downloadAll"
             variant="solid"
             size="sm"
-            disabled
+            @click="() => void onDownloadAll()"
           />
           <UButton
             color="neutral"

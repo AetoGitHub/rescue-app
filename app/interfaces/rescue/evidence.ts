@@ -18,3 +18,11 @@ export interface RescueEvidenceCreateBody {
 export interface RescueEvidenceCreateResponse {
   created: number;
 }
+
+/** Body for the future zip-download web service. */
+export interface RescueEvidenceZipDownloadBody {
+  rescue_id: number;
+  folio: string;
+  complement: string;
+  urls: string[];
+}
