@@ -9,12 +9,15 @@ import type { RescueCard, RescueServiceType  } from '~/interfaces/rescue';
 
 import type { OperationalBoardFilters } from '~/interfaces/operational/board-filters';
 import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
+import { useQueryCache } from '@pinia/colada';
 
 useHead({
   title: 'Operacional',
 });
 
 const { viewMode, setViewMode } = useRescueBoardViewMode();
+const queryCache = useQueryCache();
+const refreshingBoard = ref(false);
 
 const requestModalMounted = ref(false);
 const detailModalMounted = ref(false);
@@ -158,6 +161,16 @@ function clearServiceTypeFilters() {
   selectedServiceTypes.value = [];
 }
 
+async function refreshBoard() {
+  if (refreshingBoard.value) return;
+  refreshingBoard.value = true;
+  try {
+    await invalidateOperationalBoardCards(queryCache);
+  } finally {
+    refreshingBoard.value = false;
+  }
+}
+
 function toggleServiceType(value: RescueServiceType) {
   selectedServiceTypes.value = toggleOperationalServiceTypeFilter(
     selectedServiceTypes.value,
@@ -214,6 +227,16 @@ const {
               >
                 {{ resultCountLabel }}
               </span>
+
+              <UButton
+                color="neutral"
+                icon="i-lucide-refresh-cw"
+                variant="subtle"
+                aria-label="Actualizar panel"
+                :loading="refreshingBoard"
+                :disabled="refreshingBoard"
+                @click="() => void refreshBoard()"
+              />
 
               <UFieldGroup>
                 <UButton
@@ -557,6 +580,16 @@ const {
                     />
                   </template>
                 </UDropdownMenu>
+
+                <UButton
+                  color="neutral"
+                  icon="i-lucide-refresh-cw"
+                  variant="subtle"
+                  aria-label="Actualizar panel"
+                  :loading="refreshingBoard"
+                  :disabled="refreshingBoard"
+                  @click="() => void refreshBoard()"
+                />
 
                 <UFieldGroup>
                   <UButton

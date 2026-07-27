@@ -14,6 +14,7 @@ import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropd
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import type { RescueServiceType } from '~/interfaces/rescue';
 import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
+import { useQueryCache } from '@pinia/colada';
 
 useHead({
   title: 'Administrativo',
@@ -22,6 +23,8 @@ useHead({
 useAdministrativeViewRefreshListener();
 
 const { viewMode, setViewMode } = useRescueBoardViewMode();
+const queryCache = useQueryCache();
+const refreshingBoard = ref(false);
 const filtersExpanded = ref(false);
 const detailModalMounted = ref(false);
 const pendingDetailOpen = ref<{
@@ -261,6 +264,16 @@ function clearFilters() {
   client.value = emptyCatalogDropdownSelection();
 }
 
+async function refreshBoard() {
+  if (refreshingBoard.value) return;
+  refreshingBoard.value = true;
+  try {
+    await invalidateAdministrativeBoardCards(queryCache);
+  } finally {
+    refreshingBoard.value = false;
+  }
+}
+
 function exportCsv() {
   if (viewMode.value === 'list') {
     downloadAdministrativeCsv(filteredListRows.value);
@@ -479,6 +492,16 @@ const {
 
               <UButton
                 color="neutral"
+                icon="i-lucide-refresh-cw"
+                variant="subtle"
+                aria-label="Actualizar panel"
+                :loading="refreshingBoard"
+                :disabled="refreshingBoard"
+                @click="() => void refreshBoard()"
+              />
+
+              <UButton
+                color="neutral"
                 icon="i-lucide-download"
                 variant="subtle"
                 aria-label="Exportar CSV"
@@ -556,6 +579,16 @@ const {
                       @click="setViewMode('list')"
                     />
                   </UFieldGroup>
+
+                  <UButton
+                    color="neutral"
+                    icon="i-lucide-refresh-cw"
+                    variant="subtle"
+                    aria-label="Actualizar panel"
+                    :loading="refreshingBoard"
+                    :disabled="refreshingBoard"
+                    @click="() => void refreshBoard()"
+                  />
 
                   <UButton
                     color="neutral"
