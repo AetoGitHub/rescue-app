@@ -130,8 +130,6 @@ const displayItems = computed((): CatalogDropdownRow[] => {
   return [...selectedFirst, ...rest];
 });
 
-const selectKey = computed(() => selected.value.join(',') || 'empty');
-
 async function onSubmit(event: FormSubmitEvent<ApproveLinkGenerateFormState>) {
   const links = await generateLink(event.data.ids);
   if (links) emit('generated');
@@ -173,7 +171,6 @@ async function onCopy(url: string) {
         hint="Selecciona uno o más contactos autorizadores"
       >
         <USelectMenu
-          :key="selectKey"
           v-model="selected"
           v-model:search-term="searchTerm"
           ignore-filter
