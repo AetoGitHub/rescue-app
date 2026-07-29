@@ -248,6 +248,7 @@ watch(
       <OperationalRescueDetailClientAuthorizationSection
         v-if="!hideClientAuthorization && detail.operative_status === 'pending_authorization'"
         :rescue-id="detail.id"
+        :client-id="detail.client_id"
         :operative-status="detail.operative_status"
       />
 

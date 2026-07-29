@@ -3,6 +3,7 @@ import {
   buildGuestAuthorizationPath,
   buildGuestAuthorizationUrl,
   extractApproveTokenFromGenerateResponse,
+  mapApproveLinkGenerateItems,
 } from '~/utils/rescue-approve-link';
 
 describe('buildGuestAuthorizationPath', () => {
@@ -96,5 +97,60 @@ describe('extractApproveTokenFromGenerateResponse', () => {
   it('returns null for empty or invalid payloads', () => {
     expect(extractApproveTokenFromGenerateResponse(null)).toBeNull();
     expect(extractApproveTokenFromGenerateResponse({})).toBeNull();
+  });
+});
+
+describe('mapApproveLinkGenerateItems', () => {
+  it('maps every array item to a guest authorization url', () => {
+    expect(
+      mapApproveLinkGenerateItems(
+        7,
+        [
+          {
+            user: 'Juan Pérez',
+            api_key: 'token-a',
+            numero_telefonico: '5512345678',
+          },
+          {
+            user: 'María López',
+            api_key: 'token-b',
+            numero_telefonico: '5587654321',
+          },
+        ],
+        'https://app.example.com',
+      ),
+    ).toEqual([
+      {
+        user: 'Juan Pérez',
+        numero_telefonico: '5512345678',
+        url: 'https://app.example.com/rescue/7/authorization/token-a',
+      },
+      {
+        user: 'María López',
+        numero_telefonico: '5587654321',
+        url: 'https://app.example.com/rescue/7/authorization/token-b',
+      },
+    ]);
+  });
+
+  it('skips items without a token and uses defaults for missing fields', () => {
+    expect(
+      mapApproveLinkGenerateItems(3, [
+        { api_key: 'only-key' },
+        { user: 'Sin key', numero_telefonico: '5500000000' },
+      ]),
+    ).toEqual([
+      {
+        user: 'Autorizador',
+        numero_telefonico: '',
+        url: '/rescue/3/authorization/only-key',
+      },
+    ]);
+  });
+
+  it('returns empty array for empty or invalid payloads', () => {
+    expect(mapApproveLinkGenerateItems(1, [])).toEqual([]);
+    expect(mapApproveLinkGenerateItems(1, null)).toEqual([]);
+    expect(mapApproveLinkGenerateItems(1, {})).toEqual([]);
   });
 });

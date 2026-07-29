@@ -1,4 +1,5 @@
 import { GUEST_AUTHORIZATION_PATH_SEGMENT } from '~/constants/rescue-approve-link-api';
+import type { RescueApproveLinkGenerated } from '~/interfaces/rescue/approve-link';
 
 function readNonEmptyString(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -50,6 +51,71 @@ export function buildGuestAuthorizationUrlFromGenerateResponse(
   const token = extractApproveTokenFromGenerateResponse(body);
   if (!token) return null;
   return buildGuestAuthorizationUrl(rescueId, token, origin);
+}
+
+function unwrapGenerateResponseArray(body: unknown): unknown[] {
+  if (Array.isArray(body)) return body;
+
+  if (body != null && typeof body === 'object') {
+    const record = body as Record<string, unknown>;
+    for (const key of ['data', 'result', 'response', 'body'] as const) {
+      const nested = record[key];
+      if (Array.isArray(nested)) return nested;
+    }
+  }
+
+  return [];
+}
+
+function extractTokenFromGenerateItem(item: unknown): string | null {
+  if (item == null || typeof item !== 'object' || Array.isArray(item)) {
+    return null;
+  }
+
+  const record = item as Record<string, unknown>;
+  const direct =
+    readNonEmptyString(record.api_key)
+    ?? readNonEmptyString(record.apiKey)
+    ?? readNonEmptyString(record.token)
+    ?? readNonEmptyString(record.approve_token);
+  if (direct) return direct;
+
+  const url =
+    readNonEmptyString(record.url)
+    ?? readNonEmptyString(record.approve_url);
+  if (url) {
+    return extractTokenFromUrl(url) ?? url;
+  }
+
+  return null;
+}
+
+/** Mapea todos los items de generate a links listos para la UI. */
+export function mapApproveLinkGenerateItems(
+  rescueId: number,
+  body: unknown,
+  origin?: string,
+): RescueApproveLinkGenerated[] {
+  const items = unwrapGenerateResponseArray(body);
+  const mapped: RescueApproveLinkGenerated[] = [];
+
+  for (const item of items) {
+    const token = extractTokenFromGenerateItem(item);
+    if (!token) continue;
+
+    const record =
+      item != null && typeof item === 'object' && !Array.isArray(item)
+        ? (item as Record<string, unknown>)
+        : null;
+
+    mapped.push({
+      user: readNonEmptyString(record?.user) ?? 'Autorizador',
+      numero_telefonico: readNonEmptyString(record?.numero_telefonico) ?? '',
+      url: buildGuestAuthorizationUrl(rescueId, token, origin),
+    });
+  }
+
+  return mapped;
 }
 
 function normalizeGenerateResponseBody(body: unknown): unknown {

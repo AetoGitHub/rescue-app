@@ -1,9 +1,11 @@
 import type { MaybeRefOrGetter } from 'vue';
 import { RESCUE_APPROVE_LINK_GENERATE_PATH } from '~/constants/rescue-approve-link-api';
-import type { RescueApproveLinkGenerateResponse } from '~/interfaces/rescue/approve-link';
+import type {
+  RescueApproveLinkGenerated,
+  RescueApproveLinkGenerateResponse,
+} from '~/interfaces/rescue/approve-link';
 import {
-  buildGuestAuthorizationUrl,
-  extractApproveTokenFromGenerateResponse,
+  mapApproveLinkGenerateItems,
 } from '~/utils/rescue-approve-link';
 
 export function useRescueApproveLinkGenerate(
@@ -12,7 +14,7 @@ export function useRescueApproveLinkGenerate(
   const apiFetch = useApiFetch();
   const toast = useToast();
   const requestUrl = useRequestURL();
-  const lastUrl = ref('');
+  const lastLinks = ref<RescueApproveLinkGenerated[]>([]);
   const isGenerating = ref(false);
 
   const id = computed(() => toValue(rescueId));
@@ -36,9 +38,12 @@ export function useRescueApproveLinkGenerate(
     return copied;
   }
 
-  async function generateLink(): Promise<string | null> {
+  async function generateLink(
+    ids: number[],
+  ): Promise<RescueApproveLinkGenerated[] | null> {
     const currentId = id.value;
     if (currentId == null) return null;
+    if (ids.length === 0) return null;
 
     isGenerating.value = true;
     try {
@@ -46,29 +51,31 @@ export function useRescueApproveLinkGenerate(
         RESCUE_APPROVE_LINK_GENERATE_PATH(currentId),
         {
           method: 'POST',
-          body: {},
+          body: { ids },
         },
       );
 
-      const token = extractApproveTokenFromGenerateResponse(response);
-      if (!token) {
+      const links = mapApproveLinkGenerateItems(
+        currentId,
+        response,
+        authorizationOrigin(),
+      );
+
+      if (links.length === 0) {
         toast.add({
           title: 'No se pudo generar el link',
-          description: 'La respuesta del servidor no incluyó un token válido.',
+          description:
+            'Ningún autorizador válido recibió un link. Revisa la selección.',
           color: 'error',
         });
+        lastLinks.value = [];
         return null;
       }
 
-      const url = buildGuestAuthorizationUrl(
-        currentId,
-        token,
-        authorizationOrigin(),
-      );
-      lastUrl.value = url;
-      await copyAuthorizationUrl(url);
+      lastLinks.value = links;
+      await copyAuthorizationUrl(links[0]!.url);
 
-      return url;
+      return links;
     } catch (error) {
       toast.add({
         title: 'No se pudo generar el link',
@@ -81,15 +88,15 @@ export function useRescueApproveLinkGenerate(
     }
   }
 
-  async function copyLastUrl(): Promise<boolean> {
-    if (!lastUrl.value.trim()) return false;
-    return copyAuthorizationUrl(lastUrl.value);
+  async function copyLinkUrl(url: string): Promise<boolean> {
+    if (!url.trim()) return false;
+    return copyAuthorizationUrl(url);
   }
 
   return {
     generateLink,
-    copyLastUrl,
-    lastUrl: computed(() => lastUrl.value),
+    copyLinkUrl,
+    lastLinks: computed(() => lastLinks.value),
     isGenerating: computed(() => isGenerating.value),
   };
 }
