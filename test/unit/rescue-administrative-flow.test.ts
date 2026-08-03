@@ -89,6 +89,8 @@ function detail(
     invoice_number: null,
     invoice_date: null,
     invoice_amount: null,
+    invoice_pdf_url: null,
+    invoice_xml_url: null,
     payment_amount: null,
     payment_date: null,
     payment_method: null,

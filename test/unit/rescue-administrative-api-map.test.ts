@@ -245,6 +245,21 @@ describe('mapAdministrativeDetailFromApi', () => {
     expect(cardDetail.unlocked_until).toBe('2026-06-10T18:00:00Z');
   });
 
+  it('maps invoice pdf and xml urls', () => {
+    const detail = mapAdministrativeDetailFromApi({
+      id: 3,
+      folio: 'R-003',
+      client_type: 'CREDIT',
+      client_billing_type: 'DIRECT_INVOICE',
+      operative_status: 'closed',
+      admin_status: 'facturado',
+      invoice_pdf_url: 'https://cdn.example.com/fac.pdf',
+      invoice_xml_url: 'https://cdn.example.com/fac.xml',
+    });
+    expect(detail.invoice_pdf_url).toBe('https://cdn.example.com/fac.pdf');
+    expect(detail.invoice_xml_url).toBe('https://cdn.example.com/fac.xml');
+  });
+
   it('maps client_billing_type from API field', () => {
     const detail = mapAdministrativeDetailFromApi({
       id: 3,

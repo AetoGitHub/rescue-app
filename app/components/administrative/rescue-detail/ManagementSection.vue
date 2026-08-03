@@ -94,8 +94,21 @@ const showInvoiceDocumentActions = computed(
   () => props.detail.billing_status === 'invoiced',
 );
 
+const invoicePdfUrl = computed(
+  () => props.detail.invoice_pdf_url?.trim() || null,
+);
+
+const invoiceXmlUrl = computed(
+  () => props.detail.invoice_xml_url?.trim() || null,
+);
+
 function onAction(id: RescueAdministrativeActionId) {
   emit('action', id);
+}
+
+function openInvoiceDocument(url: string | null) {
+  if (!url || !import.meta.client) return;
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 </script>
 
@@ -269,34 +282,43 @@ function onAction(id: RescueAdministrativeActionId) {
       >
         {{ detail.invoice_date }} — {{ formatRescueCardMoney(detail.invoice_amount) }}
       </p>
-      <div
-        v-if="showInvoiceDocumentActions"
-        class="flex flex-wrap gap-2"
-      >
+      <div class="flex flex-wrap gap-2">
         <UButton
           color="neutral"
           icon="i-lucide-file-text"
-          label="PDF"
+          label="Factura PDF"
           size="sm"
           variant="subtle"
-          @click="emit('document', 'pdf')"
+          :disabled="!invoicePdfUrl"
+          @click="openInvoiceDocument(invoicePdfUrl)"
         />
         <UButton
           color="neutral"
-          icon="i-lucide-mail"
-          label="Email"
+          icon="i-lucide-file-code"
+          label="Factura XML"
           size="sm"
           variant="subtle"
-          @click="emit('document', 'email')"
+          :disabled="!invoiceXmlUrl"
+          @click="openInvoiceDocument(invoiceXmlUrl)"
         />
-        <UButton
-          color="neutral"
-          icon="i-lucide-message-circle"
-          label="WhatsApp"
-          size="sm"
-          variant="subtle"
-          @click="emit('document', 'whatsapp')"
-        />
+        <template v-if="showInvoiceDocumentActions">
+          <UButton
+            color="neutral"
+            icon="i-lucide-mail"
+            label="Email"
+            size="sm"
+            variant="subtle"
+            @click="emit('document', 'email')"
+          />
+          <UButton
+            color="neutral"
+            icon="i-lucide-message-circle"
+            label="WhatsApp"
+            size="sm"
+            variant="subtle"
+            @click="emit('document', 'whatsapp')"
+          />
+        </template>
       </div>
     </UCard>
   </section>

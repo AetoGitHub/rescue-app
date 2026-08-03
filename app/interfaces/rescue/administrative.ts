@@ -66,6 +66,8 @@ export interface AdministrativeRescueDetail extends AdministrativeRescueCard {
   invoice_number: string | null;
   invoice_date: string | null;
   invoice_amount: string | null;
+  invoice_pdf_url: string | null;
+  invoice_xml_url: string | null;
   payment_amount: string | null;
   payment_date: string | null;
   payment_method: string | null;

@@ -209,6 +209,8 @@ export function mapAdministrativeDetailFromApi(
     invoice_amount:
       readString(raw, 'invoice_amount')
       ?? readString(raw, 'invoiced_amount'),
+    invoice_pdf_url: readString(raw, 'invoice_pdf_url'),
+    invoice_xml_url: readString(raw, 'invoice_xml_url'),
     payment_amount: readString(raw, 'payment_amount'),
     payment_date: readString(raw, 'payment_date'),
     payment_method: readString(raw, 'payment_method'),
@@ -242,6 +244,8 @@ export function cardToAdministrativePreviewDetail(
     invoice_number: card.invoice_folio,
     invoice_date: null,
     invoice_amount: null,
+    invoice_pdf_url: null,
+    invoice_xml_url: null,
     payment_amount: null,
     payment_date: null,
     payment_method: null,
