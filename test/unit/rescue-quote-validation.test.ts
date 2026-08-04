@@ -31,7 +31,7 @@ const validQuoteLine = {
 const baseFormFields = {
   client: { value: 1, label: 'Cliente' },
   general_public: false,
-  serialNumber: '',
+  vehicle: '',
   manager: { value: 1, label: 'Gestor' },
   location_latitude: '',
   location_longitude: '',

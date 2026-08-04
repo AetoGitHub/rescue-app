@@ -71,7 +71,7 @@ const serviceTypeField = z.enum(RESCUE_SERVICE_TYPES, {
   error: 'Selecciona un tipo de servicio',
 });
 
-const serialNumberField = z
+const vehicleField = z
   .string()
   .transform((s) => s.trim())
   .optional()
@@ -82,7 +82,7 @@ export const rescueStepBasicsSchema = z
     service_type: serviceTypeField,
     client: clientField,
     general_public: z.boolean(),
-    serialNumber: serialNumberField,
+    vehicle: vehicleField,
     manager: managerFieldOptional,
     service_description: z.string().transform((s) => s.trim()),
   })
@@ -243,7 +243,7 @@ export const rescueCreateFormSchema = z
     service_type: serviceTypeField,
     client: clientField,
     general_public: z.boolean(),
-    serialNumber: serialNumberField,
+    vehicle: vehicleField,
     manager: managerFieldOptional,
     location_latitude: coordFromNullable('La latitud', -90, 90),
     location_longitude: coordFromNullable('La longitud', -180, 180),
@@ -279,7 +279,7 @@ export type RescueRequestFormState = {
   service_type: RescueServiceType;
   client: CatalogDropdownSelection;
   general_public: boolean;
-  serialNumber: string;
+  vehicle: string;
   service_description: string;
   location_latitude: string | null;
   location_longitude: string | null;
@@ -300,7 +300,7 @@ export function emptyRescueRequestState(): RescueRequestFormState {
     service_type: 'rescue',
     client: emptyCatalogDropdownSelection(),
     general_public: false,
-    serialNumber: '',
+    vehicle: '',
     service_description: '',
     location_latitude: null,
     location_longitude: null,
@@ -339,7 +339,6 @@ export function getStepSchemaForIndex(
 export function rescueFormToCreateBody(
   data: RescueCreateFormOutput,
 ): RescueCreateBody {
-  const serial = String(data.serialNumber ?? '').trim();
   const latitude = String(data.location_latitude ?? '').trim();
   const longitude = String(data.location_longitude ?? '').trim();
 
@@ -347,7 +346,7 @@ export function rescueFormToCreateBody(
     service_type: data.service_type,
     client: data.client.value!,
     general_public: data.general_public,
-    ...(serial ? { serial_number: serial } : {}),
+    vehicle: String(data.vehicle ?? '').trim(),
     service_description: data.service_description,
     supplier: data.supplier ?? null,
     operator: data.manager.value,

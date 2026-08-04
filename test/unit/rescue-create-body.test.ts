@@ -7,7 +7,7 @@ describe('rescueFormToCreateBody', () => {
       service_type: 'rescue',
       client: { value: 1, label: 'Cliente' },
       general_public: false,
-      serialNumber: '',
+      vehicle: 'TR-8842',
       manager: { value: 42, label: 'Gestor' },
       location_latitude: '19.4',
       location_longitude: '-99.1',
@@ -20,7 +20,9 @@ describe('rescueFormToCreateBody', () => {
 
     expect(body.operator).toBe(42);
     expect(body.client).toBe(1);
+    expect(body.vehicle).toBe('TR-8842');
     expect('manager' in body).toBe(false);
+    expect('serial_number' in body).toBe(false);
     expect(body.location_latitude).toBe('19.4');
     expect(body.location_longitude).toBe('-99.1');
   });
@@ -36,7 +38,7 @@ describe('rescueFormToCreateBody', () => {
         service_type,
         client: { value: 1, label: 'Cliente' },
         general_public: false,
-        serialNumber: '',
+        vehicle: '',
         manager: { value: 42, label: 'Gestor' },
         location_latitude: null,
         location_longitude: null,
@@ -49,6 +51,7 @@ describe('rescueFormToCreateBody', () => {
 
       expect(body.location_latitude).toBeNull();
       expect(body.location_longitude).toBeNull();
+      expect(body.vehicle).toBe('');
     }
   });
 
@@ -58,7 +61,7 @@ describe('rescueFormToCreateBody', () => {
         service_type,
         client: { value: 1, label: 'Cliente' },
         general_public: false,
-        serialNumber: '',
+        vehicle: '',
         manager: { value: 42, label: 'Gestor' },
         location_latitude: '19.4',
         location_longitude: '-99.1',

@@ -323,7 +323,7 @@ function pickStepPayload(stepIndex: number) {
         service_type: state.service_type,
         client: state.client,
         general_public: state.general_public,
-        serialNumber: state.serialNumber,
+        vehicle: state.vehicle,
         manager: state.manager,
         service_description: state.service_description,
       };

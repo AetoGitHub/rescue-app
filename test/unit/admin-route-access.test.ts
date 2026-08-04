@@ -84,6 +84,8 @@ describe('abilityForAdminPath', () => {
     expect(abilityForAdminPath('/admin/operational')).toBe(accessOperational);
     expect(abilityForAdminPath('/admin/my-balance')).toBe(accessMyBalance);
     expect(abilityForAdminPath('/admin/administrativo')).toBe(accessAdministrative);
+    expect(abilityForAdminPath('/admin/llenar-oc')).toBe(accessAdministrative);
+    expect(abilityForAdminPath('/admin/por-facturar')).toBe(accessAdministrative);
     expect(abilityForAdminPath('/admin/catalogs/clients')).toBe(accessCatalogs);
     expect(abilityForAdminPath('/admin/users')).toBe(accessUsers);
     expect(abilityForAdminPath('/admin/pagar')).toBe(accessPayments);
@@ -97,6 +99,9 @@ describe('abilityForApiPath', () => {
   it('maps api routes to the expected abilities', () => {
     expect(abilityForApiPath('/api/rescue/cards/')).toBe(accessOperational);
     expect(abilityForApiPath('/api/rescue/administrative/cards/')).toBe(
+      accessAdministrative,
+    );
+    expect(abilityForApiPath('/api/nexxt-step/fill_oc/')).toBe(
       accessAdministrative,
     );
     expect(abilityForApiPath('/api/catalogue/client/list/')).toBe(accessCatalogs);

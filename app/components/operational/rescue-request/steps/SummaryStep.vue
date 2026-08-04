@@ -86,9 +86,9 @@ onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
             }}
           </dd>
         </div>
-        <div v-if="state.serialNumber">
+        <div v-if="state.vehicle">
           <dt class="text-muted">Número económico</dt>
-          <dd class="font-medium">{{ state.serialNumber }}</dd>
+          <dd class="font-medium">{{ state.vehicle }}</dd>
         </div>
         <div v-if="state.general_public">
           <dt class="text-muted">Público en general</dt>

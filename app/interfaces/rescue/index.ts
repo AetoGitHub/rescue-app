@@ -87,7 +87,7 @@ export interface RescueCreateBody {
   service_type: RescueServiceType;
   client: number;
   general_public: boolean;
-  serial_number?: string;
+  vehicle: string;
   service_description: string;
   supplier: number | null;
   operator?: number | null;

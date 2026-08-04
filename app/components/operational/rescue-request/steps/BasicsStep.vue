@@ -32,8 +32,8 @@ defineProps<{
       />
     </UFormField>
 
-    <UFormField label="Número económico" name="serialNumber">
-      <UInput v-model="state.serialNumber" class="w-full" />
+    <UFormField label="Número económico" name="vehicle">
+      <UInput v-model="state.vehicle" class="w-full" />
     </UFormField>
 
     <UFormField
