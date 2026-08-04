@@ -78,6 +78,15 @@ const showWarning = computed(() =>
   showOperativeWarningBanner(props.flowContext),
 );
 
+const operativeStatusLabel = computed(() =>
+  getAdministrativeOperativeStatusLabel(props.flowContext.operative_status),
+);
+
+const operativeWarningDescription = computed(
+  () =>
+    `Estatus actual: ${operativeStatusLabel.value}. Revisa el estatus operativo antes de continuar con facturación.`,
+);
+
 const isPurchaseOrderEditable = computed(() =>
   isAdministrativePurchaseOrderEditable(props.flowContext),
 );
@@ -200,7 +209,7 @@ function openInvoiceDocument(url: string | null) {
       color="warning"
       icon="i-lucide-alert-triangle"
       title="El servicio operativo no está cerrado conforme"
-      description="Revisa el estatus operativo antes de continuar con facturación."
+      :description="operativeWarningDescription"
     />
 
     <UAlert
