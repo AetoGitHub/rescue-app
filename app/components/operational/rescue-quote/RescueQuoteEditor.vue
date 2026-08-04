@@ -9,7 +9,10 @@ import {
   QUOTE_EDITOR_TAB_ITEMS,
   type QuoteEditorTabValue,
 } from '~/constants/quote-editor-tabs';
-import { DEFAULT_IVA_RATE } from '~/constants/quote-pricing';
+import {
+  DEFAULT_IVA_RATE,
+  QUOTE_SUMMARY_LABELS,
+} from '~/constants/quote-pricing';
 import {
   applyContractToLine,
   clearContractFromLine,
@@ -454,31 +457,53 @@ watch(
 
       <div
         v-if="hasQuoteLines"
-        class="ml-auto w-full max-w-xs space-y-2 text-sm"
+        class="ml-auto w-full max-w-xs space-y-3 text-sm"
       >
-        <div class="flex justify-between gap-4">
-          <span class="text-muted">Conceptos</span>
-          <span class="tabular-nums">
-            {{ formatQuoteMoney(pricing.costSubtotal) }}
-          </span>
+        <div class="space-y-2">
+          <div class="flex justify-between gap-4">
+            <span class="text-muted">{{ QUOTE_SUMMARY_LABELS.subtotal }}</span>
+            <span class="tabular-nums">
+              {{ formatQuoteMoney(pricing.subtotalLines) }}
+            </span>
+          </div>
+          <div class="flex justify-between gap-4">
+            <span class="text-muted">IVA ({{ ivaPercentLabel }})</span>
+            <span class="tabular-nums">
+              +{{ formatQuoteMoney(pricing.ivaAmount) }}
+            </span>
+          </div>
+          <div
+            class="flex justify-between gap-4 border-t border-default pt-2"
+          >
+            <span class="font-semibold">TOTAL</span>
+            <span class="text-lg font-bold tabular-nums text-primary">
+              {{ formatQuoteMoney(pricing.totalCharged) }}
+            </span>
+          </div>
         </div>
-        <div class="flex justify-between gap-4">
-          <span class="text-muted">Subtotal líneas</span>
-          <span class="tabular-nums">
-            {{ formatQuoteMoney(pricing.subtotalLines) }}
-          </span>
-        </div>
-        <div class="flex justify-between gap-4">
-          <span class="text-muted">IVA ({{ ivaPercentLabel }})</span>
-          <span class="tabular-nums">
-            {{ formatQuoteMoney(pricing.ivaAmount) }}
-          </span>
-        </div>
-        <div class="flex justify-between gap-4 border-t border-default pt-2">
-          <span class="font-semibold">TOTAL</span>
-          <span class="text-lg font-bold tabular-nums text-primary">
-            {{ formatQuoteMoney(pricing.totalCharged) }}
-          </span>
+
+        <div
+          class="space-y-1.5 rounded-lg bg-elevated px-3 py-2.5 ring-1 ring-default/60"
+        >
+          <p
+            class="text-[11px] font-medium uppercase tracking-wider text-muted"
+          >
+            {{ QUOTE_SUMMARY_LABELS.internalReference }}
+          </p>
+          <div class="flex justify-between gap-4 text-muted">
+            <span>{{ QUOTE_SUMMARY_LABELS.technicalCost }}</span>
+            <span class="tabular-nums">
+              {{ formatQuoteMoney(pricing.costSubtotal) }}
+            </span>
+          </div>
+          <div class="flex justify-between gap-4">
+            <span class="font-medium text-highlighted">
+              {{ QUOTE_SUMMARY_LABELS.utility }}
+            </span>
+            <span class="font-semibold tabular-nums text-highlighted">
+              {{ formatQuoteMoney(pricing.profit) }}
+            </span>
+          </div>
         </div>
       </div>
 

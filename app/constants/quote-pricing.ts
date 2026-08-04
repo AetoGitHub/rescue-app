@@ -10,7 +10,10 @@ export const DEFAULT_QUOTE_ROUND_TO_TEN = true;
 export const QUOTE_SUMMARY_LABELS = {
   technicalCost: 'Costo técnico',
   subtotal: 'Subtotal',
-  utility: 'Utilidad',
+  /** Client-facing margin (subtotal − costo técnico). */
+  utility: 'Ganancia',
+  /** Muted panel: cost/margin info that is not part of the client total sum. */
+  internalReference: 'Referencia interna',
   sellerCommissionPercent: 'Comisión vendedor',
   sellerCommissionFixed: 'Comisión fija vendedor',
   beforeTax: 'Subtotal antes de IVA',

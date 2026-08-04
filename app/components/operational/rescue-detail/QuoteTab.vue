@@ -8,6 +8,8 @@ import type { RescueQuoteDetail } from '~/interfaces/rescue/quote';
 import type { ClientCreditSnapshot } from '~/schemas/rescue-create';
 import { canEditRescueQuoteWithUnlock } from '~/utils/rescue-quote-tab';
 import { mapRescueQuoteDetailFromApi } from '~/utils/rescue-quote-detail-map';
+import { summarizeRescueQuoteDetail } from '~/utils/rescue-quote-display';
+import { QUOTE_SUMMARY_LABELS } from '~/constants/quote-pricing';
 
 const props = defineProps<{
   detail: RescueCardDetail;
@@ -60,7 +62,53 @@ const { saveCreate, saveUpdate, isSaving } = useRescueQuoteSave(
   () => props.rescueId,
 );
 
+const {
+  showBreakdown: showQuotePricingDevBreakdown,
+  breakdownMode: quotePricingDevBreakdownMode,
+  registerShortcut: registerQuoteDevUnlockShortcut,
+  unregisterShortcut: unregisterQuoteDevUnlockShortcut,
+} = useQuotePricingDevUnlock();
+
+onMounted(registerQuoteDevUnlockShortcut);
+onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
+
+/** Settings for admin desglose when quote is read-only (closed / closed_unpaid). */
+const readOnlySettingsClientId = computed(() => {
+  if (editable.value || !showQuotePricingDevBreakdown.value) return undefined;
+  return props.detail.client_id;
+});
+const { settings: readOnlyCompanySettings } = useRescueCompanySettings(
+  readOnlySettingsClientId,
+);
+
 const isUpdateMode = computed(() => quoteDetail.value != null);
+
+const readOnlySummary = computed(() => {
+  const detail = quoteDetail.value;
+  if (detail == null) return null;
+  return summarizeRescueQuoteDetail(detail);
+});
+
+const readOnlyIvaPercentLabel = computed(() => {
+  const summary = readOnlySummary.value;
+  if (summary == null) return '';
+  return formatIvaPercent(summary.ivaPercent / 100);
+});
+
+const readOnlyPricing = computed(() =>
+  computeQuotePricing(quoteLines.value, readOnlyCompanySettings.value, {
+    clientSellerId: props.detail.seller_id,
+    serviceType: serviceType.value,
+  }),
+);
+
+const showReadOnlyAdminBreakdown = computed(
+  () =>
+    !editable.value
+    && showQuotePricingDevBreakdown.value
+    && quoteDetail.value != null
+    && quoteLines.value.some((line) => line.service.value != null),
+);
 
 const saveLabel = computed(() =>
   isUpdateMode.value ? 'Actualizar cotización' : 'Guardar cotización',
@@ -86,7 +134,7 @@ function hydrateQuoteLines(detail: RescueQuoteDetail | null) {
 
   quoteLines.value = mapRescueQuoteDetailFromApi(
     detail,
-    companySettings.value,
+    editable.value ? companySettings.value : readOnlyCompanySettings.value,
   );
 
   linesHydrated.value = true;
@@ -102,6 +150,14 @@ watch(
 );
 
 watch(companySettings, (settings) => {
+  if (!editable.value) return;
+  const detail = quoteDetail.value;
+  if (detail == null || settings == null) return;
+  quoteLines.value = mapRescueQuoteDetailFromApi(detail, settings);
+});
+
+watch(readOnlyCompanySettings, (settings) => {
+  if (editable.value) return;
   const detail = quoteDetail.value;
   if (detail == null || settings == null) return;
   quoteLines.value = mapRescueQuoteDetailFromApi(detail, settings);
@@ -186,7 +242,7 @@ function formatApiMoney(value: string | number | null | undefined): string {
 
     <template v-if="!isPending && !errorMessage">
       <UCard
-        v-if="quoteDetail && !editable"
+        v-if="quoteDetail && readOnlySummary && !editable"
         variant="subtle"
         :ui="{ body: 'space-y-4 text-sm' }"
       >
@@ -195,38 +251,11 @@ function formatApiMoney(value: string | number | null | undefined): string {
             Cotización registrada
           </h3>
           <p class="text-2xl font-bold text-primary">
-            {{ formatApiMoney(quoteDetail.total) }}
+            {{ formatApiMoney(readOnlySummary.total) }}
           </p>
         </div>
 
-        <dl class="grid gap-2 sm:grid-cols-2 text-muted">
-          <div>
-            <dt>Costo técnico</dt>
-            <dd class="font-medium text-highlighted tabular-nums">
-              {{ formatApiMoney(quoteDetail.technical_cost) }}
-            </dd>
-          </div>
-          <div>
-            <dt>Subtotal</dt>
-            <dd class="font-medium text-highlighted tabular-nums">
-              {{ formatApiMoney(quoteDetail.sub_total) }}
-            </dd>
-          </div>
-          <div v-if="quoteDetail.comissions_apply">
-            <dt>Comisiones</dt>
-            <dd class="font-medium text-highlighted tabular-nums">
-              {{ formatApiMoney(quoteDetail.comissions_apply) }}
-            </dd>
-          </div>
-          <div>
-            <dt>IVA</dt>
-            <dd class="font-medium text-highlighted tabular-nums">
-              {{ quoteDetail.iva }}%
-            </dd>
-          </div>
-        </dl>
-
-        <ul class="divide-y divide-default border-t border-default pt-2">
+        <ul class="divide-y divide-default">
           <li
             v-for="service in quoteDetail.services"
             :key="service.id"
@@ -244,10 +273,40 @@ function formatApiMoney(value: string | number | null | undefined): string {
             </span>
           </li>
         </ul>
+
+        <div class="space-y-2 border-t border-default pt-3">
+          <div class="flex justify-between gap-4 text-muted">
+            <span>{{ QUOTE_SUMMARY_LABELS.subtotal }}</span>
+            <span class="tabular-nums text-highlighted">
+              {{ formatApiMoney(readOnlySummary.subTotal) }}
+            </span>
+          </div>
+          <div class="flex justify-between gap-4 text-muted">
+            <span>IVA ({{ readOnlyIvaPercentLabel }})</span>
+            <span class="tabular-nums text-highlighted">
+              +{{ formatApiMoney(readOnlySummary.ivaAmount) }}
+            </span>
+          </div>
+          <div
+            class="flex justify-between gap-4 border-t border-default pt-2 font-medium"
+          >
+            <span>{{ QUOTE_SUMMARY_LABELS.totalQuoted }}</span>
+            <span class="tabular-nums text-primary">
+              {{ formatApiMoney(readOnlySummary.total) }}
+            </span>
+          </div>
+        </div>
       </UCard>
 
+      <OperationalRescueRequestQuotePricingDevBreakdown
+        v-if="showReadOnlyAdminBreakdown"
+        :pricing="readOnlyPricing"
+        :settings="readOnlyCompanySettings"
+        :mode="quotePricingDevBreakdownMode ?? 'admin'"
+      />
+
       <OperationalRescueQuoteEditor
-        v-else-if="linesHydrated && editable"
+        v-if="linesHydrated && editable"
         v-model:quote-lines="quoteLines"
         v-model:company-settings="companySettings"
         :client-id="detail.client_id"

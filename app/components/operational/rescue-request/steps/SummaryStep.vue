@@ -22,7 +22,7 @@ const sellerCommissionLabel = computed(() => {
   }
   const pct = state.value.company_settings?.commissions.commission_value;
   if (pct != null) {
-    return `${QUOTE_SUMMARY_LABELS.sellerCommissionPercent} (${pct}% de utilidad)`;
+    return `${QUOTE_SUMMARY_LABELS.sellerCommissionPercent} (${pct}% de ganancia)`;
   }
   return QUOTE_SUMMARY_LABELS.sellerCommissionPercent;
 });
@@ -163,51 +163,59 @@ onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
           </span>
         </li>
       </ul>
-      <div class="flex justify-between gap-4 text-muted">
-        <span>{{ QUOTE_SUMMARY_LABELS.technicalCost }}</span>
-        <span class="tabular-nums">
-          {{ formatQuoteMoney(quotePricing.costSubtotal) }}
-        </span>
+      <div class="space-y-2">
+        <div class="flex justify-between gap-4 text-muted">
+          <span>{{ QUOTE_SUMMARY_LABELS.subtotal }}</span>
+          <span class="tabular-nums">
+            {{ formatQuoteMoney(quotePricing.subtotalLines) }}
+          </span>
+        </div>
+        <div class="flex justify-between gap-4 text-muted">
+          <span>IVA ({{ ivaPercentLabel }})</span>
+          <span class="tabular-nums">
+            +{{ formatQuoteMoney(quotePricing.ivaAmount) }}
+          </span>
+        </div>
+        <div
+          class="flex justify-between gap-4 border-t border-default pt-2 font-medium"
+        >
+          <span>{{ QUOTE_SUMMARY_LABELS.totalQuoted }}</span>
+          <span class="tabular-nums text-primary">
+            {{ formatQuoteMoney(quotePricing.totalCharged) }}
+          </span>
+        </div>
       </div>
-      <div class="flex justify-between gap-4 text-muted">
-        <span>{{ QUOTE_SUMMARY_LABELS.subtotal }}</span>
-        <span class="tabular-nums">
-          {{ formatQuoteMoney(quotePricing.subtotalLines) }}
-        </span>
-      </div>
-      <div class="flex justify-between gap-4 text-muted">
-        <span>{{ QUOTE_SUMMARY_LABELS.utility }}</span>
-        <span class="tabular-nums">
-          {{ formatQuoteMoney(quotePricing.profit) }}
-        </span>
-      </div>
+
       <div
-        v-if="quotePricing.sellerCommission > 0.001"
-        class="flex justify-between gap-4 text-muted"
+        class="space-y-1.5 rounded-lg bg-elevated px-3 py-2.5 ring-1 ring-default/60"
       >
-        <span>{{ sellerCommissionLabel }}</span>
-        <span class="tabular-nums">
-          <template v-if="quotePricing.sellerCommissionAddsToTotal">+</template>
-          {{ formatQuoteMoney(quotePricing.sellerCommission) }}
-        </span>
-      </div>
-      <div class="flex justify-between gap-4 text-muted">
-        <span>{{ QUOTE_SUMMARY_LABELS.beforeTax }}</span>
-        <span class="tabular-nums">
-          {{ formatQuoteMoney(quotePricing.totalBeforeTax) }}
-        </span>
-      </div>
-      <div class="flex justify-between gap-4 text-muted">
-        <span>IVA ({{ ivaPercentLabel }})</span>
-        <span class="tabular-nums">
-          +{{ formatQuoteMoney(quotePricing.ivaAmount) }}
-        </span>
-      </div>
-      <div class="flex justify-between gap-4 border-t border-default pt-2 font-medium">
-        <span>{{ QUOTE_SUMMARY_LABELS.totalQuoted }}</span>
-        <span class="tabular-nums text-primary">
-          {{ formatQuoteMoney(quotePricing.totalCharged) }}
-        </span>
+        <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
+          {{ QUOTE_SUMMARY_LABELS.internalReference }}
+        </p>
+        <div class="flex justify-between gap-4 text-muted">
+          <span>{{ QUOTE_SUMMARY_LABELS.technicalCost }}</span>
+          <span class="tabular-nums">
+            {{ formatQuoteMoney(quotePricing.costSubtotal) }}
+          </span>
+        </div>
+        <div class="flex justify-between gap-4">
+          <span class="font-medium text-highlighted">
+            {{ QUOTE_SUMMARY_LABELS.utility }}
+          </span>
+          <span class="font-semibold tabular-nums text-highlighted">
+            {{ formatQuoteMoney(quotePricing.profit) }}
+          </span>
+        </div>
+        <div
+          v-if="quotePricing.sellerCommission > 0.001"
+          class="flex justify-between gap-4 text-muted"
+        >
+          <span>{{ sellerCommissionLabel }}</span>
+          <span class="tabular-nums">
+            <template v-if="quotePricing.sellerCommissionAddsToTotal">+</template>
+            {{ formatQuoteMoney(quotePricing.sellerCommission) }}
+          </span>
+        </div>
       </div>
     </UCard>
 
