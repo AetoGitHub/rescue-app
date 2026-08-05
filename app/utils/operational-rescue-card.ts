@@ -119,8 +119,12 @@ export function getRescueCardElapsedLabel(card: {
 }
 
 export function getRescueCardAdvanceAmount(card: {
+  advance_amount?: string | number | null;
   sub_total?: string | null;
 }): string {
+  if (card.advance_amount != null && String(card.advance_amount).trim() !== '') {
+    return formatRescueCardMoney(card.advance_amount);
+  }
   return formatRescueCardMoney(card.sub_total);
 }
 

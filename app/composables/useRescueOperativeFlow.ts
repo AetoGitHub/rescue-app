@@ -1,6 +1,9 @@
 import type { MaybeRefOrGetter } from 'vue';
 import type { RescueDetailTabValue } from '~/constants/operational-rescue-detail';
-import { RESCUE_OPERATIVE_TOAST } from '~/constants/rescue-operative-flow';
+import {
+  RESCUE_OPERATIVE_TOAST,
+  type RescuePaymentMethod,
+} from '~/constants/rescue-operative-flow';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type {
   RescueAdvanceFormState,
@@ -199,7 +202,7 @@ export function useRescueOperativeFlow(options: {
         : d.advance_date?.trim() || todayIsoDate();
     const method = d.advance_payment_method?.trim();
     advanceForm.advance_payment_method = method
-      ? (method as NonNullable<RescueAdvanceFormState['advance_payment_method']>)
+      ? (method as RescuePaymentMethod)
       : undefined;
     advanceForm.advance_reference = d.advance_reference?.trim() || '';
   }
@@ -216,8 +219,12 @@ export function useRescueOperativeFlow(options: {
     const d = detail.value;
     if (!d) return;
     completedForm.close_date = todayIsoDate();
-    completedForm.disbursement_date = todayIsoDate();
-    completedForm.disbursement_payment_method = undefined;
+    completedForm.disbursement_date =
+      d.disbursement_date?.trim() || todayIsoDate();
+    const method = d.disbursement_payment_method?.trim();
+    completedForm.disbursement_payment_method = method
+      ? (method as RescuePaymentMethod)
+      : undefined;
     completedForm.ratings = buildSupplierRatingRows(d);
     completedPanelOpen.value = true;
   }

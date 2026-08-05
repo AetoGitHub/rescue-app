@@ -19,6 +19,10 @@ export interface RescueCardBase {
   multiple_managers: boolean;
   sub_total: string | null;
   technical_cost: string | null;
+  /** From cards summary serializer. */
+  advance_requested?: boolean;
+  advance_amount?: string | number | null;
+  advance_received?: boolean | null;
   admin_status: string;
   created_at: string;
   phase_started_at: string;

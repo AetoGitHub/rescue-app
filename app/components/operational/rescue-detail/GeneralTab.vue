@@ -63,6 +63,19 @@ const showSupplierActions = computed(
   () => props.editable && canAssignRescueSupplier(props.detail),
 );
 
+const isLoan = computed(() => props.detail.service_type === 'loan');
+
+const advanceSummary = computed(() => ({
+  advance_requested: props.detail.advance_requested,
+  advance_amount: props.detail.advance_amount,
+  advance_received: props.detail.advance_received,
+}));
+
+const showDisbursementSection = computed(() => {
+  if (isLoan.value) return props.detail.disbursement_registered === true;
+  return hasRescueAdvanceSummary(advanceSummary.value);
+});
+
 const supplierSectionRef = ref<HTMLElement | null>(null);
 
 function scrollSupplierSectionIntoView() {
@@ -242,6 +255,15 @@ watch(
           Creado {{ formatElapsedSince(detail.created_at) }}
         </p>
       </section>
+
+      <OperationalRescueDetailDisbursementSection
+        v-if="showDisbursementSection"
+        :advance="advanceSummary"
+        :is-loan="isLoan"
+        :disbursement-registered="detail.disbursement_registered"
+        :disbursement-date="detail.disbursement_date"
+        :disbursement-payment-method="detail.disbursement_payment_method"
+      />
     </div>
 
     <div class="space-y-4">

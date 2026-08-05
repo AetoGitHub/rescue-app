@@ -191,7 +191,13 @@ function onCardClick() {
       <UBadge color="primary" variant="subtle" size="sm">
         Anticipo: {{ advanceAmount }}
       </UBadge>
-      <p class="text-xs text-muted">Pendiente de recibir</p>
+      <p class="text-xs text-muted">
+        {{
+          card.advance_received === true
+            ? 'Pagado'
+            : 'Pendiente'
+        }}
+      </p>
     </div>
 
     <div

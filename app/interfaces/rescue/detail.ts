@@ -33,13 +33,18 @@ export interface RescueCardDetail {
   longitude: string | null;
   quote_count?: number;
   advance_amount?: string | number | null;
+  /** From card/detail summary serializer. */
   advance_requested?: boolean;
   advance_received?: boolean | null;
   advance_date?: string | null;
   advance_payment_method?: string | null;
   advance_reference?: string | null;
   close_date?: string | null;
+  /** Loan only: whether disbursement was registered. */
+  disbursement_registered?: boolean;
+  /** Loan only. */
   disbursement_date?: string | null;
+  /** Loan only. */
   disbursement_payment_method?: string | null;
   credit_limit?: string | number | null;
   credit_available?: number | null;
