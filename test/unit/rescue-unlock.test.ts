@@ -4,12 +4,13 @@ import { createRescueUnlockFormSchema } from '~/utils/rescue-unlock-form';
 import {
   coalesceUnlockUntil,
   formatRescueUnlockRemaining,
-  getRescueUnlockMinDatetimeLocal,
+  fromUnlockCalendarDateTime,
+  getRescueUnlockMinCalendarDateTime,
   getRescueUnlockRemainingMs,
   isRescueUnlockActive,
   isRescueUnlockDatetimeLocalInPast,
-  toDatetimeLocalInputValue,
   toRescueUnlockApiBody,
+  toUnlockCalendarDateTime,
 } from '~/utils/rescue-unlock';
 
 describe('RESCUE_UNLOCK_CREATE_PATH', () => {
@@ -21,9 +22,28 @@ describe('RESCUE_UNLOCK_CREATE_PATH', () => {
 describe('datetime local helpers', () => {
   const now = new Date('2026-06-04T15:00:00');
 
-  it('formats datetime-local min from reference date', () => {
-    expect(toDatetimeLocalInputValue(now)).toBe('2026-06-04T15:00');
-    expect(getRescueUnlockMinDatetimeLocal(now)).toBe('2026-06-04T15:00');
+  it('builds the min calendar datetime from a reference date', () => {
+    const min = getRescueUnlockMinCalendarDateTime(now);
+
+    expect(fromUnlockCalendarDateTime(min)).toBe('2026-06-04T15:00');
+  });
+
+  it('parses the form string keeping the time segments', () => {
+    const parsed = toUnlockCalendarDateTime('2026-06-10T09:05');
+
+    expect(parsed?.hour).toBe(9);
+    expect(parsed?.minute).toBe(5);
+    expect(fromUnlockCalendarDateTime(parsed)).toBe('2026-06-10T09:05');
+  });
+
+  it('returns undefined for an incomplete form string', () => {
+    expect(toUnlockCalendarDateTime('')).toBeUndefined();
+    expect(toUnlockCalendarDateTime('2026-06-10')).toBeUndefined();
+  });
+
+  it('formats an empty string when there is no value', () => {
+    expect(fromUnlockCalendarDateTime(null)).toBe('');
+    expect(fromUnlockCalendarDateTime(undefined)).toBe('');
   });
 
   it('detects past datetimes', () => {

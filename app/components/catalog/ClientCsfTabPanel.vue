@@ -66,6 +66,15 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
   await uploadFile(file);
 }
 
+const { isDragging: isFullscreenDragging } = useFullscreenFileDrop({
+  model: pendingFile,
+  accept: acceptAttribute,
+  disabled: computed(() => isSaving.value || isUploading.value),
+  onFiles: (value) => {
+    void onPendingFilesChange(value);
+  },
+});
+
 function onSaveCsf() {
   void savePendingCsf((url) => {
     csfUrlModel.value = url;
@@ -143,5 +152,7 @@ function openCsfUrl() {
       :loading="isSaving"
       @click="onSaveCsf"
     />
+
+    <SharedFullscreenFileDropOverlay :active="isFullscreenDragging" />
   </div>
 </template>

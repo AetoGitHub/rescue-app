@@ -76,6 +76,15 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
     pendingFile.value = null;
   }
 }
+
+const { isDragging: isFullscreenDragging } = useFullscreenFileDrop({
+  model: pendingFile,
+  accept: QUOTE_CLASSIFIER_IMAGE_ACCEPT,
+  disabled: isBusy,
+  onFiles: (value) => {
+    void onPendingFilesChange(value);
+  },
+});
 </script>
 
 <template>
@@ -144,5 +153,7 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
         </li>
       </ul>
     </UAlert>
+
+    <SharedFullscreenFileDropOverlay :active="isFullscreenDragging" />
   </div>
 </template>

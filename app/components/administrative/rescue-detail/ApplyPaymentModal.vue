@@ -133,6 +133,16 @@ async function onPendingFilesChange(value: File | File[] | null | undefined) {
   await uploadFile(file);
 }
 
+const { isDragging: isFullscreenDragging } = useFullscreenFileDrop({
+  model: pendingFile,
+  accept: acceptAttribute,
+  disabled: isBusy,
+  enabled: open,
+  onFiles: (value) => {
+    void onPendingFilesChange(value);
+  },
+});
+
 function onApplyPayment() {
   if (!hasUploadedEvidence.value || isBusy.value) return;
   form.value.payment_evidence_url = uploadedEvidenceUrl.value;
@@ -244,4 +254,6 @@ watch(open, (isOpen) => {
     @confirm="confirmDiscard"
     @cancel="cancelDiscard"
   />
+
+  <SharedFullscreenFileDropOverlay :active="isFullscreenDragging" />
 </template>

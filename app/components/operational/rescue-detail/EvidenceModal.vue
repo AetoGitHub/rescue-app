@@ -198,6 +198,18 @@ async function onPendingFilesChange(value: File[] | null | undefined) {
   pendingFiles.value = [];
 }
 
+const { isDragging: isFullscreenDragging } = useFullscreenFileDrop({
+  model: pendingFiles,
+  multiple: true,
+  accept: acceptAttribute,
+  disabled: isBusy,
+  enabled: computed(() => open.value && !props.readonly),
+  onFiles: (value) => {
+    const files = Array.isArray(value) ? value : value ? [value] : [];
+    void onPendingFilesChange(files);
+  },
+});
+
 const dropzoneRef = ref<HTMLElement | null>(null);
 
 function scrollDropzoneIntoView() {
@@ -447,6 +459,11 @@ function fileLabel(url: string, index: number) {
     v-model:open="discardConfirmOpen"
     @confirm="confirmDiscard"
     @cancel="cancelDiscard"
+  />
+
+  <SharedFullscreenFileDropOverlay
+    :active="isFullscreenDragging"
+    label="Suelta los archivos para subirlos"
   />
 </template>
 
