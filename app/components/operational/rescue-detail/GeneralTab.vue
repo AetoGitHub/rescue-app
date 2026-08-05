@@ -71,10 +71,13 @@ const advanceSummary = computed(() => ({
   advance_received: props.detail.advance_received,
 }));
 
-const showDisbursementSection = computed(() => {
-  if (isLoan.value) return props.detail.disbursement_registered === true;
-  return hasRescueAdvanceSummary(advanceSummary.value);
-});
+const showAdvanceSection = computed(
+  () => !isLoan.value && hasRescueAdvanceSummary(advanceSummary.value),
+);
+
+const showLoanDisbursement = computed(
+  () => isLoan.value && props.detail.disbursement_registered === true,
+);
 
 const supplierSectionRef = ref<HTMLElement | null>(null);
 
@@ -257,12 +260,9 @@ watch(
       </section>
 
       <OperationalRescueDetailDisbursementSection
-        v-if="showDisbursementSection"
+        v-if="showAdvanceSection"
         :advance="advanceSummary"
-        :is-loan="isLoan"
-        :disbursement-registered="detail.disbursement_registered"
-        :disbursement-date="detail.disbursement_date"
-        :disbursement-payment-method="detail.disbursement_payment_method"
+        :is-loan="false"
       />
     </div>
 
@@ -323,6 +323,15 @@ watch(
         :detail="detail"
         :editable="editable"
         @edit="emit('edit-location')"
+      />
+
+      <OperationalRescueDetailDisbursementSection
+        v-if="showLoanDisbursement"
+        :advance="advanceSummary"
+        is-loan
+        :disbursement-registered="detail.disbursement_registered"
+        :disbursement-date="detail.disbursement_date"
+        :disbursement-payment-method="detail.disbursement_payment_method"
       />
         </div>
       </div>
