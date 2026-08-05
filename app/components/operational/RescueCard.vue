@@ -22,7 +22,9 @@ const gestorInitials = computed(() =>
 const gestorBadgeColor = computed(() =>
   getGestorBadgeColor(props.card.admin_status),
 );
-const salePrice = computed(() => formatRescueCardMoney(props.card.sub_total));
+const technicalCost = computed(() =>
+  formatRescueCardMoney(props.card.technical_cost),
+);
 const advanceAmount = computed(() => getRescueCardAdvanceAmount(props.card));
 
 const chatBadge = computed(() =>
@@ -128,10 +130,15 @@ function onCardClick() {
         size="sm"
         class="min-w-0 max-w-[60%] truncate"
       />
-      <span
-        class="inline-flex shrink-0 items-center gap-1.5 font-medium text-highlighted"
-      >
-        {{ salePrice }}
+      <span class="inline-flex shrink-0 items-center gap-1.5">
+        <span class="text-right leading-tight">
+          <span class="block text-[10px] font-normal text-muted">
+            Costo técnico
+          </span>
+          <span class="block text-xs font-medium text-highlighted tabular-nums">
+            {{ technicalCost }}
+          </span>
+        </span>
         <UBadge
           :color="gestorBadgeColor as 'neutral'"
           variant="solid"

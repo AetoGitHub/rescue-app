@@ -18,6 +18,7 @@ export interface RescueCardBase {
   supplier_name: string | null;
   multiple_managers: boolean;
   sub_total: string | null;
+  technical_cost: string | null;
   admin_status: string;
   created_at: string;
   phase_started_at: string;
