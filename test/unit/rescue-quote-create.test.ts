@@ -218,6 +218,55 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.services[0]!.pre_total).toBe('1100.00');
     expect(body!.services[0]!.total).toBe('1100.00');
   });
+
+  it('sends only loan multiplier pricing and zero modifiers for loans', () => {
+    const settings: RescueCompanySettings = {
+      commissions: {
+        commission_type: 'FIXED',
+        commission_value: 100,
+        commission_fixed: 500,
+        price_multiplier: 1.1,
+        loan_multiplier: 2,
+      },
+      contract: baseSettings.contract,
+    };
+    const body = buildRescueQuoteCreateBody(
+      1,
+      [
+        line({
+          quantity: 1,
+          unit_cost: 1001,
+          applied_price: 9999,
+          contract_item_id: 10,
+        }),
+      ],
+      settings,
+      {
+        ivaRate: 0,
+        roundToTen: true,
+        clientSellerId: 3,
+        serviceType: 'loan',
+      },
+    );
+
+    expect(body!.technical_cost).toBe('1001.00');
+    expect(body!.sub_total).toBe('2002.00');
+    expect(body!.total).toBe('2002.00');
+    expect(body!.seller_commission_type).toBe('PERCENTAGE');
+    expect(body!.seller_commission_value).toBe('0.00');
+    expect(body!.seller_commission_fixed).toBe('0.00');
+    expect(body!.seller_commission_amount).toBe('0.00');
+    expect(body!.comissions_apply).toBeUndefined();
+    expect(body!.services[0]).toMatchObject({
+      real_cost: '1001.00',
+      pre_total: '2002.00',
+      applied_price: '2002.00',
+      percenaje_apply: '0.00',
+      amount_applied: '0.00',
+      amount_rounded: '0.00',
+      total: '2002.00',
+    });
+  });
 });
 
 describe('buildRescueQuoteUpdateBody', () => {

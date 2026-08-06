@@ -44,6 +44,7 @@ const quoteCreditWarning = computed(() =>
     state.value.quote_lines,
     state.value.company_settings,
     state.value.client_seller_id,
+    state.value.service_type,
   ),
 );
 

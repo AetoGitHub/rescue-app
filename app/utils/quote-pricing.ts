@@ -227,12 +227,18 @@ export function computeQuotePricing(
   settings: RescueCompanySettings | null | undefined,
   options: QuotePricingOptions = {},
 ): QuotePricingSummary {
+  const isLoanQuote = options.serviceType === 'loan';
   const ivaRate = options.ivaRate ?? DEFAULT_IVA_RATE;
-  const roundToTen = options.roundToTen ?? DEFAULT_QUOTE_ROUND_TO_TEN;
-  const sellerCommissions = resolveSellerCommissions(
-    settings,
-    options.clientSellerId,
-  );
+  const roundToTen = isLoanQuote
+    ? false
+    : options.roundToTen ?? DEFAULT_QUOTE_ROUND_TO_TEN;
+  const sellerCommissions = isLoanQuote
+    ? {
+        commission_type: 'PERCENTAGE' as const,
+        commission_value: 0,
+        commission_fixed: 0,
+      }
+    : resolveSellerCommissions(settings, options.clientSellerId);
   const priceMultiplier = resolveQuotePriceMultiplier(
     settings,
     options.serviceType,
@@ -260,7 +266,8 @@ export function computeQuotePricing(
       return;
     }
 
-    const contractLine = isContractLine(line);
+    // Loan quotes use only loan_multiplier, including lines sourced from a contract.
+    const contractLine = !isLoanQuote && isContractLine(line);
     const costSubtotal = lineBaseFinal(line);
     const baseFinal = costSubtotal;
 
@@ -349,10 +356,12 @@ export function computeQuotePricing(
     const lineTotalCalculated = roundQuoteMoney(
       afterMultiplier + fixedShare + sellerFixedShare,
     );
-    const { appliedPrice, isAppliedPriceCustom } = resolveLineAppliedPrice(
-      draft.line,
-      lineTotalCalculated,
-    );
+    const { appliedPrice, isAppliedPriceCustom } = isLoanQuote
+      ? {
+          appliedPrice: lineTotalCalculated,
+          isAppliedPriceCustom: false,
+        }
+      : resolveLineAppliedPrice(draft.line, lineTotalCalculated);
     const { lineTotal, roundingAdd } = applyLineRounding(
       appliedPrice,
       roundToTen,
@@ -381,8 +390,9 @@ export function computeQuotePricing(
     0,
   );
   const profit = roundQuoteMoney(subtotalLines - costSubtotal);
-  const sellerCommission =
-    sellerCommissions.commission_type === 'FIXED'
+  const sellerCommission = isLoanQuote
+    ? 0
+    : sellerCommissions.commission_type === 'FIXED'
       ? roundQuoteMoney(
           pricingLines.reduce((sum, row) => sum + row.sellerFixedShare, 0),
         )

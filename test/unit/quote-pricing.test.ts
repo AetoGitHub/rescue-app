@@ -520,14 +520,25 @@ describe('computeQuotePricing', () => {
     const settings: RescueCompanySettings = {
       commissions: {
         commission_type: 'PERCENTAGE',
-        commission_value: 0,
-        commission_fixed: 0,
+        commission_value: 5,
+        commission_fixed: 500,
         price_multiplier: 1.1,
         loan_multiplier: 2,
       },
-      contract: null,
+      contract: baseSettings.contract,
     };
-    const lines = [line({ quantity: 1, unit_cost: 1000 })];
+    const lines = [
+      line({
+        quantity: 1,
+        unit_cost: 1001,
+        applied_price: 9999,
+      }),
+      line({
+        quantity: 1,
+        unit_cost: 500,
+        contract_item_id: 10,
+      }),
+    ];
 
     const rescuePricing = computeQuotePricing(lines, settings, {
       ivaRate: 0,
@@ -536,13 +547,23 @@ describe('computeQuotePricing', () => {
     });
     const loanPricing = computeQuotePricing(lines, settings, {
       ivaRate: 0,
-      roundToTen: false,
+      roundToTen: true,
       serviceType: 'loan',
     });
 
-    expect(rescuePricing.lines[0]!.afterMultiplier).toBe(1100);
-    expect(rescuePricing.subtotalLines).toBe(1100);
-    expect(loanPricing.lines[0]!.afterMultiplier).toBe(2000);
-    expect(loanPricing.subtotalLines).toBe(2000);
+    expect(rescuePricing.lines[0]!.afterMultiplier).toBe(1101.1);
+    expect(loanPricing.lines[0]!.afterMultiplier).toBe(2002);
+    expect(loanPricing.lines[1]!.afterMultiplier).toBe(1000);
+    expect(loanPricing.lines[1]!.isContractLine).toBe(false);
+    expect(loanPricing.lines.every((row) => row.fixedShare === 0)).toBe(true);
+    expect(loanPricing.lines.every((row) => row.sellerFixedShare === 0)).toBe(
+      true,
+    );
+    expect(loanPricing.lines.every((row) => row.roundingAdd === 0)).toBe(true);
+    expect(loanPricing.lines[0]!.appliedPrice).toBe(2002);
+    expect(loanPricing.lines[0]!.isAppliedPriceCustom).toBe(false);
+    expect(loanPricing.sellerCommission).toBe(0);
+    expect(loanPricing.roundingAddTotal).toBe(0);
+    expect(loanPricing.subtotalLines).toBe(3002);
   });
 });

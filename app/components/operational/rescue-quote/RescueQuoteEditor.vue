@@ -387,7 +387,13 @@ watch(
                 </span>
               </td>
               <td class="px-3 py-2 align-top">
-                <div class="space-y-1">
+                <span
+                  v-if="serviceType === 'loan'"
+                  class="font-medium tabular-nums"
+                >
+                  {{ formatQuoteMoney(lineRow(line)?.lineTotalCalculated ?? 0) }}
+                </span>
+                <div v-else class="space-y-1">
                   <div class="flex items-center gap-1">
                     <UFormField
                       :name="`quote_lines.${index}.applied_price`"

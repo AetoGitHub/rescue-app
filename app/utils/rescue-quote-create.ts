@@ -64,10 +64,14 @@ export function buildRescueQuoteCreateBody(
     return null;
   }
 
-  const sellerCommissions = resolveSellerCommissions(
-    settings,
-    options.clientSellerId,
-  );
+  const isLoanQuote = options.serviceType === 'loan';
+  const sellerCommissions = isLoanQuote
+    ? {
+        commission_type: 'PERCENTAGE' as const,
+        commission_value: 0,
+        commission_fixed: 0,
+      }
+    : resolveSellerCommissions(settings, options.clientSellerId);
   const commissionFixedPool = sellerCommissions.commission_fixed;
   const ivaRate = options.ivaRate ?? DEFAULT_IVA_RATE;
   const ivaPercent = Math.round(ivaRate * 100);
