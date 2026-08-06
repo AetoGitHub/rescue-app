@@ -29,6 +29,11 @@ const catalogNameField = (label: string) =>
 const catalogRfcField = (label: string) =>
   requiredStr(label).transform((value) => normalizeCatalogName(value));
 
+const catalogPhoneField = (label: string) =>
+  requiredStr(label)
+    .transform((value) => normalizeMexicoPhone(value))
+    .pipe(z.string().min(1, `${label} es obligatorio`));
+
 const catalogSelectionSchema = z.object({
   value: z.number().int().positive().nullable(),
   label: z.string(),
@@ -43,7 +48,7 @@ export const companyCreateSchema = z.object({
   name: catalogNameField('El nombre'),
   business_name: requiredStr('La razón social'),
   rfc: catalogRfcField('El RFC'),
-  phone: requiredStr('El teléfono'),
+  phone: catalogPhoneField('El teléfono'),
   email: z
     .string()
     .transform((s) => s.trim())
@@ -130,8 +135,8 @@ export const clientContactFormSchema = z.object({
     .string()
     .transform((s) => s.trim())
     .pipe(z.email({ error: 'Introduce un correo válido' })),
-  phone: requiredStr('El teléfono'),
-  whatsapp: requiredStr('El WhatsApp'),
+  phone: catalogPhoneField('El teléfono'),
+  whatsapp: catalogPhoneField('El WhatsApp'),
   is_authorizer: z.boolean(),
   receives_quotes: z.boolean(),
   receives_oc_reminders: z.boolean(),
@@ -194,7 +199,7 @@ export const supplierCreateSchema = z
   .object({
     name: catalogNameField('El nombre'),
     description: z.string(),
-    phone: requiredStr('El teléfono'),
+    phone: catalogPhoneField('El teléfono'),
     email: z
       .string()
       .transform((s) => s.trim())

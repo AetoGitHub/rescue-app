@@ -77,11 +77,11 @@ const positionLabel = computed(() => {
       </span>
       <span v-if="contact.phone" class="inline-flex items-center gap-1.5">
         <UIcon name="i-lucide-smartphone" class="size-4 shrink-0" />
-        {{ contact.phone }}
+        {{ formatMexicoPhoneInput(contact.phone) }}
       </span>
       <span v-if="contact.whatsapp" class="inline-flex items-center gap-1.5">
         <UIcon name="i-lucide-message-circle" class="size-4 shrink-0" />
-        {{ contact.whatsapp }}
+        {{ formatMexicoPhoneInput(contact.whatsapp) }}
       </span>
     </div>
 

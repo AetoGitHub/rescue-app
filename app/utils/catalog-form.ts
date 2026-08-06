@@ -27,10 +27,17 @@ export function formatCatalogRfcInput(
 export function formatMexicoPhoneInput(
   value: string | number | undefined,
 ): string {
-  const digits = String(value ?? '').replace(/\D/g, '').slice(0, 10);
+  const digits = normalizeMexicoPhone(value).slice(0, 10);
   if (digits.length <= 2) return digits;
   if (digits.length <= 6) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
   return `${digits.slice(0, 2)} ${digits.slice(2, 6)} ${digits.slice(6)}`;
+}
+
+/** The mask is display-only: the API always receives digits. */
+export function normalizeMexicoPhone(
+  value: string | number | undefined,
+): string {
+  return String(value ?? '').replace(/\D/g, '');
 }
 
 type StringNumberModelOptions = {

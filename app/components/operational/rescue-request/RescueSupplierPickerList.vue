@@ -219,7 +219,7 @@ function toggleTrustedOnly() {
                   </span>
                   <span class="inline-flex min-w-0 items-center gap-1 break-all">
                     <UIcon name="i-lucide-phone" class="size-3.5 shrink-0" />
-                    {{ row.phone || '—' }}
+                    {{ formatMexicoPhoneInput(row.phone) || '—' }}
                   </span>
                   <span class="inline-flex min-w-0 items-center gap-1">
                     <UIcon name="i-lucide-map-pin" class="size-3.5 shrink-0" />
@@ -261,7 +261,7 @@ function toggleTrustedOnly() {
                   </span>
                   <span class="inline-flex min-w-0 items-center gap-1 break-all">
                     <UIcon name="i-lucide-phone" class="size-3.5 shrink-0" />
-                    {{ row.phone || '—' }}
+                    {{ formatMexicoPhoneInput(row.phone) || '—' }}
                   </span>
                   <span class="inline-flex min-w-0 items-center gap-1">
                     <UIcon name="i-lucide-map-pin" class="size-3.5 shrink-0" />

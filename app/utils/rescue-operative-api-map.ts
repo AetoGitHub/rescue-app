@@ -86,6 +86,9 @@ export function toOperativeUpdatePayload(
         cancellation_reason: forms?.cancellationReasonId ?? undefined,
       };
 
+    case 'obtain_rescue':
+      throw new Error('obtain_rescue is not wired to an API yet');
+
     case 'take_request':
       return { to: 'active_without_quote' };
 

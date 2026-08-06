@@ -7,6 +7,7 @@ interface Response {
   id: number;
   role: string;
   name: string;
+  superuser?: boolean;
 }
 
 export default defineEventHandler(async (event) => {
@@ -30,6 +31,7 @@ export default defineEventHandler(async (event) => {
         name: response.name,
         id: response.id,
         role: normalizeAuthUserRoleForSession(response.role),
+        superuser: Boolean(response.superuser),
       },
       token: response.token,
     },

@@ -188,6 +188,8 @@ const columns: TableColumn<Supplier>[] = [
   {
     accessorKey: 'phone',
     header: 'Teléfono',
+    cell: ({ row }) =>
+      formatMexicoPhoneInput(row.original.phone) || '—',
   },
   {
     accessorKey: 'is_active',

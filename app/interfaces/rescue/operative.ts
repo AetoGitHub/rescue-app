@@ -11,6 +11,7 @@ export type RescueAdvancePanelMode =
 export type RescueOperativeActionId =
   | 'send_to_authorization'
   | 'cancel_service'
+  | 'obtain_rescue'
   | 'revert_cancellation'
   | 'approve_loan'
   | 'request_advance'

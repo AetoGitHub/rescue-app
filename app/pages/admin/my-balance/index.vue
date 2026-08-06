@@ -3,12 +3,17 @@ import { h, resolveComponent } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
 import {
   PAYMENT_DEBT_SOURCE_OPTIONS,
+  PAYMENT_RECIPIENT_TYPE_OPTIONS,
   type BalanceProfile,
   type PaymentDebtSource,
 } from '~/constants/payment-api';
 import type { OperativeBalanceVoucher } from '~/interfaces/payment/balance-operative';
 import type { BalanceVoucher } from '~/interfaces/payment/balance';
 import type { PaymentDebtItem } from '~/interfaces/payment/debt';
+import {
+  emptyCatalogDropdownSelection,
+  type CatalogDropdownSelection,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import { adminListTableClass } from '~/constants/admin-list-layout';
 import { parsePositiveIntQuery } from '#shared/utils/payment-balance-query';
 import {
@@ -28,6 +33,39 @@ const UBadge = resolveComponent('UBadge');
 const UIcon = resolveComponent('UIcon');
 
 const { user } = useUserSession();
+const isSuperuser = computed(() => Boolean(user.value?.superuser));
+
+const selectedProfile = ref<BalanceProfile | null>(null);
+const selectedUser = ref<CatalogDropdownSelection>(emptyCatalogDropdownSelection());
+
+const { fetchOperativeDropdown, fetchSellerDropdown } = usePaymentBoardFetchers();
+
+const userDropdownFetcher = computed(() =>
+  selectedProfile.value === 'seller'
+    ? fetchSellerDropdown
+    : fetchOperativeDropdown,
+);
+
+const userPlaceholder = computed(() =>
+  selectedProfile.value === 'seller'
+    ? 'Seleccionar vendedor'
+    : selectedProfile.value === 'operative'
+      ? 'Seleccionar operador'
+      : 'Selecciona un perfil primero',
+);
+
+const userFieldLabel = computed(() =>
+  selectedProfile.value === 'seller' ? 'Vendedor' : 'Operador',
+);
+
+watch(selectedProfile, () => {
+  selectedUser.value = emptyCatalogDropdownSelection();
+});
+
+const balanceUserId = computed(() => {
+  if (isSuperuser.value) return selectedUser.value.value;
+  return user.value?.id ?? null;
+});
 
 const {
   vouchers,
@@ -36,7 +74,21 @@ const {
   balanceProfile,
   errorMessage: balanceErrorMessage,
   testDays,
-} = useMyBalance(undefined, appliedTestDays);
+} = useMyBalance(
+  balanceUserId,
+  appliedTestDays,
+  {
+    profile: computed(() =>
+      isSuperuser.value ? selectedProfile.value : undefined,
+    ),
+    queryByUser: isSuperuser,
+  },
+);
+
+const needsSuperuserSelection = computed(() =>
+  isSuperuser.value
+  && (selectedProfile.value == null || selectedUser.value.value == null),
+);
 
 const {
   rows: debtRows,
@@ -46,8 +98,11 @@ const {
   asyncStatus: debtsAsyncStatus,
   errorMessage: debtsErrorMessage,
 } = usePaymentDebtList(
-  computed(() => user.value?.id),
-  { payment: false },
+  balanceUserId,
+  {
+    payment: false,
+    enabled: computed(() => !needsSuperuserSelection.value),
+  },
 );
 
 const debtsTableRef = useTemplateRef('debtsTable');
@@ -291,8 +346,42 @@ const debtColumns = computed((): TableColumn<PaymentDebtItem>[] => [
     title="Mi saldo"
     description="Vouchers pendientes de pago, deudas y comisiones acumuladas"
   >
+    <template
+      v-if="isSuperuser"
+      #filters
+    >
+      <div class="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <UFormField label="Perfil">
+          <USelect
+            v-model="selectedProfile"
+            :items="PAYMENT_RECIPIENT_TYPE_OPTIONS"
+            value-key="value"
+            label-key="label"
+            placeholder="Seleccionar perfil"
+            class="w-full"
+            variant="subtle"
+            :ui="{ base: 'bg-default' }"
+          />
+        </UFormField>
+
+        <UFormField
+          :label="userFieldLabel"
+          class="sm:col-span-2"
+        >
+          <CatalogDropdownSelect
+            :key="selectedProfile ?? 'none'"
+            v-model="selectedUser"
+            class="w-full"
+            :placeholder="userPlaceholder"
+            :fetcher="userDropdownFetcher"
+            :disabled="selectedProfile == null"
+          />
+        </UFormField>
+      </div>
+    </template>
+
     <UPageCard
-      v-if="isDev && hasBalanceProfile && isOperativeProfile"
+      v-if="isDev && hasBalanceProfile && isOperativeProfile && !needsSuperuserSelection"
       variant="subtle"
       :ui="{ body: 'flex flex-wrap items-end gap-3' }"
       class="mb-4"
@@ -328,7 +417,19 @@ const debtColumns = computed((): TableColumn<PaymentDebtItem>[] => [
     </UPageCard>
 
     <div
-      v-if="!hasBalanceProfile"
+      v-if="needsSuperuserSelection"
+      class="flex flex-1 items-center justify-center py-16"
+    >
+      <UPageCard class="max-w-md text-center">
+        <p class="font-medium">Selecciona perfil y usuario</p>
+        <p class="mt-1 text-sm text-muted">
+          Elige el perfil (operador o vendedor) y luego el usuario para consultar su saldo.
+        </p>
+      </UPageCard>
+    </div>
+
+    <div
+      v-else-if="!hasBalanceProfile"
       class="flex flex-1 items-center justify-center py-16"
     >
       <UPageCard class="max-w-md text-center">

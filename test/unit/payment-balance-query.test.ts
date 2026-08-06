@@ -13,9 +13,29 @@ describe('payment-balance-query', () => {
     expect(parsePositiveIntQuery('abc')).toBeNull();
   });
 
-  it('buildOperativeBalanceQuery requires operator', () => {
+  it('buildOperativeBalanceQuery requires operator or user', () => {
     expect(buildOperativeBalanceQuery({}, { dev: true })).toBeNull();
     expect(buildOperativeBalanceQuery({ operator: ' ' }, { dev: true })).toBeNull();
+    expect(buildOperativeBalanceQuery({ user: ' ' }, { dev: true })).toBeNull();
+  });
+
+  it('prefers user over operator when both are present', () => {
+    expect(
+      buildOperativeBalanceQuery(
+        { user: '7', operator: '42' },
+        { dev: false },
+      ),
+    ).toEqual({
+      user: '7',
+    });
+  });
+
+  it('accepts user query param', () => {
+    expect(
+      buildOperativeBalanceQuery({ user: '7' }, { dev: false }),
+    ).toEqual({
+      user: '7',
+    });
   });
 
   it('includes test_days in dev mode', () => {
@@ -26,6 +46,16 @@ describe('payment-balance-query', () => {
       ),
     ).toEqual({
       operator: '42',
+      test_days: '8',
+    });
+
+    expect(
+      buildOperativeBalanceQuery(
+        { user: '7', test_days: '8' },
+        { dev: true },
+      ),
+    ).toEqual({
+      user: '7',
       test_days: '8',
     });
   });

@@ -36,7 +36,7 @@ const usernameField = z
 
 const phoneField = z
   .string()
-  .transform((s) => s.trim())
+  .transform((s) => normalizeMexicoPhone(s))
   .pipe(z.string());
 
 const passwordCreateField = z

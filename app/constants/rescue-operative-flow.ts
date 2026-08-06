@@ -57,6 +57,8 @@ export const RESCUE_ADVANCE_NO_QUOTE_WARNING =
 export const RESCUE_OPERATIVE_BUTTON_LABELS = {
   sendToAuthorization: 'Enviar a Autorización',
   cancelService: 'Cancelar servicio',
+  // TODO: re-enable when obtain_rescue endpoint is ready
+  // obtainRescue: 'Obtener rescate',
   approveLoan: 'Aprobar préstamo',
   creditExceeded: 'Excede crédito disponible — no se puede aprobar',
   requestAdvance: 'Solicitar anticipo',

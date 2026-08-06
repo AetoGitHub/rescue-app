@@ -7,6 +7,7 @@ import type {
 import {
   formatMexicoPhoneInput,
   normalizeCatalogName,
+  normalizeMexicoPhone,
 } from '~/utils/catalog-form';
 
 export function mapClientContactRow(
@@ -56,8 +57,8 @@ export function clientContactFormToCreateBody(
     name: input.name,
     position: input.position,
     email: input.email,
-    phone: input.phone,
-    whatsapp: input.whatsapp,
+    phone: normalizeMexicoPhone(input.phone),
+    whatsapp: normalizeMexicoPhone(input.whatsapp),
     is_authorizer: input.is_authorizer,
     receives_quotes: input.receives_quotes,
     receives_oc_reminders: input.receives_oc_reminders,

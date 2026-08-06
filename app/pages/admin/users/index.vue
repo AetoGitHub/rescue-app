@@ -70,6 +70,8 @@ const columns: TableColumn<User>[] = [
   {
     accessorKey: 'phone',
     header: 'Teléfono',
+    cell: ({ row }) =>
+      formatMexicoPhoneInput(row.original.phone) || '—',
   },
   {
     id: 'estado',

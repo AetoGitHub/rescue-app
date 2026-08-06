@@ -82,7 +82,8 @@ const columns: TableColumn<Client>[] = [
   {
     id: 'phone',
     header: 'Teléfono',
-    cell: ({ row }) => row.original.phone?.trim() || '—',
+    cell: ({ row }) =>
+      formatMexicoPhoneInput(row.original.phone) || '—',
   },
   {
     id: 'client_type',
@@ -247,7 +248,7 @@ const columns: TableColumn<Client>[] = [
                 {{ client.name }}
               </p>
               <p class="mt-0.5 text-xs text-muted">
-                {{ client.phone?.trim() || 'Sin teléfono' }}
+                {{ formatMexicoPhoneInput(client.phone) || 'Sin teléfono' }}
               </p>
             </div>
             <UBadge

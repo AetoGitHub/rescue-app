@@ -4,6 +4,7 @@ import {
   OPERATIVE_BALANCE_PATH,
   SELLER_BALANCE_PATH,
   resolveBalanceProfile,
+  type BalanceProfile,
 } from '~/constants/payment-api';
 import type {
   OperativeBalanceResponse,
@@ -17,17 +18,34 @@ import { parsePositiveIntQuery } from '#shared/utils/payment-balance-query';
 export function useMyBalance(
   userId: MaybeRefOrGetter<number | null | undefined> = undefined,
   testDays: MaybeRefOrGetter<number | null | undefined> = undefined,
+  options?: {
+    profile?: MaybeRefOrGetter<BalanceProfile | null | undefined>;
+    queryByUser?: MaybeRefOrGetter<boolean>;
+  },
 ) {
   const apiFetch = useApiFetch();
   const { user } = useUserSession();
 
   const resolvedUserId = computed(() => {
-    const explicit = userId != null ? toValue(userId) : undefined;
-    return explicit ?? user.value?.id ?? null;
+    if (userId === undefined) {
+      return user.value?.id ?? null;
+    }
+    const explicit = toValue(userId);
+    return explicit != null && Number.isFinite(Number(explicit))
+      ? Number(explicit)
+      : null;
   });
 
-  const balanceProfile = computed(() =>
-    resolveBalanceProfile(user.value?.role),
+  const balanceProfile = computed((): BalanceProfile | null => {
+    if (options?.profile != null) {
+      const override = toValue(options.profile);
+      if (override !== undefined) return override;
+    }
+    return resolveBalanceProfile(user.value?.role);
+  });
+
+  const queryByUser = computed(() =>
+    options?.queryByUser != null ? Boolean(toValue(options.queryByUser)) : false,
   );
 
   const resolvedTestDays = computed(() => {
@@ -42,6 +60,7 @@ export function useMyBalance(
       'my-balance',
       balanceProfile.value ?? 'none',
       resolvedUserId.value ?? '',
+      queryByUser.value ? 'user' : 'self',
       resolvedTestDays.value ?? '',
     ],
     enabled: () =>
@@ -49,15 +68,16 @@ export function useMyBalance(
     query: async ({ signal }) => {
       const id = resolvedUserId.value!;
       const profile = balanceProfile.value!;
+      const idKey = queryByUser.value ? 'user' : profile === 'seller' ? 'seller' : 'operator';
 
       if (profile === 'seller') {
         return apiFetch<SellerBalanceResponse>(SELLER_BALANCE_PATH, {
-          query: { seller: id },
+          query: { [idKey]: id },
           signal,
         });
       }
 
-      const operativeQuery: Record<string, string | number> = { operator: id };
+      const operativeQuery: Record<string, string | number> = { [idKey]: id };
       if (resolvedTestDays.value != null) {
         operativeQuery.test_days = resolvedTestDays.value;
       }

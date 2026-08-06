@@ -69,6 +69,21 @@ describe('auth-roles', () => {
       id: 1,
       name: 'Admin User',
       role: 'admin',
+      superuser: false,
+    });
+
+    expect(
+      normalizeAuthSessionUser({
+        id: 2,
+        name: 'Super Admin',
+        role: 'admin',
+        superuser: true,
+      }),
+    ).toEqual({
+      id: 2,
+      name: 'Super Admin',
+      role: 'admin',
+      superuser: true,
     });
   });
 

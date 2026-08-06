@@ -72,14 +72,14 @@ describe('client contact body mappers', () => {
     is_active: true,
   };
 
-  it('builds create body with client id', () => {
+  it('builds create body with digits-only phones', () => {
     expect(clientContactFormToCreateBody(5, form)).toEqual({
       client: 5,
       name: 'JUAN PÉREZ',
       position: 'Gerente',
       email: 'juan@cliente.mx',
-      phone: '55 1234 5678',
-      whatsapp: '55 1234 5678',
+      phone: '5512345678',
+      whatsapp: '5512345678',
       is_authorizer: true,
       receives_quotes: true,
       receives_oc_reminders: false,
@@ -94,8 +94,8 @@ describe('client contact body mappers', () => {
       name: 'JUAN PÉREZ',
       position: 'Gerente',
       email: 'juan@cliente.mx',
-      phone: '55 1234 5678',
-      whatsapp: '55 1234 5678',
+      phone: '5512345678',
+      whatsapp: '5512345678',
       is_authorizer: true,
       receives_quotes: true,
       receives_oc_reminders: false,

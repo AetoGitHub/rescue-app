@@ -65,5 +65,6 @@ export function normalizeAuthSessionUser(
   return {
     ...user,
     role: normalizeAuthUserRoleForSession(user.role),
+    superuser: Boolean(user.superuser),
   };
 }

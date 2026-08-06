@@ -330,6 +330,11 @@ export function useRescueOperativeFlow(options: {
       return;
     }
 
+    // TODO: re-enable when obtain_rescue endpoint is ready
+    // if (actionId === 'obtain_rescue') {
+    //   return;
+    // }
+
     if (actionId === 'cancel_service') {
       cancellationReason.value = emptyCatalogDropdownSelection();
       cancelModalOpen.value = true;

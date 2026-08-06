@@ -35,6 +35,7 @@ export async function refreshAuthSession(
       id: response.id,
       name: response.name,
       role: normalizeAuthUserRoleForSession(response.role),
+      superuser: Boolean(response.superuser),
     };
 
     await setUserSession(

@@ -136,7 +136,7 @@ watch(
               {{ detail.client_name }}
             </p>
             <p v-if="detail.client_phone?.trim()" class="text-xs text-muted">
-              {{ detail.client_phone }}
+              {{ formatMexicoPhoneInput(detail.client_phone) }}
             </p>
           </div>
         </div>
