@@ -3,7 +3,7 @@ declare module '#auth-utils' {
     id: number;
     name: string;
     role: string;
-    superuser?: boolean;
+    is_superuser?: boolean;
   }
 
   interface UserSession {
@@ -16,7 +16,7 @@ export interface AuthRefreshResponse {
   id: number;
   role: string;
   name: string;
-  superuser?: boolean;
+  is_superuser?: boolean;
 }
 
 export {};

@@ -33,9 +33,9 @@ const UBadge = resolveComponent('UBadge');
 const UIcon = resolveComponent('UIcon');
 
 const { user } = useUserSession();
-const isSuperuser = computed(() => Boolean(user.value?.superuser));
+const isSuperuser = computed(() => Boolean(user.value?.is_superuser));
 
-const selectedProfile = ref<BalanceProfile | null>(null);
+const selectedProfile = ref<BalanceProfile>();
 const selectedUser = ref<CatalogDropdownSelection>(emptyCatalogDropdownSelection());
 
 const { fetchOperativeDropdown, fetchSellerDropdown } = usePaymentBoardFetchers();

@@ -69,7 +69,7 @@ describe('auth-roles', () => {
       id: 1,
       name: 'Admin User',
       role: 'admin',
-      superuser: false,
+      is_superuser: false,
     });
 
     expect(
@@ -77,13 +77,13 @@ describe('auth-roles', () => {
         id: 2,
         name: 'Super Admin',
         role: 'admin',
-        superuser: true,
+        is_superuser: true,
       }),
     ).toEqual({
       id: 2,
       name: 'Super Admin',
       role: 'admin',
-      superuser: true,
+      is_superuser: true,
     });
   });
 

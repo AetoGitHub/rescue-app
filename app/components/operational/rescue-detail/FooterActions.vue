@@ -7,6 +7,7 @@ import {
   getRescueDetailFooterFlowLabel,
   rescueDetailToFlowContext,
 } from '~/utils/rescue-operative-flow';
+import { isOperatorRole } from '#shared/utils/auth-roles';
 
 const props = defineProps<{
   detail: RescueCardDetail;
@@ -16,6 +17,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   action: [id: RescueOperativeActionId];
 }>();
+
+const { user } = useUserSession();
+const canClaimRescue = computed(
+  () => isOperatorRole(user.value?.role) && !user.value?.is_superuser,
+);
 
 const flowContext = computed(() => rescueDetailToFlowContext(props.detail));
 
@@ -27,7 +33,11 @@ const flowLabel = computed(() =>
   getRescueDetailFooterFlowLabel(flowContext.value),
 );
 
-const moreOptions = computed(() => getMoreOptionsActions(flowContext.value));
+const moreOptions = computed(() =>
+  getMoreOptionsActions(flowContext.value, {
+    canClaim: canClaimRescue.value,
+  }),
+);
 
 const primaryActions = computed(() =>
   footerActions.value.filter((a) => a.primary),

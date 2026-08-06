@@ -9,6 +9,9 @@ export const RESCUE_CHANGE_PHASE_PATH = (rescueId: number) =>
 export const RESCUE_REVERT_CANCELLATION_PATH = (rescueId: number) =>
   `/api/rescue/revert_cancellation/${rescueId}/`;
 
+export const RESCUE_CLAIM_PATH = (rescueId: number) =>
+  `/api/rescue/claim/${rescueId}/`;
+
 /** @deprecated Use RESCUE_CHANGE_PHASE_PATH */
 export const RESCUE_OPERATIVE_UPDATE_PATH = RESCUE_CHANGE_PHASE_PATH;
 
@@ -29,6 +32,7 @@ export const RESCUE_OPERATIVE_TOAST = {
   advanceModified: 'Monto de anticipo actualizado',
   advanceConfirmed: 'Anticipo confirmado',
   advanceApprovedWithout: 'Solicitud aprobada sin anticipo',
+  rescueClaimed: 'Rescate obtenido',
 } as const;
 
 export const RESCUE_ADVANCE_PANEL_COPY = {
@@ -57,8 +61,7 @@ export const RESCUE_ADVANCE_NO_QUOTE_WARNING =
 export const RESCUE_OPERATIVE_BUTTON_LABELS = {
   sendToAuthorization: 'Enviar a Autorización',
   cancelService: 'Cancelar servicio',
-  // TODO: re-enable when obtain_rescue endpoint is ready
-  // obtainRescue: 'Obtener rescate',
+  obtainRescue: 'Obtener rescate',
   approveLoan: 'Aprobar préstamo',
   creditExceeded: 'Excede crédito disponible — no se puede aprobar',
   requestAdvance: 'Solicitar anticipo',

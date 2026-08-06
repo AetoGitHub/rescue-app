@@ -100,11 +100,10 @@ const CANCEL_SERVICE_ACTION = action({
   color: 'error',
 });
 
-// TODO: re-enable when obtain_rescue endpoint is ready
-// const OBTAIN_RESCUE_ACTION = action({
-//   id: 'obtain_rescue',
-//   label: RESCUE_OPERATIVE_BUTTON_LABELS.obtainRescue,
-// });
+const OBTAIN_RESCUE_ACTION = action({
+  id: 'obtain_rescue',
+  label: RESCUE_OPERATIVE_BUTTON_LABELS.obtainRescue,
+});
 
 function pendingAuthorizationActions(
   ctx: RescueOperativeFlowContext,
@@ -307,10 +306,12 @@ export function canCancelOperativeService(
 
 export function getMoreOptionsActions(
   ctx: RescueOperativeFlowContext,
+  options: { canClaim?: boolean } = {},
 ): RescueFooterAction[] {
-  if (canCancelOperativeService(ctx.operative_status)) {
-    // TODO: re-enable OBTAIN_RESCUE_ACTION when obtain_rescue endpoint is ready
-    return [CANCEL_SERVICE_ACTION];
-  }
-  return [];
+  if (!canCancelOperativeService(ctx.operative_status)) return [];
+
+  return [
+    ...(options.canClaim === false ? [] : [OBTAIN_RESCUE_ACTION]),
+    CANCEL_SERVICE_ACTION,
+  ];
 }

@@ -4,5 +4,5 @@ export type AuthUser = {
   id: number;
   name: string;
   role: AuthUserRole | string;
-  superuser?: boolean;
+  is_superuser?: boolean;
 };

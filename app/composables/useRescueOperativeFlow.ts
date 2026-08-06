@@ -39,6 +39,7 @@ import {
   hasRescueSupplierAssigned,
 } from '~/utils/rescue-supplier-assign';
 import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
+import { isOperatorRole } from '#shared/utils/auth-roles';
 
 export function useRescueOperativeFlow(options: {
   rescueId: MaybeRefOrGetter<number | null>;
@@ -47,10 +48,12 @@ export function useRescueOperativeFlow(options: {
   setActiveTab: (tab: RescueDetailTabValue) => void;
 }) {
   const toast = useToast();
+  const { user } = useUserSession();
   const rescueId = computed(() => toValue(options.rescueId));
   const detail = computed(() => toValue(options.detail));
 
   const { updateOperative, isUpdating } = useRescueOperativeMutation(rescueId);
+  const { claimRescue, isClaiming } = useRescueClaimMutation(rescueId);
   const { createReviewsForRescue, isCreating: isCreatingReviews } =
     useSupplierReviewMutation();
   const { revertCancellation, isReverting } = useRescueRevertCancellation(rescueId);
@@ -330,10 +333,20 @@ export function useRescueOperativeFlow(options: {
       return;
     }
 
-    // TODO: re-enable when obtain_rescue endpoint is ready
-    // if (actionId === 'obtain_rescue') {
-    //   return;
-    // }
+    if (actionId === 'obtain_rescue') {
+      if (!isOperatorRole(user.value?.role) || user.value?.is_superuser) return;
+      try {
+        await claimRescue();
+        toast.add({
+          title: RESCUE_OPERATIVE_TOAST.rescueClaimed,
+          color: 'success',
+        });
+        await options.refresh();
+      } catch {
+        // Error toast handled in mutation
+      }
+      return;
+    }
 
     if (actionId === 'cancel_service') {
       cancellationReason.value = emptyCatalogDropdownSelection();
@@ -576,7 +589,11 @@ export function useRescueOperativeFlow(options: {
   }
 
   const isUpdatingOperative = computed(
-    () => isUpdating.value || isReverting.value || isCreatingReviews.value,
+    () =>
+      isUpdating.value
+      || isClaiming.value
+      || isReverting.value
+      || isCreatingReviews.value,
   );
 
   const quoteTotalForAdvance = computed(() => {

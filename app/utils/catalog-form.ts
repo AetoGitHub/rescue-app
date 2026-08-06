@@ -25,7 +25,7 @@ export function formatCatalogRfcInput(
 }
 
 export function formatMexicoPhoneInput(
-  value: string | number | undefined,
+  value: string | number | null | undefined,
 ): string {
   const digits = normalizeMexicoPhone(value).slice(0, 10);
   if (digits.length <= 2) return digits;
@@ -35,7 +35,7 @@ export function formatMexicoPhoneInput(
 
 /** The mask is display-only: the API always receives digits. */
 export function normalizeMexicoPhone(
-  value: string | number | undefined,
+  value: string | number | null | undefined,
 ): string {
   return String(value ?? '').replace(/\D/g, '');
 }

@@ -87,7 +87,7 @@ export function toOperativeUpdatePayload(
       };
 
     case 'obtain_rescue':
-      throw new Error('obtain_rescue is not wired to an API yet');
+      throw new Error('obtain_rescue uses a dedicated endpoint');
 
     case 'take_request':
       return { to: 'active_without_quote' };

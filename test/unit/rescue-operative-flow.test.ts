@@ -86,23 +86,26 @@ describe('getRescueDetailFooterActions', () => {
 });
 
 describe('getMoreOptionsActions', () => {
-  it('offers cancel_service in dropdown for active_without_quote', () => {
+  it('offers obtain_rescue and cancel_service for eligible users', () => {
     const options = getMoreOptionsActions(
       ctx({
         operative_status: 'active_without_quote',
         service_type: 'rescue',
       }),
     );
-    expect(options).toHaveLength(1);
-    expect(options[0]?.id).toBe('cancel_service');
+    expect(options.map((option) => option.id)).toEqual([
+      'obtain_rescue',
+      'cancel_service',
+    ]);
   });
 
-  it('offers cancel_service in dropdown for pending_authorization', () => {
+  it('hides obtain_rescue when the user cannot claim', () => {
     const options = getMoreOptionsActions(
       ctx({
         operative_status: 'pending_authorization',
         service_type: 'rescue',
       }),
+      { canClaim: false },
     );
     expect(options).toHaveLength(1);
     expect(options[0]?.id).toBe('cancel_service');
@@ -117,15 +120,17 @@ describe('getMoreOptionsActions', () => {
     'in_progress',
     'closed_unpaid',
     'warranty_pending',
-  ] as const)('offers cancel_service in dropdown for %s', (status) => {
+  ] as const)('offers claim and cancel options for %s', (status) => {
     const options = getMoreOptionsActions(
       ctx({
         operative_status: status,
         service_type: 'rescue',
       }),
     );
-    expect(options).toHaveLength(1);
-    expect(options[0]?.id).toBe('cancel_service');
+    expect(options.map((option) => option.id)).toEqual([
+      'obtain_rescue',
+      'cancel_service',
+    ]);
   });
 
   it.each(['closed', 'canceled'] as const)(
