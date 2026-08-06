@@ -81,7 +81,6 @@ const {
     profile: computed(() =>
       isSuperuser.value ? selectedProfile.value : undefined,
     ),
-    queryByUser: isSuperuser,
   },
 );
 

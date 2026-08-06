@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   if (built == null) {
     throw createError({
       statusCode: 400,
-      message: 'Indica el operador o el usuario',
+      message: 'Indica el operador',
     });
   }
 

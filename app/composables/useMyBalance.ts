@@ -20,7 +20,6 @@ export function useMyBalance(
   testDays: MaybeRefOrGetter<number | null | undefined> = undefined,
   options?: {
     profile?: MaybeRefOrGetter<BalanceProfile | null | undefined>;
-    queryByUser?: MaybeRefOrGetter<boolean>;
   },
 ) {
   const apiFetch = useApiFetch();
@@ -44,10 +43,6 @@ export function useMyBalance(
     return resolveBalanceProfile(user.value?.role);
   });
 
-  const queryByUser = computed(() =>
-    options?.queryByUser != null ? Boolean(toValue(options.queryByUser)) : false,
-  );
-
   const resolvedTestDays = computed(() => {
     if (!import.meta.dev) return null;
     const value = testDays != null ? toValue(testDays) : null;
@@ -60,7 +55,6 @@ export function useMyBalance(
       'my-balance',
       balanceProfile.value ?? 'none',
       resolvedUserId.value ?? '',
-      queryByUser.value ? 'user' : 'self',
       resolvedTestDays.value ?? '',
     ],
     enabled: () =>
@@ -68,16 +62,15 @@ export function useMyBalance(
     query: async ({ signal }) => {
       const id = resolvedUserId.value!;
       const profile = balanceProfile.value!;
-      const idKey = queryByUser.value ? 'user' : profile === 'seller' ? 'seller' : 'operator';
 
       if (profile === 'seller') {
         return apiFetch<SellerBalanceResponse>(SELLER_BALANCE_PATH, {
-          query: { [idKey]: id },
+          query: { seller: id },
           signal,
         });
       }
 
-      const operativeQuery: Record<string, string | number> = { [idKey]: id };
+      const operativeQuery: Record<string, string | number> = { operator: id };
       if (resolvedTestDays.value != null) {
         operativeQuery.test_days = resolvedTestDays.value;
       }

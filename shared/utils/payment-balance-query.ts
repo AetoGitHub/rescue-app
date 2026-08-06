@@ -18,22 +18,17 @@ export function parseOperatorQuery(value: unknown): string | null {
   return operator.length > 0 ? operator : null;
 }
 
-export type OperativeBalanceBuiltQuery =
-  | { user: string; test_days?: string }
-  | { operator: string; test_days?: string };
+export type OperativeBalanceBuiltQuery = { operator: string; test_days?: string };
 
 export function buildOperativeBalanceQuery(
-  query: { operator?: unknown; user?: unknown; test_days?: unknown },
+  query: { operator?: unknown; test_days?: unknown },
   options: { dev: boolean },
 ): OperativeBalanceBuiltQuery | null {
-  const user = parseOperatorQuery(query.user);
   const operator = parseOperatorQuery(query.operator);
 
-  if (user == null && operator == null) return null;
+  if (operator == null) return null;
 
-  const result: OperativeBalanceBuiltQuery = user != null
-    ? { user }
-    : { operator: operator! };
+  const result: OperativeBalanceBuiltQuery = { operator };
 
   if (options.dev) {
     const testDays = parsePositiveIntQuery(query.test_days);
