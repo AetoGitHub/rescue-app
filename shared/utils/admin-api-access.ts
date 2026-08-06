@@ -32,6 +32,9 @@ export function abilityForApiPath(path: string): AdminAbility {
   if (path.startsWith('/api/rescue/administrative/')) return accessAdministrative;
   if (path.startsWith('/api/payment/balance/')) return accessMyBalance;
   if (path.startsWith('/api/payment/receipt')) return accessPaymentReceipts;
+  /** Debt creation stays admin-only; the read list feeds "Mi saldo". */
+  if (path.startsWith('/api/payment/debt/create')) return accessPayments;
+  if (path.startsWith('/api/payment/debt')) return accessMyBalance;
   if (path.startsWith('/api/payment/')) return accessPayments;
   if (path.startsWith('/api/sla/')) return accessConfig;
   if (path.startsWith('/api/rescue/')) return accessOperational;

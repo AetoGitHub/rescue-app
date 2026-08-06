@@ -131,6 +131,8 @@ describe('abilityForApiPath', () => {
     expect(abilityForApiPath('/api/rescue/dropdown/')).toBe(accessDropdown);
     expect(abilityForApiPath('/api/catalogue/client/detail/1/')).toBe(accessOperational);
     expect(abilityForApiPath('/api/payment/balance/operative/')).toBe(accessMyBalance);
+    expect(abilityForApiPath('/api/payment/debt/')).toBe(accessMyBalance);
+    expect(abilityForApiPath('/api/payment/debt/create/')).toBe(accessPayments);
     expect(abilityForApiPath('/api/payment/operative/')).toBe(accessPayments);
     expect(abilityForApiPath('/api/payment/cart/')).toBe(accessPayments);
     expect(abilityForApiPath('/api/payment/receipt/')).toBe(accessPaymentReceipts);
