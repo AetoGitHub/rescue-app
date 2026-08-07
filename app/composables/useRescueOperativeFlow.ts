@@ -64,6 +64,7 @@ export function useRescueOperativeFlow(options: {
   const completedPanelOpen = ref(false);
   const cancelModalOpen = ref(false);
   const revertModalOpen = ref(false);
+  const obtainRescueModalOpen = ref(false);
 
   const advanceForm = reactive<RescueAdvanceFormState>({
     advance_amount: '',
@@ -310,6 +311,25 @@ export function useRescueOperativeFlow(options: {
     await options.refresh();
   }
 
+  function canClaimRescue(): boolean {
+    return isOperatorRole(user.value?.role) && !user.value?.is_superuser;
+  }
+
+  async function submitObtainRescue() {
+    if (!canClaimRescue()) return;
+    try {
+      await claimRescue();
+      toast.add({
+        title: RESCUE_OPERATIVE_TOAST.rescueClaimed,
+        color: 'success',
+      });
+      obtainRescueModalOpen.value = false;
+      await options.refresh();
+    } catch {
+      // Error toast handled in mutation
+    }
+  }
+
   async function handleAction(actionId: RescueOperativeActionId) {
     const d = detail.value;
     if (!d) return;
@@ -334,17 +354,8 @@ export function useRescueOperativeFlow(options: {
     }
 
     if (actionId === 'obtain_rescue') {
-      if (!isOperatorRole(user.value?.role) || user.value?.is_superuser) return;
-      try {
-        await claimRescue();
-        toast.add({
-          title: RESCUE_OPERATIVE_TOAST.rescueClaimed,
-          color: 'success',
-        });
-        await options.refresh();
-      } catch {
-        // Error toast handled in mutation
-      }
+      if (!canClaimRescue()) return;
+      obtainRescueModalOpen.value = true;
       return;
     }
 
@@ -613,6 +624,7 @@ export function useRescueOperativeFlow(options: {
     completedPanelOpen,
     cancelModalOpen,
     revertModalOpen,
+    obtainRescueModalOpen,
     advanceForm,
     completedForm,
     cancellationReason,
@@ -624,6 +636,7 @@ export function useRescueOperativeFlow(options: {
     submitCompletedPanel,
     submitCancelService,
     submitRevertCancellation,
+    submitObtainRescue,
     openAdvancePanel,
     openCompletedPanel,
   };

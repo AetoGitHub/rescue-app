@@ -40,6 +40,7 @@ const {
   completedForm,
   cancelModalOpen,
   revertModalOpen,
+  obtainRescueModalOpen,
   cancellationReason,
   reacceptanceReason,
   handleAction,
@@ -47,6 +48,7 @@ const {
   submitCompletedPanel,
   submitCancelService,
   submitRevertCancellation,
+  submitObtainRescue,
   isUpdating,
   detailForActions,
   supplierSectionHighlight,
@@ -340,6 +342,14 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
     v-model:cancellation-reason="cancellationReason"
     :loading="isUpdatingOperative"
     @submit="submitCancelService"
+  />
+
+  <LazyOperationalRescueDetailObtainRescueModal
+    v-if="obtainRescueModalOpen"
+    v-model:open="obtainRescueModalOpen"
+    :folio="detail?.folio"
+    :loading="isUpdatingOperative"
+    @submit="submitObtainRescue"
   />
 
   <LazyOperationalRescueDetailRevertCancellationModal

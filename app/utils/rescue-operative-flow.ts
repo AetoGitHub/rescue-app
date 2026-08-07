@@ -308,10 +308,10 @@ export function getMoreOptionsActions(
   ctx: RescueOperativeFlowContext,
   options: { canClaim?: boolean } = {},
 ): RescueFooterAction[] {
-  if (!canCancelOperativeService(ctx.operative_status)) return [];
-
   return [
     ...(options.canClaim === false ? [] : [OBTAIN_RESCUE_ACTION]),
-    CANCEL_SERVICE_ACTION,
+    ...(canCancelOperativeService(ctx.operative_status)
+      ? [CANCEL_SERVICE_ACTION]
+      : []),
   ];
 }

@@ -134,13 +134,27 @@ describe('getMoreOptionsActions', () => {
   });
 
   it.each(['closed', 'canceled'] as const)(
-    'does not offer cancel_service for %s',
+    'keeps obtain_rescue but drops cancel_service for %s',
     (status) => {
       const options = getMoreOptionsActions(
         ctx({
           operative_status: status,
           service_type: 'rescue',
         }),
+      );
+      expect(options.map((option) => option.id)).toEqual(['obtain_rescue']);
+    },
+  );
+
+  it.each(['closed', 'canceled'] as const)(
+    'offers no options for %s when the user cannot claim',
+    (status) => {
+      const options = getMoreOptionsActions(
+        ctx({
+          operative_status: status,
+          service_type: 'rescue',
+        }),
+        { canClaim: false },
       );
       expect(options).toHaveLength(0);
     },

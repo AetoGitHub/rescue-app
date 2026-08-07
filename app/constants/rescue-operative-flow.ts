@@ -78,6 +78,14 @@ export const RESCUE_OPERATIVE_BUTTON_LABELS = {
   revertCancellation: 'Revertir cancelación',
 } as const;
 
+export const RESCUE_OBTAIN_MODAL_COPY = {
+  title: 'Obtener rescate',
+  description:
+    '¿Confirmas obtener este rescate? Quedarás asignado como gestor responsable.',
+  cancelLabel: 'Cancelar',
+  confirmLabel: 'Obtener rescate',
+} as const;
+
 export const RESCUE_ADVANCE_PERCENT_SHORTCUTS = [25, 50, 75, 100] as const;
 
 export const RESCUE_PAYMENT_METHOD_OPTIONS = [
