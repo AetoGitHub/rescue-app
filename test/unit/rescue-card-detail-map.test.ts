@@ -27,7 +27,7 @@ const baseDetail: RescueCardDetail = {
   seller_id: null,
   seller_name: null,
   vehicle: null,
-  provider_cost: null,
+  technical_cost: null,
   net_profit: null,
   supplier_score: null,
   latitude: null,

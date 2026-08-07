@@ -208,7 +208,7 @@ const ADMINISTRATIVE_DETAIL_API_EXAMPLE = {
   seller_id: 1,
   seller_name: 'Osvaldo Valentin Garcia',
   vehicle: null,
-  provider_cost: '4.00',
+  technical_cost: '4.00',
   net_profit: '106.00',
   supplier_score: null,
   latitude: '19.435861',
@@ -227,7 +227,7 @@ describe('mapAdministrativeDetailFromApi', () => {
     expect(detail.sale_price).toBe('110.00');
     expect(detail.sub_total).toBe('110.00');
     expect(detail.net_profit).toBe('106.00');
-    expect(detail.provider_cost).toBe('4.00');
+    expect(detail.technical_cost).toBe('4.00');
     expect(detail.seller_name).toBe('Osvaldo Valentin Garcia');
     expect(detail.latitude).toBe('19.435861');
     expect(detail.longitude).toBe('-99.143275');
@@ -335,7 +335,7 @@ describe('administrativeDetailToCardDetail', () => {
       client_type: 'CREDIT',
       latitude: '19.1',
       longitude: '-99.1',
-      provider_cost: '10',
+      technical_cost: '10',
       net_profit: '90',
     });
     const card = administrativeDetailToCardDetail(detail);

@@ -75,7 +75,7 @@ export interface AdministrativeRescueDetail extends AdministrativeRescueCard {
   closed_at: string | null;
   admin_cancellation_reason: string | null;
   admin_cancellation_reason_id: number | null;
-  provider_cost: string | null;
+  technical_cost: string | null;
   latitude: string | null;
   longitude: string | null;
   supplier_score: number | null;

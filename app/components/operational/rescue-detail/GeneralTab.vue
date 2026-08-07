@@ -216,7 +216,7 @@ watch(
         class="space-y-3 rounded-lg border border-default bg-default p-4"
       >
         <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
-          Económico
+          Costo/Beneficio
         </h3>
         <div class="space-y-2 text-sm">
           <div class="flex items-center justify-between gap-2">
@@ -241,7 +241,7 @@ watch(
           >
             <span class="text-muted">Costo proveedor</span>
             <span class="font-medium text-highlighted">
-              {{ formatRescueCardMoney(detail.provider_cost) }}
+              {{ formatRescueCardMoney(detail.technical_cost) }}
             </span>
           </div>
           <div

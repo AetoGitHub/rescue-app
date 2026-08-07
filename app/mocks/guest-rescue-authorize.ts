@@ -35,7 +35,7 @@ export function buildGuestMockRescueDetail(rescueId: number): RescueCardDetail {
     seller_id: 3,
     seller_name: 'Carlos Ruiz',
     vehicle: 'TR-8842',
-    provider_cost: '4000.00',
+    technical_cost: '4000.00',
     net_profit: '5000.00',
     supplier_score: null,
     latitude: '20.5888',

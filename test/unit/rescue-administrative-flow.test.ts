@@ -98,7 +98,7 @@ function detail(
     closed_at: null,
     admin_cancellation_reason: null,
     admin_cancellation_reason_id: null,
-    provider_cost: null,
+    technical_cost: null,
     latitude: null,
     longitude: null,
     supplier_score: null,

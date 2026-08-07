@@ -26,7 +26,7 @@ export interface RescueCardDetail {
   seller_name: string | null;
   vehicle: string | null;
   internal_notes?: string | null;
-  provider_cost: string | null;
+  technical_cost: string | null;
   net_profit: string | null;
   supplier_score: number | null;
   latitude: string | null;
