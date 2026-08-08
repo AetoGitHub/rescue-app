@@ -29,6 +29,7 @@ export default defineNuxtConfig({
     '@pinia/colada-nuxt',
     '@nuxt/test-utils/module',
     'nuxt-vuefire',
+    '@sentry/nuxt/module',
   ],
 
   css: ['~/assets/css/main.css'],
@@ -77,6 +78,20 @@ export default defineNuxtConfig({
       firebaseUploadWebhookUrl: '',
       evidenceZipWebhookUrl: '',
       guestRescueUseMock: false,
+    },
+  },
+
+  sourcemap: { client: 'hidden' },
+
+  sentry: {
+    org: 'aeto-team',
+    project: 'rescues-web',
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    sourcemaps: {
+      filesToDeleteAfterUpload: [
+        '.*/**/public/**/*.map',
+        '.output/**/public/**/*.map',
+      ],
     },
   },
 
