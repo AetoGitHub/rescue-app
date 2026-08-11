@@ -35,7 +35,13 @@ export interface ClientCreateBody {
   seller?: number | null;
   notes: string;
   is_active?: boolean;
+  alegra_id: number;
 }
+
+export type ClientUpdateBody = Omit<ClientCreateBody, 'alegra_id'> & {
+  alegra_id?: number;
+};
+
 
 export interface ClientContact {
   id: number;

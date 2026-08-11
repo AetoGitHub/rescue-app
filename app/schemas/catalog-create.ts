@@ -67,7 +67,10 @@ export const companyCreateSchema = z.object({
   commission_fixed: requiredStr('La comisión fija'),
   price_multiplier: requiredStr('El multiplicador de precio'),
   loan_multiplier: requiredStr('El multiplicador de préstamo'),
+  alegra_id: requiredCatalogSelection('Selecciona un contacto de Alegra'),
 });
+
+export const companyUpdateSchema = companyCreateSchema.omit({ alegra_id: true });
 
 export const clientCreateSchema = companyCreateSchema.extend({
   company: optionalCatalogSelectionSchema,
@@ -75,6 +78,8 @@ export const clientCreateSchema = companyCreateSchema.extend({
   notes: z.string(),
   is_active: z.boolean().optional(),
 });
+
+export const clientUpdateSchema = clientCreateSchema.omit({ alegra_id: true });
 
 const creditLimitField = requiredStr('El límite de crédito').refine(
   (value) => {

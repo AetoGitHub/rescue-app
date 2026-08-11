@@ -15,7 +15,9 @@ import type {
   SupplierServiceType,
 } from '~/interfaces/catalogs/supplier';
 
-export function mapCompanyDetail(raw: Record<string, unknown>): CompanyCreateBody {
+export function mapCompanyDetail(
+  raw: Record<string, unknown>,
+): Omit<CompanyCreateBody, 'alegra_id'> {
   return {
     name: normalizeCatalogName(String(raw.name ?? '')),
     business_name: String(raw.business_name ?? ''),
@@ -50,7 +52,7 @@ export function applyCompanyDetailToClientDraft<
     | 'price_multiplier'
     | 'loan_multiplier'
   >,
->(target: T, company: CompanyCreateBody): void {
+>(target: T, company: Omit<CompanyCreateBody, 'alegra_id'>): void {
   target.business_name = company.business_name;
   target.rfc = company.rfc;
   target.phone = company.phone;
@@ -282,7 +284,7 @@ export function mapClientCreditSummary(
 
 export function mapClientDetail(raw: Record<string, unknown>): Omit<
   ClientCreateBody,
-  'company' | 'seller'
+  'company' | 'seller' | 'alegra_id'
 > & {
   company?: number;
   seller?: number;
@@ -365,12 +367,14 @@ export function mapClientCreditForm(
 
 export function mapClientDetailToCreateBody(
   raw: Record<string, unknown>,
-): ClientCreateBody {
+): Omit<ClientCreateBody, 'alegra_id'> & { alegra_id?: number } {
   const base = mapClientDetail(raw);
+  const alegraId = parseServiceAlegraId(raw);
   return {
     ...base,
     company: base.company ?? null,
     seller: base.seller ?? null,
+    ...(alegraId != null ? { alegra_id: alegraId } : {}),
   };
 }
 

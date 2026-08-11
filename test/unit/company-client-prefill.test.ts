@@ -18,6 +18,7 @@ describe('applyCompanyDetailToClientDraft', () => {
       commission_fixed: '100.00',
       price_multiplier: '1.25',
       loan_multiplier: '1.50',
+      alegra_id: 99,
     };
 
     const draft = {

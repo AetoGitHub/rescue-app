@@ -21,4 +21,9 @@ export interface CompanyCreateBody {
   commission_fixed: string;
   price_multiplier: string;
   loan_multiplier: string;
+  alegra_id: number;
 }
+
+export type CompanyUpdateBody = Omit<CompanyCreateBody, 'alegra_id'> & {
+  alegra_id?: number;
+};

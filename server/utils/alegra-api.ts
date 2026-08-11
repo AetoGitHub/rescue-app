@@ -1,4 +1,8 @@
 import type {
+  AlegraContact,
+  AlegraContactsListPage,
+} from '~/interfaces/alegra/contact.interface';
+import type {
   AlegraItem,
   AlegraItemDisplay,
   AlegraItemsListPage,
@@ -6,7 +10,9 @@ import type {
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 
 export const ALEGRA_ITEMS_BASE = 'https://api.alegra.com/api/v1/items';
+export const ALEGRA_CONTACTS_BASE = 'https://api.alegra.com/api/v1/contacts';
 export const ALEGRA_ITEMS_LIMIT = 30;
+export const ALEGRA_CONTACTS_LIMIT = 30;
 
 const ALEGRA_LIST_DEFAULTS = {
   metadata: 'false',
@@ -14,6 +20,11 @@ const ALEGRA_LIST_DEFAULTS = {
   order_direction: 'ASC',
   order_field: 'name',
   mode: 'simple',
+} as const;
+
+const ALEGRA_CONTACTS_LIST_DEFAULTS = {
+  limit: String(ALEGRA_CONTACTS_LIMIT),
+  order_direction: 'ASC',
 } as const;
 
 export function parseAlegraItemId(value: unknown): number | null {
@@ -209,5 +220,78 @@ export function formatAlegraItemDisplay(item: AlegraItem): AlegraItemDisplay | n
 export function mapAlegraItemsToDropdownResults(items: AlegraItem[]): CatalogDropdownRow[] {
   return items
     .map(mapAlegraItemToDropdownRow)
+    .filter((row): row is CatalogDropdownRow => row != null);
+}
+
+export function buildAlegraContactsListQuery(input: {
+  name?: string;
+  start?: number;
+}) {
+  const query: Record<string, string> = { ...ALEGRA_CONTACTS_LIST_DEFAULTS };
+
+  const search = input.name?.trim();
+  if (search) {
+    query.name = search;
+  }
+
+  const start = input.start ?? 0;
+  if (start > 0) {
+    query.start = String(start);
+  }
+
+  return query;
+}
+
+export function parseAlegraContactsListResponse(
+  data: unknown,
+): AlegraContactsListPage {
+  if (Array.isArray(data)) {
+    return { items: data as AlegraContact[], next: null, previous: null };
+  }
+
+  if (data && typeof data === 'object') {
+    const record = data as Record<string, unknown>;
+
+    if (Array.isArray(record.results)) {
+      return {
+        items: record.results as AlegraContact[],
+        next: normalizeAlegraOffset(record.next),
+        previous: normalizeAlegraOffset(record.previous),
+      };
+    }
+
+    if (Array.isArray(record.data)) {
+      return {
+        items: record.data as AlegraContact[],
+        next: null,
+        previous: null,
+      };
+    }
+  }
+
+  return { items: [], next: null, previous: null };
+}
+
+export function mapAlegraContactToDropdownRow(
+  contact: AlegraContact,
+): CatalogDropdownRow | null {
+  const id = parseAlegraItemId(contact.id);
+  if (id == null) return null;
+
+  const name = String(contact.name ?? '').trim();
+  const identification = String(contact.identification ?? '').trim();
+  const email = String(contact.email ?? '').trim();
+
+  return {
+    id,
+    name: name || identification || email || `Contacto #${id}`,
+  };
+}
+
+export function mapAlegraContactsToDropdownResults(
+  contacts: AlegraContact[],
+): CatalogDropdownRow[] {
+  return contacts
+    .map(mapAlegraContactToDropdownRow)
     .filter((row): row is CatalogDropdownRow => row != null);
 }

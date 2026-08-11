@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { FormSubmitEvent } from '@nuxt/ui';
-import type { CompanyCreateBody } from '~/interfaces/catalogs/company';
+import type {
+  CompanyCreateBody,
+  CompanyUpdateBody,
+} from '~/interfaces/catalogs/company';
 import type { CreditFormState } from '~/interfaces/catalogs/credit';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
+import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type { infer as ZodInfer } from 'zod';
 import {
   BILLING_TYPE_OPTIONS,
@@ -11,6 +17,7 @@ import {
 } from '~/constants/catalog-select-options';
 import {
   companyCreateSchema,
+  companyUpdateSchema,
   creditFormSchema,
   creditFormToCompanyCreateBody,
 } from '~/schemas/catalog-create';
@@ -25,6 +32,7 @@ import {
 } from '~/constants/admin-list-layout';
 
 const toast = useToast();
+const apiFetch = useApiFetch();
 
 type CompanyFormState = ZodInfer<typeof companyCreateSchema>;
 
@@ -33,8 +41,21 @@ const editingId = ref<number | null>(null);
 const editingCreditId = ref<number | null>(null);
 const detailPending = ref(false);
 const detailLoaded = ref(false);
+const linkedAlegraId = ref<number | null>(null);
+const replaceAlegra = ref(false);
 
 const isEdit = computed(() => editingId.value != null);
+
+const needsAlegraSelection = computed(
+  () =>
+    !isEdit.value
+    || replaceAlegra.value
+    || linkedAlegraId.value == null,
+);
+
+const activeSchema = computed(() =>
+  needsAlegraSelection.value ? companyCreateSchema : companyUpdateSchema,
+);
 
 function emptyState(): CompanyFormState {
   return {
@@ -51,6 +72,7 @@ function emptyState(): CompanyFormState {
     commission_fixed: '0.00',
     price_multiplier: '1.00',
     loan_multiplier: '1.00',
+    alegra_id: emptyCatalogDropdownSelection(),
   };
 }
 
@@ -77,7 +99,12 @@ const {
   resetDirtySnapshot,
 } = useDiscardChangesGuard({
   open,
-  snapshot: () => ({ state, creditState }),
+  snapshot: () => ({
+    state,
+    creditState,
+    linkedAlegraId: linkedAlegraId.value,
+    replaceAlegra: replaceAlegra.value,
+  }),
 });
 const commissionValueModel = useCommissionValueModel(
   toRef(state, 'commission_value'),
@@ -130,6 +157,8 @@ function resetForm() {
   editingCreditId.value = null;
   detailLoaded.value = false;
   pendingCompanyData.value = null;
+  linkedAlegraId.value = null;
+  replaceAlegra.value = false;
 }
 
 function prepareCreate() {
@@ -146,7 +175,9 @@ async function loadDetail(id: number) {
     const raw = await $fetch<Record<string, unknown>>(
       `/api/catalogue/company/detail/${id}/`,
     );
-    Object.assign(state, mapCompanyDetail(raw));
+    Object.assign(state, emptyState(), mapCompanyDetail(raw));
+    linkedAlegraId.value = parseServiceAlegraId(raw);
+    replaceAlegra.value = linkedAlegraId.value == null;
     detailLoaded.value = true;
   } catch (e) {
     console.error(e);
@@ -177,6 +208,26 @@ watch(open, (v) => {
   }
 });
 
+watch(replaceAlegra, (enabled) => {
+  if (enabled) {
+    state.alegra_id = emptyCatalogDropdownSelection();
+  }
+});
+
+function fetchAlegraContactsDropdown(
+  name: string,
+  options?: { signal?: AbortSignal; start?: string | null },
+) {
+  const start = options?.start?.trim();
+  return apiFetch<PaginatedResponse<CatalogDropdownRow>>('/api/alegra/contacts', {
+    query: {
+      name: name.trim() || undefined,
+      start: start || undefined,
+    },
+    signal: options?.signal,
+  });
+}
+
 const queryCache = useQueryCache();
 
 const { mutate, asyncStatus } = useMutation({
@@ -186,7 +237,7 @@ const { mutate, asyncStatus } = useMutation({
     credit,
     createCredit,
   }: {
-    body: CompanyCreateBody;
+    body: CompanyCreateBody | CompanyUpdateBody;
     id: number | null;
     credit?: ZodInfer<typeof creditFormSchema>;
     createCredit?: boolean;
@@ -264,7 +315,20 @@ const { mutate, asyncStatus } = useMutation({
 
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 const creditFormSectionRef = ref<{ submit: () => Promise<void> } | null>(null);
-const pendingCompanyData = ref<CompanyCreateBody | null>(null);
+const pendingCompanyData = ref<CompanyCreateBody | CompanyUpdateBody | null>(null);
+
+function buildSubmitBody(
+  data: CompanyFormState,
+): CompanyCreateBody | CompanyUpdateBody {
+  const { alegra_id, ...rest } = data;
+  if (needsAlegraSelection.value) {
+    return {
+      ...rest,
+      alegra_id: alegra_id.value!,
+    };
+  }
+  return rest;
+}
 
 function isCreatingCredit(): boolean {
   return (
@@ -275,19 +339,22 @@ function isCreatingCredit(): boolean {
   );
 }
 
-function needsCreditValidation(data: CompanyCreateBody): boolean {
+function needsCreditValidation(
+  data: CompanyCreateBody | CompanyUpdateBody,
+): boolean {
   const updatingCredit = isEdit.value && hasLinkedCredit.value;
   const creditOnCreate = !isEdit.value && data.client_type === 'CREDIT';
   return isCreatingCredit() || updatingCredit || creditOnCreate;
 }
 
-function onSubmit(payload: { data: CompanyCreateBody }) {
-  if (!needsCreditValidation(payload.data)) {
-    mutate({ body: payload.data, id: editingId.value });
+function onSubmit(payload: { data: CompanyFormState }) {
+  const body = buildSubmitBody(payload.data);
+  if (!needsCreditValidation(body)) {
+    mutate({ body, id: editingId.value });
     return;
   }
 
-  pendingCompanyData.value = payload.data;
+  pendingCompanyData.value = body;
   void creditFormSectionRef.value?.submit();
 }
 
@@ -313,7 +380,7 @@ function onCreditSubmit(
 }
 
 function onFormError() {
-  const result = companyCreateSchema.safeParse(state);
+  const result = activeSchema.value.safeParse(state);
   const issue = result.success ? null : result.error.issues[0];
   toast.add({
     title: 'Revisa el formulario',
@@ -364,7 +431,7 @@ async function requestSubmit() {
       <UForm
         v-show="!pendingDetail || !isEdit"
         ref="formRef"
-        :schema="companyCreateSchema"
+        :schema="activeSchema"
         :state="state"
         :class="['space-y-4', adminListSlideoverScrollClass]"
         @submit="onSubmit"
@@ -405,6 +472,49 @@ async function requestSubmit() {
         <UFormField label="Dirección" name="address" required>
           <UInput v-model="state.address" class="w-full" />
         </UFormField>
+
+        <div class="space-y-3">
+          <template v-if="!isEdit">
+            <UFormField label="Contacto Alegra" name="alegra_id" required>
+              <CatalogDropdownSelect
+                v-model="state.alegra_id"
+                placeholder="Buscar contacto en Alegra..."
+                :fetcher="fetchAlegraContactsDropdown"
+                infinite="offset"
+              />
+            </UFormField>
+          </template>
+          <template v-else>
+            <div class="space-y-2">
+              <span class="block text-sm font-medium text-default">Contacto Alegra</span>
+              <p class="text-sm text-muted">
+                {{
+                  linkedAlegraId != null
+                    ? 'Ya tiene un contacto de Alegra vinculado.'
+                    : 'Sin contacto Alegra.'
+                }}
+              </p>
+              <UCheckbox
+                v-if="linkedAlegraId != null"
+                v-model="replaceAlegra"
+                label="Cambiar contacto de Alegra"
+              />
+              <UFormField
+                v-if="needsAlegraSelection"
+                :label="linkedAlegraId != null ? 'Nuevo contacto Alegra' : undefined"
+                name="alegra_id"
+                required
+              >
+                <CatalogDropdownSelect
+                  v-model="state.alegra_id"
+                  placeholder="Buscar contacto en Alegra..."
+                  :fetcher="fetchAlegraContactsDropdown"
+                  infinite="offset"
+                />
+              </UFormField>
+            </div>
+          </template>
+        </div>
         <UFormField label="Tipo de cliente" name="client_type" required>
           <USelectMenu
             v-model="state.client_type"

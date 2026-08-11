@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAlegraAuthorizationHeader,
+  buildAlegraContactsListQuery,
   formatAlegraItemDisplay,
+  mapAlegraContactToDropdownRow,
   mapAlegraItemToDropdownRow,
+  parseAlegraContactsListResponse,
   parseAlegraItemId,
   parseAlegraItemsListResponse,
 } from '../../server/utils/alegra-api';
@@ -101,5 +104,67 @@ describe('alegra-api helpers', () => {
       name: 'Item',
       reference: null,
     });
+  });
+
+  it('buildAlegraContactsListQuery uses name search and start offset', () => {
+    expect(buildAlegraContactsListQuery({ name: 'TRANSPORTES', start: 30 })).toEqual({
+      limit: '30',
+      order_direction: 'ASC',
+      name: 'TRANSPORTES',
+      start: '30',
+    });
+    expect(buildAlegraContactsListQuery({})).toEqual({
+      limit: '30',
+      order_direction: 'ASC',
+    });
+  });
+
+  it('parseAlegraContactsListResponse reads array or results page', () => {
+    expect(parseAlegraContactsListResponse([{ id: 1, name: 'A' }])).toEqual({
+      items: [{ id: 1, name: 'A' }],
+      next: null,
+      previous: null,
+    });
+    expect(
+      parseAlegraContactsListResponse({
+        next: '30',
+        previous: null,
+        results: [{ id: 2, name: 'B' }],
+      }),
+    ).toEqual({
+      items: [{ id: 2, name: 'B' }],
+      next: '30',
+      previous: null,
+    });
+  });
+
+  it('mapAlegraContactToDropdownRow uses name when present', () => {
+    expect(
+      mapAlegraContactToDropdownRow({ id: 10, name: 'TRANSPORTES MONROY' }),
+    ).toEqual({
+      id: 10,
+      name: 'TRANSPORTES MONROY',
+    });
+  });
+
+  it('mapAlegraContactToDropdownRow falls back to identification, email, or id', () => {
+    expect(
+      mapAlegraContactToDropdownRow({ id: 11, identification: 'RFC123' }),
+    ).toEqual({
+      id: 11,
+      name: 'RFC123',
+    });
+    expect(mapAlegraContactToDropdownRow({ id: 12, email: 'a@b.com' })).toEqual({
+      id: 12,
+      name: 'a@b.com',
+    });
+    expect(mapAlegraContactToDropdownRow({ id: 13 })).toEqual({
+      id: 13,
+      name: 'Contacto #13',
+    });
+  });
+
+  it('mapAlegraContactToDropdownRow ignores contacts without id', () => {
+    expect(mapAlegraContactToDropdownRow({ name: 'Sin id' })).toBeNull();
   });
 });

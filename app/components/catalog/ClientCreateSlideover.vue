@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { FormSubmitEvent } from '@nuxt/ui';
-import type { ClientCreateBody } from '~/interfaces/catalogs/client';
+import type {
+  ClientCreateBody,
+  ClientUpdateBody,
+} from '~/interfaces/catalogs/client';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import {
   catalogDropdownSelection,
@@ -15,7 +18,12 @@ import {
   COMMISSION_TYPE_OPTIONS,
 } from '~/constants/catalog-select-options';
 import type { ClientCreditSummary, CreditFormState } from '~/interfaces/catalogs/credit';
-import { clientCreateSchema, creditFormSchema, creditFormToCreateBody } from '~/schemas/catalog-create';
+import {
+  clientCreateSchema,
+  clientUpdateSchema,
+  creditFormSchema,
+  creditFormToCreateBody,
+} from '~/schemas/catalog-create';
 import {
   adminListSlideoverBodyUi,
   adminListSlideoverContentClass,
@@ -24,6 +32,7 @@ import {
 import { slideoverTabsUi } from '~/constants/tabs-layout';
 
 const toast = useToast();
+const apiFetch = useApiFetch();
 
 type ClientFormState = ZodInfer<typeof clientCreateSchema>;
 
@@ -34,8 +43,21 @@ const clientDetailRaw = ref<Record<string, unknown> | null>(null);
 const clientDetailLoaded = ref(false);
 const clientDetailPending = ref(false);
 const editTab = ref<'general' | 'credit' | 'contacts' | 'csf'>('general');
+const linkedAlegraId = ref<number | null>(null);
+const replaceAlegra = ref(false);
 
 const isEdit = computed(() => editingId.value != null);
+
+const needsAlegraSelection = computed(
+  () =>
+    !isEdit.value
+    || replaceAlegra.value
+    || linkedAlegraId.value == null,
+);
+
+const activeSchema = computed(() =>
+  needsAlegraSelection.value ? clientCreateSchema : clientUpdateSchema,
+);
 
 const editTabItems = [
   { label: 'General', value: 'general', slot: 'general' as const },
@@ -86,6 +108,7 @@ function emptyState(): ClientFormState {
     seller: emptyCatalogDropdownSelection(),
     notes: '',
     is_active: true,
+    alegra_id: emptyCatalogDropdownSelection(),
   };
 }
 
@@ -188,7 +211,13 @@ const {
   resetDirtySnapshot,
 } = useDiscardChangesGuard({
   open,
-  snapshot: () => ({ state, creditState, clientCsfUrl: clientCsfUrl.value }),
+  snapshot: () => ({
+    state,
+    creditState,
+    clientCsfUrl: clientCsfUrl.value,
+    linkedAlegraId: linkedAlegraId.value,
+    replaceAlegra: replaceAlegra.value,
+  }),
 });
 
 function resetForm() {
@@ -201,6 +230,8 @@ function resetForm() {
   editTab.value = 'general';
   clientCsfUrl.value = null;
   pendingClientData.value = null;
+  linkedAlegraId.value = null;
+  replaceAlegra.value = false;
 }
 
 function prepareCreate() {
@@ -245,7 +276,10 @@ async function loadDetail(id: number) {
         mapped.seller,
         String(raw.seller_name ?? '').trim(),
       ),
+      alegra_id: emptyCatalogDropdownSelection(),
     });
+    linkedAlegraId.value = parseServiceAlegraId(raw);
+    replaceAlegra.value = linkedAlegraId.value == null;
     clientDetailRaw.value = raw;
     clientCsfUrl.value = mapClientCsfUrl(raw);
     clientDetailLoaded.value = true;
@@ -285,6 +319,12 @@ watch(open, (v) => {
   }
 });
 
+watch(replaceAlegra, (enabled) => {
+  if (enabled) {
+    state.alegra_id = emptyCatalogDropdownSelection();
+  }
+});
+
 watch(
   () => state.company.value,
   async (companyId, prev, onCleanup) => {
@@ -301,6 +341,14 @@ watch(
       );
       if (!active) return;
       applyCompanyDetailToClientDraft(state, mapCompanyDetail(raw));
+      const companyAlegraId = parseServiceAlegraId(raw);
+      state.alegra_id =
+        companyAlegraId != null
+          ? catalogDropdownSelection(
+              companyAlegraId,
+              'Heredado de la compañía',
+            )
+          : emptyCatalogDropdownSelection();
     } catch (e) {
       if (!active) return;
       console.error(e);
@@ -350,6 +398,20 @@ function fetchSellerDropdown(
   }));
 }
 
+function fetchAlegraContactsDropdown(
+  name: string,
+  options?: { signal?: AbortSignal; start?: string | null },
+) {
+  const start = options?.start?.trim();
+  return apiFetch<PaginatedResponse<CatalogDropdownRow>>('/api/alegra/contacts', {
+    query: {
+      name: name.trim() || undefined,
+      start: start || undefined,
+    },
+    signal: options?.signal,
+  });
+}
+
 const queryCache = useQueryCache();
 
 const { mutate, asyncStatus } = useMutation({
@@ -359,7 +421,7 @@ const { mutate, asyncStatus } = useMutation({
     credit,
     createCredit,
   }: {
-    body: ClientCreateBody;
+    body: ClientCreateBody | ClientUpdateBody;
     id: number | null;
     credit?: ZodInfer<typeof creditFormSchema>;
     createCredit?: boolean;
@@ -434,14 +496,23 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
-function buildSubmitBody(data: ZodInfer<typeof clientCreateSchema>): ClientCreateBody {
-  const { company, seller, ...rest } = data;
-  return {
+function buildSubmitBody(
+  data: ClientFormState,
+): ClientCreateBody | ClientUpdateBody {
+  const { company, seller, alegra_id, ...rest } = data;
+  const base = {
     ...rest,
     company: company.value ?? null,
     seller: seller.value ?? null,
     is_active: data.is_active ?? true,
   };
+  if (needsAlegraSelection.value) {
+    return {
+      ...base,
+      alegra_id: alegra_id.value!,
+    };
+  }
+  return base;
 }
 
 function isCreatingCredit(): boolean {
@@ -452,7 +523,7 @@ function isCreatingCredit(): boolean {
   );
 }
 
-function needsCreditValidation(data: ZodInfer<typeof clientCreateSchema>): boolean {
+function needsCreditValidation(data: ClientFormState): boolean {
   const updatingCredit = isEdit.value && hasLinkedCredit.value;
   const creditOnCreate =
     !isEdit.value
@@ -461,7 +532,7 @@ function needsCreditValidation(data: ZodInfer<typeof clientCreateSchema>): boole
   return isCreatingCredit() || updatingCredit || creditOnCreate;
 }
 
-function onSubmit(payload: { data: ZodInfer<typeof clientCreateSchema> }) {
+function onSubmit(payload: { data: ClientFormState }) {
   if (!needsCreditValidation(payload.data)) {
     mutate({ body: buildSubmitBody(payload.data), id: editingId.value });
     return;
@@ -520,7 +591,7 @@ function onCreditSubmit(
 }
 
 function onFormError() {
-  const result = clientCreateSchema.safeParse(state);
+  const result = activeSchema.value.safeParse(state);
   const issue = result.success ? null : result.error.issues[0];
   toast.add({
     title: 'Revisa el formulario',
@@ -575,7 +646,7 @@ async function requestSubmit() {
       <UForm
         v-show="!detailPending || !isEdit"
         ref="formRef"
-        :schema="clientCreateSchema"
+        :schema="activeSchema"
         :state="state"
         :class="adminListSlideoverScrollClass"
         @submit="onSubmit"
@@ -646,6 +717,34 @@ async function requestSubmit() {
                 <UFormField label="Dirección" name="address" required>
                   <UInput v-model="state.address" class="w-full" />
                 </UFormField>
+                <div class="space-y-2">
+                  <span class="block text-sm font-medium text-default">Contacto Alegra</span>
+                  <p class="text-sm text-muted">
+                    {{
+                      linkedAlegraId != null
+                        ? 'Ya tiene un contacto de Alegra vinculado.'
+                        : 'Sin contacto Alegra.'
+                    }}
+                  </p>
+                  <UCheckbox
+                    v-if="linkedAlegraId != null"
+                    v-model="replaceAlegra"
+                    label="Cambiar contacto de Alegra"
+                  />
+                  <UFormField
+                    v-if="needsAlegraSelection"
+                    :label="linkedAlegraId != null ? 'Nuevo contacto Alegra' : undefined"
+                    name="alegra_id"
+                    required
+                  >
+                    <CatalogDropdownSelect
+                      v-model="state.alegra_id"
+                      placeholder="Buscar contacto en Alegra..."
+                      :fetcher="fetchAlegraContactsDropdown"
+                      infinite="offset"
+                    />
+                  </UFormField>
+                </div>
               </section>
 
               <section class="space-y-4">
@@ -856,6 +955,14 @@ async function requestSubmit() {
           </UFormField>
           <UFormField label="Dirección" name="address" required>
             <UInput v-model="state.address" class="w-full" />
+          </UFormField>
+          <UFormField label="Contacto Alegra" name="alegra_id" required>
+            <CatalogDropdownSelect
+              v-model="state.alegra_id"
+              placeholder="Buscar contacto en Alegra..."
+              :fetcher="fetchAlegraContactsDropdown"
+              infinite="offset"
+            />
           </UFormField>
         </section>
 
