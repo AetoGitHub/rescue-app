@@ -138,10 +138,18 @@ function fetchAlegraItemsDropdown(
   name: string,
   options?: { signal?: AbortSignal; start?: string | null },
 ) {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return Promise.resolve({
+      next: null,
+      previous: null,
+      results: [] as CatalogDropdownRow[],
+    });
+  }
   const start = options?.start?.trim();
   return apiFetch<PaginatedResponse<CatalogDropdownRow>>('/api/alegra/items', {
     query: {
-      name: name.trim() || undefined,
+      name: trimmed,
       start: start || undefined,
     },
     signal: options?.signal,
@@ -299,6 +307,7 @@ async function requestSubmit() {
             placeholder="Buscar ítem en Alegra..."
             :fetcher="fetchAlegraItemsDropdown"
             infinite="offset"
+            require-search
           />
         </UFormField>
 

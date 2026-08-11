@@ -15,6 +15,8 @@ const props = defineProps<{
   fetcher: CatalogDropdownFetcher;
   disabled?: boolean;
   infinite?: CatalogDropdownInfiniteMode;
+  /** If true, do not fetch until the user types a search term. */
+  requireSearch?: boolean;
 }>();
 
 const model = defineModel<CatalogDropdownSelection>({
@@ -25,7 +27,10 @@ const selectMenu = useTemplateRef('selectMenu');
 
 const dropdown = useCatalogDropdown(
   (search, options) => props.fetcher(search, options),
-  props.infinite ? { infinite: props.infinite } : undefined,
+  {
+    ...(props.infinite ? { infinite: props.infinite } : {}),
+    requireSearch: props.requireSearch === true,
+  },
 );
 
 const {

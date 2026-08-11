@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@pinia/colada';
 import { watchDebounced } from '@vueuse/core';
 import type { AsyncStatus } from '@pinia/colada';
-import type { ComputedRef, Ref, ShallowRef } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 
@@ -36,7 +36,7 @@ interface CatalogDropdownSingleState extends CatalogDropdownStateBase {
 
 interface CatalogDropdownInfiniteState extends CatalogDropdownStateBase {
   infinite: true;
-  hasNextPage: ShallowRef<boolean>;
+  hasNextPage: ComputedRef<boolean>;
   loadNextPage: () => Promise<unknown>;
   asyncStatus: Ref<AsyncStatus>;
 }
@@ -63,9 +63,14 @@ function useDebouncedSearch() {
 function useCatalogDropdownInfinite(
   fetcher: CatalogDropdownFetcher,
   infiniteMode: CatalogDropdownInfiniteMode,
+  requireSearch: boolean,
 ): CatalogDropdownInfiniteState {
   const instanceId = useId();
   const { searchTerm, debouncedSearch } = useDebouncedSearch();
+
+  const searchEnabled = computed(
+    () => !requireSearch || debouncedSearch.value.trim().length > 0,
+  );
 
   const getNextPageParam =
     infiniteMode === 'offset'
@@ -75,12 +80,13 @@ function useCatalogDropdownInfinite(
   const {
     data,
     asyncStatus,
-    hasNextPage,
+    hasNextPage: queryHasNextPage,
     loadNextPage,
     error,
   } = useInfiniteQuery<PaginatedResponse<CatalogDropdownRow>, Error, string | null>({
     key: () => ['catalog-dropdown', instanceId, infiniteMode, debouncedSearch.value],
     initialPageParam: null,
+    enabled: () => searchEnabled.value,
     query: ({ pageParam, signal }) =>
       fetcher(debouncedSearch.value, {
         signal,
@@ -91,16 +97,24 @@ function useCatalogDropdownInfinite(
   });
 
   const items = computed(() =>
-    flattenPaginatedPages(data.value?.pages),
+    searchEnabled.value
+      ? flattenPaginatedPages(data.value?.pages)
+      : [],
   );
   const loading = computed(
-    () => asyncStatus.value === 'loading' && items.value.length === 0,
+    () =>
+      searchEnabled.value
+      && asyncStatus.value === 'loading'
+      && items.value.length === 0,
   );
   const loadingMore = computed(
     () => asyncStatus.value === 'loading' && items.value.length > 0,
   );
   const errorMessage = computed(() =>
     error.value != null ? getFetchErrorMessage(error.value) : '',
+  );
+  const hasNextPage = computed(
+    () => searchEnabled.value && Boolean(queryHasNextPage.value),
   );
 
   return {
@@ -116,19 +130,31 @@ function useCatalogDropdownInfinite(
   };
 }
 
-function useCatalogDropdownSingle(fetcher: CatalogDropdownFetcher): CatalogDropdownSingleState {
+function useCatalogDropdownSingle(
+  fetcher: CatalogDropdownFetcher,
+  requireSearch: boolean,
+): CatalogDropdownSingleState {
   const instanceId = useId();
   const { searchTerm, debouncedSearch } = useDebouncedSearch();
+
+  const searchEnabled = computed(
+    () => !requireSearch || debouncedSearch.value.trim().length > 0,
+  );
 
   const { data, asyncStatus: queryAsyncStatus, error } = useQuery({
     key: () => ['catalog-dropdown', instanceId, debouncedSearch.value],
     query: async ({ signal }) => fetcher(debouncedSearch.value, { signal }),
+    enabled: () => searchEnabled.value,
     refetchOnWindowFocus: false,
     staleTime: 60_000,
   });
 
-  const items = computed(() => data.value?.results ?? []);
-  const loading = computed(() => queryAsyncStatus.value === 'loading');
+  const items = computed(() =>
+    searchEnabled.value ? (data.value?.results ?? []) : [],
+  );
+  const loading = computed(
+    () => searchEnabled.value && queryAsyncStatus.value === 'loading',
+  );
   const errorMessage = computed(() =>
     error.value != null ? getFetchErrorMessage(error.value) : '',
   );
@@ -148,10 +174,14 @@ function useCatalogDropdownSingle(fetcher: CatalogDropdownFetcher): CatalogDropd
 
 export function useCatalogDropdown(
   fetcher: CatalogDropdownFetcher,
-  options?: { infinite?: CatalogDropdownInfiniteMode },
+  options?: {
+    infinite?: CatalogDropdownInfiniteMode;
+    requireSearch?: boolean;
+  },
 ): CatalogDropdownState {
+  const requireSearch = options?.requireSearch === true;
   if (options?.infinite) {
-    return useCatalogDropdownInfinite(fetcher, options.infinite);
+    return useCatalogDropdownInfinite(fetcher, options.infinite, requireSearch);
   }
-  return useCatalogDropdownSingle(fetcher);
+  return useCatalogDropdownSingle(fetcher, requireSearch);
 }
