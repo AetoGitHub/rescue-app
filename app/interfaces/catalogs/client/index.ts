@@ -56,6 +56,7 @@ export interface ClientContact {
   receives_oc_reminders: boolean;
   receives_account_status: boolean;
   is_billing_contact: boolean;
+  is_responsible: boolean;
   is_active: boolean;
 }
 
@@ -70,6 +71,7 @@ export interface ClientContactFormState {
   receives_oc_reminders: boolean;
   receives_account_status: boolean;
   is_billing_contact: boolean;
+  is_responsible: boolean;
   is_active: boolean;
 }
 
@@ -85,6 +87,7 @@ export interface ClientContactCreateBody {
   receives_oc_reminders: boolean;
   receives_account_status: boolean;
   is_billing_contact: boolean;
+  is_responsible: boolean;
 }
 
 export interface ClientContactUpdateBody {
@@ -99,7 +102,12 @@ export interface ClientContactUpdateBody {
   receives_oc_reminders: boolean;
   receives_account_status: boolean;
   is_billing_contact: boolean;
+  is_responsible: boolean;
   is_active: boolean;
+}
+
+export interface ClientHasResponsibleResponse {
+  has_responsible: boolean;
 }
 
 export interface ClientCsfUpdateBody {

@@ -22,6 +22,7 @@ describe('mapClientContactRow', () => {
       receives_oc_reminders: false,
       receives_account_status: false,
       is_billing_contact: false,
+      is_responsible: true,
       is_active: true,
     });
 
@@ -30,6 +31,7 @@ describe('mapClientContactRow', () => {
       client_id: 10,
       name: 'Juan Pérez',
       is_authorizer: true,
+      is_responsible: true,
       is_active: true,
     });
   });
@@ -48,11 +50,13 @@ describe('mapClientContactDetail', () => {
       receives_oc_reminders: true,
       receives_account_status: false,
       is_billing_contact: true,
+      is_responsible: false,
       is_active: false,
     });
 
     expect(form.name).toBe('JUAN PÉREZ');
     expect(form.phone).toBe('55 1234 5678');
+    expect(form.is_responsible).toBe(false);
     expect(form.is_active).toBe(false);
   });
 });
@@ -69,6 +73,7 @@ describe('client contact body mappers', () => {
     receives_oc_reminders: false,
     receives_account_status: false,
     is_billing_contact: false,
+    is_responsible: true,
     is_active: true,
   };
 
@@ -85,6 +90,7 @@ describe('client contact body mappers', () => {
       receives_oc_reminders: false,
       receives_account_status: false,
       is_billing_contact: false,
+      is_responsible: true,
     });
   });
 
@@ -101,6 +107,7 @@ describe('client contact body mappers', () => {
       receives_oc_reminders: false,
       receives_account_status: false,
       is_billing_contact: false,
+      is_responsible: true,
       is_active: true,
     });
   });

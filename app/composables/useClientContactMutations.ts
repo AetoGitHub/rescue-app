@@ -21,6 +21,7 @@ export function useClientContactMutations(options: {
     const id = clientId.value;
     if (id == null) return;
     await queryCache.invalidateQueries({ key: ['client-contacts', id] });
+    await queryCache.invalidateQueries({ key: ['client-has-responsible', id] });
   }
 
   const { mutateAsync: createContactAsync, asyncStatus: createStatus } = useMutation({

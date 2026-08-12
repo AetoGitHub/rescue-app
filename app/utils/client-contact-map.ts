@@ -26,6 +26,7 @@ export function mapClientContactRow(
     receives_oc_reminders: Boolean(raw.receives_oc_reminders),
     receives_account_status: Boolean(raw.receives_account_status),
     is_billing_contact: Boolean(raw.is_billing_contact),
+    is_responsible: Boolean(raw.is_responsible),
     is_active: raw.is_active !== false,
   };
 }
@@ -44,6 +45,7 @@ export function mapClientContactDetail(
     receives_oc_reminders: Boolean(raw.receives_oc_reminders),
     receives_account_status: Boolean(raw.receives_account_status),
     is_billing_contact: Boolean(raw.is_billing_contact),
+    is_responsible: Boolean(raw.is_responsible),
     is_active: raw.is_active !== false,
   };
 }
@@ -64,6 +66,7 @@ export function clientContactFormToCreateBody(
     receives_oc_reminders: input.receives_oc_reminders,
     receives_account_status: input.receives_account_status,
     is_billing_contact: input.is_billing_contact,
+    is_responsible: input.is_responsible,
   };
 }
 

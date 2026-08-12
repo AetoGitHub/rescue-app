@@ -1,6 +1,9 @@
 export const CLIENT_CONTACTS_LIST_PATH = (clientId: number) =>
   `/api/catalogue/client/${clientId}/contacts/`;
 
+export const CLIENT_HAS_RESPONSIBLE_PATH = (clientId: number) =>
+  `/api/catalogue/client/${clientId}/has_responsible/`;
+
 export const CLIENT_AUTHORIZERS_DROPDOWN_PATH = (clientId: number) =>
   `/api/catalogue/client/${clientId}/contacts/authorizers/dropdown/`;
 

@@ -147,6 +147,7 @@ export const clientContactFormSchema = z.object({
   receives_oc_reminders: z.boolean(),
   receives_account_status: z.boolean(),
   is_billing_contact: z.boolean(),
+  is_responsible: z.boolean(),
   is_active: z.boolean(),
 });
 
@@ -166,6 +167,7 @@ export function clientContactFormToCreateBody(
     receives_oc_reminders: input.receives_oc_reminders,
     receives_account_status: input.receives_account_status,
     is_billing_contact: input.is_billing_contact,
+    is_responsible: input.is_responsible,
   };
 }
 

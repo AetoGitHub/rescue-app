@@ -10,6 +10,8 @@ import {
 
 const props = defineProps<{
   clientId: number;
+  /** Whether the client already has a responsible contact elsewhere. */
+  hasResponsible?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -21,10 +23,19 @@ const toast = useToast();
 
 const editingId = ref<number | null>(null);
 const detailPending = ref(false);
+/** True when the contact being edited is already the responsible one. */
+const editingIsResponsible = ref(false);
 
 const isEdit = computed(() => editingId.value != null);
 
-function emptyState(): ZodInfer<typeof clientContactFormSchema> {
+/** Only one responsible contact: lock the checkbox unless editing that contact or none exists yet. */
+const canToggleResponsible = computed(
+  () => !(props.hasResponsible && !editingIsResponsible.value),
+);
+
+function emptyState(
+  defaults?: Partial<ZodInfer<typeof clientContactFormSchema>>,
+): ZodInfer<typeof clientContactFormSchema> {
   return {
     name: '',
     position: '',
@@ -36,6 +47,7 @@ function emptyState(): ZodInfer<typeof clientContactFormSchema> {
     receives_oc_reminders: false,
     receives_account_status: false,
     is_billing_contact: false,
+    is_responsible: defaults?.is_responsible ?? false,
     is_active: true,
   };
 }
@@ -45,21 +57,30 @@ const state = reactive(emptyState());
 function resetForm() {
   Object.assign(state, emptyState());
   editingId.value = null;
+  editingIsResponsible.value = false;
 }
 
 function prepareCreate() {
   resetForm();
+  // Encourage assigning a responsible when the client still has none.
+  Object.assign(
+    state,
+    emptyState({ is_responsible: props.hasResponsible !== true }),
+  );
 }
 
 async function openEdit(id: number) {
   editingId.value = id;
+  editingIsResponsible.value = false;
   Object.assign(state, emptyState());
   detailPending.value = true;
   try {
     const raw = await $fetch<Record<string, unknown>>(
       CLIENT_CONTACT_DETAIL_PATH(id),
     );
-    Object.assign(state, mapClientContactDetail(raw));
+    const detail = mapClientContactDetail(raw);
+    Object.assign(state, detail);
+    editingIsResponsible.value = detail.is_responsible;
   } catch (e) {
     console.error(e);
     toast.add({
@@ -244,6 +265,20 @@ async function requestSubmit() {
             v-model="state.is_billing_contact"
             label="Cobranza (contacto de Cobranza IA)"
           />
+        </UFormField>
+
+        <UFormField name="is_responsible">
+          <UCheckbox
+            v-model="state.is_responsible"
+            :disabled="!canToggleResponsible"
+            label="Es responsable"
+          />
+          <p
+            v-if="!canToggleResponsible"
+            class="mt-1 text-xs text-muted"
+          >
+            Este cliente ya tiene un contacto responsable.
+          </p>
         </UFormField>
       </div>
 

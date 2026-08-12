@@ -15,6 +15,7 @@ const emit = defineEmits<{
 const roleTags = computed(() => {
   const tags: string[] = [];
   if (props.contact.is_authorizer) tags.push('Autorizador');
+  if (props.contact.is_responsible) tags.push('Responsable');
   if (props.contact.receives_quotes) tags.push('Cotizaciones');
   if (props.contact.receives_oc_reminders) tags.push('OC recordatorio');
   if (props.contact.receives_account_status) tags.push('Edo. cuenta');
@@ -48,6 +49,13 @@ const positionLabel = computed(() => {
         >
           <UIcon name="i-lucide-shield-check" class="size-3.5" />
           Autorizador
+        </span>
+        <span
+          v-if="contact.is_responsible"
+          class="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2.5 py-0.5 text-xs font-medium text-warning"
+        >
+          <UIcon name="i-lucide-user-check" class="size-3.5" />
+          Responsable
         </span>
         <span
           v-if="!contact.is_active"

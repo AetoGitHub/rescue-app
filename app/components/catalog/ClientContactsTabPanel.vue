@@ -27,6 +27,14 @@ const {
   enabled: computed(() => props.enabled ?? true),
 });
 
+const {
+  hasResponsible,
+  isPending: isHasResponsiblePending,
+} = useClientHasResponsible({
+  clientId: computed(() => props.clientId),
+  enabled: computed(() => props.enabled ?? true),
+});
+
 const scrollRoot = computed(() => props.scrollRootRef ?? null);
 
 usePaginatedTableInfiniteScroll({
@@ -102,33 +110,6 @@ function onFormCancelled() {
       </h3>
 
       <div class="flex flex-wrap items-center gap-2">
-        <!-- Exportar contactos (próximamente)
-        <div class="relative inline-flex">
-          <UButton
-            type="button"
-            color="neutral"
-            variant="outline"
-            icon="i-simple-icons-microsoftexcel"
-            label="Exportar"
-            size="sm"
-            class="pointer-events-none select-none blur-[2px] opacity-60"
-            tabindex="-1"
-            aria-hidden="true"
-          />
-
-          <div
-            class="absolute inset-0 z-10 flex items-center justify-center rounded-md"
-            aria-label="Próximamente"
-          >
-            <span
-              class="rounded-full border border-default bg-elevated/95 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted shadow-sm backdrop-blur-sm"
-            >
-              Próximamente
-            </span>
-          </div>
-        </div>
-        -->
-
         <UButton
           type="button"
           icon="i-lucide-plus"
@@ -139,10 +120,20 @@ function onFormCancelled() {
       </div>
     </div>
 
+    <UAlert
+      v-if="!isHasResponsiblePending && !hasResponsible"
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-user-round-x"
+      title="Sin contacto responsable"
+      description="Marca al menos un contacto como responsable para este cliente."
+    />
+
     <CatalogClientContactForm
       v-if="showContactForm"
       ref="contactFormRef"
       :client-id="clientId"
+      :has-responsible="hasResponsible"
       @saved="onFormSaved"
       @cancelled="onFormCancelled"
     />
