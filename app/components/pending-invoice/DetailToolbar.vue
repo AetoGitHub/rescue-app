@@ -1,51 +1,84 @@
 <script setup lang="ts">
-import { PENDING_INVOICE_ZIP_COMING_SOON } from '~/constants/pending-invoice-api';
-import type { PendingInvoiceSummary } from '~/interfaces/invoicing/pending-invoice';
+import {
+  PENDING_INVOICE_SEARCH_PLACEHOLDER,
+  PENDING_INVOICE_ZIP_TOAST,
+} from '~/constants/pending-invoice';
+import { formatPendingInvoiceMoney } from '~/utils/pending-invoice-display';
 
 const props = defineProps<{
-  summary?: PendingInvoiceSummary | null;
-  rowCount: number;
-  hasNextPage?: boolean;
-  hasActiveFilters?: boolean;
+  eventCount: number;
+  total: number;
+  activeFilterCount: number;
 }>();
+
+const emit = defineEmits<{
+  clearFilters: [];
+}>();
+
+const search = defineModel<string>('search', { required: true });
 
 const toast = useToast();
 
-const summaryLabel = computed(() => {
-  if (props.hasActiveFilters) {
-    const countLabel = props.hasNextPage
-      ? `${props.rowCount}+ eventos`
-      : `${props.rowCount} eventos`;
-    return countLabel;
-  }
-
-  const eventos = props.summary?.eventos ?? props.rowCount;
-  const total =
-    props.summary != null
-      ? formatRescueCardMoney(props.summary.total_con_iva)
-      : '—';
-  return `${eventos} eventos · ${total} c/IVA`;
-});
+const summaryLabel = computed(
+  () =>
+    `${props.eventCount} evento${props.eventCount === 1 ? '' : 's'} · ${formatPendingInvoiceMoney(props.total)} c/IVA`,
+);
 
 function onDownloadZip() {
   toast.add({
-    title: PENDING_INVOICE_ZIP_COMING_SOON,
-    description: 'La descarga ZIP por compañía estará disponible pronto.',
+    title: PENDING_INVOICE_ZIP_TOAST.title,
+    description: PENDING_INVOICE_ZIP_TOAST.description,
+    icon: 'i-lucide-file-archive',
     color: 'neutral',
   });
 }
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <p class="text-sm text-muted">
-      {{ summaryLabel }}
-    </p>
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <UInput
+      v-model="search"
+      icon="i-lucide-search"
+      variant="subtle"
+      class="w-full sm:max-w-md"
+      :placeholder="PENDING_INVOICE_SEARCH_PLACEHOLDER"
+      :ui="{ base: 'bg-default' }"
+    >
+      <template
+        v-if="search"
+        #trailing
+      >
+        <UButton
+          color="neutral"
+          variant="link"
+          size="xs"
+          icon="i-lucide-x"
+          aria-label="Limpiar búsqueda"
+          @click="search = ''"
+        />
+      </template>
+    </UInput>
+
     <UButton
-      color="primary"
-      icon="i-lucide-download"
-      label="Descargar ZIP por compañía"
-      @click="onDownloadZip"
+      v-if="activeFilterCount > 0"
+      color="neutral"
+      variant="subtle"
+      icon="i-lucide-filter-x"
+      :label="`Limpiar filtros (${activeFilterCount})`"
+      @click="emit('clearFilters')"
     />
+
+    <div class="flex items-center gap-3 sm:ms-auto">
+      <p class="text-sm whitespace-nowrap text-muted">
+        {{ summaryLabel }}
+      </p>
+      <UButton
+        color="primary"
+        icon="i-lucide-file-archive"
+        label="Descargar ZIP por compañía"
+        class="whitespace-nowrap"
+        @click="onDownloadZip"
+      />
+    </div>
   </div>
 </template>

@@ -37,12 +37,6 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         ability: accessAdministrative,
       },
       {
-        label: 'Por Facturar',
-        to: '/admin/por-facturar',
-        icon: 'i-lucide-file-clock',
-        ability: accessAdministrative,
-      },
-      {
         label: 'Mi saldo',
         to: '/admin/my-balance',
         icon: 'i-lucide-wallet',
@@ -59,6 +53,17 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         to: '/admin/pagar/recibos',
         icon: 'i-lucide-file-check-2',
         ability: accessPaymentReceipts,
+      },
+    ],
+  },
+  {
+    label: 'Cobranza',
+    items: [
+      {
+        label: 'Por Facturar',
+        to: '/admin/por-facturar',
+        icon: 'i-lucide-file-clock',
+        ability: accessAdministrative,
       },
     ],
   },

@@ -1,53 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  computeSparklineTrend,
   daysSemaphoreColor,
+  formatMatrixMonthLabel,
   matrixCellAgeClass,
   monthsBehindCurrent,
   needsAttention,
+  pendingInvoiceRowAgeClass,
 } from '../../app/utils/pending-invoice-display';
 
 describe('pending-invoice-display', () => {
-  describe('computeSparklineTrend', () => {
-    it('returns flat when fewer than two points', () => {
-      expect(computeSparklineTrend([])).toEqual({
-        percentChange: null,
-        direction: 'flat',
-      });
-      expect(computeSparklineTrend([{ fecha: '2026-01-01', valor: 100 }])).toEqual({
-        percentChange: null,
-        direction: 'flat',
-      });
-    });
-
-    it('detects downward trend', () => {
-      const trend = computeSparklineTrend([
-        { fecha: '2026-01-01', valor: 100 },
-        { fecha: '2026-01-02', valor: 80 },
-      ]);
-      expect(trend.direction).toBe('down');
-      expect(trend.percentChange).toBe(-20);
-    });
-
-    it('detects upward trend', () => {
-      const trend = computeSparklineTrend([
-        { fecha: '2026-01-01', valor: 100 },
-        { fecha: '2026-01-02', valor: 125 },
-      ]);
-      expect(trend.direction).toBe('up');
-      expect(trend.percentChange).toBe(25);
-    });
-
-    it('handles zero baseline with growth', () => {
-      const trend = computeSparklineTrend([
-        { fecha: '2026-01-01', valor: 0 },
-        { fecha: '2026-01-02', valor: 50 },
-      ]);
-      expect(trend.direction).toBe('up');
-      expect(trend.percentChange).toBe(100);
-    });
-  });
-
   describe('daysSemaphoreColor', () => {
     it('uses success below 30 days', () => {
       expect(daysSemaphoreColor(29)).toBe('success');
@@ -60,6 +21,20 @@ describe('pending-invoice-display', () => {
 
     it('uses error above 60 days', () => {
       expect(daysSemaphoreColor(61)).toBe('error');
+    });
+  });
+
+  describe('pendingInvoiceRowAgeClass', () => {
+    it('maps each semaphore band to a distinct row tint', () => {
+      const tints = [
+        pendingInvoiceRowAgeClass(10),
+        pendingInvoiceRowAgeClass(45),
+        pendingInvoiceRowAgeClass(120),
+      ];
+      expect(new Set(tints).size).toBe(3);
+      expect(tints[0]).toContain('success');
+      expect(tints[1]).toContain('warning');
+      expect(tints[2]).toContain('error');
     });
   });
 
@@ -89,23 +64,26 @@ describe('pending-invoice-display', () => {
     });
   });
 
+  describe('formatMatrixMonthLabel', () => {
+    it('renders month and year', () => {
+      expect(formatMatrixMonthLabel('2026-02')).toMatch(/2026$/);
+      expect(formatMatrixMonthLabel('2026-02')).toMatch(/^[A-Z]/);
+    });
+
+    it('returns the key when it cannot be parsed', () => {
+      expect(formatMatrixMonthLabel('nope')).toBe('nope');
+    });
+  });
+
   describe('needsAttention', () => {
     it('flags remission without purchase order', () => {
-      expect(
-        needsAttention({ status: 'En remisión', oc: null }),
-      ).toBe(true);
-      expect(
-        needsAttention({ status: 'En remisión', oc: '–' }),
-      ).toBe(true);
+      expect(needsAttention({ status: 'En remisión', oc: null })).toBe(true);
+      expect(needsAttention({ status: 'En remisión', oc: '–' })).toBe(true);
     });
 
     it('does not flag when OC exists or status differs', () => {
-      expect(
-        needsAttention({ status: 'En remisión', oc: 'OC-123' }),
-      ).toBe(false);
-      expect(
-        needsAttention({ status: 'Sin atender', oc: null }),
-      ).toBe(false);
+      expect(needsAttention({ status: 'En remisión', oc: 'OC-123' })).toBe(false);
+      expect(needsAttention({ status: 'Sin atender', oc: null })).toBe(false);
     });
   });
 });

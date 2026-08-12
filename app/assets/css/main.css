@@ -5,3 +5,19 @@
   --font-sans: 'Barlow', sans-serif;
 }
 
+/* Spreadsheet header band used by the Por Facturar tables (Excel-like teal). */
+@theme inline {
+  --color-sheet-header: var(--sheet-header);
+  --color-sheet-header-foreground: var(--sheet-header-foreground);
+}
+
+:root {
+  --sheet-header: hsl(163 67% 38%);
+  --sheet-header-foreground: hsl(0 0% 100%);
+}
+
+.dark {
+  --sheet-header: hsl(163 52% 24%);
+  --sheet-header-foreground: hsl(0 0% 100%);
+}
+
