@@ -1,4 +1,7 @@
-import type { PendingInvoiceRow } from '~/interfaces/invoicing/pending-invoice';
+import type {
+  PendingInvoiceDaysPromColor,
+  PendingInvoiceRow,
+} from '~/interfaces/invoicing/pending-invoice';
 
 export type DaysSemaphoreColor = 'success' | 'warning' | 'error';
 
@@ -35,6 +38,18 @@ export function daysSemaphoreTextClass(dias: number): string {
   if (color === 'success') return 'text-success';
   if (color === 'warning') return 'text-warning';
   return 'text-error';
+}
+
+/** Prefer API `dias_prom_color`; fall back to the 30/60 semaphore when missing. */
+export function pendingInvoiceDaysPromTextClass(
+  color: PendingInvoiceDaysPromColor | null | undefined,
+  dias: number | null | undefined,
+): string {
+  if (color === 'verde') return 'text-success';
+  if (color === 'amarillo') return 'text-warning';
+  if (color === 'rojo') return 'text-error';
+  if (dias == null) return 'text-muted';
+  return daysSemaphoreTextClass(dias);
 }
 
 /** Whole-row tint by age; kept faint so the table still reads as data, not alarm. */

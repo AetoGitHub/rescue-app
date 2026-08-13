@@ -3,19 +3,21 @@ import { h, resolveComponent } from 'vue';
 import type { TableColumn } from '@nuxt/ui';
 import type { PendingInvoiceSellerRow } from '~/interfaces/invoicing/pending-invoice';
 import {
-  daysSemaphoreTextClass,
   formatPendingInvoiceMoney,
 } from '~/utils/pending-invoice-display';
-import { buildPendingInvoiceSellerRows } from '~/utils/pending-invoice-aggregate';
 import { pendingInvoiceExcelTableUi } from '~/constants/pending-invoice';
 
-const { scopedRows } = usePendingInvoiceList();
+const {
+  rows,
+  isInitialLoading,
+  isLoadingMore,
+  isError,
+  errorMessage,
+  refresh,
+} = usePendingInvoiceByResponsible();
 
 const UBadge = resolveComponent('UBadge');
-const UIcon = resolveComponent('UIcon');
 const UProgress = resolveComponent('UProgress');
-
-const rows = computed(() => buildPendingInvoiceSellerRows(scopedRows.value));
 
 const totals = computed(() =>
   rows.value.reduce(
@@ -40,23 +42,10 @@ const totals = computed(() =>
   ),
 );
 
-function sharePercent(total: number): number {
-  if (totals.value.total <= 0) return 0;
-  return Math.round((total / totals.value.total) * 1000) / 10;
-}
-
 function countCell(value: number) {
   return h(
     'span',
     { class: value === 0 ? 'tabular-nums text-dimmed' : 'tabular-nums' },
-    String(value),
-  );
-}
-
-function daysCell(value: number) {
-  return h(
-    'span',
-    { class: ['font-medium tabular-nums', daysSemaphoreTextClass(value)] },
     String(value),
   );
 }
@@ -78,7 +67,6 @@ function footerCell(content: unknown, align = 'text-right') {
   return h('span', { class: ['font-semibold', align] }, content as string);
 }
 
-// UTable renders footer cells as `th`, so this aligns header, body and totals.
 const numericMeta = {
   class: { th: 'text-right', td: 'text-right' },
 } as const;
@@ -136,20 +124,6 @@ const columns = computed<TableColumn<PendingInvoiceSellerRow>[]>(() => [
     footer: () => footerCell(String(totals.value.atencion)),
   },
   {
-    id: 'dias_prom',
-    header: 'Días prom.',
-    meta: numericMeta,
-    cell: ({ row }) => daysCell(row.original.dias_prom),
-    footer: () => footerCell('—'),
-  },
-  {
-    id: 'dias_max',
-    header: 'Días máx.',
-    meta: numericMeta,
-    cell: ({ row }) => daysCell(row.original.dias_max),
-    footer: () => footerCell('—'),
-  },
-  {
     id: 'subtotal',
     header: 'Subtotal',
     meta: numericMeta,
@@ -168,11 +142,15 @@ const columns = computed<TableColumn<PendingInvoiceSellerRow>[]>(() => [
     header: 'Total c/IVA',
     meta: { class: { th: 'text-right w-56', td: 'w-56' } },
     cell: ({ row }) => {
-      const percent = sharePercent(row.original.total);
+      const percent = row.original.porcentaje_facturado;
       return h('div', { class: 'flex flex-col items-end gap-1' }, [
         h('div', { class: 'flex items-baseline gap-2' }, [
           moneyCell(row.original.total, true),
-          h('span', { class: 'text-xs tabular-nums text-muted' }, `${percent}%`),
+          h(
+            'span',
+            { class: 'text-xs tabular-nums text-muted' },
+            `${percent}%`,
+          ),
         ]),
         h(UProgress, { modelValue: percent, max: 100, size: 'xs' }),
       ]);
@@ -185,12 +163,37 @@ const columns = computed<TableColumn<PendingInvoiceSellerRow>[]>(() => [
 <template>
   <div class="flex min-h-0 flex-1 flex-col gap-3">
     <p class="text-sm text-muted">
-      Participación por vendedor sobre el total pendiente, de mayor a menor
-      monto. Los días usan el semáforo 30/60.
+      Participación por responsable sobre el total pendiente.
     </p>
 
     <div
-      v-if="rows.length === 0"
+      v-if="isInitialLoading"
+      class="flex flex-1 items-center justify-center rounded-lg border border-muted bg-default py-16"
+    >
+      <UIcon
+        name="i-lucide-loader-circle"
+        class="size-6 animate-spin text-muted"
+      />
+    </div>
+
+    <div
+      v-else-if="isError && rows.length === 0"
+      class="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-muted bg-default py-16"
+    >
+      <p class="text-sm text-muted">
+        {{ errorMessage || 'No se pudo cargar el resumen por responsable.' }}
+      </p>
+      <UButton
+        color="neutral"
+        variant="subtle"
+        icon="i-lucide-refresh-cw"
+        label="Reintentar"
+        @click="() => void refresh()"
+      />
+    </div>
+
+    <div
+      v-else-if="rows.length === 0"
       class="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-muted bg-default py-16"
     >
       <UIcon
@@ -202,12 +205,19 @@ const columns = computed<TableColumn<PendingInvoiceSellerRow>[]>(() => [
       </p>
     </div>
 
-    <UTable
-      v-else
-      sticky
-      :columns="columns"
-      :data="rows"
-      :ui="pendingInvoiceExcelTableUi"
-    />
+    <template v-else>
+      <UTable
+        sticky
+        :columns="columns"
+        :data="rows"
+        :ui="pendingInvoiceExcelTableUi"
+      />
+      <p
+        v-if="isLoadingMore"
+        class="text-center text-xs text-muted"
+      >
+        Cargando más responsables…
+      </p>
+    </template>
   </div>
 </template>

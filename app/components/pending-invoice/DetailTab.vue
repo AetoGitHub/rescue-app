@@ -21,6 +21,8 @@ const {
   isLoadingMore,
   isError,
   errorMessage,
+  hasNextPage,
+  loadNextPage,
   refresh,
 } = usePendingInvoiceList();
 const controller = usePendingInvoiceColumnFilters();
@@ -161,12 +163,19 @@ async function onEvidenceZip(
         @evidence-zip="onEvidenceZip"
       />
 
-      <p
-        v-if="isLoadingMore"
-        class="text-center text-xs text-muted"
+      <div
+        v-if="hasNextPage || isLoadingMore"
+        class="flex justify-center py-2"
       >
-        Cargando más eventos…
-      </p>
+        <UButton
+          color="neutral"
+          variant="subtle"
+          :loading="isLoadingMore"
+          :disabled="isLoadingMore"
+          label="Cargar más"
+          @click="() => void loadNextPage()"
+        />
+      </div>
     </template>
 
     <LazyPendingInvoiceCommentModal

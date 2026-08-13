@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PendingInvoiceRow } from '../../app/interfaces/invoicing/pending-invoice';
 import {
-  buildPendingInvoiceMatrix,
   buildPendingInvoiceMonthWindow,
-  buildPendingInvoiceSellerRows,
   collectPendingInvoiceCompanies,
   filterPendingInvoiceRows,
   pendingInvoiceColumnOptions,
@@ -147,85 +145,12 @@ describe('pending-invoice-aggregate', () => {
     });
   });
 
-  describe('buildPendingInvoiceSellerRows', () => {
-    const rows = [
-      buildRow({ id: 1, dias: 20, status: 'Sin atender' }),
-      buildRow({ id: 2, dias: 80, status: 'En remisión', oc: null }),
-      buildRow({
-        id: 3,
-        responsable: 'Lucía Ramírez',
-        total: 5000,
-        subtotal: 4310,
-        iva: 690,
-      }),
-    ];
-
-    it('groups by seller and orders by amount descending', () => {
-      const result = buildPendingInvoiceSellerRows(rows);
-      expect(result.map(row => row.responsable)).toEqual([
-        'Lucía Ramírez',
-        'Diego Torres',
-      ]);
-    });
-
-    it('counts statuses, attention flags and day stats', () => {
-      const diego = buildPendingInvoiceSellerRows(rows).find(
-        row => row.responsable === 'Diego Torres',
-      );
-      expect(diego).toMatchObject({
-        eventos: 2,
-        sin_atender: 1,
-        remision: 1,
-        atencion: 1,
-        dias_prom: 50,
-        dias_max: 80,
-      });
-    });
-  });
-
   describe('buildPendingInvoiceMonthWindow', () => {
     it('returns the last N months in ascending order', () => {
       expect(buildPendingInvoiceMonthWindow(3, new Date(2026, 0, 15))).toEqual([
         '2025-11',
         '2025-12',
         '2026-01',
-      ]);
-    });
-  });
-
-  describe('buildPendingInvoiceMatrix', () => {
-    const reference = new Date(2026, 1, 15);
-    const rows = [
-      buildRow({ id: 1, mes_key: '2026-02', total: 1000 }),
-      buildRow({ id: 2, mes_key: '2026-01', total: 500 }),
-      buildRow({
-        id: 3,
-        mes_key: '2026-02',
-        total: 300,
-        autorizador: 'Lic. Patricia Vela',
-      }),
-      buildRow({ id: 4, mes_key: '2020-01', total: 999 }),
-    ];
-
-    it('keeps only months inside the window', () => {
-      const matrix = buildPendingInvoiceMatrix(rows, 3, reference);
-      expect(matrix.month_keys).toEqual(['2025-12', '2026-01', '2026-02']);
-      expect(matrix.totals.eventos).toBe(3);
-      expect(matrix.totals.total).toBe(1800);
-    });
-
-    it('aggregates amounts and events per month cell', () => {
-      const matrix = buildPendingInvoiceMatrix(rows, 3, reference);
-      const company = matrix.rows[0];
-      expect(company?.meses['2026-02']).toEqual({ monto: 1300, eventos: 2 });
-      expect(company?.meses['2026-01']).toEqual({ monto: 500, eventos: 1 });
-    });
-
-    it('breaks each company down by authorizer', () => {
-      const matrix = buildPendingInvoiceMatrix(rows, 3, reference);
-      expect(matrix.rows[0]?.autorizadores.map(row => row.autorizador)).toEqual([
-        'Ing. Ramiro Cano',
-        'Lic. Patricia Vela',
       ]);
     });
   });

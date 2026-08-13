@@ -1,17 +1,11 @@
 import type {
-  PendingInvoiceMatrix,
-  PendingInvoiceMatrixAuthorizerRow,
-  PendingInvoiceMatrixCell,
   PendingInvoiceRow,
-  PendingInvoiceSellerRow,
   PendingInvoiceSummary,
 } from '~/interfaces/invoicing/pending-invoice';
 import type { PendingInvoiceColumnId } from '~/constants/pending-invoice';
 import {
   formatPendingInvoiceDateShort,
   formatPendingInvoiceMoney,
-  needsAttention,
-  sortMatrixMonthKeys,
 } from '~/utils/pending-invoice-display';
 
 export type PendingInvoiceColumnFilters = Partial<
@@ -223,37 +217,6 @@ export function summarizePendingInvoiceRows(
   );
 }
 
-export function buildPendingInvoiceSellerRows(
-  rows: PendingInvoiceRow[],
-): PendingInvoiceSellerRow[] {
-  const groups = new Map<string, PendingInvoiceRow[]>();
-
-  for (const row of rows) {
-    const current = groups.get(row.responsable);
-    if (current) current.push(row);
-    else groups.set(row.responsable, [row]);
-  }
-
-  const sellerRows = [...groups].map(([responsable, group]) => {
-    const totalDays = group.reduce((sum, row) => sum + row.dias, 0);
-
-    return {
-      responsable,
-      eventos: group.length,
-      sin_atender: group.filter(row => row.status === 'Sin atender').length,
-      remision: group.filter(row => row.status === 'En remisión').length,
-      atencion: group.filter(row => needsAttention(row)).length,
-      dias_prom: Math.round(totalDays / group.length),
-      dias_max: group.reduce((max, row) => Math.max(max, row.dias), 0),
-      subtotal: group.reduce((sum, row) => sum + row.subtotal, 0),
-      iva: group.reduce((sum, row) => sum + row.iva, 0),
-      total: group.reduce((sum, row) => sum + row.total, 0),
-    } satisfies PendingInvoiceSellerRow;
-  });
-
-  return sellerRows.sort((a, b) => b.total - a.total);
-}
-
 export function buildPendingInvoiceMonthWindow(
   months: number,
   reference = new Date(),
@@ -266,104 +229,4 @@ export function buildPendingInvoiceMonthWindow(
     );
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   });
-}
-
-function emptyCell(): PendingInvoiceMatrixCell {
-  return { monto: 0, eventos: 0 };
-}
-
-function addToCells(
-  cells: Record<string, PendingInvoiceMatrixCell>,
-  monthKey: string,
-  row: PendingInvoiceRow,
-): void {
-  const cell = cells[monthKey] ?? emptyCell();
-  cell.monto += row.total;
-  cell.eventos += 1;
-  cells[monthKey] = cell;
-}
-
-export function buildPendingInvoiceMatrix(
-  rows: PendingInvoiceRow[],
-  months: number,
-  reference = new Date(),
-): PendingInvoiceMatrix {
-  const monthKeys = buildPendingInvoiceMonthWindow(months, reference);
-  const windowSet = new Set(monthKeys);
-  const scoped = rows.filter(row => windowSet.has(row.mes_key));
-
-  const companies = new Map<
-    string,
-    {
-      meses: Record<string, PendingInvoiceMatrixCell>;
-      total: number;
-      eventos: number;
-      autorizadores: Map<
-        string,
-        {
-          meses: Record<string, PendingInvoiceMatrixCell>;
-          total: number;
-          eventos: number;
-        }
-      >;
-    }
-  >();
-
-  const totals = {
-    meses: {} as Record<string, PendingInvoiceMatrixCell>,
-    total: 0,
-    eventos: 0,
-  };
-
-  for (const row of scoped) {
-    const company =
-      companies.get(row.compania) ??
-      { meses: {}, total: 0, eventos: 0, autorizadores: new Map() };
-
-    addToCells(company.meses, row.mes_key, row);
-    company.total += row.total;
-    company.eventos += 1;
-
-    const authorizerKey = row.autorizador.trim() || '—';
-    const authorizer =
-      company.autorizadores.get(authorizerKey) ??
-      { meses: {}, total: 0, eventos: 0 };
-
-    addToCells(authorizer.meses, row.mes_key, row);
-    authorizer.total += row.total;
-    authorizer.eventos += 1;
-    company.autorizadores.set(authorizerKey, authorizer);
-
-    companies.set(row.compania, company);
-
-    addToCells(totals.meses, row.mes_key, row);
-    totals.total += row.total;
-    totals.eventos += 1;
-  }
-
-  const matrixRows = [...companies]
-    .map(([compania, company]) => ({
-      compania,
-      meses: company.meses,
-      total: company.total,
-      eventos: company.eventos,
-      autorizadores: [...company.autorizadores]
-        .map(
-          ([autorizador, authorizer]) =>
-            ({
-              autorizador,
-              meses: authorizer.meses,
-              total: authorizer.total,
-              eventos: authorizer.eventos,
-            }) satisfies PendingInvoiceMatrixAuthorizerRow,
-        )
-        .sort((a, b) => b.total - a.total),
-    }))
-    .sort((a, b) => b.total - a.total);
-
-  return {
-    month_keys: sortMatrixMonthKeys(monthKeys),
-    rows: matrixRows,
-    totals,
-  };
 }

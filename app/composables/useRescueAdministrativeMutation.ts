@@ -1,6 +1,10 @@
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
-import { PENDING_INVOICE_LIST_QUERY_KEY } from '~/constants/pending-invoice-api';
+import {
+  PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY,
+  PENDING_INVOICE_COMPANY_MATRIX_QUERY_KEY,
+  PENDING_INVOICE_LIST_QUERY_KEY,
+} from '~/constants/pending-invoice-api';
 import {
   RESCUE_ADMINISTRATIVE_CHANGE_PHASE_PATH,
   RESCUE_ADMINISTRATIVE_REVERT_CANCELLATION_PATH,
@@ -40,6 +44,12 @@ async function invalidateAdministrativeQueries(
   });
   await queryCache.invalidateQueries({
     key: [PENDING_INVOICE_LIST_QUERY_KEY],
+  });
+  await queryCache.invalidateQueries({
+    key: [PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY],
+  });
+  await queryCache.invalidateQueries({
+    key: [PENDING_INVOICE_COMPANY_MATRIX_QUERY_KEY],
   });
 }
 

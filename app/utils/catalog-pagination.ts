@@ -22,10 +22,12 @@ export function extractCursorFromPaginatedNext(
   }
 }
 
+export type PaginatedQueryValue = string | string[];
+
 export function buildPaginatedQuery(
-  baseQuery: Record<string, string> | undefined,
+  baseQuery: Record<string, PaginatedQueryValue> | undefined,
   cursor: string | null | undefined,
-): Record<string, string> | undefined {
+): Record<string, PaginatedQueryValue> | undefined {
   const normalizedCursor = cursor?.trim();
   if (!normalizedCursor) return baseQuery;
 

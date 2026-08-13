@@ -5,25 +5,28 @@ import {
   PENDING_INVOICE_LIST_QUERY_KEY,
 } from '~/constants/pending-invoice-api';
 import type { PendingInvoiceTabValue } from '~/constants/pending-invoice';
-import type { PendingInvoiceApiRow } from '~/interfaces/invoicing/pending-invoice';
+import type {
+  PendingInvoiceApiRow,
+  PendingInvoiceCompanySelection,
+} from '~/interfaces/invoicing/pending-invoice';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { mapPendingInvoiceApiRow } from '~/utils/pending-invoice-map';
 import {
-  collectPendingInvoiceCompanies,
   filterPendingInvoiceRows,
   summarizePendingInvoiceRows,
 } from '~/utils/pending-invoice-aggregate';
+import { pendingInvoiceCompanyQuery } from '~/utils/pending-invoice-dashboard-map';
+import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
 
 /**
- * Shared pending-invoice list for the three Por Facturar tabs.
+ * Shared pending-invoice state for Por Facturar.
  *
  * Company filter and active tab live in `useState` so matrix → detail jumps
- * stay in sync. Seller/matrix aggregates need the full cursor window, so pages
- * keep loading until `next` is exhausted.
+ * stay in sync. Seller/matrix tabs fetch their own endpoints.
  */
 export function usePendingInvoiceList() {
   const apiFetch = useApiFetch();
-  const selectedCompanies = useState<string[]>(
+  const selectedCompanies = useState<PendingInvoiceCompanySelection[]>(
     'pending-invoice-companies',
     () => [],
   );
@@ -32,9 +35,20 @@ export function usePendingInvoiceList() {
     () => 'detail',
   );
 
-  const baseQuery = computed(() => ({
-    admin_status: PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
-  }));
+  const companyQuery = computed(() =>
+    pendingInvoiceCompanyQuery(selectedCompanies.value),
+  );
+  const companyNames = computed(() =>
+    selectedCompanies.value.map(company => company.name).filter(Boolean),
+  );
+
+  const baseQuery = computed(() => {
+    const query: Record<string, PaginatedQueryValue> = {
+      admin_status: PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
+    };
+    if (companyQuery.value != null) query.company = companyQuery.value;
+    return query;
+  });
 
   const {
     data,
@@ -48,7 +62,10 @@ export function usePendingInvoiceList() {
     Error,
     string | null
   >({
-    key: () => [PENDING_INVOICE_LIST_QUERY_KEY],
+    key: () => [
+      PENDING_INVOICE_LIST_QUERY_KEY,
+      serializeCompanyQuery(companyQuery.value),
+    ],
     initialPageParam: null,
     query: ({ pageParam }) =>
       apiFetch<PaginatedResponse<PendingInvoiceApiRow>>(
@@ -60,17 +77,6 @@ export function usePendingInvoiceList() {
     getNextPageParam: getNextCursorPageParam,
   });
 
-  // Drain the cursor so seller/matrix aggregates see the full filtered set.
-  watch(
-    [hasNextPage, asyncStatus],
-    ([canLoadMore, status]) => {
-      if (canLoadMore && status !== 'loading') {
-        void loadNextPage();
-      }
-    },
-    { immediate: true },
-  );
-
   const rows = computed(() => {
     const reference = new Date();
     return flattenPaginatedPages<PendingInvoiceApiRow>(data.value?.pages).map(
@@ -78,11 +84,10 @@ export function usePendingInvoiceList() {
     );
   });
 
-  const companies = computed(() => collectPendingInvoiceCompanies(rows.value));
-
+  /** Client-side name filter as a safety net while the API may ignore `company`. */
   const scopedRows = computed(() =>
     filterPendingInvoiceRows(rows.value, {
-      companies: selectedCompanies.value,
+      companies: companyNames.value,
     }),
   );
 
@@ -102,8 +107,17 @@ export function usePendingInvoiceList() {
     error.value != null ? getFetchErrorMessage(error.value) : '',
   );
 
-  function focusCompany(compania: string) {
-    selectedCompanies.value = [compania];
+  function focusCompany(input: {
+    id?: number | null;
+    name: string;
+  }) {
+    const name = input.name.trim();
+    if (!name) return;
+    const id =
+      input.id != null && Number.isFinite(input.id) && input.id > 0
+        ? input.id
+        : 0;
+    selectedCompanies.value = [{ id, name }];
     activeTab.value = 'detail';
   }
 
@@ -113,8 +127,9 @@ export function usePendingInvoiceList() {
 
   return {
     rows,
-    companies,
     selectedCompanies,
+    companyQuery,
+    companyNames,
     activeTab,
     scopedRows,
     summary,
@@ -128,4 +143,11 @@ export function usePendingInvoiceList() {
     focusCompany,
     clearCompanies,
   };
+}
+
+function serializeCompanyQuery(
+  value: string | string[] | undefined,
+): string {
+  if (value == null) return '';
+  return Array.isArray(value) ? value.join(',') : value;
 }
