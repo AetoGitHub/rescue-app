@@ -1,51 +1,27 @@
-import { CalendarDateTime, type DateValue } from '@internationalized/date';
 import type { RescueUnlockBody } from '~/interfaces/rescue/administrative';
 import type { RescueUnlockFormState } from '~/utils/rescue-unlock-form';
-
-const DATETIME_LOCAL_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/;
 
 function pad(part: number): string {
   return String(part).padStart(2, '0');
 }
 
-/** Form string -> `UInputDate` value (minute granularity, so hours stay editable). */
-export function toUnlockCalendarDateTime(
-  value: string,
-): CalendarDateTime | undefined {
-  const match = DATETIME_LOCAL_PATTERN.exec(value.trim());
-  if (!match) return undefined;
-
-  const [, year, month, day, hour, minute] = match;
-  return new CalendarDateTime(
-    Number(year),
-    Number(month),
-    Number(day),
-    Number(hour),
-    Number(minute),
-  );
+/** Local date -> `input[type="datetime-local"]` value (`YYYY-MM-DDTHH:mm`). */
+export function toRescueUnlockDatetimeLocal(date: Date): string {
+  return [
+    date.getFullYear(),
+    '-',
+    pad(date.getMonth() + 1),
+    '-',
+    pad(date.getDate()),
+    'T',
+    pad(date.getHours()),
+    ':',
+    pad(date.getMinutes()),
+  ].join('');
 }
 
-/** `UInputDate` value -> form string; missing time segments fall back to 00:00. */
-export function fromUnlockCalendarDateTime(
-  value: DateValue | null | undefined,
-): string {
-  if (value == null) return '';
-
-  const hour = 'hour' in value ? value.hour : 0;
-  const minute = 'minute' in value ? value.minute : 0;
-  return `${value.year}-${pad(value.month)}-${pad(value.day)}T${pad(hour)}:${pad(minute)}`;
-}
-
-export function getRescueUnlockMinCalendarDateTime(
-  now = new Date(),
-): CalendarDateTime {
-  return new CalendarDateTime(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes(),
-  );
+export function getRescueUnlockMinDatetimeLocal(now = new Date()): string {
+  return toRescueUnlockDatetimeLocal(now);
 }
 
 export function isRescueUnlockDatetimeLocalInPast(

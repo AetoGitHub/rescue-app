@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { CalendarDate, CalendarDateTime, type DateValue } from '@internationalized/date';
 import type { FormSubmitEvent } from '@nuxt/ui';
 import {
   createRescueUnlockFormSchema,
@@ -43,36 +42,7 @@ const {
 const rescueIdRef = computed(() => props.rescueId);
 const { unlockRescue, isUnlocking } = useRescueUnlockMutation(rescueIdRef);
 
-const datePickerOpen = ref(false);
-const minUnlockDatetime = computed(() => getRescueUnlockMinCalendarDateTime());
-
-const unlockDatetime = computed<DateValue | undefined>({
-  get: () => toUnlockCalendarDateTime(state.unlocked_until_local),
-  set: (value) => {
-    state.unlocked_until_local = fromUnlockCalendarDateTime(value);
-  },
-});
-
-const unlockDate = computed<DateValue | undefined>({
-  get: () => {
-    const current = unlockDatetime.value;
-    if (!current) return undefined;
-    return new CalendarDate(current.year, current.month, current.day);
-  },
-  set: (value) => {
-    if (value == null) return;
-    const time = toUnlockCalendarDateTime(state.unlocked_until_local)
-      ?? minUnlockDatetime.value;
-    unlockDatetime.value = new CalendarDateTime(
-      value.year,
-      value.month,
-      value.day,
-      time.hour,
-      time.minute,
-    );
-    datePickerOpen.value = false;
-  },
-});
+const minUnlockDatetime = computed(() => getRescueUnlockMinDatetimeLocal());
 
 const unlockFormSchema = computed(() => createRescueUnlockFormSchema());
 
@@ -181,33 +151,13 @@ async function requestSubmit() {
             name="unlocked_until_local"
             required
           >
-            <UInputDate
-              v-model="unlockDatetime"
-              granularity="minute"
-              :hour-cycle="24"
-              :min-value="minUnlockDatetime"
+            <UInput
+              v-model="state.unlocked_until_local"
+              type="datetime-local"
+              :min="minUnlockDatetime"
               class="w-full"
-            >
-              <template #trailing>
-                <UPopover v-model:open="datePickerOpen">
-                  <UButton
-                    type="button"
-                    icon="i-lucide-calendar"
-                    color="neutral"
-                    variant="link"
-                    aria-label="Abrir calendario"
-                  />
-
-                  <template #content>
-                    <UCalendar
-                      v-model="unlockDate"
-                      :min-value="minUnlockDatetime"
-                      class="p-2"
-                    />
-                  </template>
-                </UPopover>
-              </template>
-            </UInputDate>
+              :ui="{ base: 'dark:scheme-dark' }"
+            />
           </UFormField>
           <UFormField
             label="Razón"
