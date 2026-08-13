@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-  PENDING_INVOICE_SEARCH_PLACEHOLDER,
-  PENDING_INVOICE_ZIP_TOAST,
-} from '~/constants/pending-invoice';
+import { PENDING_INVOICE_SEARCH_PLACEHOLDER } from '~/constants/pending-invoice';
 import { formatPendingInvoiceMoney } from '~/utils/pending-invoice-display';
 
 const props = defineProps<{
@@ -17,21 +14,22 @@ const emit = defineEmits<{
 
 const search = defineModel<string>('search', { required: true });
 
-const toast = useToast();
-
 const summaryLabel = computed(
   () =>
     `${props.eventCount} evento${props.eventCount === 1 ? '' : 's'} · ${formatPendingInvoiceMoney(props.total)} c/IVA`,
 );
 
-function onDownloadZip() {
-  toast.add({
-    title: PENDING_INVOICE_ZIP_TOAST.title,
-    description: PENDING_INVOICE_ZIP_TOAST.description,
-    icon: 'i-lucide-file-archive',
-    color: 'neutral',
-  });
-}
+// ZIP por compañía — deshabilitado de momento (endpoint/flujo pendiente).
+// import { PENDING_INVOICE_ZIP_TOAST } from '~/constants/pending-invoice';
+// const toast = useToast();
+// function onDownloadZip() {
+//   toast.add({
+//     title: PENDING_INVOICE_ZIP_TOAST.title,
+//     description: PENDING_INVOICE_ZIP_TOAST.description,
+//     icon: 'i-lucide-file-archive',
+//     color: 'neutral',
+//   });
+// }
 </script>
 
 <template>
@@ -72,6 +70,7 @@ function onDownloadZip() {
       <p class="text-sm whitespace-nowrap text-muted">
         {{ summaryLabel }}
       </p>
+      <!--
       <UButton
         color="primary"
         icon="i-lucide-file-archive"
@@ -79,6 +78,7 @@ function onDownloadZip() {
         class="whitespace-nowrap"
         @click="onDownloadZip"
       />
+      -->
     </div>
   </div>
 </template>
