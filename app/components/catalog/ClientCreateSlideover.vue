@@ -21,8 +21,8 @@ import type { ClientCreditSummary, CreditFormState } from '~/interfaces/catalogs
 import {
   clientCreateSchema,
   clientUpdateSchema,
-  creditFormSchema,
   creditFormToCreateBody,
+  type creditFormSchema,
 } from '~/schemas/catalog-create';
 import {
   adminListSlideoverBodyUi,
@@ -30,9 +30,16 @@ import {
   adminListSlideoverScrollClass,
 } from '~/constants/admin-list-layout';
 import { slideoverTabsUi } from '~/constants/tabs-layout';
+import type {
+  FormValidationError,
+  FormValidationErrorEvent,
+} from '~/utils/form-validation-feedback';
 
 const toast = useToast();
 const apiFetch = useApiFetch();
+const { onFormError: reportFormError, focusFormErrorField } =
+  useFormValidationFeedback();
+const formValidationErrors = ref<FormValidationError[]>([]);
 
 type ClientFormState = ZodInfer<typeof clientCreateSchema>;
 
@@ -200,6 +207,10 @@ const creditTabInvoiceBindings = computed(() => ({
 const formRef = ref<{ submit: () => Promise<void>; $el?: HTMLElement } | null>(null);
 const clientSlideoverScrollRoot = computed(() => formRef.value?.$el ?? null);
 const creditFormSectionRef = ref<{ submit: () => Promise<void> } | null>(null);
+const creditTabPanelRef = ref<{
+  submitCreditForm: () => Promise<void>;
+  openLineEdit: () => void;
+} | null>(null);
 const pendingClientData = ref<ZodInfer<typeof clientCreateSchema> | null>(null);
 const {
   guardedOpen,
@@ -232,6 +243,7 @@ function resetForm() {
   pendingClientData.value = null;
   linkedAlegraId.value = null;
   replaceAlegra.value = false;
+  formValidationErrors.value = [];
 }
 
 function prepareCreate() {
@@ -540,40 +552,24 @@ function needsCreditValidation(data: ClientFormState): boolean {
   return isCreatingCredit() || updatingCredit || creditOnCreate;
 }
 
-function onSubmit(payload: { data: ClientFormState }) {
+async function onSubmit(payload: { data: ClientFormState }) {
+  formValidationErrors.value = [];
+
   if (!needsCreditValidation(payload.data)) {
     mutate({ body: buildSubmitBody(payload.data), id: editingId.value });
     return;
   }
 
-  if (isEdit.value) {
-    const creditResult = creditFormSchema.safeParse(creditState);
-    if (!creditResult.success) {
-      const issue = creditResult.error.issues[0];
-      toast.add({
-        title: 'Revisa los datos de crédito',
-        description: issue?.message ?? 'Completa los campos de crédito.',
-        color: 'error',
-      });
-      editTab.value = 'credit';
-      return;
-    }
+  pendingClientData.value = payload.data;
 
-    let body = buildSubmitBody(payload.data);
-    const creatingCredit = isCreatingCredit();
-    if (creatingCredit && body.client_type !== 'CREDIT') {
-      body = { ...body, client_type: 'CREDIT' };
-    }
-    mutate({
-      body,
-      id: editingId.value,
-      credit: creditResult.data,
-      createCredit: creatingCredit,
-    });
+  if (isEdit.value) {
+    editTab.value = 'credit';
+    creditTabPanelRef.value?.openLineEdit();
+    await nextTick();
+    await creditTabPanelRef.value?.submitCreditForm();
     return;
   }
 
-  pendingClientData.value = payload.data;
   void creditFormSectionRef.value?.submit();
 }
 
@@ -598,25 +594,54 @@ function onCreditSubmit(
   });
 }
 
-function onFormError() {
-  const result = activeSchema.value.safeParse(state);
-  const issue = result.success ? null : result.error.issues[0];
-  toast.add({
-    title: 'Revisa el formulario',
-    description: issue?.message ?? 'Completa los campos requeridos.',
-    color: 'error',
+async function onFormError(event: FormValidationErrorEvent) {
+  await reportFormError(event, {
+    onErrors: (errors) => {
+      formValidationErrors.value = errors;
+    },
+    beforeFocus: async () => {
+      if (showEditCreditTabs.value) {
+        editTab.value = 'general';
+        await nextTick();
+      }
+    },
   });
 }
 
-function onCreditFormError() {
-  const result = creditFormSchema.safeParse(creditState);
-  const issue = result.success ? null : result.error.issues[0];
-  toast.add({
-    title: 'Revisa los datos de crédito',
-    description: issue?.message ?? 'Completa los campos de crédito.',
-    color: 'error',
+async function onSummaryErrorSelect(error: FormValidationError) {
+  const creditField = new Set([
+    'limit',
+    'days',
+    'extension',
+    'remision_tolerance',
+    'requires_purchase_order',
+    'is_blocked',
+  ]);
+
+  if (creditField.has(error.name ?? '')) {
+    editTab.value = 'credit';
+    creditTabPanelRef.value?.openLineEdit();
+  } else if (showEditCreditTabs.value) {
+    editTab.value = 'general';
+  }
+
+  await nextTick();
+  await focusFormErrorField(error);
+}
+
+async function onCreditFormError(event: FormValidationErrorEvent) {
+  await reportFormError(event, {
+    onErrors: (errors) => {
+      formValidationErrors.value = errors;
+    },
+    beforeFocus: async () => {
+      if (isEdit.value) {
+        editTab.value = 'credit';
+        creditTabPanelRef.value?.openLineEdit();
+        await nextTick();
+      }
+    },
   });
-  if (isEdit.value) editTab.value = 'credit';
 }
 
 function cancel() {
@@ -660,6 +685,11 @@ async function requestSubmit() {
         @submit="onSubmit"
         @error="onFormError"
       >
+        <SharedFormErrorSummary
+          class="sticky top-0 z-10 mb-4"
+          :errors="formValidationErrors"
+          @select="onSummaryErrorSelect"
+        />
         <UTabs
           v-if="showEditCreditTabs"
           v-model="editTab"
@@ -873,6 +903,7 @@ async function requestSubmit() {
 
           <template #credit>
             <CatalogClientCreditTabPanel
+              ref="creditTabPanelRef"
               v-model:is-active="state.is_active!"
               v-model:credit-state="creditState"
               :client-id="editingId"

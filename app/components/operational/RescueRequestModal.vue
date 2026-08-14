@@ -417,9 +417,7 @@ function onSubmit(payload: FormSubmitEvent<RescueCreateFormOutput>) {
   });
 }
 
-function onFormError() {
-  console.error('Validación de formulario de solicitud de rescate');
-}
+const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
   requestClose();

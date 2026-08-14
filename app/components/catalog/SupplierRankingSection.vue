@@ -48,9 +48,7 @@ async function onSubmit(event: FormSubmitEvent<SupplierReviewFormState>) {
   }
 }
 
-function onFormError() {
-  // Validation errors shown by UForm
-}
+const { onFormError } = useFormValidationFeedback();
 
 async function requestSubmit() {
   await formRef.value?.submit();

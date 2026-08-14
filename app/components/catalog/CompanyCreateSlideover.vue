@@ -18,8 +18,8 @@ import {
 import {
   companyCreateSchema,
   companyUpdateSchema,
-  creditFormSchema,
   creditFormToCompanyCreateBody,
+  type creditFormSchema,
 } from '~/schemas/catalog-create';
 import {
   companyCreditCreatePath,
@@ -33,6 +33,7 @@ import {
 
 const toast = useToast();
 const apiFetch = useApiFetch();
+const { onFormError } = useFormValidationFeedback();
 
 type CompanyFormState = ZodInfer<typeof companyCreateSchema>;
 
@@ -387,25 +388,6 @@ function onCreditSubmit(
   });
 }
 
-function onFormError() {
-  const result = activeSchema.value.safeParse(state);
-  const issue = result.success ? null : result.error.issues[0];
-  toast.add({
-    title: 'Revisa el formulario',
-    description: issue?.message ?? 'Completa los campos requeridos.',
-    color: 'error',
-  });
-}
-
-function onCreditFormError() {
-  const result = creditFormSchema.safeParse(creditState);
-  const issue = result.success ? null : result.error.issues[0];
-  toast.add({
-    title: 'Revisa los datos de crédito',
-    description: issue?.message ?? 'Completa los campos de crédito.',
-    color: 'error',
-  });
-}
 
 function cancel() {
   requestClose();
@@ -585,7 +567,7 @@ async function requestSubmit() {
           requires-purchase-order-label="La compañía requiere orden de compra"
           block-label="Bloquear crédito de la compañía"
           @submit="onCreditSubmit"
-          @error="onCreditFormError"
+          @error="onFormError"
         />
       </UForm>
     </template>

@@ -122,9 +122,7 @@ async function onSubmit(payload: FormSubmitEvent<ZodInfer<typeof clientContactFo
   }
 }
 
-function onFormError() {
-  console.error('Validación de formulario de contacto');
-}
+const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
   resetForm();

@@ -166,9 +166,7 @@ function onSubmit(payload: { data: ZodInfer<typeof contractItemFormSchema> }) {
   });
 }
 
-function onFormError() {
-  console.error('Validación de formulario de convenio de contrato');
-}
+const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
   requestClose();

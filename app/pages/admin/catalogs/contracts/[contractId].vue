@@ -150,9 +150,7 @@ function onHeaderSubmit(payload: {
   saveHeader(contractHeaderFormToUpdateBody(payload.data));
 }
 
-function onHeaderFormError() {
-  console.error('Validación de formulario de contrato');
-}
+const { onFormError: onHeaderFormError } = useFormValidationFeedback();
 
 async function requestHeaderSave() {
   await headerFormRef.value?.submit();

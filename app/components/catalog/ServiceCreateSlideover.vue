@@ -243,9 +243,7 @@ function onSubmit(payload: { data: ServiceFormState }) {
   });
 }
 
-function onFormError() {
-  console.error('Validación de formulario de servicio');
-}
+const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
   requestClose();

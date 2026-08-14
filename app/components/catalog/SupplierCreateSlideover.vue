@@ -162,9 +162,7 @@ function onSubmit(payload: { data: SupplierCreateFormOutput }) {
   mutate({ body, id: editingId.value });
 }
 
-function onFormError() {
-  console.error('Validación de formulario de proveedor');
-}
+const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
   requestClose();

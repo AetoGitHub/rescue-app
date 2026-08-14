@@ -2,6 +2,7 @@
 import type { FormSubmitEvent } from '@nuxt/ui';
 import type { AsyncStatus } from '@pinia/colada';
 import type { infer as ZodInfer } from 'zod';
+import type { FormValidationErrorEvent } from '~/utils/form-validation-feedback';
 import type {
   ClientCreditInvoice,
   CreditFormState,
@@ -40,7 +41,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   loadMoreInvoices: [];
   creditSubmit: [payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>];
-  creditError: [];
+  creditError: [event: FormValidationErrorEvent];
 }>();
 
 const creditFormRef = ref<{ submit: () => Promise<void> } | null>(null);
@@ -196,7 +197,11 @@ async function submitCreditForm() {
   await creditFormRef.value?.submit();
 }
 
-defineExpose({ submitCreditForm });
+function openLineEdit() {
+  lineEditOpen.value = true;
+}
+
+defineExpose({ submitCreditForm, openLineEdit });
 
 const usagePercent = computed(() =>
   clientCreditUsagePercent(
@@ -365,7 +370,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
           :state="creditState"
           class="min-w-0 flex-1 basis-0 space-y-4"
           @submit="onCreditFormSubmit"
-          @error="emit('creditError')"
+          @error="emit('creditError', $event)"
         >
           <UFormField label="Límite de crédito" name="limit" required>
             <UInputNumber

@@ -194,9 +194,7 @@ function onSubmit(payload: {
   });
 }
 
-function onFormError() {
-  console.error('Validación de formulario de usuario');
-}
+const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
   requestClose();

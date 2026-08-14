@@ -147,9 +147,7 @@ function onSubmit(payload: { data: { name: string } }) {
   mutate({ body, id: null });
 }
 
-function onFormError() {
-  console.error('Validación de formulario de categoría');
-}
+const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
   requestClose();

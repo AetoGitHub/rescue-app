@@ -2,6 +2,7 @@
 import type { FormSubmitEvent } from '@nuxt/ui';
 import type { infer as ZodInfer } from 'zod';
 import type { CreditFormState } from '~/interfaces/catalogs/credit';
+import type { FormValidationErrorEvent } from '~/utils/form-validation-feedback';
 import { creditFormSchema } from '~/schemas/catalog-create';
 
 const props = withDefaults(
@@ -25,7 +26,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   submit: [payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>];
-  error: [];
+  error: [event: FormValidationErrorEvent];
 }>();
 
 const creditState = defineModel<CreditFormState>('creditState', { required: true });
@@ -82,7 +83,7 @@ defineExpose({ submit });
     :state="creditState"
     class="space-y-4"
     @submit="onSubmit"
-    @error="emit('error')"
+    @error="emit('error', $event)"
   >
     <div v-if="props.intro" class="space-y-1 text-center">
       <p class="font-medium text-default">
