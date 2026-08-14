@@ -108,7 +108,7 @@ export function getPasswordResetErrorMessage(error: unknown): string {
   return 'No se pudo completar la operación.';
 }
 
-function getFetchStatusCode(error: unknown): number | undefined {
+export function getFetchStatusCode(error: unknown): number | undefined {
   if (!error || typeof error !== 'object') return undefined;
   const e = error as Record<string, unknown>;
   const c = e.statusCode ?? e.status;

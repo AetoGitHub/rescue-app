@@ -1,14 +1,34 @@
-export const FILL_OC_API_PATH = '/api/nexxt-step/fill_oc/';
+export const FILL_OC_API_PATH = '/api/nexxt-step/fill-oc';
+
+export const FILL_OC_API_KEY_HEADER = 'x-api-key';
 
 export const FILL_OC_QUERY_KEY = ['fill-oc'] as const;
+
+/** Tiempo que la tarjeta muestra el check antes de desaparecer. */
+export const FILL_OC_SAVED_HOLD_MS = 1_200;
 
 export const FILL_OC_LABELS = {
   pageTitle: 'Llenar OC',
   pageDescription: 'Registra la orden de compra de los rescates pendientes.',
   empty: 'No hay rescates pendientes de OC.',
+  emptyDescription: 'Todos los rescates ya tienen su orden de compra.',
   inputLabel: 'Número de OC',
   inputPlaceholder: 'OC del cliente',
   saveButton: 'Guardar OC',
+  savedBadge: 'OC guardada',
   successToast: 'Orden de compra guardada',
   errorToast: 'No se pudo guardar la OC',
+  searchPlaceholder: 'Buscar por folio o total',
+  noSearchResults: 'Sin coincidencias',
+  noSearchResultsDescription: 'Prueba con otro folio o limpia la búsqueda.',
+  missingKeyTitle: 'Falta la clave de acceso',
+  missingKeyDescription:
+    'Abre el enlace completo que recibiste; debe incluir el parámetro «key».',
+  unauthorizedTitle: 'Acceso no autorizado',
+  unauthorizedDescription:
+    'La clave del enlace no es válida o ya expiró. Solicita un enlace nuevo.',
+  loadErrorTitle: 'No se pudo cargar la lista',
+  retryButton: 'Reintentar',
+  pendingCount: 'pendientes',
+  pendingCountSingular: 'pendiente',
 } as const;

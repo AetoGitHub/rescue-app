@@ -1,144 +1,169 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui';
 import { FILL_OC_LABELS } from '~/constants/fill-oc-api';
-import type { FillOcPendingItem } from '~/interfaces/nexxt-step/fill-oc';
-import {
-  fillOcFormSchema,
-  fillOcFormToSubmitBody,
-  type FillOcFormState,
-} from '~/schemas/fill-oc';
+
+const props = defineProps<{
+  apiKey: string;
+}>();
 
 const {
   items,
   isInitialLoading,
   isError,
+  isUnauthorized,
   errorMessage,
   refresh,
-} = useFillOcList();
+} = useFillOcList(() => props.apiKey);
 
-const { submitOc } = useFillOcMutation();
+const search = ref('');
+const savedIds = ref<number[]>([]);
 
-const formStates = reactive<Record<number, FillOcFormState>>({});
-const savingId = ref<number | null>(null);
-
-watch(
-  items,
-  (list) => {
-    for (const item of list) {
-      if (!(item.id in formStates)) {
-        formStates[item.id] = { oc: '' };
-      }
-    }
-  },
-  { immediate: true },
+/** Un refetch en segundo plano no debe revivir una tarjeta ya guardada. */
+const pendingItems = computed(() =>
+  items.value.filter((item) => !savedIds.value.includes(item.id)),
 );
 
-function createSubmitHandler(item: FillOcPendingItem) {
-  return async (event: FormSubmitEvent<FillOcFormState>) => {
-    await onSubmit(item, event);
-  };
-}
+const visibleItems = computed(() =>
+  pendingItems.value.filter((item) => matchesFillOcSearch(item, search.value)),
+);
 
-async function onSubmit(
-  item: FillOcPendingItem,
-  event: FormSubmitEvent<FillOcFormState>,
-) {
-  savingId.value = item.id;
-  try {
-    await submitOc(fillOcFormToSubmitBody(item.id, event.data));
-    delete formStates[item.id];
-  } catch {
-    // Toast handled in mutation
-  } finally {
-    savingId.value = null;
-  }
+const hasSearch = computed(() => search.value.trim() !== '');
+const showSearch = computed(
+  () => pendingItems.value.length > 1 || hasSearch.value,
+);
+
+const pendingCountLabel = computed(() => {
+  const count = pendingItems.value.length;
+  const noun =
+    count === 1 ? FILL_OC_LABELS.pendingCountSingular : FILL_OC_LABELS.pendingCount;
+  return `${count} ${noun}`;
+});
+
+function onSaved(id: number) {
+  savedIds.value = [...savedIds.value, id];
 }
 </script>
 
 <template>
-  <section class="flex min-h-0 flex-1 flex-col space-y-4 rounded-lg border border-default bg-default p-4">
-    <div
-      v-if="isInitialLoading"
-      class="flex flex-1 justify-center py-12"
+  <div class="mx-auto flex w-full max-w-xl flex-col">
+    <header
+      class="sticky top-0 z-10 space-y-3 border-b border-default bg-muted/80 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 backdrop-blur-md"
     >
-      <UIcon
-        name="i-lucide-loader-circle"
-        class="size-8 animate-spin text-muted"
-      />
-    </div>
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">
+            Órdenes de compra
+          </p>
+          <h1 class="text-xl font-semibold text-highlighted">
+            {{ FILL_OC_LABELS.pageTitle }}
+          </h1>
+        </div>
 
-    <div
-      v-else-if="isError"
-      class="flex flex-1 flex-col items-center justify-center gap-3 py-12"
-    >
-      <p class="text-sm text-muted">
-        {{ errorMessage || 'No se pudo cargar la lista.' }}
-      </p>
-      <UButton
-        color="neutral"
-        variant="soft"
-        label="Reintentar"
-        icon="i-lucide-refresh-cw"
-        @click="() => void refresh()"
-      />
-    </div>
+        <UBadge
+          v-if="!isInitialLoading && !isError"
+          color="neutral"
+          variant="subtle"
+          class="shrink-0 tabular-nums"
+          :label="pendingCountLabel"
+        />
+      </div>
 
-    <div
-      v-else-if="items.length === 0"
-      class="flex-1 py-8 text-center text-sm text-muted"
-    >
-      {{ FILL_OC_LABELS.empty }}
-    </div>
-
-    <div
-      v-else
-      class="min-h-0 flex-1 space-y-3 overflow-y-auto"
-    >
-      <article
-        v-for="item in items"
-        :key="item.id"
-        class="rounded-lg border border-default p-4"
+      <UInput
+        v-if="showSearch"
+        v-model="search"
+        icon="i-lucide-search"
+        variant="subtle"
+        size="lg"
+        class="w-full"
+        :placeholder="FILL_OC_LABELS.searchPlaceholder"
+        :ui="{ base: 'bg-default' }"
       >
-        <UForm
-          v-if="formStates[item.id]"
-          :schema="fillOcFormSchema"
-          :state="formStates[item.id]"
-          class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
-          @submit="createSubmitHandler(item)"
+        <template
+          v-if="hasSearch"
+          #trailing
         >
-          <div class="min-w-0 space-y-1 lg:flex-1">
-            <h3 class="font-semibold text-highlighted">
-              {{ item.folio }}
-            </h3>
-          </div>
+          <UButton
+            color="neutral"
+            variant="link"
+            size="xs"
+            icon="i-lucide-x"
+            aria-label="Limpiar búsqueda"
+            @click="search = ''"
+          />
+        </template>
+      </UInput>
+    </header>
 
-          <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-end lg:max-w-xl">
-            <UFormField
-              :label="FILL_OC_LABELS.inputLabel"
-              name="oc"
-              required
-              class="min-w-0 flex-1"
-            >
-              <UInput
-                v-model="formStates[item.id]!.oc"
-                class="w-full"
-                :placeholder="FILL_OC_LABELS.inputPlaceholder"
-                :disabled="savingId === item.id"
-              />
-            </UFormField>
+    <div class="px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div
+        v-if="isInitialLoading"
+        class="space-y-3"
+      >
+        <USkeleton
+          v-for="index in 3"
+          :key="index"
+          class="h-56 w-full rounded-xl"
+        />
+      </div>
 
-            <UButton
-              type="submit"
-              color="primary"
-              :label="FILL_OC_LABELS.saveButton"
-              icon="i-lucide-save"
-              class="shrink-0"
-              :loading="savingId === item.id"
-              :disabled="savingId === item.id"
-            />
-          </div>
-        </UForm>
-      </article>
+      <AdministrativeFillOcStateMessage
+        v-else-if="isUnauthorized"
+        icon="i-lucide-shield-x"
+        tone="error"
+        :title="FILL_OC_LABELS.unauthorizedTitle"
+        :description="FILL_OC_LABELS.unauthorizedDescription"
+      />
+
+      <AdministrativeFillOcStateMessage
+        v-else-if="isError"
+        icon="i-lucide-triangle-alert"
+        tone="error"
+        :title="FILL_OC_LABELS.loadErrorTitle"
+        :description="errorMessage"
+      >
+        <template #action>
+          <UButton
+            color="neutral"
+            variant="subtle"
+            icon="i-lucide-refresh-cw"
+            :label="FILL_OC_LABELS.retryButton"
+            @click="() => void refresh()"
+          />
+        </template>
+      </AdministrativeFillOcStateMessage>
+
+      <AdministrativeFillOcStateMessage
+        v-else-if="pendingItems.length === 0"
+        icon="i-lucide-check-check"
+        tone="success"
+        :title="FILL_OC_LABELS.empty"
+        :description="FILL_OC_LABELS.emptyDescription"
+      />
+
+      <AdministrativeFillOcStateMessage
+        v-else-if="visibleItems.length === 0"
+        icon="i-lucide-search-x"
+        :title="FILL_OC_LABELS.noSearchResults"
+        :description="FILL_OC_LABELS.noSearchResultsDescription"
+      />
+
+      <TransitionGroup
+        v-else
+        tag="div"
+        class="relative space-y-3"
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 motion-safe:translate-y-1"
+        leave-active-class="absolute inset-x-0 transition duration-300 ease-out"
+        leave-to-class="opacity-0 motion-safe:scale-95"
+        move-class="transition duration-300 ease-out"
+      >
+        <AdministrativeFillOcCard
+          v-for="item in visibleItems"
+          :key="item.id"
+          :item="item"
+          :api-key="apiKey"
+          @saved="onSaved"
+        />
+      </TransitionGroup>
     </div>
-  </section>
+  </div>
 </template>
