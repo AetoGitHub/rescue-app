@@ -1,8 +1,18 @@
-export const FILL_OC_API_PATH = '/api/nexxt-step/fill-oc';
+export const FILL_OC_API_PATH = '/api/nexxt-step/fill_oc/';
 
 export const FILL_OC_API_KEY_HEADER = 'x-api-key';
 
 export const FILL_OC_QUERY_KEY = ['fill-oc'] as const;
+
+/** Query `key` de preview local. En producción el backend las rechaza. */
+export const FILL_OC_MOCK_KEY = {
+  list: 'mock',
+  unauthorized: 'mock-unauthorized',
+  empty: 'mock-empty',
+  error: 'mock-error',
+} as const;
+
+export type FillOcMockKey = (typeof FILL_OC_MOCK_KEY)[keyof typeof FILL_OC_MOCK_KEY];
 
 /** Tiempo que la tarjeta muestra el check antes de desaparecer. */
 export const FILL_OC_SAVED_HOLD_MS = 1_200;

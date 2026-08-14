@@ -13,7 +13,10 @@ function stringifyDetail(detail: unknown): string | null {
   return null;
 }
 
-export function forwardFetchError(error: unknown): never {
+export function forwardFetchError(
+  error: unknown,
+  options?: { fatal?: boolean },
+): never {
   const statusCode =
     error && typeof error === 'object'
       ? Number(
@@ -37,5 +40,6 @@ export function forwardFetchError(error: unknown): never {
     statusCode,
     message: detail ?? 'Error en la solicitud',
     data,
+    fatal: options?.fatal,
   });
 }

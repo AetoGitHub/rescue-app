@@ -18,6 +18,8 @@ const apiKey = computed(() => {
   return typeof value === 'string' ? value.trim() : '';
 });
 
+const isDev = import.meta.dev;
+
 useHead({
   title: FILL_OC_LABELS.pageTitle,
   meta: [{ name: 'robots', content: 'noindex, nofollow' }],
@@ -26,6 +28,8 @@ useHead({
 
 <template>
   <main class="min-h-svh bg-muted/30">
+    <AdministrativeFillOcDevPreview v-if="isDev" />
+
     <AdministrativeFillOcList
       v-if="apiKey"
       :api-key="apiKey"
