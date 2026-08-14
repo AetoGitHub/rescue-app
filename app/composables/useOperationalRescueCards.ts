@@ -37,6 +37,8 @@ export function useOperationalRescueCards(
         query: buildPaginatedQuery(baseQuery.value, pageParam),
       }),
     getNextPageParam: getNextCursorPageParam,
+    refetchOnWindowFocus: false,
+    staleTime: OPERATIONAL_BOARD_STALE_TIME_MS,
   });
 
   const rows = computed(() =>

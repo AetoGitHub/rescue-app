@@ -27,6 +27,8 @@ export function useOperationalRescueCardsSummary(
         query: queryParams.value,
         signal,
       }),
+    refetchOnWindowFocus: false,
+    staleTime: OPERATIONAL_BOARD_STALE_TIME_MS,
   });
 
   const subtotal = computed(() => data.value?.subtotal ?? 0);

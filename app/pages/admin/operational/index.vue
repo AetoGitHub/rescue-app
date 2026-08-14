@@ -2,6 +2,7 @@
 import { refDebounced } from '@vueuse/core';
 import type { DropdownMenuItem } from '@nuxt/ui';
 
+import { operationalKanbanColumnClass } from '~/constants/admin-list-layout';
 import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
@@ -630,17 +631,29 @@ const {
         />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <SharedKanbanScrollContainer v-if="viewMode === 'kanban'">
-            <LazyOperationalKanbanColumnData
-              v-for="column in visibleColumns"
+          <SharedKanbanScrollContainer
+            v-if="viewMode === 'kanban'"
+            v-slot="{ isColumnMounted }"
+          >
+            <template
+              v-for="(column, index) in visibleColumns"
               :key="column.status"
-              hydrate-on-visible
-              :status="column.status"
-              :title="column.title"
-              :accent-color="column.accentColor"
-              :filters="boardFilters"
-              @select="openRescue"
-            />
+            >
+              <LazyOperationalKanbanColumnData
+                v-if="isColumnMounted(index)"
+                :status="column.status"
+                :title="column.title"
+                :accent-color="column.accentColor"
+                :filters="boardFilters"
+                @select="openRescue"
+              />
+              <div
+                v-else
+                :class="operationalKanbanColumnClass"
+                class="h-full"
+                aria-hidden="true"
+              />
+            </template>
           </SharedKanbanScrollContainer>
 
           <div

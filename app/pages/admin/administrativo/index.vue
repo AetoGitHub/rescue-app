@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { refDebounced } from '@vueuse/core';
 import type { DropdownMenuItem } from '@nuxt/ui';
+import { administrativeKanbanColumnClass } from '~/constants/admin-list-layout';
 import {
   ADMINISTRATIVE_API_SERVICE_TYPES,
   ADMINISTRATIVE_ELIGIBLE_OPERATIVE_STATUSES,
@@ -739,19 +740,31 @@ const {
         />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <SharedKanbanScrollContainer v-if="viewMode === 'kanban'">
-            <LazyAdministrativeKanbanColumnData
-              v-for="column in visibleColumns"
+          <SharedKanbanScrollContainer
+            v-if="viewMode === 'kanban'"
+            v-slot="{ isColumnMounted }"
+          >
+            <template
+              v-for="(column, index) in visibleColumns"
               :key="column.status"
-              hydrate-on-visible
-              :status="column.status"
-              :title="column.title"
-              :accent-color="column.accentColor"
-              :filters="boardFilters"
-              @count="onColumnCount"
-              @select="openRescueDetail"
-              @admin-doc-send="onAdminDocSend"
-            />
+            >
+              <LazyAdministrativeKanbanColumnData
+                v-if="isColumnMounted(index)"
+                :status="column.status"
+                :title="column.title"
+                :accent-color="column.accentColor"
+                :filters="boardFilters"
+                @count="onColumnCount"
+                @select="openRescueDetail"
+                @admin-doc-send="onAdminDocSend"
+              />
+              <div
+                v-else
+                :class="administrativeKanbanColumnClass"
+                class="h-full"
+                aria-hidden="true"
+              />
+            </template>
           </SharedKanbanScrollContainer>
 
           <div

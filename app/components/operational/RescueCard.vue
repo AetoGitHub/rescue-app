@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useNow } from '@vueuse/core';
 import type { RescueCard } from '~/interfaces/rescue';
 
 const props = defineProps<{
@@ -10,8 +9,10 @@ const emit = defineEmits<{
   select: [id: number];
 }>();
 
+const { isMobile } = useResponsive();
 const { settings } = useRescueGeneralSettings();
-const now = useNow({ interval: 30_000 });
+const now = useSharedNow();
+const quickChatOpen = ref(false);
 
 const serviceTypeBadge = computed(() =>
   getRescueServiceTypeBadge(props.card.service_type),
@@ -60,6 +61,10 @@ const showQuickChat = computed(
   () => props.card.operative_status !== 'requested',
 );
 
+const showQuickChatComposer = computed(
+  () => showQuickChat.value && (!isMobile.value || quickChatOpen.value),
+);
+
 const supplierLabel = computed(() =>
   props.card.supplier_name?.trim() ? props.card.supplier_name : 'Sin proveedor',
 );
@@ -74,6 +79,10 @@ const vehicleLabel = computed(() =>
 
 function onCardClick() {
   emit('select', props.card.id);
+}
+
+function openQuickChat() {
+  quickChatOpen.value = true;
 }
 </script>
 
@@ -162,7 +171,7 @@ function onCardClick() {
     </div>
 
     <div class="flex items-center justify-between gap-2 text-xs text-muted">
-      <UTooltip :text="chatBadge.tooltip">
+      <UTooltip v-if="!isMobile" :text="chatBadge.tooltip">
         <UBadge
           :color="chatBadge.color as 'neutral'"
           icon="i-lucide-message-square"
@@ -171,7 +180,15 @@ function onCardClick() {
           size="sm"
         />
       </UTooltip>
-      <UTooltip :text="slaBadge.tooltip">
+      <UBadge
+        v-else
+        :color="chatBadge.color as 'neutral'"
+        icon="i-lucide-message-square"
+        :label="chatBadge.label"
+        variant="subtle"
+        size="sm"
+      />
+      <UTooltip v-if="!isMobile" :text="slaBadge.tooltip">
         <UBadge
           :color="slaBadge.customStyle ? 'neutral' : (slaBadge.color as 'neutral')"
           icon="i-lucide-clock-alert"
@@ -182,6 +199,16 @@ function onCardClick() {
           size="sm"
         />
       </UTooltip>
+      <UBadge
+        v-else
+        :color="slaBadge.customStyle ? 'neutral' : (slaBadge.color as 'neutral')"
+        icon="i-lucide-clock-alert"
+        :label="slaBadge.label"
+        :style="slaBadge.customStyle"
+        :class="slaBadge.customStyle ? 'ring-0' : undefined"
+        variant="subtle"
+        size="sm"
+      />
     </div>
 
     <div
@@ -221,8 +248,18 @@ function onCardClick() {
       <UButton block color="primary" label="Tomar solicitud" size="sm" />
     </div>
 
+    <UButton
+      v-if="showQuickChat && isMobile && !quickChatOpen"
+      block
+      color="neutral"
+      icon="i-lucide-message-square"
+      label="Mensaje"
+      size="sm"
+      variant="subtle"
+      @click.stop="openQuickChat"
+    />
     <LazyOperationalRescueCardQuickChat
-      v-if="showQuickChat"
+      v-else-if="showQuickChatComposer"
       hydrate-on-visible
       :rescue-id="card.id"
     />
@@ -230,30 +267,45 @@ function onCardClick() {
 </template>
 
 <style scoped>
+.operational-rescue-card--critical {
+  --tw-ring-color: transparent;
+  position: relative;
+  box-shadow: 0 0 0 2px rgb(239 68 68 / 0.85);
+}
+
+.operational-rescue-card--critical::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    0 0 0 2px rgb(239 68 68 / 0.95),
+    0 0 14px rgb(239 68 68 / 0.55);
+  opacity: 0;
+}
+
+@media (min-width: 768px) {
+  .operational-rescue-card--critical::after {
+    animation: operational-rescue-card-critical-glow 1.25s ease-in-out infinite;
+  }
+}
+
 @keyframes operational-rescue-card-critical-glow {
   0%,
   100% {
-    box-shadow:
-      0 0 0 1px rgb(239 68 68 / 0.55),
-      0 0 8px rgb(239 68 68 / 0.25);
+    opacity: 0.4;
   }
 
   50% {
-    box-shadow:
-      0 0 0 2px rgb(239 68 68 / 0.95),
-      0 0 14px rgb(239 68 68 / 0.55);
+    opacity: 1;
   }
 }
 
-.operational-rescue-card--critical {
-  --tw-ring-color: transparent;
-  animation: operational-rescue-card-critical-glow 1.25s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .operational-rescue-card--critical {
+  .operational-rescue-card--critical::after {
     animation: none;
-    box-shadow: 0 0 0 2px rgb(239 68 68 / 0.85);
+    opacity: 0;
   }
 }
 </style>

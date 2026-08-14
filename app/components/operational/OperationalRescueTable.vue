@@ -125,6 +125,16 @@ const asyncStatusRef = computed(
   () => props.asyncStatus ?? ('idle' as import('@pinia/colada').AsyncStatus),
 );
 
+const { isMobile } = useResponsive();
+const columnVisibility = computed(() => ({
+  service_type: !isMobile.value,
+  operator: !isMobile.value,
+  supplier: !isMobile.value,
+  sub_total: !isMobile.value,
+  admin_status: !isMobile.value,
+  phase_started_at: !isMobile.value,
+}));
+
 usePaginatedTableInfiniteScroll({
   tableRef,
   hasNextPage: hasNextPageRef,
@@ -140,6 +150,7 @@ usePaginatedTableInfiniteScroll({
       sticky
       :class="adminBoardListTableClass"
       :columns="columns"
+      :column-visibility="columnVisibility"
       :data="rows"
       :loading="loading"
       @select="onRowSelect"
