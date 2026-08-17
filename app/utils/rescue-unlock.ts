@@ -1,6 +1,11 @@
 import type { RescueUnlockBody } from '~/interfaces/rescue/administrative';
 import type { RescueUnlockFormState } from '~/utils/rescue-unlock-form';
 
+export const RESCUE_UNLOCK_PAST_DATE_MESSAGE =
+  'La fecha no puede estar en el pasado';
+export const RESCUE_UNLOCK_INVALID_DATE_MESSAGE =
+  'Fecha de desbloqueo inválida';
+
 function pad(part: number): string {
   return String(part).padStart(2, '0');
 }
@@ -39,10 +44,10 @@ export function toRescueUnlockApiBody(
 ): RescueUnlockBody {
   const date = new Date(form.unlocked_until_local);
   if (Number.isNaN(date.getTime())) {
-    throw new Error('Fecha de desbloqueo inválida');
+    throw new Error(RESCUE_UNLOCK_INVALID_DATE_MESSAGE);
   }
   if (isRescueUnlockDatetimeLocalInPast(form.unlocked_until_local, now)) {
-    throw new Error('La fecha no puede estar en el pasado');
+    throw new Error(RESCUE_UNLOCK_PAST_DATE_MESSAGE);
   }
 
   return {

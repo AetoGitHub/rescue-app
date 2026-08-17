@@ -8,6 +8,7 @@ import {
   getRescueUnlockRemainingMs,
   isRescueUnlockActive,
   isRescueUnlockDatetimeLocalInPast,
+  RESCUE_UNLOCK_PAST_DATE_MESSAGE,
   toRescueUnlockApiBody,
   toRescueUnlockDatetimeLocal,
 } from '~/utils/rescue-unlock';
@@ -44,6 +45,12 @@ describe('datetime local helpers', () => {
     expect(isRescueUnlockDatetimeLocalInPast('2026-06-05T10:00', now)).toBe(
       false,
     );
+    expect(
+      isRescueUnlockDatetimeLocalInPast(
+        '2026-06-04T15:00',
+        new Date('2026-06-04T15:00:05'),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -65,6 +72,26 @@ describe('createRescueUnlockFormSchema', () => {
       reason: 'Motivo',
     });
     expect(parsed.success).toBe(false);
+  });
+
+  it('rejects a datetime that becomes past when the clock advances', () => {
+    let current = new Date('2026-06-04T10:27:30');
+    const schema = createRescueUnlockFormSchema(() => current);
+    const form = {
+      unlocked_until_local: '2026-06-04T10:28',
+      reason: 'Motivo',
+    };
+
+    expect(schema.safeParse(form).success).toBe(true);
+
+    current = new Date('2026-06-04T10:28:05');
+    const parsed = schema.safeParse(form);
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues.some((issue) =>
+        issue.message === RESCUE_UNLOCK_PAST_DATE_MESSAGE,
+      )).toBe(true);
+    }
   });
 
   it('rejects empty fields', () => {

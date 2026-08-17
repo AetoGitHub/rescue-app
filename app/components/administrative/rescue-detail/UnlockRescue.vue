@@ -4,6 +4,10 @@ import {
   createRescueUnlockFormSchema,
   type RescueUnlockFormState,
 } from '~/utils/rescue-unlock-form';
+import {
+  RESCUE_UNLOCK_INVALID_DATE_MESSAGE,
+  RESCUE_UNLOCK_PAST_DATE_MESSAGE,
+} from '~/utils/rescue-unlock';
 
 const props = defineProps<{
   rescueId: number;
@@ -14,8 +18,12 @@ const emit = defineEmits<{
   success: [];
 }>();
 
+const { onFormError } = useFormValidationFeedback();
 const open = ref(false);
-const formRef = ref<{ submit: () => Promise<void> } | null>(null);
+const formRef = ref<{
+  submit: () => Promise<void>;
+  setErrors: (errors: { name: string; message: string }[]) => void;
+} | null>(null);
 const pendingUnlockedUntil = ref<string | null>(null);
 
 function emptyState(): RescueUnlockFormState {
@@ -42,9 +50,8 @@ const {
 const rescueIdRef = computed(() => props.rescueId);
 const { unlockRescue, isUnlocking } = useRescueUnlockMutation(rescueIdRef);
 
-const minUnlockDatetime = computed(() => getRescueUnlockMinDatetimeLocal());
-
-const unlockFormSchema = computed(() => createRescueUnlockFormSchema());
+const minUnlockDatetime = ref(getRescueUnlockMinDatetimeLocal());
+const unlockFormSchema = createRescueUnlockFormSchema(() => new Date());
 
 const resolvedUnlockedUntil = computed(() =>
   coalesceUnlockUntil(props.unlockedUntil, pendingUnlockedUntil.value),
@@ -82,6 +89,7 @@ function resetForm() {
 
 function openUnlockModal() {
   if (isCurrentlyUnlocked.value) return;
+  minUnlockDatetime.value = getRescueUnlockMinDatetimeLocal();
   open.value = true;
 }
 
@@ -106,8 +114,21 @@ async function onSubmit(event: FormSubmitEvent<RescueUnlockFormState>) {
     pendingUnlockedUntil.value = body.unlocked_until;
     closeWithoutConfirm();
     emit('success');
-  } catch {
-    // Toast handled in mutation
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    if (
+      message === RESCUE_UNLOCK_PAST_DATE_MESSAGE
+      || message === RESCUE_UNLOCK_INVALID_DATE_MESSAGE
+    ) {
+      const fieldError = {
+        name: 'unlocked_until_local',
+        message,
+      };
+      formRef.value?.setErrors([fieldError]);
+      await onFormError({ errors: [fieldError] });
+      return;
+    }
+    // API errors: toast handled in mutation
   }
 }
 
@@ -145,6 +166,7 @@ async function requestSubmit() {
           :schema="unlockFormSchema"
           class="space-y-3"
           @submit="onSubmit"
+          @error="onFormError"
         >
           <UFormField
             label="Desbloquear hasta (fecha y hora)"
