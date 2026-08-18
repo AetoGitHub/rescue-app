@@ -59,12 +59,7 @@ export function useRescueQuotePdf(rescueId: MaybeRefOrGetter<number | null>) {
         responseType: 'blob',
       });
 
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = `cotizacion_rescue_${id}.pdf`;
-      link.click();
-      URL.revokeObjectURL(objectUrl);
+      downloadBlob(blob, `cotizacion_rescue_${id}.pdf`);
     } catch (error) {
       toast.add({
         title: 'No se pudo descargar la cotización',
