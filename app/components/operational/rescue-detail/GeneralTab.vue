@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { RescueChatMessage } from '~/interfaces/rescue';
-import type { RescueCardDetail } from '~/interfaces/rescue';
+import type { RescueCardDetail, RescueChatMessage } from '~/interfaces/rescue';
 
 const props = withDefaults(
   defineProps<{
