@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { FormSubmitEvent } from '@nuxt/ui';
+import type { z } from 'zod';
 import type {
   CompanyCreateBody,
   CompanyUpdateBody,
 } from '~/interfaces/catalogs/company';
 import type { CreditFormState } from '~/interfaces/catalogs/credit';
-import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
-import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import {
+  emptyCatalogDropdownSelection,
+  type CatalogDropdownRow,
+} from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
-import type { infer as ZodInfer } from 'zod';
 import {
   BILLING_TYPE_OPTIONS,
   CLIENT_TYPE_OPTIONS,
@@ -35,7 +37,7 @@ const toast = useToast();
 const apiFetch = useApiFetch();
 const { onFormError } = useFormValidationFeedback();
 
-type CompanyFormState = ZodInfer<typeof companyCreateSchema>;
+type CompanyFormState = z.infer<typeof companyCreateSchema>;
 
 const open = ref(false);
 const editingId = ref<number | null>(null);
@@ -248,7 +250,7 @@ const { mutate, asyncStatus } = useMutation({
   }: {
     body: CompanyCreateBody | CompanyUpdateBody;
     id: number | null;
-    credit?: ZodInfer<typeof creditFormSchema>;
+    credit?: z.infer<typeof creditFormSchema>;
     createCredit?: boolean;
   }) => {
     if (id != null) {
@@ -365,7 +367,7 @@ function needsCreditValidation(
   return isCreatingCredit() || updatingCredit || creditOnCreate;
 }
 
-function onSubmit(payload: { data: CompanyFormState }) {
+async function onSubmit(payload: FormSubmitEvent<CompanyFormState>) {
   if (isSaving.value) return;
   isSubmitSequenceActive.value = true;
   const body = buildSubmitBody(payload.data);
@@ -375,19 +377,17 @@ function onSubmit(payload: { data: CompanyFormState }) {
   }
 
   pendingCompanyData.value = body;
-  void (async () => {
-    try {
-      await creditFormSectionRef.value?.submit();
-    } finally {
-      if (asyncStatus.value !== 'loading') {
-        isSubmitSequenceActive.value = false;
-      }
+  try {
+    await creditFormSectionRef.value?.submit();
+  } finally {
+    if (asyncStatus.value !== 'loading') {
+      isSubmitSequenceActive.value = false;
     }
-  })();
+  }
 }
 
 function onCreditSubmit(
-  payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>,
+  payload: FormSubmitEvent<z.infer<typeof creditFormSchema>>,
 ) {
   if (asyncStatus.value === 'loading') return;
   const companyData = pendingCompanyData.value;

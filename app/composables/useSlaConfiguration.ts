@@ -32,17 +32,18 @@ function cloneUpdateChatRow(row: SlaUpdateChatConfigRow): SlaUpdateChatConfigRow
 
 async function persistDirtyRows<T extends { id: number | null; _dirty?: boolean }>(
   rows: T[],
-  create: (row: T) => Promise<void>,
-  update: (row: T) => Promise<void>,
-): Promise<void> {
+  create: (row: T) => Promise<boolean>,
+  update: (row: T, id: number) => Promise<boolean>,
+): Promise<boolean> {
   for (const row of rows) {
     if (!row._dirty) continue;
     if (row.id == null) {
-      await create(row);
+      if (!(await create(row))) return false;
     } else {
-      await update(row);
+      if (!(await update(row, row.id))) return false;
     }
   }
+  return true;
 }
 
 export type SlaConfigurationContext = ReturnType<typeof useSlaConfiguration>;
@@ -247,9 +248,11 @@ export function useSlaConfiguration() {
     return null;
   }
 
-  async function saveDirtyTimePerStageRows(rows: SlaTimePerStageRow[]) {
+  async function saveDirtyTimePerStageRows(
+    rows: SlaTimePerStageRow[],
+  ): Promise<boolean> {
     const dirtyRows = rows.filter((row) => row._dirty);
-    if (dirtyRows.length === 0) return;
+    if (dirtyRows.length === 0) return true;
 
     const error = validateTimePerStageRows(dirtyRows);
     if (error) {
@@ -257,24 +260,22 @@ export function useSlaConfiguration() {
       throw new Error('validation');
     }
 
-    await persistDirtyRows(
+    return persistDirtyRows(
       dirtyRows,
-      async (row) => {
-        await api.createTimePerStage({
+      (row) =>
+        api.createTimePerStage({
           service_type: row.service_type,
           operative_status: row.operative_status,
           time: row.time,
           unit: row.unit,
-        });
-      },
-      async (row) => {
-        await api.updateTimePerStage(row.id!, {
+        }),
+      (row, id) =>
+        api.updateTimePerStage(id, {
           service_type: row.service_type,
           operative_status: row.operative_status,
           time: row.time,
           unit: row.unit,
-        });
-      },
+        }),
     );
   }
 
@@ -282,7 +283,10 @@ export function useSlaConfiguration() {
     const key = `stages-${serviceType}`;
     setSaving(key, true);
     try {
-      await saveDirtyTimePerStageRows(timePerStageForType(serviceType, false));
+      const saved = await saveDirtyTimePerStageRows(
+        timePerStageForType(serviceType, false),
+      );
+      if (!saved) return;
       toast.add({
         title: `Cambios guardados (${getSlaRequestTypeLabel(serviceType)})`,
         color: 'success',
@@ -306,7 +310,8 @@ export function useSlaConfiguration() {
     const key = `portal-${row.service_type}`;
     setSaving(key, true);
     try {
-      await saveDirtyTimePerStageRows([row]);
+      const saved = await saveDirtyTimePerStageRows([row]);
+      if (!saved) return;
       toast.add({ title: 'Tiempo de portal guardado', color: 'success' });
       await load();
     } catch (e) {
@@ -348,29 +353,28 @@ export function useSlaConfiguration() {
     const key = 'alert-levels';
     setSaving(key, true);
     try {
-      await persistDirtyRows(
+      const saved = await persistDirtyRows(
         dirtyRows,
-        async (row) => {
-          await api.createLevelAlert({
+        (row) =>
+          api.createLevelAlert({
             name: row.name,
             percentage_limit: row.percentage_limit,
             color: row.color,
             notify_gestor: row.notify_gestor,
             notify_admin: row.notify_admin,
             notify_direccion: row.notify_direccion,
-          });
-        },
-        async (row) => {
-          await api.updateLevelAlert(row.id!, {
+          }),
+        (row, id) =>
+          api.updateLevelAlert(id, {
             name: row.name,
             percentage_limit: row.percentage_limit,
             color: row.color,
             notify_gestor: row.notify_gestor,
             notify_admin: row.notify_admin,
             notify_direccion: row.notify_direccion,
-          });
-        },
+          }),
       );
+      if (!saved) return;
       toast.add({ title: 'Niveles de alerta guardados', color: 'success' });
       await load();
     } catch (e) {
@@ -409,29 +413,28 @@ export function useSlaConfiguration() {
     const key = `chat-${serviceType}`;
     setSaving(key, true);
     try {
-      await persistDirtyRows(
+      const saved = await persistDirtyRows(
         dirtyRows,
-        async (row) => {
-          await api.createUpdateChat({
+        (row) =>
+          api.createUpdateChat({
             service_type: row.service_type,
             operative_status: row.operative_status,
             yellow_time: row.yellow_time,
             yellow_unit: row.yellow_unit,
             red_time: row.red_time,
             red_unit: row.red_unit,
-          });
-        },
-        async (row) => {
-          await api.updateUpdateChat(row.id!, {
+          }),
+        (row, id) =>
+          api.updateUpdateChat(id, {
             service_type: row.service_type,
             operative_status: row.operative_status,
             yellow_time: row.yellow_time,
             yellow_unit: row.yellow_unit,
             red_time: row.red_time,
             red_unit: row.red_unit,
-          });
-        },
+          }),
       );
+      if (!saved) return;
       toast.add({
         title: `Chat guardado (${getSlaRequestTypeLabel(serviceType)})`,
         color: 'success',

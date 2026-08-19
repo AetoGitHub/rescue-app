@@ -70,7 +70,9 @@ export const companyCreateSchema = z.object({
   alegra_id: requiredCatalogSelection('Selecciona un contacto de Alegra'),
 });
 
-export const companyUpdateSchema = companyCreateSchema.omit({ alegra_id: true });
+export const companyUpdateSchema = companyCreateSchema.extend({
+  alegra_id: optionalCatalogSelectionSchema,
+});
 
 export const clientCreateSchema = companyCreateSchema.extend({
   company: optionalCatalogSelectionSchema,
@@ -79,7 +81,9 @@ export const clientCreateSchema = companyCreateSchema.extend({
   is_active: z.boolean().optional(),
 });
 
-export const clientUpdateSchema = clientCreateSchema.omit({ alegra_id: true });
+export const clientUpdateSchema = clientCreateSchema.extend({
+  alegra_id: optionalCatalogSelectionSchema,
+});
 
 const creditLimitField = requiredStr('El límite de crédito').refine(
   (value) => {
@@ -196,7 +200,9 @@ export const serviceCreateSchema = z.object({
   alegra_id: requiredCatalogSelection('Selecciona un ítem de Alegra'),
 });
 
-export const serviceUpdateSchema = serviceCreateSchema.omit({ alegra_id: true });
+export const serviceUpdateSchema = serviceCreateSchema.extend({
+  alegra_id: optionalCatalogSelectionSchema,
+});
 
 export const categoryCreateSchema = z.object({
   name: catalogNameField('El nombre'),

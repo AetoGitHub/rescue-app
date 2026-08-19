@@ -50,23 +50,20 @@ async function fetchAllPaginated<T>(
  */
 export function useSlaConfigApi() {
   const apiFetch = useApiFetch();
-  const mutationLocks = new Map<string, Promise<unknown>>();
+  const mutationLocks = new Set<string>();
 
-  function runMutationLocked<T>(
+  async function runMutationLocked(
     key: string,
-    mutation: () => Promise<T>,
-  ): Promise<T> {
-    const pending = mutationLocks.get(key) as Promise<T> | undefined;
-    if (pending) return pending;
-
-    const promise = Promise.resolve().then(mutation);
-    mutationLocks.set(key, promise);
-
-    return promise.finally(() => {
-      if (mutationLocks.get(key) === promise) {
-        mutationLocks.delete(key);
-      }
-    });
+    mutation: () => Promise<unknown>,
+  ): Promise<boolean> {
+    if (mutationLocks.has(key)) return false;
+    mutationLocks.add(key);
+    try {
+      await mutation();
+      return true;
+    } finally {
+      mutationLocks.delete(key);
+    }
   }
 
   async function listTimePerStage(): Promise<SlaTimePerStage[]> {
@@ -81,7 +78,7 @@ export function useSlaConfigApi() {
 
   async function createTimePerStage(
     body: Omit<SlaTimePerStage, 'id'>,
-  ): Promise<number> {
+  ): Promise<boolean> {
     const requestBody = mapSlaTimePerStageToApiBody({ id: null, ...body });
     return runMutationLocked(
       `time-per-stage:create:${JSON.stringify(requestBody)}`,
@@ -101,7 +98,7 @@ export function useSlaConfigApi() {
   async function updateTimePerStage(
     id: number,
     body: Omit<SlaTimePerStage, 'id'>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     return runMutationLocked(`time-per-stage:update:${id}`, async () => {
       await apiFetch(SLA_API_PATHS.timePerStage.update(id), {
         method: 'PUT',
@@ -122,7 +119,7 @@ export function useSlaConfigApi() {
 
   async function createLevelAlert(
     body: Omit<SlaLevelAlertConfig, 'id'>,
-  ): Promise<number> {
+  ): Promise<boolean> {
     const requestBody = mapSlaLevelAlertToApiBody({ id: null, ...body });
     return runMutationLocked(
       `level-alert:create:${JSON.stringify(requestBody)}`,
@@ -142,7 +139,7 @@ export function useSlaConfigApi() {
   async function updateLevelAlert(
     id: number,
     body: Omit<SlaLevelAlertConfig, 'id'>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     return runMutationLocked(`level-alert:update:${id}`, async () => {
       await apiFetch(SLA_API_PATHS.levelAlert.update(id), {
         method: 'PUT',
@@ -163,7 +160,7 @@ export function useSlaConfigApi() {
 
   async function createUpdateChat(
     body: Omit<SlaUpdateChatConfig, 'id'>,
-  ): Promise<number> {
+  ): Promise<boolean> {
     const requestBody = mapSlaUpdateChatToApiBody({ id: null, ...body });
     return runMutationLocked(
       `update-chat:create:${JSON.stringify(requestBody)}`,
@@ -183,7 +180,7 @@ export function useSlaConfigApi() {
   async function updateUpdateChat(
     id: number,
     body: Omit<SlaUpdateChatConfig, 'id'>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     return runMutationLocked(`update-chat:update:${id}`, async () => {
       await apiFetch(SLA_API_PATHS.updateChat.update(id), {
         method: 'PUT',

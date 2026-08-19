@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada';
+import type { FormSubmitEvent } from '@nuxt/ui';
+import type { z } from 'zod';
 import { SERVICE_UNIT_OPTIONS } from '~/constants/catalog-select-options';
 import type { AlegraItemDisplay } from '~/interfaces/alegra/item.interface';
 import type { ServiceCreateBody, ServiceUpdateBody } from '~/interfaces/catalogs/service';
-import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import {
   catalogDropdownSelection,
   emptyCatalogDropdownSelection,
-  type CatalogDropdownSelection,
+  type CatalogDropdownRow,
 } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import {
@@ -20,14 +21,7 @@ import { serviceCreateSchema, serviceUpdateSchema } from '~/schemas/catalog-crea
 const toast = useToast();
 const apiFetch = useApiFetch();
 
-type ServiceFormState = {
-  name: string;
-  description: string;
-  category: CatalogDropdownSelection;
-  unit: ServiceCreateBody['unit'];
-  warranty: boolean;
-  alegra_id: CatalogDropdownSelection;
-};
+type ServiceFormState = z.infer<typeof serviceCreateSchema>;
 
 const open = ref(false);
 const editingId = ref<number | null>(null);
@@ -217,7 +211,7 @@ const isSaving = computed(() => asyncStatus.value === 'loading');
 
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
-function onSubmit(payload: { data: ServiceFormState }) {
+function onSubmit(payload: FormSubmitEvent<ServiceFormState>) {
   if (isSaving.value) return;
   if (isEdit.value) {
     mutate({

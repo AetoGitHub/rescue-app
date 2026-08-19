@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import type { SupplierServiceType } from '../../app/interfaces/catalogs/supplier';
-import type { RescueSupplierNearbyRow } from '../../app/interfaces/rescue';
 import { supplierCreateToCreateBody } from '../../app/schemas/catalog-create';
 
 describe('supplierCreateToCreateBody', () => {

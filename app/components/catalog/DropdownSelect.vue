@@ -4,9 +4,9 @@ import type {
   CatalogDropdownFetcher,
   CatalogDropdownInfiniteMode,
 } from '~/composables/useCatalogDropdown';
-import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import {
   emptyCatalogDropdownSelection,
+  type CatalogDropdownRow,
   type CatalogDropdownSelection,
 } from '~/interfaces/shared/catalog-dropdown.interface';
 
@@ -39,7 +39,7 @@ const {
   loading,
   loadingMore,
   errorMessage,
-  infinite,
+  infinite: infiniteMode,
   hasNextPage,
   loadNextPage,
   asyncStatus,
@@ -118,7 +118,7 @@ onMounted(() => {
       variant="subtle"
       :ui="{ base: 'bg-default' }"
     >
-      <template v-if="infinite" #content-bottom>
+      <template v-if="infiniteMode" #content-bottom>
         <div class="flex min-h-8 items-center justify-center px-2 py-1">
           <UIcon
             v-if="loadingMore"

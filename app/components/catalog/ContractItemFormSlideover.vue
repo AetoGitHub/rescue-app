@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { ContractItem } from '~/interfaces/catalogs/contract';
-import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import {
   catalogDropdownSelection,
   emptyCatalogDropdownSelection,
+  type CatalogDropdownRow,
   type CatalogDropdownSelection,
 } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { RescueAdministrativeFlowContext,
-  AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
+import type {
+  AdministrativeRescueCard,
+  AdministrativeRescueDetail,
+  RescueAdministrativeFlowContext,
+} from '~/interfaces/rescue/administrative';
 import {
   getAdministrativeFooterActions,
   getAdministrativeRemissionAlert,
@@ -24,7 +27,6 @@ import {
   shouldShowKanbanRemittanceReadOnly,
   showOperativeWarningBanner,
 } from '~/utils/rescue-administrative-flow';
-import type { AdministrativeRescueDetail } from '~/interfaces/rescue/administrative';
 
 function ctx(
   partial: Partial<RescueAdministrativeFlowContext> & {

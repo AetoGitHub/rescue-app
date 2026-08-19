@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { FormSubmitEvent } from '@nuxt/ui';
+import type { z } from 'zod';
 import type {
   ClientCreateBody,
   ClientUpdateBody,
 } from '~/interfaces/catalogs/client';
-import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import {
   catalogDropdownSelection,
   emptyCatalogDropdownSelection,
+  type CatalogDropdownRow,
 } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
-import type { infer as ZodInfer } from 'zod';
 import {
   BILLING_TYPE_OPTIONS,
   CLIENT_TYPE_OPTIONS,
@@ -41,7 +41,7 @@ const { onFormError: reportFormError, focusFormErrorField } =
   useFormValidationFeedback();
 const formValidationErrors = ref<FormValidationError[]>([]);
 
-type ClientFormState = ZodInfer<typeof clientCreateSchema>;
+type ClientFormState = z.infer<typeof clientCreateSchema>;
 
 const open = ref(false);
 const editingId = ref<number | null>(null);
@@ -211,7 +211,7 @@ const creditTabPanelRef = ref<{
   submitCreditForm: () => Promise<void>;
   openLineEdit: () => void;
 } | null>(null);
-const pendingClientData = ref<ZodInfer<typeof clientCreateSchema> | null>(null);
+const pendingClientData = ref<ClientFormState | null>(null);
 const {
   guardedOpen,
   discardConfirmOpen,
@@ -443,7 +443,7 @@ const { mutate, asyncStatus } = useMutation({
   }: {
     body: ClientCreateBody | ClientUpdateBody;
     id: number | null;
-    credit?: ZodInfer<typeof creditFormSchema>;
+    credit?: z.infer<typeof creditFormSchema>;
     createCredit?: boolean;
   }) => {
     if (id != null) {
@@ -561,7 +561,7 @@ function needsCreditValidation(data: ClientFormState): boolean {
   return isCreatingCredit() || updatingCredit || creditOnCreate;
 }
 
-async function onSubmit(payload: { data: ClientFormState }) {
+async function onSubmit(payload: FormSubmitEvent<ClientFormState>) {
   if (isSaving.value) return;
   isSubmitSequenceActive.value = true;
   formValidationErrors.value = [];
@@ -591,7 +591,7 @@ async function onSubmit(payload: { data: ClientFormState }) {
 }
 
 function onCreditSubmit(
-  payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>,
+  payload: FormSubmitEvent<z.infer<typeof creditFormSchema>>,
 ) {
   if (asyncStatus.value === 'loading') return;
   const clientData = pendingClientData.value;
