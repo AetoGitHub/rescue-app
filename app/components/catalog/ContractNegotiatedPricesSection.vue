@@ -117,7 +117,10 @@ function scheduleRowSave(row: ContractItemEditableRow) {
   );
 }
 
-function onPriceUpdate(row: ContractItemEditableRow, value: number | undefined) {
+function onPriceUpdate(
+  row: ContractItemEditableRow,
+  value: number | undefined,
+) {
   row.price =
     value != null && Number.isFinite(value) ? value.toFixed(2) : '0.00';
   scheduleRowSave(row);
@@ -167,9 +170,9 @@ const hasNextPageRef = computed(() => props.hasNextPage ?? false);
 const listAsyncStatus = computed(() => props.asyncStatus ?? 'idle');
 const loadingMore = computed(
   () =>
-    listAsyncStatus.value === 'loading'
-    && editableRows.value.length > 0
-    && props.loading !== true,
+    listAsyncStatus.value === 'loading' &&
+    editableRows.value.length > 0 &&
+    props.loading !== true,
 );
 
 useScrollContainerInfiniteLoad({
@@ -261,9 +264,9 @@ async function confirmRemove(row: ContractItemEditableRow) {
 
     <div
       ref="tableScrollRef"
-      class="max-h-[32rem] overflow-x-auto overflow-y-auto rounded-lg border border-default"
+      class="max-h-128 overflow-x-auto overflow-y-auto rounded-lg border border-default"
     >
-      <table class="w-full min-w-[640px] text-sm sm:min-w-[880px]">
+      <table class="w-full min-w-160 text-sm sm:min-w-220">
         <thead>
           <tr
             class="border-b border-default bg-elevated/50 text-left text-xs font-medium uppercase tracking-wide text-muted"
@@ -305,7 +308,9 @@ async function confirmRemove(row: ContractItemEditableRow) {
                   v-bind="catalogCurrencyInputProps"
                   :min="0"
                   class="min-w-32"
-                  @update:model-value="(v) => onPriceUpdate(row, v ?? undefined)"
+                  @update:model-value="
+                    (v) => onPriceUpdate(row, v ?? undefined)
+                  "
                 />
                 <UIcon
                   v-if="savingIds.has(row.id)"
