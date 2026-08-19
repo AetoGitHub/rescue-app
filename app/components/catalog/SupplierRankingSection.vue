@@ -39,8 +39,10 @@ function resetReviewForm() {
 }
 
 async function onSubmit(event: FormSubmitEvent<SupplierReviewFormState>) {
+  if (isCreating.value) return;
   try {
-    await createReview(props.supplierId, event.data);
+    const created = await createReview(props.supplierId, event.data);
+    if (!created) return;
     resetReviewForm();
     emit('submitted');
   } catch {
@@ -51,6 +53,7 @@ async function onSubmit(event: FormSubmitEvent<SupplierReviewFormState>) {
 const { onFormError } = useFormValidationFeedback();
 
 async function requestSubmit() {
+  if (isCreating.value) return;
   await formRef.value?.submit();
 }
 </script>

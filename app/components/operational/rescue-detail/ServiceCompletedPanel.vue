@@ -4,7 +4,7 @@ import type { RescueServiceCompletedFormState } from '~/interfaces/rescue/operat
 
 const open = defineModel<boolean>('open', { required: true });
 
-defineProps<{
+const props = defineProps<{
   isLoan: boolean;
   loading?: boolean;
 }>();
@@ -31,6 +31,7 @@ watch(open, (isOpen) => {
 });
 
 function onSubmit() {
+  if (props.loading) return;
   emit('submit');
 }
 </script>
@@ -38,6 +39,8 @@ function onSubmit() {
 <template>
   <USlideover
     v-model:open="guardedOpen"
+    :dismissible="!loading"
+    :close="{ disabled: loading }"
     :title="RESCUE_SERVICE_COMPLETED_PANEL_TITLE"
     :ui="{ content: 'max-w-lg' }"
   >
@@ -113,12 +116,14 @@ function onSubmit() {
           color="neutral"
           label="Cancelar"
           variant="subtle"
+          :disabled="loading"
           @click="requestClose"
         />
         <UButton
           color="primary"
           label="Guardar y cerrar"
           :loading="loading"
+          :disabled="loading"
           @click="onSubmit"
         />
       </div>

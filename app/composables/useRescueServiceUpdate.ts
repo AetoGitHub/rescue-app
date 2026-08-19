@@ -38,10 +38,14 @@ export function useRescueServiceUpdate(
     onSuccess: invalidateServiceQueries,
   });
 
-  const isUpdating = computed(() => asyncStatus.value === 'loading');
+  const updateLocked = ref(false);
+  const isUpdating = computed(
+    () => updateLocked.value || asyncStatus.value === 'loading',
+  );
 
   async function saveService(body: RescueServiceUpdateBody) {
-    if (id.value == null) return false;
+    if (id.value == null || isUpdating.value) return false;
+    updateLocked.value = true;
 
     try {
       await updateService(body);
@@ -57,6 +61,8 @@ export function useRescueServiceUpdate(
         color: 'error',
       });
       return false;
+    } finally {
+      updateLocked.value = false;
     }
   }
 

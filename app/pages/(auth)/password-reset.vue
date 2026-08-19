@@ -27,7 +27,7 @@ const confirmState = reactive({
   password2: '',
 });
 
-const { mutate: requestReset, asyncStatus: requestStatus } = useMutation({
+const { mutateAsync: requestResetAsync, asyncStatus: requestStatus } = useMutation({
   mutation: (body: PasswordResetRequestOutput) =>
     $fetch('/api/auth/password-reset/request', {
       method: 'POST',
@@ -45,7 +45,7 @@ const { mutate: requestReset, asyncStatus: requestStatus } = useMutation({
   },
 });
 
-const { mutate: confirmReset, asyncStatus: confirmStatus } = useMutation({
+const { mutateAsync: confirmResetAsync, asyncStatus: confirmStatus } = useMutation({
   mutation: (body: PasswordResetConfirmOutput) =>
     $fetch('/api/auth/password-reset/confirm', {
       method: 'POST',
@@ -66,18 +66,48 @@ const { mutate: confirmReset, asyncStatus: confirmStatus } = useMutation({
   },
 });
 
-function onRequestSubmit(payload: FormSubmitEvent<PasswordResetRequestOutput>) {
+const requestSubmitting = ref(false);
+const confirmSubmitting = ref(false);
+const isRequestSubmitting = computed(
+  () => requestSubmitting.value || requestStatus.value === 'loading',
+);
+const isConfirmSubmitting = computed(
+  () => confirmSubmitting.value || confirmStatus.value === 'loading',
+);
+
+async function onRequestSubmit(
+  payload: FormSubmitEvent<PasswordResetRequestOutput>,
+) {
+  if (isRequestSubmitting.value) return;
+  requestSubmitting.value = true;
   errorMessage.value = null;
   requestSuccessMessage.value = null;
-  requestReset(payload.data);
+  try {
+    await requestResetAsync(payload.data);
+  } catch {
+    // El mensaje lo establece onError.
+  } finally {
+    requestSubmitting.value = false;
+  }
 }
 
-function onConfirmSubmit(payload: FormSubmitEvent<PasswordResetConfirmOutput>) {
+async function onConfirmSubmit(
+  payload: FormSubmitEvent<PasswordResetConfirmOutput>,
+) {
+  if (isConfirmSubmitting.value) return;
+  confirmSubmitting.value = true;
   errorMessage.value = null;
-  confirmReset(payload.data);
+  try {
+    await confirmResetAsync(payload.data);
+  } catch {
+    // El mensaje lo establece onError.
+  } finally {
+    confirmSubmitting.value = false;
+  }
 }
 
 function goBackToRequest() {
+  if (isConfirmSubmitting.value) return;
   step.value = 'request';
   errorMessage.value = null;
   requestSuccessMessage.value = null;
@@ -149,7 +179,8 @@ function goBackToRequest() {
           size="xl"
           class="font-bold"
           label="Enviar código"
-          :loading="requestStatus === 'loading'"
+          :loading="isRequestSubmitting"
+          :disabled="isRequestSubmitting"
         />
       </UForm>
 
@@ -206,7 +237,8 @@ function goBackToRequest() {
           size="xl"
           class="font-bold"
           label="Restablecer contraseña"
-          :loading="confirmStatus === 'loading'"
+          :loading="isConfirmSubmitting"
+          :disabled="isConfirmSubmitting"
         />
 
         <UButton
@@ -215,6 +247,7 @@ function goBackToRequest() {
           color="neutral"
           variant="ghost"
           label="Volver a solicitar código"
+          :disabled="isConfirmSubmitting"
           @click="goBackToRequest"
         />
       </UForm>

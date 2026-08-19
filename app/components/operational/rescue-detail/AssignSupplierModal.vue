@@ -197,6 +197,7 @@ function onMapSupplierSelect(supplierId: number) {
 }
 
 async function onSubmit(event: FormSubmitEvent<z.infer<typeof rescueSupplierAssignSchema>>) {
+  if (isAssigning.value) return;
   const body = rescueSupplierAssignToBody(event.data);
 
   const ok = await saveSupplier(body);
@@ -207,6 +208,7 @@ async function onSubmit(event: FormSubmitEvent<z.infer<typeof rescueSupplierAssi
 }
 
 async function onRemoveSupplier() {
+  if (isAssigning.value) return;
   const ok = await saveSupplier({ supplier: null });
   if (ok) {
     closeWithoutConfirm();
@@ -215,6 +217,7 @@ async function onRemoveSupplier() {
 }
 
 function onSaveClick() {
+  if (isAssigning.value) return;
   if (state.supplier == null) {
     toast.add({
       title: 'Selecciona un proveedor',
@@ -241,6 +244,7 @@ const assignSupplierModalProps = computed(() => ({
   <UModal
     v-model:open="guardedOpen"
     :dismissible="false"
+    :close="{ disabled: isAssigning }"
     :title="modalTitle"
     description="Selecciona un proveedor de la lista o agrega uno nuevo."
     v-bind="assignSupplierModalProps"

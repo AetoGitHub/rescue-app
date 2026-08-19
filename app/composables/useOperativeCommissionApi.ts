@@ -50,22 +50,47 @@ export function useOperativeCommissionApi() {
     },
   });
 
+  const updatingOperatorIds = ref<Set<number>>(new Set());
+  const bulkUpdating = ref(false);
+
   async function updateCommission(operatorId: number, commission: string) {
-    await mutateAsync({ operatorId, commission });
+    if (bulkUpdating.value || updatingOperatorIds.value.has(operatorId)) return;
+    updatingOperatorIds.value = new Set([
+      ...updatingOperatorIds.value,
+      operatorId,
+    ]);
+    try {
+      await mutateAsync({ operatorId, commission });
+    } finally {
+      const next = new Set(updatingOperatorIds.value);
+      next.delete(operatorId);
+      updatingOperatorIds.value = next;
+    }
   }
 
   async function updateCommissionBulk(items: OperativeCommissionBulkItem[]) {
-    await apiFetch(OPERATIVE_COMMISSION_BULK_PATH, {
-      method: 'PUT',
-      body: items.map((item) => ({
-        id: item.id,
-        commission: formatOperativeCommissionForApi(item.commission),
-      })),
-    });
-    await queryCache.invalidateQueries({ key: ['operative-commission'] });
+    if (bulkUpdating.value || updatingOperatorIds.value.size > 0) return;
+    bulkUpdating.value = true;
+    try {
+      await apiFetch(OPERATIVE_COMMISSION_BULK_PATH, {
+        method: 'PUT',
+        body: items.map((item) => ({
+          id: item.id,
+          commission: formatOperativeCommissionForApi(item.commission),
+        })),
+      });
+      await queryCache.invalidateQueries({ key: ['operative-commission'] });
+    } finally {
+      bulkUpdating.value = false;
+    }
   }
 
-  const isUpdating = computed(() => asyncStatus.value === 'loading');
+  const isUpdating = computed(
+    () =>
+      bulkUpdating.value
+      || updatingOperatorIds.value.size > 0
+      || asyncStatus.value === 'loading',
+  );
 
   return {
     updateCommission,

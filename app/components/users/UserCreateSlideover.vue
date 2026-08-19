@@ -135,7 +135,7 @@ watch(open, (v) => {
 
 const queryCache = useQueryCache();
 
-const { mutate, asyncStatus } = useMutation({
+const { mutateAsync: saveUserAsync, asyncStatus } = useMutation({
   mutation: ({
     createBody,
     updateBody,
@@ -172,35 +172,49 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
+const savingUser = ref(false);
+const isSavingUser = computed(
+  () => savingUser.value || asyncStatus.value === 'loading',
+);
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
-function onSubmit(payload: {
+async function onSubmit(payload: {
   data: UserFormOutputCreate | UserFormOutputUpdate;
 }) {
+  if (isSavingUser.value || isResettingPassword.value) return;
+  savingUser.value = true;
   const d = payload.data;
   const id = editingId.value;
 
-  if (id != null) {
-    mutate({
-      id,
-      updateBody: userUpdateToUpdateBody(d as UserFormOutputUpdate),
-    });
-    return;
-  }
+  try {
+    if (id != null) {
+      await saveUserAsync({
+        id,
+        updateBody: userUpdateToUpdateBody(d as UserFormOutputUpdate),
+      });
+      return;
+    }
 
-  mutate({
-    id: null,
-    createBody: userCreateToCreateBody(d as UserFormOutputCreate),
-  });
+    await saveUserAsync({
+      id: null,
+      createBody: userCreateToCreateBody(d as UserFormOutputCreate),
+    });
+  } catch {
+    // El toast de error lo muestra la mutación.
+  } finally {
+    savingUser.value = false;
+  }
 }
 
 const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
+  if (isSavingUser.value || isResettingPassword.value) return;
   requestClose();
 }
 
 async function requestSubmit() {
+  if (isSavingUser.value || isResettingPassword.value) return;
   await formRef.value?.submit();
 }
 
@@ -240,16 +254,20 @@ const { mutateAsync: resetPasswordAsync, asyncStatus: passwordResetStatus } =
     },
   });
 
+const resettingPassword = ref(false);
 const isResettingPassword = computed(
-  () => passwordResetStatus.value === 'loading',
+  () =>
+    resettingPassword.value || passwordResetStatus.value === 'loading',
 );
 
 async function onPasswordResetSubmit(payload: {
   data: AdminUserPasswordResetOutput;
 }) {
+  if (isSavingUser.value || isResettingPassword.value) return;
   const userId = editingId.value;
   if (userId == null) return;
 
+  resettingPassword.value = true;
   try {
     await resetPasswordAsync({
       userId,
@@ -263,10 +281,13 @@ async function onPasswordResetSubmit(payload: {
     resetDirtySnapshot();
   } catch {
     // Error toast handled in mutation
+  } finally {
+    resettingPassword.value = false;
   }
 }
 
 async function requestPasswordResetSubmit() {
+  if (isSavingUser.value || isResettingPassword.value) return;
   await passwordResetFormRef.value?.submit();
 }
 </script>
@@ -462,7 +483,7 @@ async function requestPasswordResetSubmit() {
               label="Restablecer contraseña"
               icon="i-lucide-key-round"
               :loading="isResettingPassword"
-              :disabled="isResettingPassword"
+              :disabled="isSavingUser || isResettingPassword"
               @click="requestPasswordResetSubmit"
             />
           </div>
@@ -472,12 +493,21 @@ async function requestPasswordResetSubmit() {
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton type="button" color="neutral" variant="subtle" label="Cancelar" @click="cancel" />
+        <UButton
+          type="button"
+          color="neutral"
+          variant="subtle"
+          label="Cancelar"
+          :disabled="isSavingUser || isResettingPassword"
+          @click="cancel"
+        />
         <UButton
           type="button"
           label="Guardar"
-          :loading="asyncStatus === 'loading' || (detailPending && isEdit)"
-          :disabled="asyncStatus === 'loading' || (detailPending && isEdit)"
+          :loading="isSavingUser || (detailPending && isEdit)"
+          :disabled="
+            isSavingUser || isResettingPassword || (detailPending && isEdit)
+          "
           @click="requestSubmit"
         />
       </div>

@@ -3,7 +3,7 @@ import { RESCUE_OBTAIN_MODAL_COPY } from '~/constants/rescue-operative-flow';
 
 const open = defineModel<boolean>('open', { required: true });
 
-defineProps<{
+const props = defineProps<{
   folio?: string | null;
   loading?: boolean;
 }>();
@@ -11,12 +11,18 @@ defineProps<{
 const emit = defineEmits<{
   submit: [];
 }>();
+
+function onSubmit() {
+  if (props.loading) return;
+  emit('submit');
+}
 </script>
 
 <template>
   <UModal
     v-model:open="open"
     :dismissible="false"
+    :close="{ disabled: loading }"
     :title="RESCUE_OBTAIN_MODAL_COPY.title"
     :ui="{ content: 'max-w-md' }"
   >
@@ -46,7 +52,8 @@ const emit = defineEmits<{
           color="primary"
           :label="RESCUE_OBTAIN_MODAL_COPY.confirmLabel"
           :loading="loading"
-          @click="emit('submit')"
+          :disabled="loading"
+          @click="onSubmit"
         />
       </div>
     </template>

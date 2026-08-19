@@ -50,6 +50,24 @@ async function fetchAllPaginated<T>(
  */
 export function useSlaConfigApi() {
   const apiFetch = useApiFetch();
+  const mutationLocks = new Map<string, Promise<unknown>>();
+
+  function runMutationLocked<T>(
+    key: string,
+    mutation: () => Promise<T>,
+  ): Promise<T> {
+    const pending = mutationLocks.get(key) as Promise<T> | undefined;
+    if (pending) return pending;
+
+    const promise = Promise.resolve().then(mutation);
+    mutationLocks.set(key, promise);
+
+    return promise.finally(() => {
+      if (mutationLocks.get(key) === promise) {
+        mutationLocks.delete(key);
+      }
+    });
+  }
 
   async function listTimePerStage(): Promise<SlaTimePerStage[]> {
     const rows = await fetchAllPaginated(
@@ -64,23 +82,31 @@ export function useSlaConfigApi() {
   async function createTimePerStage(
     body: Omit<SlaTimePerStage, 'id'>,
   ): Promise<number> {
-    const response = await apiFetch<{ id: number }>(
-      SLA_API_PATHS.timePerStage.create,
-      {
-        method: 'POST',
-        body: mapSlaTimePerStageToApiBody({ id: null, ...body }),
+    const requestBody = mapSlaTimePerStageToApiBody({ id: null, ...body });
+    return runMutationLocked(
+      `time-per-stage:create:${JSON.stringify(requestBody)}`,
+      async () => {
+        const response = await apiFetch<{ id: number }>(
+          SLA_API_PATHS.timePerStage.create,
+          {
+            method: 'POST',
+            body: requestBody,
+          },
+        );
+        return response.id;
       },
     );
-    return response.id;
   }
 
   async function updateTimePerStage(
     id: number,
     body: Omit<SlaTimePerStage, 'id'>,
   ): Promise<void> {
-    await apiFetch(SLA_API_PATHS.timePerStage.update(id), {
-      method: 'PUT',
-      body: mapSlaTimePerStageToApiBody({ id, ...body }),
+    return runMutationLocked(`time-per-stage:update:${id}`, async () => {
+      await apiFetch(SLA_API_PATHS.timePerStage.update(id), {
+        method: 'PUT',
+        body: mapSlaTimePerStageToApiBody({ id, ...body }),
+      });
     });
   }
 
@@ -97,23 +123,31 @@ export function useSlaConfigApi() {
   async function createLevelAlert(
     body: Omit<SlaLevelAlertConfig, 'id'>,
   ): Promise<number> {
-    const response = await apiFetch<{ id: number }>(
-      SLA_API_PATHS.levelAlert.create,
-      {
-        method: 'POST',
-        body: mapSlaLevelAlertToApiBody({ id: null, ...body }),
+    const requestBody = mapSlaLevelAlertToApiBody({ id: null, ...body });
+    return runMutationLocked(
+      `level-alert:create:${JSON.stringify(requestBody)}`,
+      async () => {
+        const response = await apiFetch<{ id: number }>(
+          SLA_API_PATHS.levelAlert.create,
+          {
+            method: 'POST',
+            body: requestBody,
+          },
+        );
+        return response.id;
       },
     );
-    return response.id;
   }
 
   async function updateLevelAlert(
     id: number,
     body: Omit<SlaLevelAlertConfig, 'id'>,
   ): Promise<void> {
-    await apiFetch(SLA_API_PATHS.levelAlert.update(id), {
-      method: 'PUT',
-      body: mapSlaLevelAlertToApiBody({ id, ...body }),
+    return runMutationLocked(`level-alert:update:${id}`, async () => {
+      await apiFetch(SLA_API_PATHS.levelAlert.update(id), {
+        method: 'PUT',
+        body: mapSlaLevelAlertToApiBody({ id, ...body }),
+      });
     });
   }
 
@@ -130,23 +164,31 @@ export function useSlaConfigApi() {
   async function createUpdateChat(
     body: Omit<SlaUpdateChatConfig, 'id'>,
   ): Promise<number> {
-    const response = await apiFetch<{ id: number }>(
-      SLA_API_PATHS.updateChat.create,
-      {
-        method: 'POST',
-        body: mapSlaUpdateChatToApiBody({ id: null, ...body }),
+    const requestBody = mapSlaUpdateChatToApiBody({ id: null, ...body });
+    return runMutationLocked(
+      `update-chat:create:${JSON.stringify(requestBody)}`,
+      async () => {
+        const response = await apiFetch<{ id: number }>(
+          SLA_API_PATHS.updateChat.create,
+          {
+            method: 'POST',
+            body: requestBody,
+          },
+        );
+        return response.id;
       },
     );
-    return response.id;
   }
 
   async function updateUpdateChat(
     id: number,
     body: Omit<SlaUpdateChatConfig, 'id'>,
   ): Promise<void> {
-    await apiFetch(SLA_API_PATHS.updateChat.update(id), {
-      method: 'PUT',
-      body: mapSlaUpdateChatToApiBody({ id, ...body }),
+    return runMutationLocked(`update-chat:update:${id}`, async () => {
+      await apiFetch(SLA_API_PATHS.updateChat.update(id), {
+        method: 'PUT',
+        body: mapSlaUpdateChatToApiBody({ id, ...body }),
+      });
     });
   }
 

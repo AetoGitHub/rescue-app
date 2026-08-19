@@ -155,9 +155,12 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
+const isSaving = computed(() => asyncStatus.value === 'loading');
+
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function onSubmit(payload: { data: ZodInfer<typeof contractItemFormSchema> }) {
+  if (isSaving.value) return;
   mutate({
     body: isEdit.value
       ? contractItemFormToUpdateBody(payload.data)
@@ -169,10 +172,12 @@ function onSubmit(payload: { data: ZodInfer<typeof contractItemFormSchema> }) {
 const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
+  if (isSaving.value) return;
   requestClose();
 }
 
 async function requestSubmit() {
+  if (isSaving.value) return;
   await formRef.value?.submit();
 }
 </script>
@@ -180,6 +185,7 @@ async function requestSubmit() {
 <template>
   <USlideover
     v-model:open="guardedOpen"
+    :dismissible="!isSaving"
     :title="isEdit ? 'Editar convenio' : 'Nuevo convenio'"
     :ui="{
       content: adminListSlideoverContentClass,
@@ -237,13 +243,14 @@ async function requestSubmit() {
           color="neutral"
           variant="subtle"
           label="Cancelar"
+          :disabled="isSaving"
           @click="cancel"
         />
         <UButton
           type="button"
           label="Guardar"
-          :loading="asyncStatus === 'loading'"
-          :disabled="asyncStatus === 'loading'"
+          :loading="isSaving"
+          :disabled="isSaving"
           @click="requestSubmit"
         />
       </div>

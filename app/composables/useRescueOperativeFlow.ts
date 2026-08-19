@@ -59,6 +59,8 @@ export function useRescueOperativeFlow(options: {
   const { revertCancellation, isReverting } = useRescueRevertCancellation(rescueId);
   const { evidences } = useRescueEvidenceList(rescueId);
 
+  const isClosingWithReviews = ref(false);
+
   const advancePanelOpen = ref(false);
   const advancePanelMode = ref<RescueAdvancePanelMode>('request');
   const completedPanelOpen = ref(false);
@@ -505,15 +507,35 @@ export function useRescueOperativeFlow(options: {
   async function submitCloseWithReviews(
     action: RescueOperativeActionId,
     completed: RescueServiceCompletedFormState,
-  ) {
+  ): Promise<boolean> {
     const id = rescueId.value;
-    if (id == null) return;
+    if (id == null) return false;
 
-    if (completed.ratings.length > 0) {
-      await createReviewsForRescue(completed.ratings, id);
+    // Lock síncrono: descarta el segundo click sin lanzar error y garantiza
+    // que calificaciones y cierre corran como una sola secuencia.
+    if (
+      isClosingWithReviews.value
+      || isCreatingReviews.value
+      || isUpdating.value
+    ) {
+      return false;
     }
 
-    await runUpdate(action, { completed });
+    isClosingWithReviews.value = true;
+    try {
+      if (completed.ratings.length > 0) {
+        const reviewsSaved = await createReviewsForRescue(
+          completed.ratings,
+          id,
+        );
+        if (!reviewsSaved) return false;
+      }
+
+      await runUpdate(action, { completed });
+      return true;
+    } finally {
+      isClosingWithReviews.value = false;
+    }
   }
 
   async function submitCompletedPanel() {
@@ -543,11 +565,11 @@ export function useRescueOperativeFlow(options: {
     if (!ensureSupplierBeforeCloseOrRedirect()) return;
 
     try {
-      await submitCloseWithReviews(action, {
+      const closed = await submitCloseWithReviews(action, {
         ...completedForm,
         ...parsed.data,
       });
-      completedPanelOpen.value = false;
+      if (closed) completedPanelOpen.value = false;
     } catch {
       // Error API: el panel permanece abierto para reintentar
     }
@@ -604,7 +626,8 @@ export function useRescueOperativeFlow(options: {
       isUpdating.value
       || isClaiming.value
       || isReverting.value
-      || isCreatingReviews.value,
+      || isCreatingReviews.value
+      || isClosingWithReviews.value,
   );
 
   const quoteTotalForAdvance = computed(() => {

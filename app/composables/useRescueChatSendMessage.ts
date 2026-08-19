@@ -12,7 +12,7 @@ export function useRescueChatSendMessage(rescueId: MaybeRefOrGetter<number | nul
   const toast = useToast();
   const id = computed(() => toValue(rescueId));
 
-  const { mutate, mutateAsync, asyncStatus } = useMutation({
+  const { mutateAsync, asyncStatus } = useMutation({
     mutation: (text: string) => {
       const currentId = id.value;
       if (currentId == null) {
@@ -47,11 +47,28 @@ export function useRescueChatSendMessage(rescueId: MaybeRefOrGetter<number | nul
     },
   });
 
-  const isSending = computed(() => asyncStatus.value === 'loading');
+  const sendLocked = ref(false);
+  const isSending = computed(
+    () => sendLocked.value || asyncStatus.value === 'loading',
+  );
+
+  function sendMessage(text: string) {
+    void sendMessageAsync(text);
+  }
+
+  async function sendMessageAsync(text: string) {
+    if (isSending.value) return;
+    sendLocked.value = true;
+    try {
+      return await mutateAsync(text);
+    } finally {
+      sendLocked.value = false;
+    }
+  }
 
   return {
-    sendMessage: mutate,
-    sendMessageAsync: mutateAsync,
+    sendMessage,
+    sendMessageAsync,
     isSending,
   };
 }

@@ -119,6 +119,7 @@ function onPlaceSelect(payload: MapPlaceSelectPayload) {
 async function onSubmit(
   event: FormSubmitEvent<z.infer<typeof rescueLocationUpdateSchema>>,
 ) {
+  if (isUpdating.value) return;
   const body = rescueLocationUpdateToBody(event.data);
   const ok = await saveLocation(body);
   if (ok) {
@@ -128,6 +129,7 @@ async function onSubmit(
 }
 
 function onSaveClick() {
+  if (isUpdating.value) return;
   void formRef.value?.submit();
 }
 </script>
@@ -136,6 +138,7 @@ function onSaveClick() {
   <UModal
     v-model:open="guardedOpen"
     :dismissible="false"
+    :close="{ disabled: isUpdating }"
     title="Editar ubicación"
     :ui="{ content: 'max-w-2xl' }"
   >

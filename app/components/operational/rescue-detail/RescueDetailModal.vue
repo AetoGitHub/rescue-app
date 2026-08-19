@@ -7,6 +7,7 @@ import {
   RESCUE_EVIDENCE_TYPE_SERVICE,
 } from '~/constants/rescue-evidence-api';
 import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
+import type { RescueOperativeActionId } from '~/interfaces/rescue/operative';
 import { modalTabsUi } from '~/constants/tabs-layout';
 
 const open = ref(false);
@@ -43,12 +44,12 @@ const {
   obtainRescueModalOpen,
   cancellationReason,
   reacceptanceReason,
-  handleAction,
-  submitAdvancePanel,
-  submitCompletedPanel,
-  submitCancelService,
-  submitRevertCancellation,
-  submitObtainRescue,
+  handleAction: handleOperativeAction,
+  submitAdvancePanel: submitOperativeAdvancePanel,
+  submitCompletedPanel: submitOperativeCompletedPanel,
+  submitCancelService: submitOperativeCancelService,
+  submitRevertCancellation: submitOperativeRevertCancellation,
+  submitObtainRescue: submitOperativeObtainRescue,
   isUpdating,
   detailForActions,
   supplierSectionHighlight,
@@ -67,6 +68,42 @@ const detailForFooter = computed(
   () => detailForActions.value ?? detail.value,
 );
 
+const operativeHandlerLocked = ref(false);
+
+async function runGuardedOperativeHandler(handler: () => Promise<void>) {
+  if (operativeHandlerLocked.value || isUpdating.value) return;
+  operativeHandlerLocked.value = true;
+  try {
+    await handler();
+  } finally {
+    operativeHandlerLocked.value = false;
+  }
+}
+
+function handleAction(actionId: RescueOperativeActionId) {
+  return runGuardedOperativeHandler(() => handleOperativeAction(actionId));
+}
+
+function submitAdvancePanel() {
+  return runGuardedOperativeHandler(submitOperativeAdvancePanel);
+}
+
+function submitCompletedPanel() {
+  return runGuardedOperativeHandler(submitOperativeCompletedPanel);
+}
+
+function submitCancelService() {
+  return runGuardedOperativeHandler(submitOperativeCancelService);
+}
+
+function submitRevertCancellation() {
+  return runGuardedOperativeHandler(submitOperativeRevertCancellation);
+}
+
+function submitObtainRescue() {
+  return runGuardedOperativeHandler(submitOperativeObtainRescue);
+}
+
 const modalFooterDetail = computed((): RescueCardDetail | null => {
   if (
     detailForFooter.value == null
@@ -80,7 +117,9 @@ const modalFooterDetail = computed((): RescueCardDetail | null => {
   return detailForFooter.value;
 });
 
-const isUpdatingOperative = computed(() => isUpdating.value);
+const isUpdatingOperative = computed(
+  () => isUpdating.value || operativeHandlerLocked.value,
+);
 
 const modalTitle = computed(() => detail.value?.folio ?? 'Detalle de rescate');
 
@@ -191,6 +230,7 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
   <UModal
     v-model:open="open"
     :dismissible="false"
+    :close="{ disabled: isUpdatingOperative }"
     :title="modalTitle"
     v-bind="modalProps"
   >

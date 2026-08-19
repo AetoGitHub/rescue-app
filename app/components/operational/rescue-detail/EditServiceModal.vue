@@ -49,6 +49,7 @@ watch(open, (isOpen) => {
 async function onSubmit(
   event: FormSubmitEvent<z.infer<typeof rescueServiceUpdateSchema>>,
 ) {
+  if (isUpdating.value) return;
   const body = rescueServiceUpdateToBody(event.data);
   const ok = await saveService(body);
   if (ok) {
@@ -58,6 +59,7 @@ async function onSubmit(
 }
 
 function onSaveClick() {
+  if (isUpdating.value) return;
   void formRef.value?.submit();
 }
 </script>
@@ -66,6 +68,7 @@ function onSaveClick() {
   <UModal
     v-model:open="guardedOpen"
     :dismissible="false"
+    :close="{ disabled: isUpdating }"
     title="Editar servicio"
     :ui="{ content: 'max-w-md' }"
   >

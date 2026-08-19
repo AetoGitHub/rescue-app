@@ -147,12 +147,14 @@ const headerFormRef = ref<{ submit: () => Promise<void> } | null>(null);
 function onHeaderSubmit(payload: {
   data: ZodInfer<typeof contractHeaderUpdateSchema>;
 }) {
+  if (headerSaveStatus.value === 'loading') return;
   saveHeader(contractHeaderFormToUpdateBody(payload.data));
 }
 
 const { onFormError: onHeaderFormError } = useFormValidationFeedback();
 
 async function requestHeaderSave() {
+  if (headerSaveStatus.value === 'loading') return;
   await headerFormRef.value?.submit();
 }
 

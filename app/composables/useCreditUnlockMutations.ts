@@ -87,10 +87,44 @@ export function useCreditUnlockMutations(options: {
     },
   });
 
+  const createLocked = ref(false);
+  const cancelLocked = ref(false);
+
+  const isCreating = computed(
+    () => createLocked.value || createStatus.value === 'loading',
+  );
+  const isCancelling = computed(
+    () => cancelLocked.value || cancelStatus.value === 'loading',
+  );
+
+  async function createUnlockGuarded(
+    body: CreditUnlockCreateBody,
+  ): Promise<boolean> {
+    if (isCreating.value) return false;
+    createLocked.value = true;
+    try {
+      await createUnlock(body);
+      return true;
+    } finally {
+      createLocked.value = false;
+    }
+  }
+
+  async function cancelUnlockGuarded(unlockId: number): Promise<boolean> {
+    if (isCancelling.value) return false;
+    cancelLocked.value = true;
+    try {
+      await cancelUnlock(unlockId);
+      return true;
+    } finally {
+      cancelLocked.value = false;
+    }
+  }
+
   return {
-    createUnlock,
-    cancelUnlock,
-    isCreating: computed(() => createStatus.value === 'loading'),
-    isCancelling: computed(() => cancelStatus.value === 'loading'),
+    createUnlock: createUnlockGuarded,
+    cancelUnlock: cancelUnlockGuarded,
+    isCreating,
+    isCancelling,
   };
 }

@@ -106,7 +106,12 @@ watch(isCurrentlyUnlocked, (active) => {
 });
 
 async function onSubmit(event: FormSubmitEvent<RescueUnlockFormState>) {
-  if (isRescueUnlockActive(resolvedUnlockedUntil.value)) return;
+  if (
+    isUnlocking.value
+    || isRescueUnlockActive(resolvedUnlockedUntil.value)
+  ) {
+    return;
+  }
 
   try {
     const body = toRescueUnlockApiBody(event.data);
@@ -133,6 +138,7 @@ async function onSubmit(event: FormSubmitEvent<RescueUnlockFormState>) {
 }
 
 async function requestSubmit() {
+  if (isUnlocking.value) return;
   await formRef.value?.submit();
 }
 </script>
@@ -147,7 +153,7 @@ async function requestSubmit() {
       label="Desbloquear rescate"
       color="neutral"
       variant="outline"
-      :disabled="isCurrentlyUnlocked"
+      :disabled="isCurrentlyUnlocked || isUnlocking"
       @click="openUnlockModal"
     />
   </UTooltip>
@@ -202,12 +208,14 @@ async function requestSubmit() {
           color="neutral"
           label="Cancelar"
           variant="subtle"
+          :disabled="isUnlocking"
           @click="requestClose"
         />
         <UButton
           type="button"
           label="Confirmar desbloqueo"
           :loading="isUnlocking"
+          :disabled="isUnlocking"
           @click="requestSubmit"
         />
       </div>

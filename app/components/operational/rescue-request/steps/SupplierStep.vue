@@ -177,7 +177,7 @@ function clearSupplier() {
   warnedSupplierIds.value.clear();
 }
 
-const { mutate: createSupplier, asyncStatus: createPending } = useMutation({
+const { mutateAsync: createSupplier, asyncStatus: createPending } = useMutation({
   mutation: (body: SupplierCreateBody) =>
     $fetch<{ id: number; name?: string }>('/api/supplier/create/', {
       method: 'POST',
@@ -207,8 +207,23 @@ const { mutate: createSupplier, asyncStatus: createPending } = useMutation({
   },
 });
 
-function onInlineSubmit(payload: { data: SupplierCreateFormOutput }) {
-  createSupplier(supplierCreateToCreateBody(payload.data) as SupplierCreateBody);
+const inlineCreateLocked = ref(false);
+const isCreatingSupplier = computed(
+  () => inlineCreateLocked.value || createPending.value === 'loading',
+);
+
+async function onInlineSubmit(payload: { data: SupplierCreateFormOutput }) {
+  if (isCreatingSupplier.value) return;
+  inlineCreateLocked.value = true;
+  try {
+    await createSupplier(
+      supplierCreateToCreateBody(payload.data) as SupplierCreateBody,
+    );
+  } catch {
+    // El toast se gestiona en onError.
+  } finally {
+    inlineCreateLocked.value = false;
+  }
 }
 
 function toggleInlineForm() {
@@ -273,8 +288,8 @@ function toggleInlineForm() {
                 <UButton
                   type="button"
                   label="Guardar proveedor"
-                  :loading="createPending === 'loading'"
-                  :disabled="createPending === 'loading'"
+                  :loading="isCreatingSupplier"
+                  :disabled="isCreatingSupplier"
                   @click="inlineFormRef?.submit()"
                 />
               </UForm>

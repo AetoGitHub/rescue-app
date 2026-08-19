@@ -49,10 +49,23 @@ export function useRescueRevertCancellation(
     },
   });
 
-  const isReverting = computed(() => asyncStatus.value === 'loading');
+  const revertLocked = ref(false);
+  const isReverting = computed(
+    () => revertLocked.value || asyncStatus.value === 'loading',
+  );
+
+  async function revertCancellation(body: RescueRevertCancellationBody) {
+    if (isReverting.value) return;
+    revertLocked.value = true;
+    try {
+      return await mutateAsync(body);
+    } finally {
+      revertLocked.value = false;
+    }
+  }
 
   return {
-    revertCancellation: mutateAsync,
+    revertCancellation,
     isReverting,
   };
 }

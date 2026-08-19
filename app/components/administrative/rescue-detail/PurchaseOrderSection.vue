@@ -5,7 +5,7 @@ const purchaseOrderNumber = defineModel<string>('purchaseOrderNumber', {
   required: true,
 });
 
-defineProps<{
+const props = defineProps<{
   highlight?: boolean;
   loading?: boolean;
   readonly?: boolean;
@@ -15,6 +15,11 @@ defineProps<{
 const emit = defineEmits<{
   save: [];
 }>();
+
+function onSave() {
+  if (props.disabled || props.loading) return;
+  emit('save');
+}
 </script>
 
 <template>
@@ -57,9 +62,9 @@ const emit = defineEmits<{
       <UButton
         color="primary"
         :label="RESCUE_ADMINISTRATIVE_BUTTON_LABELS.savePurchaseOrder"
-        :disabled="disabled"
+        :disabled="disabled || loading"
         :loading="loading"
-        @click="emit('save')"
+        @click="onSave"
       />
     </template>
   </UCard>

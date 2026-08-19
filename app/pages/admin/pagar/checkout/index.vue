@@ -228,6 +228,7 @@ function onAddDebt() {
 async function onCreateDebtSubmit(
   body: Parameters<typeof createDebt>[0],
 ) {
+  if (isCreating.value) return;
   await createDebt(body);
   createDebtModalOpen.value = false;
   await refresh();
@@ -238,7 +239,14 @@ function onCancel() {
 }
 
 async function onPay() {
-  if (missingRecipientUser.value || isInvalidCart.value) return;
+  if (
+    isPaying.value
+    || paymentCompleted.value
+    || missingRecipientUser.value
+    || isInvalidCart.value
+  ) {
+    return;
+  }
 
   try {
     paymentCompleted.value = true;
@@ -672,6 +680,7 @@ const itemCountLabel = computed(() => {
               label="Cancelar"
               color="neutral"
               variant="outline"
+              :disabled="isPaying"
               @click="onCancel"
             />
             <UButton

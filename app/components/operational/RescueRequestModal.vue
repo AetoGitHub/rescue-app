@@ -228,7 +228,7 @@ function fetchManagerDropdown(
   }));
 }
 
-const { mutate, asyncStatus } = useMutation({
+const { mutateAsync, asyncStatus } = useMutation({
   mutation: async (payload: {
     form: RescueCreateFormOutput;
     companySettings: RescueRequestFormState['company_settings'];
@@ -312,6 +312,11 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
+const submissionLocked = ref(false);
+const isSubmitting = computed(
+  () => submissionLocked.value || asyncStatus.value === 'loading',
+);
+
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function pickStepPayload(stepIndex: number) {
@@ -380,6 +385,7 @@ function validateCurrentStep(): boolean {
 }
 
 function goNext() {
+  if (isSubmitting.value) return;
   if (!validateCurrentStep()) return;
   if (isLastStep.value) return;
   currentStep.value += 1;
@@ -387,48 +393,62 @@ function goNext() {
 }
 
 function goPrev() {
+  if (isSubmitting.value) return;
   if (currentStep.value <= 0) return;
   currentStep.value -= 1;
   stepError.value = null;
 }
 
 function skipSupplier() {
+  if (isSubmitting.value) return;
   state.supplier = null;
   state.supplierLabel = '';
   goNext();
 }
 
 function skipLocation() {
+  if (isSubmitting.value) return;
   state.location_latitude = null;
   state.location_longitude = null;
   state.location_description = '';
   goNext();
 }
 
-function onSubmit(payload: FormSubmitEvent<RescueCreateFormOutput>) {
+async function onSubmit(payload: FormSubmitEvent<RescueCreateFormOutput>) {
+  if (isSubmitting.value) return;
+  submissionLocked.value = true;
   applyLockedManager();
-  mutate({
-    form: {
-      ...payload.data,
-      manager: state.manager,
-    },
-    companySettings: state.company_settings,
-    clientSellerId: state.client_seller_id,
-  });
+  try {
+    await mutateAsync({
+      form: {
+        ...payload.data,
+        manager: state.manager,
+      },
+      companySettings: state.company_settings,
+      clientSellerId: state.client_seller_id,
+    });
+  } catch {
+    // El toast se gestiona en onError.
+  } finally {
+    submissionLocked.value = false;
+  }
 }
 
 const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
+  if (isSubmitting.value) return;
   requestClose();
 }
 
 async function requestSubmit() {
+  if (isSubmitting.value) return;
   if (!validateQuoteCredit()) return;
   await formRef.value?.submit();
 }
 
 function onPrimaryAction() {
+  if (isSubmitting.value) return;
   if (isLastStep.value) {
     void requestSubmit();
   } else {
@@ -454,6 +474,7 @@ const wizardModalProps = computed(() => {
   <UModal
     v-model:open="guardedOpen"
     :dismissible="false"
+    :close="{ disabled: isSubmitting }"
     title="Nueva solicitud"
     v-bind="wizardModalProps"
   >
@@ -534,6 +555,7 @@ const wizardModalProps = computed(() => {
           color="neutral"
           variant="subtle"
           label="Cancelar"
+          :disabled="isSubmitting"
           @click="cancel"
         />
         <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
@@ -543,6 +565,7 @@ const wizardModalProps = computed(() => {
             color="neutral"
             variant="ghost"
             label="Omitir ubicación"
+            :disabled="isSubmitting"
             @click="skipLocation"
           />
           <UButton
@@ -551,6 +574,7 @@ const wizardModalProps = computed(() => {
             color="neutral"
             variant="ghost"
             label="Omitir proveedor"
+            :disabled="isSubmitting"
             @click="skipSupplier"
           />
           <UButton
@@ -560,6 +584,7 @@ const wizardModalProps = computed(() => {
             variant="outline"
             icon="i-lucide-chevron-left"
             label="Anterior"
+            :disabled="isSubmitting"
             @click="goPrev"
           />
           <UButton
@@ -567,8 +592,8 @@ const wizardModalProps = computed(() => {
             :label="isLastStep ? 'Crear solicitud' : 'Siguiente'"
             :icon="isLastStep ? undefined : 'i-lucide-chevron-right'"
             :trailing="!isLastStep"
-            :loading="asyncStatus === 'loading'"
-            :disabled="asyncStatus === 'loading'"
+            :loading="isSubmitting"
+            :disabled="isSubmitting"
             @click="onPrimaryAction"
           />
         </div>

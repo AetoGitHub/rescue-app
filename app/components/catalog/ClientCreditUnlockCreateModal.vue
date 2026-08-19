@@ -72,11 +72,18 @@ watch(
 );
 
 async function onSubmit(event: FormSubmitEvent<CreditUnlockFormState>) {
+  if (props.loading) return;
   emit('submit', creditUnlockFormToCreateBody(props.creditId, event.data));
 }
 
 async function requestSubmit() {
+  if (props.loading) return;
   await formRef.value?.submit();
+}
+
+function onCancel() {
+  if (props.loading) return;
+  requestClose();
 }
 
 defineExpose({ requestSubmit });
@@ -132,12 +139,14 @@ defineExpose({ requestSubmit });
           color="neutral"
           label="Cancelar"
           variant="subtle"
-          @click="requestClose"
+          :disabled="loading"
+          @click="onCancel"
         />
         <UButton
           type="button"
           label="Crear"
           :loading="loading"
+          :disabled="loading"
           @click="requestSubmit"
         />
       </div>

@@ -155,6 +155,7 @@ watch(open, (isOpen) => {
 });
 
 function onSubmit(payload: { data: SupplierCreateFormOutput }) {
+  if (isSaving.value) return;
   const body =
     editingId.value == null
       ? (supplierCreateToCreateBody(payload.data) as SupplierCreateBody)
@@ -165,6 +166,7 @@ function onSubmit(payload: { data: SupplierCreateFormOutput }) {
 const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
+  if (isSaving.value) return;
   requestClose();
 }
 
@@ -175,6 +177,7 @@ async function onReviewSubmitted() {
 }
 
 async function requestSubmit() {
+  if (isSaving.value) return;
   await formRef.value?.submit();
 }
 </script>
@@ -182,6 +185,7 @@ async function requestSubmit() {
 <template>
   <USlideover
     v-model:open="guardedOpen"
+    :dismissible="!isSaving"
     :title="isEdit ? 'Editar proveedor' : 'Nuevo proveedor'"
     :description="
       isEdit
@@ -242,6 +246,7 @@ async function requestSubmit() {
           color="neutral"
           variant="subtle"
           label="Cancelar"
+          :disabled="isSaving"
           @click="cancel"
         />
         <UButton

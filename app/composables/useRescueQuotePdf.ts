@@ -31,6 +31,7 @@ export function useRescueQuotePdf(rescueId: MaybeRefOrGetter<number | null>) {
   }
 
   async function viewQuotePdf(regenerate = false) {
+    if (isViewingPdf.value) return;
     isViewingPdf.value = true;
 
     try {
@@ -49,7 +50,7 @@ export function useRescueQuotePdf(rescueId: MaybeRefOrGetter<number | null>) {
 
   async function downloadQuotePdf(regenerate = false) {
     const id = toValue(rescueId);
-    if (id == null) return;
+    if (id == null || isDownloadingPdf.value) return;
 
     isDownloadingPdf.value = true;
 

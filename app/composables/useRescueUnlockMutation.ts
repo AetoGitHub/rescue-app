@@ -65,8 +65,23 @@ export function useRescueUnlockMutation(
     },
   });
 
+  const unlockingLock = ref(false);
+  const isUnlocking = computed(
+    () => unlockingLock.value || asyncStatus.value === 'loading',
+  );
+
+  async function unlockRescue(body: RescueUnlockBody) {
+    if (isUnlocking.value) return;
+    unlockingLock.value = true;
+    try {
+      return await mutateAsync(body);
+    } finally {
+      unlockingLock.value = false;
+    }
+  }
+
   return {
-    unlockRescue: mutateAsync,
-    isUnlocking: computed(() => asyncStatus.value === 'loading'),
+    unlockRescue,
+    isUnlocking,
   };
 }

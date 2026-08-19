@@ -32,7 +32,7 @@ type Schema = z.output<typeof schema>;
 const loginErrorMessage = ref<string | null>(null);
 const { fetch: fetchUserSession } = useUserSession();
 
-const { mutate, asyncStatus } = useMutation({
+const { mutateAsync: loginAsync, asyncStatus } = useMutation({
   mutation: ({ username, password }: { username: string; password: string }) =>
     $fetch('/api/auth/login', {
       method: 'POST',
@@ -53,12 +53,25 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
-function onSubmit(payload: FormSubmitEvent<Schema>) {
+const loginSubmitting = ref(false);
+const isLoginSubmitting = computed(
+  () => loginSubmitting.value || asyncStatus.value === 'loading',
+);
+
+async function onSubmit(payload: FormSubmitEvent<Schema>) {
+  if (isLoginSubmitting.value) return;
+  loginSubmitting.value = true;
   loginErrorMessage.value = null;
-  mutate({
-    username: formatUsernameInput(payload.data.username),
-    password: payload.data.password,
-  });
+  try {
+    await loginAsync({
+      username: formatUsernameInput(payload.data.username),
+      password: payload.data.password,
+    });
+  } catch {
+    // El mensaje lo establece onError.
+  } finally {
+    loginSubmitting.value = false;
+  }
 }
 </script>
 
@@ -78,7 +91,8 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
         :ui="{
           title: 'font-thin uppercase text-xs tracking-[0.25em] text-muted',
         }"
-        :loading="asyncStatus === 'loading'"
+        :loading="isLoginSubmitting"
+        :disabled="isLoginSubmitting"
         @submit="onSubmit"
       >
         <template #leading>

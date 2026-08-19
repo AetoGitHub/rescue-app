@@ -76,6 +76,7 @@ const { isDragging: isFullscreenDragging } = useFullscreenFileDrop({
 });
 
 function onSaveCsf() {
+  if (isSaving.value) return;
   void savePendingCsf((url) => {
     csfUrlModel.value = url;
     emit('saved', url);

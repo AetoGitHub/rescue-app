@@ -35,9 +35,13 @@ const {
   isGenerating,
 } = useRescueApproveLinkGenerate(() => props.rescueId);
 
+const generateLocked = ref(false);
+const isGeneratePending = computed(
+  () => generateLocked.value || isGenerating.value,
+);
 const hasLinks = computed(() => lastLinks.value.length > 0);
 const canGenerate = computed(
-  () => props.clientId > 0 && state.ids.length > 0 && !isGenerating.value,
+  () => props.clientId > 0 && state.ids.length > 0 && !isGeneratePending.value,
 );
 
 const apiFetch = useApiFetch();
@@ -131,11 +135,18 @@ const displayItems = computed((): CatalogDropdownRow[] => {
 });
 
 async function onSubmit(event: FormSubmitEvent<ApproveLinkGenerateFormState>) {
-  const links = await generateLink(event.data.ids);
-  if (links) emit('generated');
+  if (isGeneratePending.value) return;
+  generateLocked.value = true;
+  try {
+    const links = await generateLink(event.data.ids);
+    if (links) emit('generated');
+  } finally {
+    generateLocked.value = false;
+  }
 }
 
 function onGenerateClick() {
+  if (isGeneratePending.value) return;
   formRef.value?.submit();
 }
 
@@ -180,7 +191,7 @@ async function onCopy(url: string) {
           :items="displayItems"
           :loading="loading"
           placeholder="Seleccionar autorizadores"
-          :disabled="isGenerating || clientId <= 0"
+          :disabled="isGeneratePending || clientId <= 0"
           class="w-full"
           variant="subtle"
           :ui="{ base: 'bg-default' }"
@@ -234,7 +245,7 @@ async function onCopy(url: string) {
             label="Regenerar links"
             size="sm"
             variant="outline"
-            :loading="isGenerating"
+            :loading="isGeneratePending"
             :disabled="!canGenerate"
             @click="onGenerateClick"
           />
@@ -257,7 +268,7 @@ async function onCopy(url: string) {
           label="Generar links de autorización"
           size="sm"
           variant="outline"
-          :loading="isGenerating"
+          :loading="isGeneratePending"
           :disabled="!canGenerate"
           @click="onGenerateClick"
         />

@@ -29,6 +29,7 @@ const isLocked = computed(() => status.value !== 'idle');
 let savedTimeout: ReturnType<typeof setTimeout> | undefined;
 
 async function onSubmit(event: FormSubmitEvent<FillOcFormState>) {
+  if (isLocked.value) return;
   status.value = 'saving';
 
   try {

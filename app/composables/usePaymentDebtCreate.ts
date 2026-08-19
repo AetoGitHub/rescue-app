@@ -7,7 +7,7 @@ export function usePaymentDebtCreate() {
   const queryCache = useQueryCache();
   const toast = useToast();
 
-  const { mutateAsync: createDebt, asyncStatus } = useMutation({
+  const { mutateAsync: createDebtAsync, asyncStatus } = useMutation({
     mutation: (body: PaymentDebtCreateBody) =>
       apiFetch(PAYMENT_DEBT_CREATE_PATH, {
         method: 'POST',
@@ -30,7 +30,20 @@ export function usePaymentDebtCreate() {
     },
   });
 
-  const isCreating = computed(() => asyncStatus.value === 'loading');
+  const creatingLock = ref(false);
+  const isCreating = computed(
+    () => creatingLock.value || asyncStatus.value === 'loading',
+  );
+
+  async function createDebt(body: PaymentDebtCreateBody) {
+    if (creatingLock.value || asyncStatus.value === 'loading') return;
+    creatingLock.value = true;
+    try {
+      return await createDebtAsync(body);
+    } finally {
+      creatingLock.value = false;
+    }
+  }
 
   return {
     createDebt,

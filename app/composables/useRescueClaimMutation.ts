@@ -47,8 +47,23 @@ export function useRescueClaimMutation(
     },
   });
 
+  const claimLocked = ref(false);
+  const isClaiming = computed(
+    () => claimLocked.value || asyncStatus.value === 'loading',
+  );
+
+  async function claimRescue() {
+    if (isClaiming.value) return;
+    claimLocked.value = true;
+    try {
+      await mutateAsync();
+    } finally {
+      claimLocked.value = false;
+    }
+  }
+
   return {
-    claimRescue: mutateAsync,
-    isClaiming: computed(() => asyncStatus.value === 'loading'),
+    claimRescue,
+    isClaiming,
   };
 }

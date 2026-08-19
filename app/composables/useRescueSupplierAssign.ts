@@ -38,10 +38,14 @@ export function useRescueSupplierAssign(
     onSuccess: invalidateSupplierQueries,
   });
 
-  const isAssigning = computed(() => asyncStatus.value === 'loading');
+  const assignmentLocked = ref(false);
+  const isAssigning = computed(
+    () => assignmentLocked.value || asyncStatus.value === 'loading',
+  );
 
   async function saveSupplier(body: RescueSupplierAssignBody) {
-    if (id.value == null) return false;
+    if (id.value == null || isAssigning.value) return false;
+    assignmentLocked.value = true;
 
     try {
       await assignSupplier(body);
@@ -59,6 +63,8 @@ export function useRescueSupplierAssign(
         color: 'error',
       });
       return false;
+    } finally {
+      assignmentLocked.value = false;
     }
   }
 

@@ -9,7 +9,7 @@ import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface
 
 const open = defineModel<boolean>('open', { required: true });
 
-defineProps<{
+const props = defineProps<{
   loading?: boolean;
 }>();
 
@@ -40,6 +40,7 @@ const fetchReacceptanceReasonDropdown: CatalogDropdownFetcher = (
   );
 
 function onSubmit() {
+  if (props.loading) return;
   emit('submit');
 }
 </script>
@@ -48,6 +49,7 @@ function onSubmit() {
   <UModal
     v-model:open="open"
     :dismissible="false"
+    :close="{ disabled: loading }"
     title="Revertir cancelación"
     :ui="{ content: 'max-w-md' }"
   >
@@ -81,12 +83,14 @@ function onSubmit() {
           color="neutral"
           label="Cerrar"
           variant="subtle"
+          :disabled="loading"
           @click="() => { open = false }"
         />
         <UButton
           color="primary"
           label="Revertir cancelación"
           :loading="loading"
+          :disabled="loading"
           @click="onSubmit"
         />
       </div>

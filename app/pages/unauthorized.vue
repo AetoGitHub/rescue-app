@@ -10,7 +10,7 @@ useHead({
 
 const { clear: clearUserSession } = useUserSession();
 
-const { mutate: logout, asyncStatus: logoutStatus } = useMutation({
+const { mutateAsync: logoutAsync, asyncStatus: logoutStatus } = useMutation({
   mutation: async () => {
     await $fetch('/api/auth/logout', { method: 'POST' });
     await clearUserSession();
@@ -19,6 +19,23 @@ const { mutate: logout, asyncStatus: logoutStatus } = useMutation({
     await navigateTo('/login', { replace: true });
   },
 });
+
+const logoutSubmitting = ref(false);
+const isLoggingOut = computed(
+  () => logoutSubmitting.value || logoutStatus.value === 'loading',
+);
+
+async function logout() {
+  if (isLoggingOut.value) return;
+  logoutSubmitting.value = true;
+  try {
+    await logoutAsync();
+  } catch {
+    // El usuario puede reintentar al liberarse el estado.
+  } finally {
+    logoutSubmitting.value = false;
+  }
+}
 </script>
 
 <template>
@@ -38,8 +55,9 @@ const { mutate: logout, asyncStatus: logoutStatus } = useMutation({
         variant="outline"
         icon="i-lucide-log-out"
         label="Cerrar sesión"
-        :loading="logoutStatus === 'loading'"
-        @click="() => logout()"
+        :loading="isLoggingOut"
+        :disabled="isLoggingOut"
+        @click="logout"
       />
     </UPageCard>
   </div>

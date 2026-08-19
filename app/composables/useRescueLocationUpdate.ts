@@ -38,10 +38,14 @@ export function useRescueLocationUpdate(
     onSuccess: invalidateLocationQueries,
   });
 
-  const isUpdating = computed(() => asyncStatus.value === 'loading');
+  const updateLocked = ref(false);
+  const isUpdating = computed(
+    () => updateLocked.value || asyncStatus.value === 'loading',
+  );
 
   async function saveLocation(body: RescueLocationUpdateBody) {
-    if (id.value == null) return false;
+    if (id.value == null || isUpdating.value) return false;
+    updateLocked.value = true;
 
     try {
       await updateLocation(body);
@@ -57,6 +61,8 @@ export function useRescueLocationUpdate(
         color: 'error',
       });
       return false;
+    } finally {
+      updateLocked.value = false;
     }
   }
 

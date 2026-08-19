@@ -343,13 +343,12 @@ async function submitMessage() {
         class="min-w-0 flex-1"
         placeholder="Escribe un mensaje o actualización del servicio..."
         autoresize
-        :disabled="isSending"
       />
       <UButton
         color="primary"
         icon="i-lucide-send"
         :loading="isSending"
-        :disabled="!messageText.trim()"
+        :disabled="isSending || !messageText.trim()"
         aria-label="Enviar mensaje"
         @click="submitMessage"
       />

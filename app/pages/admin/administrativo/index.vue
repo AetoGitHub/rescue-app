@@ -97,6 +97,7 @@ function onAdminDocSend(payload: {
 }
 
 async function onSendAdminDocSubmit(body: RescueAdminDocBody) {
+  if (isSavingAdminDoc.value) return;
   const ok = await saveAdminDoc(body);
   if (ok) {
     sendAdminDocModalOpen.value = false;

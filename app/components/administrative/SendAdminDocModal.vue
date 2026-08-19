@@ -63,6 +63,7 @@ watch(open, (isOpen) => {
 });
 
 function submitWithExtraRescues(extraRescues: number[]) {
+  if (props.loading) return;
   const parsed = rescueAdminDocCopySchema.safeParse({
     remittance_folio: props.remittanceFolio,
     invoice_folio: props.invoiceFolio,
@@ -92,10 +93,12 @@ function onBack() {
 }
 
 function onSubmit(event: FormSubmitEvent<RescueAdminDocFormState>) {
+  if (props.loading) return;
   emit('submit', rescueAdminDocToBody(event.data));
 }
 
 function onApplySelected() {
+  if (props.loading) return;
   void formRef.value?.submit();
 }
 </script>
@@ -184,6 +187,7 @@ function onApplySelected() {
             color="primary"
             label="No, solo este rescate"
             :loading="loading"
+            :disabled="loading"
             @click="onOnlyThisRescue"
           />
         </template>
@@ -200,6 +204,7 @@ function onApplySelected() {
             color="primary"
             label="Enviar"
             :loading="loading"
+            :disabled="loading"
             @click="onApplySelected"
           />
         </template>

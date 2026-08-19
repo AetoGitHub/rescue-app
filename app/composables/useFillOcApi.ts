@@ -90,7 +90,7 @@ export function useFillOcMutation(apiKey: MaybeRefOrGetter<string>) {
    * Sin invalidar la lista: la tarjeta muestra su animación de guardado y se
    * retira localmente; un refetch inmediato la haría desaparecer antes.
    */
-  const { mutateAsync } = useMutation({
+  const { mutateAsync, asyncStatus } = useMutation({
     mutation: async (body: FillOcSubmitBody) => {
       const currentKey = toValue(apiKey).trim();
       if (isFillOcMockKey(currentKey)) {
@@ -113,7 +113,22 @@ export function useFillOcMutation(apiKey: MaybeRefOrGetter<string>) {
     },
   });
 
+  const submitting = ref(false);
+
+  async function submitOc(body: FillOcSubmitBody) {
+    if (submitting.value || asyncStatus.value === 'loading') return;
+    submitting.value = true;
+    try {
+      return await mutateAsync(body);
+    } finally {
+      submitting.value = false;
+    }
+  }
+
   return {
-    submitOc: mutateAsync,
+    submitOc,
+    isSubmitting: computed(
+      () => submitting.value || asyncStatus.value === 'loading',
+    ),
   };
 }

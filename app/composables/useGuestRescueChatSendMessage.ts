@@ -68,13 +68,21 @@ export function useGuestRescueChatSendMessage(
     },
   });
 
+  const sendLocked = ref(false);
   const isSending = computed(
-    () => enabledRef.value && asyncStatus.value === 'loading',
+    () =>
+      enabledRef.value
+      && (sendLocked.value || asyncStatus.value === 'loading'),
   );
 
   async function sendMessageAsync(text: string) {
-    if (!enabledRef.value) return;
-    await mutateAsync(text);
+    if (!enabledRef.value || isSending.value) return;
+    sendLocked.value = true;
+    try {
+      await mutateAsync(text);
+    } finally {
+      sendLocked.value = false;
+    }
   }
 
   function isOwnGuestMessage(messageId: number): boolean {

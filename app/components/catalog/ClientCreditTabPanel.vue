@@ -156,8 +156,10 @@ function openUnlockHistory() {
 }
 
 async function onCreateUnlock(body: CreditUnlockCreateBody) {
+  if (creditUnlockMutations.isCreating.value) return;
   try {
-    await creditUnlockMutations.createUnlock(body);
+    const created = await creditUnlockMutations.createUnlock(body);
+    if (!created) return;
     unlockCreateOpen.value = false;
     await creditUnlockList.refresh();
   } catch {
@@ -166,6 +168,7 @@ async function onCreateUnlock(body: CreditUnlockCreateBody) {
 }
 
 function requestCancelUnlock(row: CreditTemporaryUnlock) {
+  if (creditUnlockMutations.isCancelling.value) return;
   cancelUnlockTarget.value = row;
   cancelUnlockOpen.value = true;
 }
@@ -173,8 +176,10 @@ function requestCancelUnlock(row: CreditTemporaryUnlock) {
 async function confirmCancelUnlock() {
   const target = cancelUnlockTarget.value;
   if (target == null) return;
+  if (creditUnlockMutations.isCancelling.value) return;
   try {
-    await creditUnlockMutations.cancelUnlock(target.id);
+    const cancelled = await creditUnlockMutations.cancelUnlock(target.id);
+    if (!cancelled) return;
     cancelUnlockOpen.value = false;
     cancelUnlockTarget.value = null;
     await creditUnlockList.refresh();
@@ -549,7 +554,11 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
               color="error"
               variant="outline"
               size="xs"
-              :loading="creditUnlockMutations.isCancelling.value"
+              :loading="
+                creditUnlockMutations.isCancelling.value
+                && cancelUnlockTarget?.id === unlock.id
+              "
+              :disabled="creditUnlockMutations.isCancelling.value"
               @click="requestCancelUnlock(unlock)"
             />
           </div>
@@ -589,6 +598,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
             color="neutral"
             label="Volver"
             variant="subtle"
+            :disabled="creditUnlockMutations.isCancelling.value"
             @click="close()"
           />
           <UButton
@@ -596,6 +606,7 @@ const creditMetricRows = computed((): CreditMetricRow[] => [
             label="Confirmar cancelación"
             color="error"
             :loading="creditUnlockMutations.isCancelling.value"
+            :disabled="creditUnlockMutations.isCancelling.value"
             @click="confirmCancelUnlock"
           />
         </div>

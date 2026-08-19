@@ -41,6 +41,8 @@ export function useRescueApproveLinkGenerate(
   async function generateLink(
     ids: number[],
   ): Promise<RescueApproveLinkGenerated[] | null> {
+    if (isGenerating.value) return null;
+
     const currentId = id.value;
     if (currentId == null) return null;
     if (ids.length === 0) return null;

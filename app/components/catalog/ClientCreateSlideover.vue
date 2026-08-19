@@ -516,6 +516,15 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
+const isSubmitSequenceActive = ref(false);
+const isSaving = computed(
+  () => asyncStatus.value === 'loading' || isSubmitSequenceActive.value,
+);
+
+watch(asyncStatus, (status) => {
+  if (status !== 'loading') isSubmitSequenceActive.value = false;
+});
+
 function buildSubmitBody(
   data: ClientFormState,
 ): ClientCreateBody | ClientUpdateBody {
@@ -553,29 +562,38 @@ function needsCreditValidation(data: ClientFormState): boolean {
 }
 
 async function onSubmit(payload: { data: ClientFormState }) {
+  if (isSaving.value) return;
+  isSubmitSequenceActive.value = true;
   formValidationErrors.value = [];
 
-  if (!needsCreditValidation(payload.data)) {
-    mutate({ body: buildSubmitBody(payload.data), id: editingId.value });
-    return;
+  try {
+    if (!needsCreditValidation(payload.data)) {
+      mutate({ body: buildSubmitBody(payload.data), id: editingId.value });
+      return;
+    }
+
+    pendingClientData.value = payload.data;
+
+    if (isEdit.value) {
+      editTab.value = 'credit';
+      creditTabPanelRef.value?.openLineEdit();
+      await nextTick();
+      await creditTabPanelRef.value?.submitCreditForm();
+      return;
+    }
+
+    await creditFormSectionRef.value?.submit();
+  } finally {
+    if (asyncStatus.value !== 'loading') {
+      isSubmitSequenceActive.value = false;
+    }
   }
-
-  pendingClientData.value = payload.data;
-
-  if (isEdit.value) {
-    editTab.value = 'credit';
-    creditTabPanelRef.value?.openLineEdit();
-    await nextTick();
-    await creditTabPanelRef.value?.submitCreditForm();
-    return;
-  }
-
-  void creditFormSectionRef.value?.submit();
 }
 
 function onCreditSubmit(
   payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>,
 ) {
+  if (asyncStatus.value === 'loading') return;
   const clientData = pendingClientData.value;
   if (clientData == null) return;
   pendingClientData.value = null;
@@ -645,10 +663,12 @@ async function onCreditFormError(event: FormValidationErrorEvent) {
 }
 
 function cancel() {
+  if (isSaving.value) return;
   requestClose();
 }
 
 async function requestSubmit() {
+  if (isSaving.value) return;
   await formRef.value?.submit();
 }
 </script>
@@ -656,6 +676,7 @@ async function requestSubmit() {
 <template>
   <USlideover
     v-model:open="guardedOpen"
+    :dismissible="!isSaving"
     :title="isEdit ? 'Editar cliente' : 'Nuevo cliente'"
     :ui="{
       content: `max-w-xl ${adminListSlideoverContentClass}`,
@@ -1137,13 +1158,14 @@ async function requestSubmit() {
           color="neutral"
           variant="subtle"
           label="Cancelar"
+          :disabled="isSaving"
           @click="cancel"
         />
         <UButton
           type="button"
           label="Guardar"
-          :loading="asyncStatus === 'loading' || (detailPending && isEdit)"
-          :disabled="asyncStatus === 'loading' || (detailPending && isEdit)"
+          :loading="isSaving || (detailPending && isEdit)"
+          :disabled="isSaving || (detailPending && isEdit)"
           @click="requestSubmit"
         />
       </div>

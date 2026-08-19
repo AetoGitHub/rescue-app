@@ -103,18 +103,19 @@ const { createContactAsync, updateContactAsync, isSaving } = useClientContactMut
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 async function onSubmit(payload: FormSubmitEvent<ZodInfer<typeof clientContactFormSchema>>) {
+  if (isSaving.value) return;
   const id = editingId.value;
   try {
-    if (id != null) {
-      await updateContactAsync({
-        contactId: id,
-        body: clientContactFormToUpdateBody(props.clientId, payload.data),
-      });
-    } else {
-      await createContactAsync(
-        clientContactFormToCreateBody(props.clientId, payload.data),
-      );
-    }
+    const saved
+      = id != null
+        ? await updateContactAsync({
+            contactId: id,
+            body: clientContactFormToUpdateBody(props.clientId, payload.data),
+          })
+        : await createContactAsync(
+            clientContactFormToCreateBody(props.clientId, payload.data),
+          );
+    if (!saved) return;
     resetForm();
     emit('saved');
   } catch {
@@ -125,11 +126,13 @@ async function onSubmit(payload: FormSubmitEvent<ZodInfer<typeof clientContactFo
 const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
+  if (isSaving.value) return;
   resetForm();
   emit('cancelled');
 }
 
 async function requestSubmit() {
+  if (isSaving.value) return;
   await formRef.value?.submit();
 }
 </script>
@@ -286,6 +289,7 @@ async function requestSubmit() {
           color="neutral"
           variant="outline"
           label="Cancelar"
+          :disabled="isSaving"
           @click="cancel"
         />
         <UButton

@@ -85,7 +85,7 @@ export function usePaymentCart(
     }
   }
 
-  const { mutateAsync: addSelected, asyncStatus: addSelectedStatus } =
+  const { mutateAsync: addSelectedAsync, asyncStatus: addSelectedStatus } =
     useMutation({
       mutation: (payload: PaymentCartAddSelectedPayload) => {
         const body: PaymentCartAddOperativeBody | PaymentCartAddSellerBody =
@@ -126,7 +126,7 @@ export function usePaymentCart(
       },
     });
 
-  const { mutateAsync: addAll, asyncStatus: addAllStatus } = useMutation({
+  const { mutateAsync: addAllAsync, asyncStatus: addAllStatus } = useMutation({
     mutation: (filters: PaymentListFilterInput) => {
       const query = buildPaymentCartAddAllQuery(filters);
       if (!query) {
@@ -164,7 +164,7 @@ export function usePaymentCart(
     },
   });
 
-  const { mutateAsync: clearCart, asyncStatus: clearStatus } = useMutation({
+  const { mutateAsync: clearCartAsync, asyncStatus: clearStatus } = useMutation({
     mutation: (_options: PaymentCartClearOptions = {}) =>
       apiFetch(PAYMENT_CART_PATH, {
         method: 'DELETE',
@@ -188,7 +188,7 @@ export function usePaymentCart(
     },
   });
 
-  const { mutateAsync: payCart, asyncStatus: payStatus } = useMutation({
+  const { mutateAsync: payCartAsync, asyncStatus: payStatus } = useMutation({
     mutation: (body: PaymentCartPayBody) => {
       const payload: PaymentCartPayBody = {};
 
@@ -218,14 +218,79 @@ export function usePaymentCart(
     },
   });
 
+  const addingIds = ref<Set<number>>(new Set());
+  const addingAllLock = ref(false);
+  const clearingLock = ref(false);
+  const payingLock = ref(false);
+
+  async function addSelected(payload: PaymentCartAddSelectedPayload) {
+    const ids = [...new Set(payload.ids)];
+    if (
+      addingAllLock.value
+      || ids.length === 0
+      || ids.some((id) => addingIds.value.has(id))
+    ) {
+      return;
+    }
+
+    addingIds.value = new Set([...addingIds.value, ...ids]);
+    try {
+      return await addSelectedAsync(payload);
+    } finally {
+      const next = new Set(addingIds.value);
+      ids.forEach((id) => next.delete(id));
+      addingIds.value = next;
+    }
+  }
+
+  async function addAll(filters: PaymentListFilterInput) {
+    if (addingAllLock.value || addingIds.value.size > 0) return;
+    addingAllLock.value = true;
+    try {
+      return await addAllAsync(filters);
+    } finally {
+      addingAllLock.value = false;
+    }
+  }
+
+  async function clearCart(options: PaymentCartClearOptions = {}) {
+    if (clearingLock.value) return;
+    clearingLock.value = true;
+    try {
+      return await clearCartAsync(options);
+    } finally {
+      clearingLock.value = false;
+    }
+  }
+
+  async function payCart(body: PaymentCartPayBody) {
+    if (payingLock.value) return;
+    payingLock.value = true;
+    try {
+      return await payCartAsync(body);
+    } finally {
+      payingLock.value = false;
+    }
+  }
+
   const isAdding = computed(
     () =>
-      addSelectedStatus.value === 'loading'
+      addingIds.value.size > 0
+      || addingAllLock.value
+      || addSelectedStatus.value === 'loading'
       || addAllStatus.value === 'loading',
   );
 
-  const isClearing = computed(() => clearStatus.value === 'loading');
-  const isPaying = computed(() => payStatus.value === 'loading');
+  const isAddingAll = computed(
+    () => addingAllLock.value || addAllStatus.value === 'loading',
+  );
+  const isClearing = computed(
+    () => clearingLock.value || clearStatus.value === 'loading',
+  );
+  const isPaying = computed(
+    () => payingLock.value || payStatus.value === 'loading',
+  );
+  const isAddingRow = (id: number) => addingIds.value.has(id);
 
   return {
     cart,
@@ -233,6 +298,8 @@ export function usePaymentCart(
     errorMessage,
     isLoading,
     isAdding,
+    isAddingAll,
+    isAddingRow,
     isClearing,
     isPaying,
     refresh,

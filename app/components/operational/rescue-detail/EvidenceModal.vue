@@ -121,6 +121,7 @@ const isBusy = computed(
 );
 
 async function uploadFiles(files: File[]) {
+  if (isUploading.value || files.length === 0) return;
   const invalid = files.find(
     (file) => !isRescueEvidenceFileAllowed(file, evidenceType.value),
   );
@@ -298,6 +299,7 @@ function fileLabel(url: string, index: number) {
   <UModal
     v-model:open="guardedOpen"
     :dismissible="false"
+    :close="{ disabled: isUploading }"
     :title="modalTitle"
     :description="copy.subtitle"
     :ui="{ content: 'max-w-2xl' }"

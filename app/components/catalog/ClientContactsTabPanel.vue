@@ -76,6 +76,7 @@ function onContactSelect(contact: ClientContact) {
 
 async function confirmRemove(contact: ClientContact) {
   if (!import.meta.client) return;
+  if (isRemoving.value) return;
   if (!window.confirm(`¿Eliminar el contacto «${contact.name}»?`)) return;
 
   if (selectedContactId.value === contact.id) {

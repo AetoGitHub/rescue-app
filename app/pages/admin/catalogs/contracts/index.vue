@@ -120,6 +120,7 @@ function manageContract(contractId: number) {
 }
 
 function createContractForClient(clientId: number) {
+  if (creatingClientId.value === clientId) return;
   creatingClientId.value = clientId;
   createContract(clientId);
 }

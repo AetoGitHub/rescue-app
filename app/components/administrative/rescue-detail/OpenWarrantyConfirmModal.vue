@@ -1,13 +1,18 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { required: true });
 
-defineProps<{
+const props = defineProps<{
   loading?: boolean;
 }>();
 
 const emit = defineEmits<{
   submit: [];
 }>();
+
+function onSubmit() {
+  if (props.loading) return;
+  emit('submit');
+}
 </script>
 
 <template>
@@ -27,7 +32,8 @@ const emit = defineEmits<{
         color="warning"
         label="Abrir garantía"
         :loading="loading"
-        @click="emit('submit')"
+        :disabled="loading"
+        @click="onSubmit"
       />
     </template>
   </UModal>

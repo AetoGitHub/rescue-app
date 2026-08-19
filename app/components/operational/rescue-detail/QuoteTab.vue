@@ -174,6 +174,7 @@ function fetchServiceDropdown(
 }
 
 async function onSaveQuote() {
+  if (isSaving.value) return;
   const basePayload = {
     quoteLines: quoteLines.value,
     companySettings: companySettings.value,
@@ -228,6 +229,7 @@ function formatApiMoney(value: string | number | null | undefined): string {
         icon="i-lucide-file-text"
         label="Ver PDF"
         :loading="isViewingPdf"
+        :disabled="isViewingPdf"
         @click="viewQuotePdf()"
       />
       <UButton
@@ -236,6 +238,7 @@ function formatApiMoney(value: string | number | null | undefined): string {
         icon="i-lucide-download"
         label="Descargar PDF"
         :loading="isDownloadingPdf"
+        :disabled="isDownloadingPdf"
         @click="downloadQuotePdf()"
       />
     </div>
@@ -331,6 +334,7 @@ function formatApiMoney(value: string | number | null | undefined): string {
           icon="i-lucide-save"
           :label="saveLabel"
           :loading="isSaving"
+          :disabled="isSaving"
           @click="onSaveQuote"
         />
       </div>

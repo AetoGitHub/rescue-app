@@ -65,7 +65,7 @@ export function useClientContactMutations(options: {
     },
   });
 
-  const { mutate: removeContact, asyncStatus: removeStatus } = useMutation({
+  const { mutateAsync: removeContactAsync, asyncStatus: removeStatus } = useMutation({
     mutation: (contactId: number) =>
       $fetch(CLIENT_CONTACT_DELETE_PATH(contactId), { method: 'DELETE' }),
     async onSuccess() {
@@ -81,17 +81,62 @@ export function useClientContactMutations(options: {
     },
   });
 
+  const saveLocked = ref(false);
+  const removeLocked = ref(false);
+
   const isSaving = computed(
     () =>
-      createStatus.value === 'loading'
+      saveLocked.value
+      || createStatus.value === 'loading'
       || updateStatus.value === 'loading',
   );
 
-  const isRemoving = computed(() => removeStatus.value === 'loading');
+  const isRemoving = computed(
+    () => removeLocked.value || removeStatus.value === 'loading',
+  );
+
+  async function createContact(
+    body: ClientContactCreateBody,
+  ): Promise<boolean> {
+    if (isSaving.value) return false;
+    saveLocked.value = true;
+    try {
+      await createContactAsync(body);
+      return true;
+    } finally {
+      saveLocked.value = false;
+    }
+  }
+
+  async function updateContact(payload: {
+    contactId: number;
+    body: ClientContactUpdateBody;
+  }): Promise<boolean> {
+    if (isSaving.value) return false;
+    saveLocked.value = true;
+    try {
+      await updateContactAsync(payload);
+      return true;
+    } finally {
+      saveLocked.value = false;
+    }
+  }
+
+  function removeContact(contactId: number) {
+    if (isRemoving.value) return;
+    removeLocked.value = true;
+    void removeContactAsync(contactId)
+      .catch(() => {
+        // Toast handled in mutation onError.
+      })
+      .finally(() => {
+        removeLocked.value = false;
+      });
+  }
 
   return {
-    createContactAsync,
-    updateContactAsync,
+    createContactAsync: createContact,
+    updateContactAsync: updateContact,
     removeContact,
     isSaving,
     isRemoving,

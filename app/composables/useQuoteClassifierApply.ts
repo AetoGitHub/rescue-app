@@ -12,10 +12,13 @@ export function useQuoteClassifierApply(options: {
   const toast = useToast();
 
   const isBusy = ref(false);
+  const isClassifying = ref(false);
   const lastNotes = ref<string[]>([]);
   const lastNotesHasUnmatched = ref(false);
 
   async function classifyInput(input: string, type: QuoteClassifierInputType) {
+    if (isClassifying.value) return;
+    isClassifying.value = true;
     isBusy.value = true;
     lastNotes.value = [];
     lastNotesHasUnmatched.value = false;
@@ -48,6 +51,7 @@ export function useQuoteClassifierApply(options: {
         color: 'error',
       });
     } finally {
+      isClassifying.value = false;
       isBusy.value = false;
     }
   }

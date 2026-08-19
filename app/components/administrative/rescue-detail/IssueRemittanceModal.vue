@@ -3,7 +3,7 @@ import type { RescueRemittanceFormState } from '~/interfaces/rescue/administrati
 
 const open = defineModel<boolean>('open', { required: true });
 
-defineProps<{
+const props = defineProps<{
   loading?: boolean;
 }>();
 
@@ -13,6 +13,11 @@ const emit = defineEmits<{
 }>();
 
 const form = defineModel<RescueRemittanceFormState>('form', { required: true });
+
+function onSubmit() {
+  if (props.loading) return;
+  emit('submit');
+}
 </script>
 
 <template>
@@ -38,6 +43,7 @@ const form = defineModel<RescueRemittanceFormState>('form', { required: true });
               color="neutral"
               icon="i-lucide-refresh-cw"
               variant="subtle"
+              :disabled="loading"
               @click="emit('regenerate')"
             />
           </div>
@@ -48,7 +54,8 @@ const form = defineModel<RescueRemittanceFormState>('form', { required: true });
           color="primary"
           label="Confirmar remisión"
           :loading="loading"
-          @click="emit('submit')"
+          :disabled="loading"
+          @click="onSubmit"
         />
       </div>
     </template>

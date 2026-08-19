@@ -9,7 +9,7 @@ import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface
 
 const open = defineModel<boolean>('open', { required: true });
 
-defineProps<{
+const props = defineProps<{
   loading?: boolean;
 }>();
 
@@ -38,6 +38,11 @@ const fetchCancellationReasonDropdown: CatalogDropdownFetcher = (
       signal: options?.signal,
     },
   );
+
+function onSubmit() {
+  if (props.loading) return;
+  emit('submit');
+}
 </script>
 
 <template>
@@ -58,6 +63,7 @@ const fetchCancellationReasonDropdown: CatalogDropdownFetcher = (
             v-model="cancellationReason"
             placeholder="Selecciona un motivo"
             :fetcher="fetchCancellationReasonDropdown"
+            :disabled="loading"
           />
         </UFormField>
 
@@ -66,7 +72,8 @@ const fetchCancellationReasonDropdown: CatalogDropdownFetcher = (
           color="error"
           label="Confirmar cancelación"
           :loading="loading"
-          @click="emit('submit')"
+          :disabled="loading"
+          @click="onSubmit"
         />
       </div>
     </template>

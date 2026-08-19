@@ -12,6 +12,8 @@ export function useGuestRescueApprove(
   const errorMessage = ref('');
 
   async function approve(): Promise<boolean> {
+    if (isApproving.value || isApproved.value) return false;
+
     const currentRescueId = toValue(rescueId);
     const currentToken = toValue(token)?.trim() ?? '';
 

@@ -63,6 +63,8 @@ const {
   cart,
   isLoading: cartLoading,
   isAdding,
+  isAddingAll,
+  isAddingRow,
   isClearing,
   cartItemIds,
   addSelected,
@@ -226,7 +228,14 @@ async function onRowCheck(id: number, checked: boolean) {
   }
 
   const row = rows.value.find((item) => item.id === id);
-  if (row == null || !isPaymentListRowSelectable(row)) return;
+  if (
+    isAddingAll.value
+    || isAddingRow(id)
+    || row == null
+    || !isPaymentListRowSelectable(row)
+  ) {
+    return;
+  }
 
   try {
     await addSelected({
@@ -251,6 +260,7 @@ async function onToggleAllVisible(checked: boolean) {
     .filter((row) => isPaymentListRowSelectable(row))
     .map((row) => row.id);
   if (ids.length === 0) return;
+  if (isAdding.value) return;
 
   try {
     await addSelected({
@@ -271,6 +281,7 @@ async function onToggleAllVisible(checked: boolean) {
 }
 
 async function onAddAll() {
+  if (isAdding.value) return;
   if (appliedFilters.value.userId == null) {
     toast.add({
       title: 'Selecciona un usuario para ver deudas',
@@ -291,6 +302,7 @@ async function onAddAll() {
 }
 
 async function onClearCart() {
+  if (isClearing.value) return;
   await clearCart({});
   clearSelection();
 }
@@ -359,7 +371,6 @@ function onCheckout() {
 }
 
 const columns = computed((): TableColumn<PaymentListItem>[] => {
-  const adding = isAdding.value;
   const profileType = recipientType.value;
   const hasSelectableRows = selectableRows.value.length > 0;
 
@@ -375,7 +386,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
               : false,
           'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
             void onToggleAllVisible(value === true),
-          disabled: adding || !hasSelectableRows,
+          disabled: isAdding.value || !hasSelectableRows,
           ariaLabel: 'Seleccionar todas las filas visibles',
         }),
       cell: ({ row }) => {
@@ -387,7 +398,8 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
             if (!selectable) return;
             void onRowCheck(row.original.id, value === true);
           },
-          disabled: adding || !selectable,
+          disabled:
+            isAddingAll.value || isAddingRow(row.original.id) || !selectable,
           ariaLabel: `Seleccionar deuda ${row.original.rescue_folio}`,
         });
       },
@@ -565,7 +577,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
             color="primary"
             variant="soft"
             :loading="isAdding"
-            :disabled="!hasSearched"
+            :disabled="isAdding || !hasSearched"
             @click="onAddAll"
           />
         </div>

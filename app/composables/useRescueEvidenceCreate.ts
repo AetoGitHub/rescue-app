@@ -37,10 +37,23 @@ export function useRescueEvidenceCreate(
     },
   });
 
-  const isCreating = computed(() => asyncStatus.value === 'loading');
+  const createLocked = ref(false);
+  const isCreating = computed(
+    () => createLocked.value || asyncStatus.value === 'loading',
+  );
+
+  async function createEvidences(body: RescueEvidenceCreateBody) {
+    if (isCreating.value) return;
+    createLocked.value = true;
+    try {
+      return await mutateAsync(body);
+    } finally {
+      createLocked.value = false;
+    }
+  }
 
   return {
-    createEvidences: mutateAsync,
+    createEvidences,
     isCreating,
   };
 }

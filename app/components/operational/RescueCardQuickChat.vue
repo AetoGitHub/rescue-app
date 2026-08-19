@@ -39,7 +39,6 @@ function onInputKeydown(event: KeyboardEvent) {
       class="min-w-0 flex-1"
       placeholder="Mensaje rápido…"
       size="sm"
-      :disabled="isSending"
       @keydown="onInputKeydown"
     />
     <UButton
@@ -47,7 +46,7 @@ function onInputKeydown(event: KeyboardEvent) {
       icon="i-lucide-send"
       size="sm"
       :loading="isSending"
-      :disabled="!messageText.trim()"
+      :disabled="isSending || !messageText.trim()"
       aria-label="Enviar mensaje"
       @click="submitMessage"
     />

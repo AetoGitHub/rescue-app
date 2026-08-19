@@ -53,12 +53,13 @@ const dropdownItems = computed(() => {
     moreOptions.value.map((item) => ({
       label: item.label,
       color: item.color === 'error' ? ('error' as const) : undefined,
-      onSelect: () => emit('action', item.id),
+      onSelect: () => onAction(item.id),
     })),
   ];
 });
 
 function onAction(id: RescueOperativeActionId) {
+  if (props.loading) return;
   emit('action', id);
 }
 </script>
@@ -75,6 +76,7 @@ function onAction(id: RescueOperativeActionId) {
         :color="action.color ?? 'primary'"
         :variant="action.variant ?? 'solid'"
         :label="action.label"
+        :loading="loading"
         :disabled="action.disabled || loading"
         :title="action.disabledReason"
         @click="onAction(action.id)"
@@ -85,6 +87,7 @@ function onAction(id: RescueOperativeActionId) {
         :color="action.color ?? 'neutral'"
         :variant="action.variant ?? 'outline'"
         :label="action.label"
+        :loading="loading"
         :disabled="action.disabled || loading"
         @click="onAction(action.id)"
       />
@@ -97,6 +100,7 @@ function onAction(id: RescueOperativeActionId) {
           icon="i-lucide-ellipsis"
           variant="outline"
           aria-label="Más opciones"
+          :loading="loading"
           :disabled="loading"
         />
       </UDropdownMenu>

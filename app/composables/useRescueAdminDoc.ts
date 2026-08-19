@@ -48,14 +48,18 @@ export function useRescueAdminDoc(rescueId: MaybeRefOrGetter<number | null>) {
     },
   });
 
-  const isSaving = computed(() => asyncStatus.value === 'loading');
+  const savingLock = ref(false);
+  const isSaving = computed(
+    () => savingLock.value || asyncStatus.value === 'loading',
+  );
 
   async function save(
     body: RescueAdminDocBody,
     options?: { silent?: boolean },
   ) {
-    if (id.value == null) return false;
+    if (id.value == null || isSaving.value) return false;
 
+    savingLock.value = true;
     try {
       await saveAdminDoc(body);
       if (!options?.silent) {
@@ -72,6 +76,8 @@ export function useRescueAdminDoc(rescueId: MaybeRefOrGetter<number | null>) {
         color: 'error',
       });
       return false;
+    } finally {
+      savingLock.value = false;
     }
   }
 

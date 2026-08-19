@@ -37,6 +37,11 @@ export function useSupplierReviewMutation() {
     },
   });
 
+  const reviewLocked = ref(false);
+  const isCreating = computed(
+    () => reviewLocked.value || asyncStatus.value === 'loading',
+  );
+
   async function createReview(
     supplierId: number,
     input: {
@@ -44,37 +49,50 @@ export function useSupplierReviewMutation() {
       selectedChips: string[];
       freeComment: string;
     },
-  ) {
-    await mutateAsync({
-      supplierId,
-      body: toStandaloneSupplierReviewBody(
-        input.rating,
-        input.selectedChips,
-        input.freeComment,
-      ),
-    });
-    toast.add({
-      title: 'Calificación guardada',
-      color: 'success',
-    });
+  ): Promise<boolean> {
+    if (isCreating.value) return false;
+    reviewLocked.value = true;
+    try {
+      await mutateAsync({
+        supplierId,
+        body: toStandaloneSupplierReviewBody(
+          input.rating,
+          input.selectedChips,
+          input.freeComment,
+        ),
+      });
+      toast.add({
+        title: 'Calificación guardada',
+        color: 'success',
+      });
+      return true;
+    } finally {
+      reviewLocked.value = false;
+    }
   }
 
   async function createReviewsForRescue(
     ratings: RescueSupplierRatingRow[],
     rescueId: number,
-  ) {
-    const rated = getRatedSuppliers(ratings);
-    await Promise.all(
-      rated.map((row) =>
-        mutateAsync({
-          supplierId: row.supplier_id,
-          body: toSupplierReviewCreateBody(row, rescueId),
-        }),
-      ),
-    );
+  ): Promise<boolean> {
+    if (isCreating.value) return false;
+    reviewLocked.value = true;
+    try {
+      const rated = getRatedSuppliers(ratings);
+      // Concurrencia intencional: una petición por proveedor calificado.
+      await Promise.all(
+        rated.map((row) =>
+          mutateAsync({
+            supplierId: row.supplier_id,
+            body: toSupplierReviewCreateBody(row, rescueId),
+          }),
+        ),
+      );
+      return true;
+    } finally {
+      reviewLocked.value = false;
+    }
   }
-
-  const isCreating = computed(() => asyncStatus.value === 'loading');
 
   return {
     createReview,

@@ -80,8 +80,12 @@ export function useRescueQuoteSave(
     onSuccess: invalidateQuoteQueries,
   });
 
+  const saveInFlight = ref(false);
   const isSaving = computed(
-    () => createStatus.value === 'loading' || updateStatus.value === 'loading',
+    () =>
+      saveInFlight.value
+      || createStatus.value === 'loading'
+      || updateStatus.value === 'loading',
   );
 
   function validateQuotePayload(payload: QuoteSaveBasePayload) {
@@ -105,7 +109,7 @@ export function useRescueQuoteSave(
     return { currentId, parsed: parsed.data };
   }
 
-  async function saveCreate(payload: QuoteSaveCreatePayload) {
+  async function saveCreateUnlocked(payload: QuoteSaveCreatePayload) {
     const validated = validateQuotePayload(payload);
     if (validated == null) return false;
 
@@ -151,7 +155,7 @@ export function useRescueQuoteSave(
       return true;
     } catch (error) {
       if (isRescueQuoteNotFoundError(error)) {
-        return saveUpdate(payload);
+        return saveUpdateUnlocked(payload);
       }
       toast.add({
         title: 'No se pudo guardar la cotización',
@@ -162,7 +166,7 @@ export function useRescueQuoteSave(
     }
   }
 
-  async function saveUpdate(payload: QuoteSaveBasePayload) {
+  async function saveUpdateUnlocked(payload: QuoteSaveBasePayload) {
     const validated = validateQuotePayload(payload);
     if (validated == null) return false;
 
@@ -196,6 +200,26 @@ export function useRescueQuoteSave(
         color: 'error',
       });
       return false;
+    }
+  }
+
+  async function saveCreate(payload: QuoteSaveCreatePayload) {
+    if (saveInFlight.value) return false;
+    saveInFlight.value = true;
+    try {
+      return await saveCreateUnlocked(payload);
+    } finally {
+      saveInFlight.value = false;
+    }
+  }
+
+  async function saveUpdate(payload: QuoteSaveBasePayload) {
+    if (saveInFlight.value) return false;
+    saveInFlight.value = true;
+    try {
+      return await saveUpdateUnlocked(payload);
+    } finally {
+      saveInFlight.value = false;
     }
   }
 

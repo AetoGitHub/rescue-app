@@ -142,11 +142,13 @@ function applyPercent(percent: number) {
 }
 
 function onCancel() {
+  if (props.loading) return;
   open.value = false;
   emit('cancel');
 }
 
 function onSubmit() {
+  if (props.loading) return;
   if (!confirmOnly.value) {
     const amount = parseAdvanceAmountValue(form.value.advance_amount);
     if (amount <= 0) {

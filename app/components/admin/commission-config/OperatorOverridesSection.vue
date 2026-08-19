@@ -16,7 +16,7 @@ const {
 const operators = computed(() => mapOperativeCommissionRows(rawRows.value));
 
 const drafts = reactive<Record<number, string>>({});
-const savingOperatorId = ref<number | null>(null);
+const savingOperatorIds = ref<Set<number>>(new Set());
 
 const { updateCommission } = useOperativeCommissionApi();
 
@@ -45,7 +45,20 @@ function setCommissionDraft(operatorId: number, value: number | undefined) {
       : formatStringNumber(value * 100, 2);
 }
 
+function isSavingOperator(operatorId: number) {
+  return savingOperatorIds.value.has(operatorId);
+}
+
+function setSavingOperator(operatorId: number, active: boolean) {
+  const next = new Set(savingOperatorIds.value);
+  if (active) next.add(operatorId);
+  else next.delete(operatorId);
+  savingOperatorIds.value = next;
+}
+
 async function saveOperator(operator: OperativeCommissionOperator) {
+  if (isSavingOperator(operator.id)) return;
+
   const commission = drafts[operator.id] ?? '';
   const parsed = operativeCommissionRowSchema.safeParse({ commission });
   if (!parsed.success) {
@@ -56,14 +69,14 @@ async function saveOperator(operator: OperativeCommissionOperator) {
     return;
   }
 
-  savingOperatorId.value = operator.id;
+  setSavingOperator(operator.id, true);
   try {
     await updateCommission(operator.id, parsed.data.commission);
     drafts[operator.id] = parsed.data.commission;
   } catch {
     // Toast handled in mutation
   } finally {
-    savingOperatorId.value = null;
+    setSavingOperator(operator.id, false);
   }
 }
 
@@ -169,8 +182,7 @@ useScrollContainerInfiniteLoad({
               label="Guardar"
               icon="i-lucide-save"
               class="shrink-0"
-              :loading="savingOperatorId === operator.id"
-              :disabled="savingOperatorId === operator.id"
+              :loading="isSavingOperator(operator.id)"
               @click="() => void saveOperator(operator)"
             />
           </div>

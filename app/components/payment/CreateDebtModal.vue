@@ -61,10 +61,12 @@ watch(open, (isOpen) => {
 });
 
 async function onSubmit(event: FormSubmitEvent<PaymentDebtCreateFormState>) {
+  if (props.loading) return;
   emit('submit', paymentDebtCreateToBody(props.userId, event.data));
 }
 
 async function requestSubmit() {
+  if (props.loading) return;
   await formRef.value?.submit();
 }
 
@@ -116,6 +118,7 @@ defineExpose({ requestSubmit });
           color="neutral"
           label="Cancelar"
           variant="subtle"
+          :disabled="loading"
           @click="requestClose"
         />
         <UButton
@@ -123,6 +126,7 @@ defineExpose({ requestSubmit });
           color="primary"
           label="Agregar deuda"
           :loading="loading"
+          :disabled="loading"
           @click="requestSubmit"
         />
       </div>

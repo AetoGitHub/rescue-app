@@ -213,9 +213,12 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
+const isSaving = computed(() => asyncStatus.value === 'loading');
+
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
 function onSubmit(payload: { data: ServiceFormState }) {
+  if (isSaving.value) return;
   if (isEdit.value) {
     mutate({
       body: {
@@ -246,10 +249,12 @@ function onSubmit(payload: { data: ServiceFormState }) {
 const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
+  if (isSaving.value) return;
   requestClose();
 }
 
 async function requestSubmit() {
+  if (isSaving.value) return;
   await formRef.value?.submit();
 }
 </script>
@@ -257,6 +262,7 @@ async function requestSubmit() {
 <template>
   <USlideover
     v-model:open="guardedOpen"
+    :dismissible="!isSaving"
     :title="isEdit ? 'Editar servicio' : 'Nuevo servicio'"
     :ui="{
       content: adminListSlideoverContentClass,
@@ -365,12 +371,19 @@ async function requestSubmit() {
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton type="button" color="neutral" variant="subtle" label="Cancelar" @click="cancel" />
+        <UButton
+          type="button"
+          color="neutral"
+          variant="subtle"
+          label="Cancelar"
+          :disabled="isSaving"
+          @click="cancel"
+        />
         <UButton
           type="button"
           label="Guardar"
-          :loading="asyncStatus === 'loading' || (detailPending && isEdit)"
-          :disabled="asyncStatus === 'loading' || (detailPending && isEdit)"
+          :loading="isSaving || (detailPending && isEdit)"
+          :disabled="isSaving || (detailPending && isEdit)"
           @click="requestSubmit"
         />
       </div>

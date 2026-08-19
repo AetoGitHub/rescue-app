@@ -116,13 +116,41 @@ export function useRescueAdministrativeMutation(
     },
   });
 
+  const updateLock = ref(false);
   const isUpdating = computed(
-    () => asyncStatus.value === 'loading' || revertStatus.value === 'loading',
+    () =>
+      updateLock.value
+      || asyncStatus.value === 'loading'
+      || revertStatus.value === 'loading',
   );
 
+  async function updateAdministrative(
+    body: RescueAdministrativeChangePhaseBody,
+  ) {
+    if (updateLock.value || isUpdating.value) return;
+    updateLock.value = true;
+    try {
+      return await mutateAsync(body);
+    } finally {
+      updateLock.value = false;
+    }
+  }
+
+  async function revertAdministrativeCancellation(
+    body: RescueAdministrativeRevertCancellationBody,
+  ) {
+    if (updateLock.value || isUpdating.value) return;
+    updateLock.value = true;
+    try {
+      return await revertAsync(body);
+    } finally {
+      updateLock.value = false;
+    }
+  }
+
   return {
-    updateAdministrative: mutateAsync,
-    revertAdministrativeCancellation: revertAsync,
+    updateAdministrative,
+    revertAdministrativeCancellation,
     isUpdating,
   };
 }

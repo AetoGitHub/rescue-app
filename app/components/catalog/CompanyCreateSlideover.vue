@@ -322,6 +322,15 @@ const { mutate, asyncStatus } = useMutation({
   },
 });
 
+const isSubmitSequenceActive = ref(false);
+const isSaving = computed(
+  () => asyncStatus.value === 'loading' || isSubmitSequenceActive.value,
+);
+
+watch(asyncStatus, (status) => {
+  if (status !== 'loading') isSubmitSequenceActive.value = false;
+});
+
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 const creditFormSectionRef = ref<{ submit: () => Promise<void> } | null>(null);
 const pendingCompanyData = ref<CompanyCreateBody | CompanyUpdateBody | null>(null);
@@ -357,6 +366,8 @@ function needsCreditValidation(
 }
 
 function onSubmit(payload: { data: CompanyFormState }) {
+  if (isSaving.value) return;
+  isSubmitSequenceActive.value = true;
   const body = buildSubmitBody(payload.data);
   if (!needsCreditValidation(body)) {
     mutate({ body, id: editingId.value });
@@ -364,12 +375,21 @@ function onSubmit(payload: { data: CompanyFormState }) {
   }
 
   pendingCompanyData.value = body;
-  void creditFormSectionRef.value?.submit();
+  void (async () => {
+    try {
+      await creditFormSectionRef.value?.submit();
+    } finally {
+      if (asyncStatus.value !== 'loading') {
+        isSubmitSequenceActive.value = false;
+      }
+    }
+  })();
 }
 
 function onCreditSubmit(
   payload: FormSubmitEvent<ZodInfer<typeof creditFormSchema>>,
 ) {
+  if (asyncStatus.value === 'loading') return;
   const companyData = pendingCompanyData.value;
   if (companyData == null) return;
   pendingCompanyData.value = null;
@@ -390,10 +410,12 @@ function onCreditSubmit(
 
 
 function cancel() {
+  if (isSaving.value) return;
   requestClose();
 }
 
 async function requestSubmit() {
+  if (isSaving.value) return;
   await formRef.value?.submit();
 }
 </script>
@@ -401,6 +423,7 @@ async function requestSubmit() {
 <template>
   <USlideover
     v-model:open="guardedOpen"
+    :dismissible="!isSaving"
     :title="isEdit ? 'Editar compañía' : 'Nueva compañía'"
     :ui="{
       content: adminListSlideoverContentClass,
@@ -574,12 +597,19 @@ async function requestSubmit() {
 
     <template #footer>
       <div class="flex justify-end gap-2 w-full">
-        <UButton type="button" color="neutral" variant="subtle" label="Cancelar" @click="cancel" />
+        <UButton
+          type="button"
+          color="neutral"
+          variant="subtle"
+          label="Cancelar"
+          :disabled="isSaving"
+          @click="cancel"
+        />
         <UButton
           type="button"
           label="Guardar"
-          :loading="asyncStatus === 'loading' || (pendingDetail && isEdit)"
-          :disabled="asyncStatus === 'loading' || (pendingDetail && isEdit)"
+          :loading="isSaving || (pendingDetail && isEdit)"
+          :disabled="isSaving || (pendingDetail && isEdit)"
           @click="requestSubmit"
         />
       </div>

@@ -44,8 +44,13 @@ export function useClientCsf(options: {
     },
   });
 
+  const saveLocked = ref(false);
+
   const isSaving = computed(
-    () => isUploading.value || saveStatus.value === 'loading',
+    () =>
+      isUploading.value
+      || saveLocked.value
+      || saveStatus.value === 'loading',
   );
 
   const hasPendingUpload = computed(
@@ -53,6 +58,8 @@ export function useClientCsf(options: {
   );
 
   async function uploadFile(file: File): Promise<string | null> {
+    if (isSaving.value) return null;
+
     const id = clientId.value;
     if (id == null) return null;
 
@@ -88,14 +95,18 @@ export function useClientCsf(options: {
   }
 
   async function savePendingCsf(onSaved?: (url: string) => void) {
+    if (isSaving.value) return;
     const url = pendingUrl.value?.trim();
     if (!url) return;
+    saveLocked.value = true;
     try {
       await saveCsfAsync({ csf: url });
       onSaved?.(url);
       pendingUrl.value = null;
     } catch {
       // Toast handled in mutation onError.
+    } finally {
+      saveLocked.value = false;
     }
   }
 

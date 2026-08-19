@@ -80,6 +80,10 @@ async function enrichCategories(items: ContractItem[]) {
 const saveTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
 async function persistRow(row: ContractItemEditableRow) {
+  if (savingIds.value.has(row.id)) {
+    scheduleRowSave(row);
+    return;
+  }
   savingIds.value.add(row.id);
   try {
     await $fetch(`/api/catalogue/contract/item/update/${row.id}/`, {
@@ -178,6 +182,7 @@ useScrollContainerInfiniteLoad({
 
 async function confirmRemove(row: ContractItemEditableRow) {
   if (!import.meta.client) return;
+  if (removingId.value === row.id) return;
   if (
     !window.confirm(
       `¿Eliminar «${row.service_name}» de los precios negociados?`,
@@ -321,6 +326,7 @@ async function confirmRemove(row: ContractItemEditableRow) {
                 size="xs"
                 aria-label="Eliminar"
                 :loading="removingId === row.id"
+                :disabled="removingId === row.id"
                 @click="confirmRemove(row)"
               />
             </td>

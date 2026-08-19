@@ -34,6 +34,7 @@ const secondaryActions = computed(() =>
 );
 
 function onAction(id: RescueAdministrativeActionId) {
+  if (props.loading) return;
   emit('action', id);
 }
 </script>

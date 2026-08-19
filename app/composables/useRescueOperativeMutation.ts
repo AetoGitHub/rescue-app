@@ -53,10 +53,23 @@ export function useRescueOperativeMutation(
     },
   });
 
-  const isUpdating = computed(() => asyncStatus.value === 'loading');
+  const updateLocked = ref(false);
+  const isUpdating = computed(
+    () => updateLocked.value || asyncStatus.value === 'loading',
+  );
+
+  async function updateOperative(body: RescueChangePhaseBody) {
+    if (isUpdating.value) return;
+    updateLocked.value = true;
+    try {
+      return await mutateAsync(body);
+    } finally {
+      updateLocked.value = false;
+    }
+  }
 
   return {
-    updateOperative: mutateAsync,
+    updateOperative,
     isUpdating,
   };
 }
