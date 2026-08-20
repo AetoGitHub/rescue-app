@@ -89,13 +89,26 @@ const selectedRescue = computed(
 const columns: TableColumn<TmsRescueDisplay>[] = [
   { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'folio', header: 'Folio' },
-  { accessorKey: 'internal_notes', header: 'Notas internas' },
+  {
+    accessorKey: 'internal_notes',
+    header: 'Notas internas',
+    meta: {
+      class: {
+        th: 'w-full min-w-64',
+        td: 'w-full min-w-64 whitespace-normal',
+      },
+    },
+  },
   { accessorKey: 'pdf_alegra', header: 'PDF Alegra' },
   { accessorKey: 'xml_alegra', header: 'XML Alegra' },
   { accessorKey: 'remittance_folio', header: 'Orden de compra' },
   { accessorKey: 'invoice_folio', header: 'Factura' },
   { accessorKey: 'oc_pdf', header: 'PDF OC' },
-  { id: 'actions', header: '' },
+  {
+    id: 'actions',
+    header: '',
+    meta: { class: { th: 'w-16', td: 'w-16' } },
+  },
 ];
 
 function openEditor(rescue: TmsRescue) {
@@ -302,7 +315,6 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         :data="filteredRows"
         :loading="isInitialLoading"
         :get-row-id="(row: TmsRescueDisplay) => String(row.id)"
-        :ui="{ base: 'min-w-280' }"
       >
         <template #id-cell="{ row }">
           <span class="font-mono text-xs tabular-nums text-muted">
@@ -326,7 +338,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         </template>
 
         <template #internal_notes-cell="{ row }">
-          <p class="max-w-72 whitespace-pre-line text-sm text-toned">
+          <p class="whitespace-pre-line text-sm text-toned">
             {{ row.original.internal_notes || '—' }}
           </p>
         </template>
