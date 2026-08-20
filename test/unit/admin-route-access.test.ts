@@ -100,6 +100,7 @@ describe('abilityForAdminPath', () => {
     expect(abilityForAdminPath('/admin/my-balance')).toBe(accessMyBalance);
     expect(abilityForAdminPath('/admin/administrativo')).toBe(accessAdministrative);
     expect(abilityForAdminPath('/admin/por-facturar')).toBe(accessAdministrative);
+    expect(abilityForAdminPath('/admin/portales/tms')).toBe(accessAdministrative);
     expect(abilityForAdminPath('/admin/catalogs/clients')).toBe(accessCatalogs);
     expect(abilityForAdminPath('/admin/users')).toBe(accessUsers);
     expect(abilityForAdminPath('/admin/pagar')).toBe(accessPayments);

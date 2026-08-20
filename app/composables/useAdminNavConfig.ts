@@ -68,6 +68,17 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     ],
   },
   {
+    label: 'Portales',
+    items: [
+      {
+        label: 'TMS',
+        to: '/admin/portales/tms',
+        icon: 'i-lucide-panels-top-left',
+        ability: accessAdministrative,
+      },
+    ],
+  },
+  {
     label: 'Catálogos',
     items: [
       {

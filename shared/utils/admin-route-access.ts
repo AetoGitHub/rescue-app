@@ -18,6 +18,7 @@ export function abilityForAdminPath(path: string): AdminAbility {
   if (path.startsWith('/admin/pagar/recibo')) return accessPaymentReceipts;
   if (path.startsWith('/admin/pagar')) return accessPayments;
   if (path.startsWith('/admin/por-facturar')) return accessAdministrative;
+  if (path.startsWith('/admin/portales')) return accessAdministrative;
   if (path.startsWith('/admin/administrativo')) return accessAdministrative;
   if (path.startsWith('/admin/my-balance')) return accessMyBalance;
   if (path.startsWith('/admin/operational')) return accessOperational;
