@@ -32,6 +32,8 @@ export interface TmsPurchaseOrderUploadFile {
 
 export interface TmsPurchaseOrderUploadResponse {
   files: TmsPurchaseOrderUploadFile[];
+  /** Mensaje del servicio cuando el lote falló pero hay resultados por archivo. */
+  batchError?: string | null;
 }
 
 export interface TmsPurchaseOrderAssignment {
