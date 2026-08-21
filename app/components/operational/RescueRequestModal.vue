@@ -346,7 +346,7 @@ function pickStepPayload(stepIndex: number) {
     case 'supplier':
       return { supplier: state.supplier };
     case 'summary':
-      return { internal_notes: state.internal_notes };
+      return { client: state.client, internal_notes: state.internal_notes };
     default:
       return {};
   }
@@ -443,6 +443,7 @@ function cancel() {
 
 async function requestSubmit() {
   if (isSubmitting.value) return;
+  if (!validateCurrentStep()) return;
   if (!validateQuoteCredit()) return;
   await formRef.value?.submit();
 }

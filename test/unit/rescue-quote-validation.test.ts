@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   getRescueStepQuoteSchema,
   getRescueStepQuoteWithSettingsSchema,
+  isTmsClient,
   rescueCreateFormSchema,
+  rescueStepSummarySchema,
   rescueStepSupplierSchema,
 } from '~/schemas/rescue-create';
 import {
@@ -151,5 +153,51 @@ describe('rescueCreateFormSchema quote_lines', () => {
       quote_lines: [validQuoteLine],
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('TMS client internal notes', () => {
+  it('detects TMS by label or name, ignoring case and spaces', () => {
+    expect(isTmsClient({ label: 'TMS' })).toBe(true);
+    expect(isTmsClient({ label: ' tms ' })).toBe(true);
+    expect(isTmsClient({ name: 'Tms' })).toBe(true);
+    expect(isTmsClient({ label: 'Cliente' })).toBe(false);
+    expect(isTmsClient({ label: 'ATMS' })).toBe(false);
+  });
+
+  it('requires internal notes for TMS on the summary step', () => {
+    const empty = rescueStepSummarySchema.safeParse({
+      client: { value: 12, label: 'TMS' },
+      internal_notes: '   ',
+    });
+    expect(empty.success).toBe(false);
+    expect(empty.error?.issues[0]?.path).toEqual(['internal_notes']);
+
+    const filled = rescueStepSummarySchema.safeParse({
+      client: { value: 12, label: 'TMS' },
+      internal_notes: 'Folio de orden 2616071',
+    });
+    expect(filled.success).toBe(true);
+  });
+
+  it('keeps internal notes optional for other clients', () => {
+    const result = rescueStepSummarySchema.safeParse({
+      client: { value: 1, label: 'Cliente' },
+      internal_notes: '',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects TMS create when internal notes are empty', () => {
+    const result = rescueCreateFormSchema.safeParse({
+      ...baseFormFields,
+      client: { value: 12, label: 'TMS' },
+      service_type: 'rescue',
+      quote_lines: [],
+    });
+    expect(result.success).toBe(false);
+    expect(
+      result.error?.issues.some((issue) => issue.path[0] === 'internal_notes'),
+    ).toBe(true);
   });
 });

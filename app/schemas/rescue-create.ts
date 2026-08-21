@@ -11,6 +11,7 @@ import {
 } from '~/interfaces/shared/catalog-dropdown.interface';
 import { getContractItemById } from '~/utils/rescue-company-settings';
 import { isQuoteOptionalForServiceType } from '~/utils/rescue-request';
+import { TMS_CLIENT_LABEL } from '~/constants/tms-portal-api';
 const RESCUE_SERVICE_TYPES = [
   'rescue',
   'loan',
@@ -234,9 +235,38 @@ export function getRescueStepQuoteWithSettingsSchema(
   );
 }
 
-export const rescueStepSummarySchema = z.object({
-  internal_notes: z.string().transform((s) => s.trim()),
-});
+export function isTmsClient(
+  client: { label?: string | null; name?: string | null } | null | undefined,
+): boolean {
+  const expected = TMS_CLIENT_LABEL.toLocaleLowerCase('es-MX');
+  return [client?.label, client?.name].some(
+    (value) => value?.trim().toLocaleLowerCase('es-MX') === expected,
+  );
+}
+
+const TMS_INTERNAL_NOTES_REQUIRED =
+  'Las notas internas son obligatorias para el cliente TMS';
+
+function refineTmsInternalNotes(
+  data: { client: { label: string }; internal_notes: string },
+  ctx: z.RefinementCtx,
+) {
+  if (!isTmsClient(data.client)) return;
+  if (data.internal_notes.length > 0) return;
+
+  ctx.addIssue({
+    code: 'custom',
+    message: TMS_INTERNAL_NOTES_REQUIRED,
+    path: ['internal_notes'],
+  });
+}
+
+export const rescueStepSummarySchema = z
+  .object({
+    client: catalogSelectionSchema,
+    internal_notes: z.string().transform((s) => s.trim()),
+  })
+  .superRefine(refineTmsInternalNotes);
 
 export const rescueCreateFormSchema = z
   .object({
@@ -265,6 +295,7 @@ export const rescueCreateFormSchema = z
     refineQuoteLines(data.quote_lines, undefined, ctx, {
       required: !isQuoteOptionalForServiceType(data.service_type),
     });
+    refineTmsInternalNotes(data, ctx);
   });
 
 export type RescueCreateFormOutput = z.output<typeof rescueCreateFormSchema>;

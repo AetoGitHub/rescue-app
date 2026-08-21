@@ -6,6 +6,13 @@ import type {
   TmsRescueListResponse,
 } from '~/interfaces/portals/tms';
 
+function normalizeTmsRescue(rescue: TmsRescue): TmsRescue {
+  return {
+    ...rescue,
+    ready: rescue.ready === true,
+  };
+}
+
 export function normalizeTmsRescuePage(
   response: TmsRescueListResponse,
 ): PaginatedResponse<TmsRescue> {
@@ -13,11 +20,14 @@ export function normalizeTmsRescuePage(
     return {
       next: null,
       previous: null,
-      results: response,
+      results: response.map(normalizeTmsRescue),
     };
   }
 
-  return response;
+  return {
+    ...response,
+    results: response.results.map(normalizeTmsRescue),
+  };
 }
 
 function comparableFolio(value: string | null | undefined): string {

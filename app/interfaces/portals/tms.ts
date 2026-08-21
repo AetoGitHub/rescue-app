@@ -9,6 +9,7 @@ export interface TmsRescue {
   remittance_folio: string | null;
   invoice_folio: string | null;
   oc_pdf: string | null;
+  ready: boolean;
 }
 
 export type TmsRescueListResponse =

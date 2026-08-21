@@ -105,6 +105,11 @@ const columns: TableColumn<TmsRescueDisplay>[] = [
       },
     },
   },
+  {
+    accessorKey: 'ready',
+    header: 'Listo',
+    meta: { class: { th: 'w-24', td: 'w-24 align-top' } },
+  },
 ];
 
 function draftFor(rescueId: number): TmsRescueDraftState {
@@ -310,11 +315,18 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
                 Factura {{ rescue.invoice_folio || '—' }}
               </p>
             </div>
-            <PortalTmsRowSaveStatus
-              :status="rowStatus[rescue.id] ?? 'idle'"
-              :error="rowErrors[rescue.id]"
-              :dirty="rescue.isDirty"
-            />
+            <div class="flex shrink-0 flex-col items-end gap-2">
+              <UBadge
+                :color="rescue.ready ? 'success' : 'error'"
+                variant="subtle"
+                :label="rescue.ready ? 'Listo' : 'Pendiente'"
+              />
+              <PortalTmsRowSaveStatus
+                :status="rowStatus[rescue.id] ?? 'idle'"
+                :error="rowErrors[rescue.id]"
+                :dirty="rescue.isDirty"
+              />
+            </div>
           </div>
 
           <div class="mt-3 flex flex-wrap gap-2">
@@ -468,6 +480,14 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             :disabled="rowStatus[row.original.id] === 'saving'"
             @blur="() => void commitDraft(row.original.id)"
             @keydown.esc="revertDraft(row.original.id)"
+          />
+        </template>
+
+        <template #ready-cell="{ row }">
+          <UBadge
+            :color="row.original.ready ? 'success' : 'error'"
+            variant="subtle"
+            :label="row.original.ready ? 'Listo' : 'Pendiente'"
           />
         </template>
 

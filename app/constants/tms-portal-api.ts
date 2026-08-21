@@ -4,3 +4,6 @@ export const TMS_RESCUE_TRIGGER_PATH = '/api/invoicing/client_portal/tms/trigger
 export const TMS_PURCHASE_ORDER_UPLOAD_PATH =
   '/api/portals/tms/purchase-orders/upload';
 export const TMS_RESCUE_LIST_QUERY_KEY = ['portal-tms-rescues'] as const;
+
+/** Nombre/etiqueta del cliente TMS. No usar el id: puede cambiar. */
+export const TMS_CLIENT_LABEL = 'TMS';

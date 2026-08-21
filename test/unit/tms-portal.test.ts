@@ -27,6 +27,7 @@ function rescue(
     remittance_folio: remittanceFolio,
     invoice_folio: `C${id}`,
     oc_pdf: null,
+    ready: false,
   };
 }
 
@@ -43,6 +44,14 @@ function upload(
 }
 
 describe('TMS portal mapping', () => {
+  it('normalizes missing ready as false', () => {
+    const { results } = normalizeTmsRescuePage([
+      { ...rescue(1, '100'), ready: true },
+      { ...rescue(2, '200'), ready: undefined as unknown as boolean },
+    ]);
+    expect(results.map((row) => row.ready)).toEqual([true, false]);
+  });
+
   it('normalizes legacy arrays and preserves cursor responses', () => {
     const rows = [rescue(1, '100')];
     expect(normalizeTmsRescuePage(rows)).toEqual({
@@ -56,7 +65,7 @@ describe('TMS portal mapping', () => {
       previous: null,
       results: rows,
     };
-    expect(normalizeTmsRescuePage(paginated)).toBe(paginated);
+    expect(normalizeTmsRescuePage(paginated)).toEqual(paginated);
   });
 
   it('auto-assigns only an exact unique remittance match', () => {

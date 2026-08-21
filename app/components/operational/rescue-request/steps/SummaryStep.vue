@@ -2,7 +2,7 @@
 import type { RescueRequestFormState } from '~/schemas/rescue-create';
 import { DEFAULT_IVA_RATE, QUOTE_SUMMARY_LABELS } from '~/constants/quote-pricing';
 import { RESCUE_SERVICE_TYPE_OPTIONS } from '~/constants/rescue-select-options';
-import { parseRescueCoord } from '~/schemas/rescue-create';
+import { parseRescueCoord, isTmsClient } from '~/schemas/rescue-create';
 
 const state = defineModel<RescueRequestFormState>({ required: true });
 
@@ -236,7 +236,16 @@ onBeforeUnmount(unregisterQuoteDevUnlockShortcut);
       :mode="quotePricingDevBreakdownMode ?? 'dev'"
     />
 
-    <UFormField label="Nota interna" name="internal_notes">
+    <UFormField
+      label="Nota interna"
+      name="internal_notes"
+      :required="isTmsClient(state.client)"
+      :description="
+        isTmsClient(state.client)
+          ? 'Obligatorias para el cliente TMS'
+          : undefined
+      "
+    >
       <UTextarea v-model="state.internal_notes" class="w-full" :rows="4" />
     </UFormField>
   </div>
