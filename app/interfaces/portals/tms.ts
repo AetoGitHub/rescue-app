@@ -36,6 +36,8 @@ export interface TmsPurchaseOrderUploadResponse {
   batchError?: string | null;
 }
 
+export type TmsRowSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 export interface TmsPurchaseOrderAssignment {
   file: TmsPurchaseOrderUploadFile;
   rescueId: number | null;

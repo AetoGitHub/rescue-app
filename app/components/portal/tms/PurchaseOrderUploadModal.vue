@@ -2,7 +2,6 @@
 import type { Form, FormSubmitEvent } from '@nuxt/ui';
 import type {
   TmsPurchaseOrderAssignment,
-  TmsPurchaseOrderUploadResponse,
   TmsRescue,
 } from '~/interfaces/portals/tms';
 import {
@@ -33,7 +32,7 @@ const batchError = ref<string | null>(null);
 const isUploading = ref(false);
 const processingCount = ref(0);
 const toast = useToast();
-const apiFetch = useApiFetch();
+const { uploadPurchaseOrders } = useTmsPurchaseOrderUpload();
 
 const rescueOptions = computed(() =>
   props.rescues.map((rescue) => ({
@@ -41,6 +40,13 @@ const rescueOptions = computed(() =>
     value: rescue.id,
   })),
 );
+
+function rescueLabel(rescueId: number | null): string {
+  if (rescueId == null) return '';
+  return (
+    rescueOptions.value.find((option) => option.value === rescueId)?.label ?? ''
+  );
+}
 
 const STATUS_TEXT_CLASS = {
   success: 'text-success',
@@ -75,6 +81,11 @@ function assignFile(assignment: TmsPurchaseOrderAssignment, rescueId: number) {
   emit('assign', { rescueId, url: assignment.file.url });
 }
 
+/** Devuelve la fila al modo manual para corregir un rescate mal relacionado. */
+function reopenAssignment(assignment: TmsPurchaseOrderAssignment) {
+  assignment.status = 'unmatched';
+}
+
 async function onSubmit(
   event: FormSubmitEvent<TmsPurchaseOrderUploadState>,
 ) {
@@ -92,17 +103,8 @@ async function onSubmit(
       assignment.status !== 'failed' && !resubmitted.has(assignment.file.fileName),
   );
 
-  const body = new FormData();
-  for (const file of files) body.append('files', file);
-
   try {
-    const response = await apiFetch<TmsPurchaseOrderUploadResponse>(
-      '/api/portals/tms/purchase-orders/upload',
-      {
-        method: 'POST',
-        body,
-      },
-    );
+    const response = await uploadPurchaseOrders(files);
 
     const processed = assignTmsPurchaseOrders(response.files, props.rescues);
     assignments.value = [...kept, ...processed];
@@ -300,18 +302,18 @@ function resetModal() {
               v-if="assignment.status !== 'assigned' && assignment.file.url"
               class="flex flex-col gap-2 sm:flex-row"
             >
-              <USelect
+              <USelectMenu
                 :model-value="assignment.rescueId ?? undefined"
                 :items="rescueOptions"
                 value-key="value"
                 label-key="label"
-                placeholder="Selecciona el rescate"
+                placeholder="Busca el rescate por folio u orden"
+                :search-input="{ placeholder: 'Buscar folio u orden' }"
+                icon="i-lucide-search"
                 class="min-w-0 flex-1"
                 @update:model-value="assignment.rescueId = $event ?? null"
               />
               <UButton
-                color="neutral"
-                variant="subtle"
                 label="Asignar"
                 icon="i-lucide-link"
                 :disabled="assignment.rescueId == null"
@@ -319,6 +321,23 @@ function resetModal() {
                   assignment.rescueId != null
                     && assignFile(assignment, assignment.rescueId)
                 "
+              />
+            </div>
+
+            <div
+              v-else-if="assignment.status === 'assigned' && assignment.file.url"
+              class="flex flex-wrap items-center gap-2 text-xs text-muted"
+            >
+              <span class="truncate">
+                Rescate {{ rescueLabel(assignment.rescueId) || 'relacionado' }}
+              </span>
+              <UButton
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                icon="i-lucide-pencil"
+                label="Cambiar"
+                @click="reopenAssignment(assignment)"
               />
             </div>
           </li>

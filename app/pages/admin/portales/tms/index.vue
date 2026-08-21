@@ -3,21 +3,29 @@ import type { TableColumn } from '@nuxt/ui';
 import type {
   TmsRescue,
   TmsRescueUpdateBody,
+  TmsRowSaveStatus,
 } from '~/interfaces/portals/tms';
-import type { TmsRescueDraftState } from '~/schemas/tms-portal';
+import {
+  tmsRescueDraftSchema,
+  tmsRescueDraftToUpdateBody,
+  type TmsRescueDraftState,
+} from '~/schemas/tms-portal';
 import { adminListTableClass } from '~/constants/admin-list-layout';
 
 type TmsRescueDisplay = TmsRescue & {
   isDirty: boolean;
 };
 
+const SAVED_FLASH_MS = 2500;
+
 useHead({ title: 'Portal TMS' });
 
 const search = ref('');
 const tableRef = useTemplateRef('table');
 const drafts = reactive<Record<number, TmsRescueDraftState>>({});
-const selectedRescueId = ref<number | null>(null);
-const editOpen = ref(false);
+const rowStatus = reactive<Record<number, TmsRowSaveStatus>>({});
+const rowErrors = reactive<Record<number, string | null>>({});
+const savedTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
 const {
   rows,
@@ -30,12 +38,7 @@ const {
   refresh,
 } = useTmsRescueList();
 
-const {
-  updateRescue,
-  triggerPortal,
-  isUpdating,
-  isTriggering,
-} = useTmsRescueMutations();
+const { updateRescue, triggerPortal, isTriggering } = useTmsRescueMutations();
 
 usePaginatedTableInfiniteScroll({
   tableRef,
@@ -80,69 +83,140 @@ const filteredRows = computed(() =>
   ),
 );
 
-const selectedRescue = computed(
-  () =>
-    displayRows.value.find((rescue) => rescue.id === selectedRescueId.value)
-    ?? null,
-);
-
 const columns: TableColumn<TmsRescueDisplay>[] = [
   { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'folio', header: 'Folio' },
+  { accessorKey: 'pdf_alegra', header: 'PDF Alegra' },
+  { accessorKey: 'xml_alegra', header: 'XML Alegra' },
+  { accessorKey: 'remittance_folio', header: 'Orden de compra' },
+  { accessorKey: 'invoice_folio', header: 'Factura' },
+  {
+    accessorKey: 'oc_pdf',
+    header: 'PDF OC',
+    meta: { class: { th: 'min-w-72', td: 'min-w-72 align-top' } },
+  },
   {
     accessorKey: 'internal_notes',
     header: 'Notas internas',
     meta: {
       class: {
-        th: 'w-full min-w-64',
-        td: 'w-full min-w-64 whitespace-normal',
+        th: 'w-full min-w-72',
+        td: 'w-full min-w-72 whitespace-normal align-top',
       },
     },
   },
-  { accessorKey: 'pdf_alegra', header: 'PDF Alegra' },
-  { accessorKey: 'xml_alegra', header: 'XML Alegra' },
-  { accessorKey: 'remittance_folio', header: 'Orden de compra' },
-  { accessorKey: 'invoice_folio', header: 'Factura' },
-  { accessorKey: 'oc_pdf', header: 'PDF OC' },
-  {
-    id: 'actions',
-    header: '',
-    meta: { class: { th: 'w-16', td: 'w-16' } },
-  },
 ];
 
-function openEditor(rescue: TmsRescue) {
-  selectedRescueId.value = rescue.id;
-  editOpen.value = true;
+function draftFor(rescueId: number): TmsRescueDraftState {
+  const existing = drafts[rescueId];
+  if (existing) return existing;
+
+  const rescue = rows.value.find((item) => item.id === rescueId);
+  const draft: TmsRescueDraftState = {
+    internal_notes: rescue?.internal_notes ?? '',
+    oc_pdf: rescue?.oc_pdf ?? '',
+  };
+  drafts[rescueId] = draft;
+  return draft;
 }
 
-async function applyDraft(payload: {
-  rescueId: number;
-  body: TmsRescueUpdateBody;
-}) {
-  const saved = await updateRescue(payload.body);
-  if (!saved) return;
-  drafts[payload.rescueId] = {
-    internal_notes: payload.body.internal_notes,
-    oc_pdf: payload.body.oc_pdf ?? '',
+function flashSaved(rescueId: number) {
+  rowStatus[rescueId] = 'saved';
+  clearTimeout(savedTimers.get(rescueId));
+  savedTimers.set(
+    rescueId,
+    setTimeout(() => {
+      if (rowStatus[rescueId] === 'saved') rowStatus[rescueId] = 'idle';
+      savedTimers.delete(rescueId);
+    }, SAVED_FLASH_MS),
+  );
+}
+
+onScopeDispose(() => {
+  for (const timer of savedTimers.values()) clearTimeout(timer);
+  savedTimers.clear();
+});
+
+/** Persiste el borrador de la fila; se dispara al salir del campo. */
+async function commitDraft(rescueId: number) {
+  if (rowStatus[rescueId] === 'saving') return;
+
+  const source = rows.value.find((item) => item.id === rescueId);
+  if (!source) return;
+
+  const parsed = tmsRescueDraftSchema.safeParse(draftFor(rescueId));
+  if (!parsed.success) {
+    rowErrors[rescueId] =
+      parsed.error.issues[0]?.message ?? 'Revisa los datos de la fila';
+    rowStatus[rescueId] = 'error';
+    return;
+  }
+
+  const body = tmsRescueDraftToUpdateBody(rescueId, parsed.data);
+  if (
+    body.internal_notes === source.internal_notes
+    && body.oc_pdf === source.oc_pdf
+  ) {
+    rowErrors[rescueId] = null;
+    if (rowStatus[rescueId] !== 'saved') rowStatus[rescueId] = 'idle';
+    return;
+  }
+
+  rowStatus[rescueId] = 'saving';
+  const saved = await updateRescue(body, { silentSuccess: true });
+  if (!saved) {
+    rowErrors[rescueId] = 'No se pudo guardar, vuelve a intentarlo';
+    rowStatus[rescueId] = 'error';
+    return;
+  }
+
+  drafts[rescueId] = {
+    internal_notes: body.internal_notes,
+    oc_pdf: body.oc_pdf ?? '',
   };
-  editOpen.value = false;
+  rowErrors[rescueId] = null;
+  flashSaved(rescueId);
+}
+
+function revertDraft(rescueId: number) {
+  const source = rows.value.find((item) => item.id === rescueId);
+  if (!source) return;
+  drafts[rescueId] = {
+    internal_notes: source.internal_notes,
+    oc_pdf: source.oc_pdf ?? '',
+  };
+  rowErrors[rescueId] = null;
+  rowStatus[rescueId] = 'idle';
+}
+
+function clearOcPdf(rescueId: number) {
+  draftFor(rescueId).oc_pdf = '';
+  void commitDraft(rescueId);
 }
 
 async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
   const rescue = displayRows.value.find((item) => item.id === payload.rescueId);
   if (!rescue) return;
+
   const body: TmsRescueUpdateBody = {
     id: payload.rescueId,
     oc_pdf: payload.url,
     internal_notes: rescue.internal_notes,
   };
-  const saved = await updateRescue(body);
-  if (!saved) return;
+  rowStatus[payload.rescueId] = 'saving';
+  const saved = await updateRescue(body, { silentSuccess: true });
+  if (!saved) {
+    rowErrors[payload.rescueId] = 'No se pudo guardar la orden de compra';
+    rowStatus[payload.rescueId] = 'error';
+    return;
+  }
+
   drafts[payload.rescueId] = {
     internal_notes: body.internal_notes,
     oc_pdf: payload.url,
   };
+  rowErrors[payload.rescueId] = null;
+  flashSaved(payload.rescueId);
 }
 </script>
 
@@ -150,7 +224,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
   <AdminListPageShell
     navbar-title="Portal TMS"
     title="TMS"
-    description="Relaciona facturas, órdenes de compra y sus PDFs de los rescates."
+    description="Edita el PDF de la orden de compra y las notas internas en la tabla; se guardan al salir del campo."
   >
     <template #actions>
       <UButton
@@ -181,7 +255,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         v-if="displayRows.some((row) => row.isDirty)"
         color="warning"
         variant="subtle"
-        :label="`${displayRows.filter((row) => row.isDirty).length} borradores pendientes`"
+        :label="`${displayRows.filter((row) => row.isDirty).length} filas sin guardar`"
       />
     </template>
 
@@ -228,51 +302,22 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <h2 class="font-semibold text-highlighted">
-                  {{ rescue.folio }}
-                </h2>
-                <UBadge
-                  v-if="rescue.isDirty"
-                  color="warning"
-                  variant="subtle"
-                  label="Borrador"
-                  size="sm"
-                />
-              </div>
+              <h2 class="font-semibold text-highlighted">
+                {{ rescue.folio }}
+              </h2>
               <p class="mt-1 text-xs text-muted">
-                ID {{ rescue.id }} · OC {{ rescue.remittance_folio || '—' }}
+                ID {{ rescue.id }} · OC {{ rescue.remittance_folio || '—' }} ·
+                Factura {{ rescue.invoice_folio || '—' }}
               </p>
             </div>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-pencil"
-              aria-label="Editar borrador"
-              @click="openEditor(rescue)"
+            <PortalTmsRowSaveStatus
+              :status="rowStatus[rescue.id] ?? 'idle'"
+              :error="rowErrors[rescue.id]"
+              :dirty="rescue.isDirty"
             />
           </div>
 
-          <p class="mt-3 text-sm text-toned whitespace-pre-line">
-            {{ rescue.internal_notes || 'Sin notas internas' }}
-          </p>
-
-          <div class="mt-4 grid grid-cols-2 gap-3 text-xs">
-            <div>
-              <span class="text-muted">Factura</span>
-              <p class="font-medium text-highlighted">
-                {{ rescue.invoice_folio || '—' }}
-              </p>
-            </div>
-            <div>
-              <span class="text-muted">PDF OC</span>
-              <p class="font-medium" :class="rescue.oc_pdf ? 'text-success' : 'text-muted'">
-                {{ rescue.oc_pdf ? 'Asignado' : 'Pendiente' }}
-              </p>
-            </div>
-          </div>
-
-          <div class="mt-4 flex flex-wrap gap-2">
+          <div class="mt-3 flex flex-wrap gap-2">
             <UButton
               v-if="rescue.pdf_alegra"
               :to="rescue.pdf_alegra"
@@ -293,16 +338,35 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
               icon="i-lucide-file-code-2"
               label="XML"
             />
-            <UButton
-              v-if="rescue.oc_pdf"
-              :to="rescue.oc_pdf"
-              target="_blank"
-              color="primary"
-              variant="subtle"
-              size="sm"
-              icon="i-lucide-external-link"
-              label="Ver OC"
-            />
+          </div>
+
+          <div class="mt-4 space-y-3">
+            <UFormField
+              label="PDF OC"
+              :error="rowErrors[rescue.id] || undefined"
+            >
+              <PortalTmsOcPdfCell
+                :folio="rescue.folio"
+                :url="rescue.oc_pdf"
+                :disabled="rowStatus[rescue.id] === 'saving'"
+                @uploaded="(url) => void assignPurchaseOrder({ rescueId: rescue.id, url })"
+                @remove="clearOcPdf(rescue.id)"
+              />
+            </UFormField>
+
+            <UFormField label="Notas internas">
+              <UTextarea
+                v-model="draftFor(rescue.id).internal_notes"
+                :rows="2"
+                autoresize
+                :maxrows="6"
+                placeholder="Notas para el seguimiento del rescate"
+                class="w-full"
+                :disabled="rowStatus[rescue.id] === 'saving'"
+                @blur="() => void commitDraft(rescue.id)"
+                @keydown.esc="revertDraft(rescue.id)"
+              />
+            </UFormField>
           </div>
         </article>
       </template>
@@ -327,20 +391,12 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             <span class="font-semibold text-highlighted">
               {{ row.original.folio }}
             </span>
-            <UBadge
-              v-if="row.original.isDirty"
-              color="warning"
-              variant="subtle"
-              label="Borrador"
-              size="sm"
+            <PortalTmsRowSaveStatus
+              :status="rowStatus[row.original.id] ?? 'idle'"
+              :error="rowErrors[row.original.id]"
+              :dirty="row.original.isDirty"
             />
           </div>
-        </template>
-
-        <template #internal_notes-cell="{ row }">
-          <p class="whitespace-pre-line text-sm text-toned">
-            {{ row.original.internal_notes || '—' }}
-          </p>
         </template>
 
         <template #pdf_alegra-cell="{ row }">
@@ -382,31 +438,36 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         </template>
 
         <template #oc_pdf-cell="{ row }">
-          <UButton
-            v-if="row.original.oc_pdf"
-            :to="row.original.oc_pdf"
-            target="_blank"
-            color="success"
-            variant="subtle"
-            size="sm"
-            icon="i-lucide-file-check-2"
-            label="Ver OC"
-          />
-          <UBadge
-            v-else
-            color="warning"
-            variant="subtle"
-            label="Pendiente"
-          />
+          <div class="space-y-1">
+            <PortalTmsOcPdfCell
+              :folio="row.original.folio"
+              :url="row.original.oc_pdf"
+              :disabled="rowStatus[row.original.id] === 'saving'"
+              @uploaded="(url) => void assignPurchaseOrder({ rescueId: row.original.id, url })"
+              @remove="clearOcPdf(row.original.id)"
+            />
+            <p
+              v-if="rowErrors[row.original.id]"
+              class="text-xs text-error"
+            >
+              {{ rowErrors[row.original.id] }}
+            </p>
+          </div>
         </template>
 
-        <template #actions-cell="{ row }">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-pencil"
-            aria-label="Editar notas y PDF de la orden de compra"
-            @click="openEditor(row.original)"
+        <template #internal_notes-cell="{ row }">
+          <UTextarea
+            v-model="draftFor(row.original.id).internal_notes"
+            :rows="1"
+            autoresize
+            :maxrows="5"
+            size="sm"
+            placeholder="Sin notas internas"
+            class="w-full"
+            :aria-label="`Notas internas de ${row.original.folio}`"
+            :disabled="rowStatus[row.original.id] === 'saving'"
+            @blur="() => void commitDraft(row.original.id)"
+            @keydown.esc="revertDraft(row.original.id)"
           />
         </template>
 
@@ -417,12 +478,5 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         </template>
       </UTable>
     </SharedResponsiveDataList>
-
-    <PortalTmsRescueDraftModal
-      v-model:open="editOpen"
-      :rescue="selectedRescue"
-      :loading="isUpdating"
-      @apply="applyDraft"
-    />
   </AdminListPageShell>
 </template>

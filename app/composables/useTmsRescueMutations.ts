@@ -42,15 +42,20 @@ export function useTmsRescueMutations() {
     () => triggerLocked.value || triggerStatus.value === 'loading',
   );
 
-  async function updateRescue(body: TmsRescueUpdateBody) {
+  async function updateRescue(
+    body: TmsRescueUpdateBody,
+    options?: { silentSuccess?: boolean },
+  ) {
     const run = async () => {
       updateLocked.value = true;
       try {
         await updateRescueAsync(body);
-        toast.add({
-          title: 'Rescate actualizado',
-          color: 'success',
-        });
+        if (!options?.silentSuccess) {
+          toast.add({
+            title: 'Rescate actualizado',
+            color: 'success',
+          });
+        }
         return true;
       } catch (error) {
         toast.add({
