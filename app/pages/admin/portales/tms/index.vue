@@ -115,24 +115,30 @@ const columns: TableColumn<TmsRescueDisplay>[] = [
   {
     accessorKey: 'oc_pdf',
     header: 'PDF OC',
-    meta: { class: { th: 'min-w-50', td: 'min-w-50 align-top' } },
+    meta: { class: { th: 'w-32', td: 'w-32 align-top' } },
   },
   {
     accessorKey: 'internal_notes',
     header: 'Notas internas',
     meta: {
       class: {
-        th: 'w-full min-w-56',
-        td: 'w-full min-w-56 whitespace-normal align-top',
+        th: 'w-full min-w-40',
+        td: 'w-full min-w-40 whitespace-normal align-top',
       },
     },
   },
   {
     accessorKey: 'ready',
     header: 'Listo',
-    meta: { class: { th: 'min-w-28', td: 'min-w-28 align-top' } },
+    meta: { class: { th: 'w-24', td: 'w-24 align-top' } },
   },
 ];
+
+/** Padding compacto: evita el scroll horizontal en escritorio. */
+const tableUi = {
+  th: 'px-2.5 py-2 whitespace-normal',
+  td: 'px-2.5 py-2',
+} as const;
 
 const tableMeta = {
   class: {
@@ -398,13 +404,11 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
               </h2>
               <p class="mt-1 text-xs text-muted">ID {{ rescue.id }}</p>
               <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                <UBadge
+                <UIcon
                   v-if="isTmsRescueReadOnly(rescue)"
-                  color="neutral"
-                  variant="subtle"
-                  size="sm"
-                  icon="i-lucide-lock"
-                  label="Solo lectura"
+                  name="i-lucide-lock"
+                  class="size-3.5 shrink-0 text-muted"
+                  aria-label="Rescate de solo lectura"
                 />
                 <UBadge
                   v-if="rescue.remittance_folio"
@@ -538,6 +542,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         :data="filteredRows"
         :loading="isInitialLoading"
         :meta="tableMeta"
+        :ui="tableUi"
         :get-row-id="(row: TmsRescueDisplay) => String(row.id)"
       >
         <template #id-cell="{ row }">
@@ -547,17 +552,15 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         </template>
 
         <template #folio-cell="{ row }">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5">
             <span class="font-semibold text-highlighted">
               {{ row.original.folio }}
             </span>
-            <UBadge
+            <UIcon
               v-if="isTmsRescueReadOnly(row.original)"
-              color="neutral"
-              variant="subtle"
-              size="sm"
-              icon="i-lucide-lock"
-              label="Solo lectura"
+              name="i-lucide-lock"
+              class="size-3.5 shrink-0 text-muted"
+              aria-label="Rescate de solo lectura"
             />
             <PortalTmsRowSaveStatus
               :status="rowStatus[row.original.id] ?? 'idle'"

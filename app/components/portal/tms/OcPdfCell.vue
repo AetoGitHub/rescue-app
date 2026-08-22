@@ -52,12 +52,12 @@ async function onFileChange(value: File | null | undefined) {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-1.5">
+  <div class="flex flex-col items-start gap-1">
     <UBadge
       v-if="isUploading"
       color="neutral"
       variant="subtle"
-      size="sm"
+      size="xs"
       icon="i-lucide-loader-circle"
       label="Subiendo"
       :ui="{ leadingIcon: 'animate-spin' }"
@@ -70,7 +70,7 @@ async function onFileChange(value: File | null | undefined) {
         target="_blank"
         color="success"
         variant="subtle"
-        size="sm"
+        size="xs"
         icon="i-lucide-file-check-2"
         label="Ver OC"
       />
@@ -79,11 +79,14 @@ async function onFileChange(value: File | null | undefined) {
         label="Sin PDF"
       />
 
-      <template v-if="!readonly">
+      <div
+        v-if="!readonly"
+        class="flex items-center gap-1"
+      >
         <UFileUpload
           v-model="pendingFile"
           variant="button"
-          size="sm"
+          size="xs"
           color="neutral"
           accept=".pdf,application/pdf"
           reset
@@ -99,13 +102,13 @@ async function onFileChange(value: File | null | undefined) {
           v-if="url"
           color="neutral"
           variant="ghost"
-          size="sm"
+          size="xs"
           icon="i-lucide-trash-2"
           :disabled="disabled"
           :aria-label="`Quitar PDF de la orden de compra de ${folio}`"
           @click="emit('remove')"
         />
-      </template>
+      </div>
     </template>
   </div>
 </template>
