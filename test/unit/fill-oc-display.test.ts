@@ -7,6 +7,11 @@ import {
 
 const SAMPLE_ITEM = {
   folio: 'RES-2026-00012',
+  responsable: 'TEST TEST',
+  vehicle: 'Unidad 12',
+  service_description: 'Cambio de llanta',
+  sub_total: 2974.14,
+  iva: 475.86,
   total: '3450.00',
 };
 
@@ -51,10 +56,12 @@ describe('formatFillOcDateTime', () => {
 });
 
 describe('matchesFillOcSearch', () => {
-  it('matches folio and formatted total without accents or casing', () => {
+  it('matches folio, responsable, unidad, description and amounts', () => {
     expect(matchesFillOcSearch(SAMPLE_ITEM, '')).toBe(true);
     expect(matchesFillOcSearch(SAMPLE_ITEM, '  res-2026-00012  ')).toBe(true);
-    expect(matchesFillOcSearch(SAMPLE_ITEM, '00012')).toBe(true);
+    expect(matchesFillOcSearch(SAMPLE_ITEM, 'test')).toBe(true);
+    expect(matchesFillOcSearch(SAMPLE_ITEM, 'unidad 12')).toBe(true);
+    expect(matchesFillOcSearch(SAMPLE_ITEM, 'llanta')).toBe(true);
     expect(matchesFillOcSearch(SAMPLE_ITEM, '3450')).toBe(true);
     expect(matchesFillOcSearch(SAMPLE_ITEM, 'xyz')).toBe(false);
   });

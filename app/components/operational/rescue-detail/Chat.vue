@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { FillOcStaffFetch } from '~/composables/useFillOcStaffAuth';
 import type { RescueChatMessage } from '~/interfaces/rescue';
 import { guestChatMessageVariant } from '~/utils/guest-rescue-chat';
 
@@ -11,6 +12,10 @@ const props = withDefaults(
     externalMessages?: RescueChatMessage[] | null;
     sendMessage?: (text: string) => Promise<void>;
     isSendingExternal?: boolean;
+    staffAuthToken?: string;
+    staffUserId?: number | null;
+    staffFetch?: FillOcStaffFetch;
+    fillOcMock?: boolean;
   }>(),
   {
     rescueId: undefined,
@@ -20,6 +25,10 @@ const props = withDefaults(
     externalMessages: undefined,
     sendMessage: undefined,
     isSendingExternal: false,
+    staffAuthToken: undefined,
+    staffUserId: undefined,
+    staffFetch: undefined,
+    fillOcMock: false,
   },
 );
 
@@ -37,8 +46,15 @@ const isGuestMode = computed(
   () => isGuestTokenMode.value || isGuestLegacyMode.value,
 );
 
+const isFillOcStaffMode = computed(
+  () =>
+    props.rescueId != null
+    && Boolean(props.staffFetch)
+    && (props.fillOcMock || Boolean(props.staffAuthToken?.trim())),
+);
+
 const isStaffChatMode = computed(
-  () => !isGuestMode.value && props.rescueId != null,
+  () => !isGuestMode.value && !isFillOcStaffMode.value && props.rescueId != null,
 );
 
 const isSidebar = computed(() => props.layout === 'sidebar');
@@ -60,6 +76,7 @@ const sessionUserId = computed(() => user.value?.id ?? null);
 
 const currentUserId = computed(() => {
   if (props.guestAuthorId != null) return props.guestAuthorId;
+  if (props.staffUserId != null) return props.staffUserId;
   return sessionUserId.value;
 });
 
@@ -108,25 +125,60 @@ const {
 const { sendMessageAsync: staffSendMessageAsync, isSending: staffIsSending } =
   useRescueChatSendMessage(staffRescueId);
 
+const fillOcRescueId = computed(() =>
+  isFillOcStaffMode.value ? props.rescueId! : null,
+);
+
+const fillOcStaffFetch: FillOcStaffFetch = (path, options) =>
+  props.staffFetch
+    ? props.staffFetch(path, options)
+    : Promise.reject(new Error('Sin token'));
+
+const {
+  messages: fillOcMessages,
+  asyncStatus: fillOcAsyncStatus,
+  hasNextPage: fillOcHasNextPage,
+  loadNextPage: fillOcLoadNextPage,
+  isInitialLoading: fillOcIsInitialLoading,
+  isLoadingMore: fillOcIsLoadingMore,
+  errorMessage: fillOcErrorMessage,
+} = useFillOcStaffChatMessages(fillOcRescueId, fillOcStaffFetch, {
+  enabled: isFillOcStaffMode,
+  mock: () => props.fillOcMock,
+});
+
+const { sendMessageAsync: fillOcSendMessageAsync, isSending: fillOcIsSending } =
+  useFillOcStaffChatSendMessage(fillOcRescueId, fillOcStaffFetch, {
+    enabled: isFillOcStaffMode,
+    mock: () => props.fillOcMock,
+  });
+
 const messages = computed(() => {
   if (isGuestLegacyMode.value) return props.externalMessages ?? [];
   if (isGuestTokenMode.value) return guestTokenMessages.value;
+  if (isFillOcStaffMode.value) return fillOcMessages.value;
   return staffMessages.value;
 });
 
 const asyncStatus = computed(() => {
   if (isGuestTokenMode.value) return guestAsyncStatus.value;
+  if (isFillOcStaffMode.value) return fillOcAsyncStatus.value;
   return staffAsyncStatus.value;
 });
 
 const hasNextPage = computed(() => {
   if (isGuestTokenMode.value) return guestHasNextPage.value;
+  if (isFillOcStaffMode.value) return fillOcHasNextPage.value;
   return staffHasNextPage.value;
 });
 
 function handleLoadNextPage() {
   if (isGuestTokenMode.value) {
     void guestLoadNextPage();
+    return;
+  }
+  if (isFillOcStaffMode.value) {
+    void fillOcLoadNextPage();
     return;
   }
   void staffLoadNextPage();
@@ -149,24 +201,28 @@ useScrollContainerInfiniteLoad({
 const isInitialLoading = computed(() => {
   if (isGuestLegacyMode.value) return false;
   if (isGuestTokenMode.value) return guestIsInitialLoading.value;
+  if (isFillOcStaffMode.value) return fillOcIsInitialLoading.value;
   return staffIsInitialLoading.value;
 });
 
 const isLoadingMore = computed(() => {
   if (isGuestLegacyMode.value) return false;
   if (isGuestTokenMode.value) return guestIsLoadingMore.value;
+  if (isFillOcStaffMode.value) return fillOcIsLoadingMore.value;
   return staffIsLoadingMore.value;
 });
 
 const errorMessage = computed(() => {
   if (isGuestLegacyMode.value) return '';
   if (isGuestTokenMode.value) return guestErrorMessage.value;
+  if (isFillOcStaffMode.value) return fillOcErrorMessage.value;
   return staffErrorMessage.value;
 });
 
 const isSending = computed(() => {
   if (isGuestLegacyMode.value) return props.isSendingExternal;
   if (isGuestTokenMode.value) return guestIsSending.value;
+  if (isFillOcStaffMode.value) return fillOcIsSending.value;
   return staffIsSending.value;
 });
 
@@ -214,6 +270,8 @@ async function submitMessage() {
       await props.sendMessage(text);
     } else if (isGuestTokenMode.value) {
       await guestSendMessageAsync(text);
+    } else if (isFillOcStaffMode.value) {
+      await fillOcSendMessageAsync(text);
     } else {
       await staffSendMessageAsync(text);
     }

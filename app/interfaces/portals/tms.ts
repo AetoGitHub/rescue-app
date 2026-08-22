@@ -10,6 +10,16 @@ export interface TmsRescue {
   invoice_folio: string | null;
   oc_pdf: string | null;
   ready: boolean;
+  /** Si es true, el portal no permite editar la fila. */
+  correct_upload: boolean;
+}
+
+/** `null`/`undefined` = sin filtrar; el param solo se envía cuando es booleano. */
+export type TmsTriState = boolean | null | undefined;
+
+export interface TmsRescueFilters {
+  ready?: TmsTriState;
+  confirm?: TmsTriState;
 }
 
 export type TmsRescueListResponse =
@@ -20,6 +30,7 @@ export interface TmsRescueUpdateBody {
   id: number;
   oc_pdf: string | null;
   internal_notes: string;
+  ready?: boolean;
 }
 
 export interface TmsPurchaseOrderUploadFile {

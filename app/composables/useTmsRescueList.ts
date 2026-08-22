@@ -1,7 +1,9 @@
 import { useInfiniteQuery } from '@pinia/colada';
+import type { MaybeRefOrGetter } from 'vue';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import type {
   TmsRescue,
+  TmsRescueFilters,
   TmsRescueListResponse,
 } from '~/interfaces/portals/tms';
 import {
@@ -9,8 +11,11 @@ import {
   TMS_RESCUE_LIST_QUERY_KEY,
 } from '~/constants/tms-portal-api';
 
-export function useTmsRescueList() {
+export function useTmsRescueList(
+  filters?: MaybeRefOrGetter<TmsRescueFilters>,
+) {
   const apiFetch = useApiFetch();
+  const baseQuery = computed(() => buildTmsRescueQuery(toValue(filters)));
 
   const {
     data,
@@ -20,13 +25,16 @@ export function useTmsRescueList() {
     error,
     refresh,
   } = useInfiniteQuery<PaginatedResponse<TmsRescue>, Error, string | null>({
-    key: () => [...TMS_RESCUE_LIST_QUERY_KEY],
+    key: () => [
+      ...TMS_RESCUE_LIST_QUERY_KEY,
+      ...serializeTmsRescueFilters(toValue(filters)),
+    ],
     initialPageParam: null,
     query: async ({ pageParam }) => {
       const response = await apiFetch<TmsRescueListResponse>(
         TMS_RESCUE_LIST_PATH,
         {
-          query: buildPaginatedQuery(undefined, pageParam),
+          query: buildPaginatedQuery(baseQuery.value, pageParam),
         },
       );
       return normalizeTmsRescuePage(response);

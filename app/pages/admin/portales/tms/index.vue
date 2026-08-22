@@ -2,9 +2,11 @@
 import type { TableColumn } from '@nuxt/ui';
 import type {
   TmsRescue,
+  TmsRescueFilters,
   TmsRescueUpdateBody,
   TmsRowSaveStatus,
 } from '~/interfaces/portals/tms';
+import type { TmsTriStateOption } from '~/utils/tms-portal';
 import {
   tmsRescueDraftSchema,
   tmsRescueDraftToUpdateBody,
@@ -21,11 +23,23 @@ const SAVED_FLASH_MS = 2500;
 useHead({ title: 'Portal TMS' });
 
 const search = ref('');
+const readyFilter = ref<TmsTriStateOption>('all');
+const confirmFilter = ref<TmsTriStateOption>('all');
 const tableRef = useTemplateRef('table');
 const drafts = reactive<Record<number, TmsRescueDraftState>>({});
+/** Refleja el check de "Listo" mientras el backend confirma el cambio. */
+const readyOverrides = reactive<Record<number, boolean | undefined>>({});
 const rowStatus = reactive<Record<number, TmsRowSaveStatus>>({});
 const rowErrors = reactive<Record<number, string | null>>({});
 const savedTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+const readyFilterItems = tmsTriStateItems('Listo');
+const confirmFilterItems = tmsTriStateItems('Confirmado');
+
+const filters = computed<TmsRescueFilters>(() => ({
+  ready: toTmsTriState(readyFilter.value),
+  confirm: toTmsTriState(confirmFilter.value),
+}));
 
 const {
   rows,
@@ -36,7 +50,7 @@ const {
   isError,
   errorMessage,
   refresh,
-} = useTmsRescueList();
+} = useTmsRescueList(filters);
 
 const { updateRescue, triggerPortal, isTriggering } = useTmsRescueMutations();
 
@@ -51,6 +65,9 @@ watch(
   rows,
   (value) => {
     for (const rescue of value) {
+      if (readyOverrides[rescue.id] === rescue.ready) {
+        readyOverrides[rescue.id] = undefined;
+      }
       if (drafts[rescue.id] != null) continue;
       drafts[rescue.id] = {
         internal_notes: rescue.internal_notes,
@@ -63,6 +80,10 @@ watch(
 
 const displayRows = computed<TmsRescueDisplay[]>(() =>
   rows.value.map((rescue) => {
+    if (isTmsRescueReadOnly(rescue)) {
+      return { ...rescue, isDirty: false };
+    }
+
     const draft = drafts[rescue.id];
     const internalNotes = draft?.internal_notes ?? rescue.internal_notes;
     const ocPdf = draft?.oc_pdf || null;
@@ -70,6 +91,7 @@ const displayRows = computed<TmsRescueDisplay[]>(() =>
       ...rescue,
       internal_notes: internalNotes,
       oc_pdf: ocPdf,
+      ready: readyOverrides[rescue.id] ?? rescue.ready,
       isDirty:
         internalNotes !== rescue.internal_notes
         || ocPdf !== rescue.oc_pdf,
@@ -93,24 +115,33 @@ const columns: TableColumn<TmsRescueDisplay>[] = [
   {
     accessorKey: 'oc_pdf',
     header: 'PDF OC',
-    meta: { class: { th: 'min-w-72', td: 'min-w-72 align-top' } },
+    meta: { class: { th: 'min-w-50', td: 'min-w-50 align-top' } },
   },
   {
     accessorKey: 'internal_notes',
     header: 'Notas internas',
     meta: {
       class: {
-        th: 'w-full min-w-72',
-        td: 'w-full min-w-72 whitespace-normal align-top',
+        th: 'w-full min-w-56',
+        td: 'w-full min-w-56 whitespace-normal align-top',
       },
     },
   },
   {
     accessorKey: 'ready',
     header: 'Listo',
-    meta: { class: { th: 'w-24', td: 'w-24 align-top' } },
+    meta: { class: { th: 'min-w-28', td: 'min-w-28 align-top' } },
   },
 ];
+
+const tableMeta = {
+  class: {
+    tr: (row: { original: TmsRescueDisplay }) =>
+      isTmsRescueComplete(row.original)
+        ? 'bg-success/[0.07] hover:bg-success/[0.12]'
+        : '',
+  },
+};
 
 function draftFor(rescueId: number): TmsRescueDraftState {
   const existing = drafts[rescueId];
@@ -147,7 +178,7 @@ async function commitDraft(rescueId: number) {
   if (rowStatus[rescueId] === 'saving') return;
 
   const source = rows.value.find((item) => item.id === rescueId);
-  if (!source) return;
+  if (!source || isTmsRescueReadOnly(source)) return;
 
   const parsed = tmsRescueDraftSchema.safeParse(draftFor(rescueId));
   if (!parsed.success) {
@@ -195,13 +226,43 @@ function revertDraft(rescueId: number) {
 }
 
 function clearOcPdf(rescueId: number) {
+  const source = rows.value.find((item) => item.id === rescueId);
+  if (!source || isTmsRescueReadOnly(source)) return;
   draftFor(rescueId).oc_pdf = '';
   void commitDraft(rescueId);
 }
 
+async function toggleReady(rescueId: number, value: boolean) {
+  if (rowStatus[rescueId] === 'saving') return;
+
+  const source = rows.value.find((item) => item.id === rescueId);
+  if (!source || isTmsRescueReadOnly(source) || source.ready === value) return;
+
+  readyOverrides[rescueId] = value;
+  rowStatus[rescueId] = 'saving';
+  const saved = await updateRescue(
+    {
+      id: rescueId,
+      oc_pdf: source.oc_pdf,
+      internal_notes: source.internal_notes,
+      ready: value,
+    },
+    { silentSuccess: true },
+  );
+  if (!saved) {
+    readyOverrides[rescueId] = undefined;
+    rowErrors[rescueId] = 'No se pudo actualizar el estado «Listo»';
+    rowStatus[rescueId] = 'error';
+    return;
+  }
+
+  rowErrors[rescueId] = null;
+  flashSaved(rescueId);
+}
+
 async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
   const rescue = displayRows.value.find((item) => item.id === payload.rescueId);
-  if (!rescue) return;
+  if (!rescue || isTmsRescueReadOnly(rescue)) return;
 
   const body: TmsRescueUpdateBody = {
     id: payload.rescueId,
@@ -229,7 +290,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
   <AdminListPageShell
     navbar-title="Portal TMS"
     title="TMS"
-    description="Edita el PDF de la orden de compra y las notas internas en la tabla; se guardan al salir del campo."
+    description="Edita el PDF de la orden de compra y las notas internas en la tabla; se guardan al salir del campo. Las filas en verde ya tienen toda la documentación."
   >
     <template #actions>
       <UButton
@@ -254,6 +315,26 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         placeholder="Buscar folio, orden de compra, factura o nota"
         class="w-full sm:max-w-md"
         variant="subtle"
+        :ui="{ base: 'bg-default' }"
+      />
+      <USelect
+        v-model="readyFilter"
+        :items="readyFilterItems"
+        value-key="value"
+        label-key="label"
+        icon="i-lucide-check-check"
+        variant="subtle"
+        class="w-full sm:w-44"
+        :ui="{ base: 'bg-default' }"
+      />
+      <USelect
+        v-model="confirmFilter"
+        :items="confirmFilterItems"
+        value-key="value"
+        label-key="label"
+        icon="i-lucide-badge-check"
+        variant="subtle"
+        class="w-full sm:w-52"
         :ui="{ base: 'bg-default' }"
       />
       <UBadge
@@ -303,23 +384,59 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         <article
           v-for="rescue in filteredRows"
           :key="rescue.id"
-          class="rounded-lg border border-default bg-default p-4"
+          class="rounded-lg border p-4"
+          :class="
+            isTmsRescueComplete(rescue)
+              ? 'border-success/40 bg-success/[0.07]'
+              : 'border-default bg-default'
+          "
         >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <h2 class="font-semibold text-highlighted">
                 {{ rescue.folio }}
               </h2>
-              <p class="mt-1 text-xs text-muted">
-                ID {{ rescue.id }} · OC {{ rescue.remittance_folio || '—' }} ·
-                Factura {{ rescue.invoice_folio || '—' }}
-              </p>
+              <p class="mt-1 text-xs text-muted">ID {{ rescue.id }}</p>
+              <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                <UBadge
+                  v-if="isTmsRescueReadOnly(rescue)"
+                  color="neutral"
+                  variant="subtle"
+                  size="sm"
+                  icon="i-lucide-lock"
+                  label="Solo lectura"
+                />
+                <UBadge
+                  v-if="rescue.remittance_folio"
+                  color="neutral"
+                  variant="subtle"
+                  size="sm"
+                  :label="`OC ${rescue.remittance_folio}`"
+                />
+                <PortalTmsMissingValue v-else label="Sin orden" />
+                <UBadge
+                  v-if="rescue.invoice_folio"
+                  color="neutral"
+                  variant="subtle"
+                  size="sm"
+                  :label="`Factura ${rescue.invoice_folio}`"
+                />
+                <PortalTmsMissingValue v-else label="Sin factura" />
+              </div>
             </div>
             <div class="flex shrink-0 flex-col items-end gap-2">
-              <UBadge
+              <UCheckbox
+                :model-value="rescue.ready"
+                :disabled="
+                  isTmsRescueReadOnly(rescue)
+                  || rowStatus[rescue.id] === 'saving'
+                "
                 :color="rescue.ready ? 'success' : 'error'"
-                variant="subtle"
-                :label="rescue.ready ? 'Listo' : 'Pendiente'"
+                :label="rescue.ready ? 'Listo' : 'No listo'"
+                :ui="{ label: rescue.ready ? 'text-success' : 'text-error' }"
+                @update:model-value="
+                  (value) => void toggleReady(rescue.id, value === true)
+                "
               />
               <PortalTmsRowSaveStatus
                 :status="rowStatus[rescue.id] ?? 'idle'"
@@ -340,6 +457,10 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
               icon="i-lucide-file-text"
               label="PDF"
             />
+            <PortalTmsMissingValue
+              v-if="!rescue.pdf_alegra"
+              label="Sin PDF"
+            />
             <UButton
               v-if="rescue.xml_alegra"
               :to="rescue.xml_alegra"
@@ -349,6 +470,10 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
               size="sm"
               icon="i-lucide-file-code-2"
               label="XML"
+            />
+            <PortalTmsMissingValue
+              v-if="!rescue.xml_alegra"
+              label="Sin XML"
             />
           </div>
 
@@ -360,6 +485,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
               <PortalTmsOcPdfCell
                 :folio="rescue.folio"
                 :url="rescue.oc_pdf"
+                :readonly="isTmsRescueReadOnly(rescue)"
                 :disabled="rowStatus[rescue.id] === 'saving'"
                 @uploaded="(url) => void assignPurchaseOrder({ rescueId: rescue.id, url })"
                 @remove="clearOcPdf(rescue.id)"
@@ -367,16 +493,37 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             </UFormField>
 
             <UFormField label="Notas internas">
-              <UTextarea
-                v-model="draftFor(rescue.id).internal_notes"
-                :rows="2"
-                autoresize
-                :maxrows="6"
-                placeholder="Notas para el seguimiento del rescate"
-                class="w-full"
-                :disabled="rowStatus[rescue.id] === 'saving'"
-                @blur="() => void commitDraft(rescue.id)"
-                @keydown.esc="revertDraft(rescue.id)"
+              <p
+                v-if="isTmsRescueReadOnly(rescue)"
+                class="whitespace-pre-wrap text-sm text-highlighted"
+              >
+                {{ rescue.internal_notes || '' }}
+              </p>
+              <div
+                v-else
+                class="space-y-1.5"
+              >
+                <UTextarea
+                  v-model="draftFor(rescue.id).internal_notes"
+                  :rows="2"
+                  autoresize
+                  :maxrows="10"
+                  placeholder="Notas para el seguimiento del rescate"
+                  class="w-full"
+                  :disabled="rowStatus[rescue.id] === 'saving'"
+                  :color="rescue.internal_notes ? 'primary' : 'error'"
+                  :highlight="!rescue.internal_notes"
+                  @blur="() => void commitDraft(rescue.id)"
+                  @keydown.esc="revertDraft(rescue.id)"
+                />
+                <PortalTmsMissingValue
+                  v-if="!rescue.internal_notes"
+                  label="Sin nota interna"
+                />
+              </div>
+              <PortalTmsMissingValue
+                v-if="isTmsRescueReadOnly(rescue) && !rescue.internal_notes"
+                label="Sin nota interna"
               />
             </UFormField>
           </div>
@@ -390,6 +537,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         :columns="columns"
         :data="filteredRows"
         :loading="isInitialLoading"
+        :meta="tableMeta"
         :get-row-id="(row: TmsRescueDisplay) => String(row.id)"
       >
         <template #id-cell="{ row }">
@@ -403,6 +551,14 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             <span class="font-semibold text-highlighted">
               {{ row.original.folio }}
             </span>
+            <UBadge
+              v-if="isTmsRescueReadOnly(row.original)"
+              color="neutral"
+              variant="subtle"
+              size="sm"
+              icon="i-lucide-lock"
+              label="Solo lectura"
+            />
             <PortalTmsRowSaveStatus
               :status="rowStatus[row.original.id] ?? 'idle'"
               :error="rowErrors[row.original.id]"
@@ -417,11 +573,12 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             :to="row.original.pdf_alegra"
             target="_blank"
             color="neutral"
-            variant="ghost"
+            variant="subtle"
+            size="sm"
             icon="i-lucide-file-text"
-            aria-label="Abrir PDF de Alegra"
+            label="PDF"
           />
-          <span v-else class="text-muted">—</span>
+          <PortalTmsMissingValue v-else label="Sin PDF" />
         </template>
 
         <template #xml_alegra-cell="{ row }">
@@ -430,23 +587,26 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             :to="row.original.xml_alegra"
             target="_blank"
             color="neutral"
-            variant="ghost"
+            variant="subtle"
+            size="sm"
             icon="i-lucide-file-code-2"
-            aria-label="Abrir XML de Alegra"
+            label="XML"
           />
-          <span v-else class="text-muted">—</span>
+          <PortalTmsMissingValue v-else label="Sin XML" />
         </template>
 
         <template #remittance_folio-cell="{ row }">
-          <span class="tabular-nums">
-            {{ row.original.remittance_folio || '—' }}
+          <span v-if="row.original.remittance_folio" class="tabular-nums">
+            {{ row.original.remittance_folio }}
           </span>
+          <PortalTmsMissingValue v-else label="Sin orden" />
         </template>
 
         <template #invoice_folio-cell="{ row }">
-          <span class="tabular-nums">
-            {{ row.original.invoice_folio || '—' }}
+          <span v-if="row.original.invoice_folio" class="tabular-nums">
+            {{ row.original.invoice_folio }}
           </span>
+          <PortalTmsMissingValue v-else label="Sin factura" />
         </template>
 
         <template #oc_pdf-cell="{ row }">
@@ -454,6 +614,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             <PortalTmsOcPdfCell
               :folio="row.original.folio"
               :url="row.original.oc_pdf"
+              :readonly="isTmsRescueReadOnly(row.original)"
               :disabled="rowStatus[row.original.id] === 'saving'"
               @uploaded="(url) => void assignPurchaseOrder({ rescueId: row.original.id, url })"
               @remove="clearOcPdf(row.original.id)"
@@ -468,26 +629,55 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         </template>
 
         <template #internal_notes-cell="{ row }">
-          <UTextarea
-            v-model="draftFor(row.original.id).internal_notes"
-            :rows="1"
-            autoresize
-            :maxrows="5"
-            size="sm"
-            placeholder="Sin notas internas"
-            class="w-full"
-            :aria-label="`Notas internas de ${row.original.folio}`"
-            :disabled="rowStatus[row.original.id] === 'saving'"
-            @blur="() => void commitDraft(row.original.id)"
-            @keydown.esc="revertDraft(row.original.id)"
+          <p
+            v-if="isTmsRescueReadOnly(row.original)"
+            class="whitespace-pre-wrap text-sm text-highlighted"
+          >
+            {{ row.original.internal_notes || '' }}
+          </p>
+          <div
+            v-else
+            class="space-y-1.5"
+          >
+            <UTextarea
+              v-model="draftFor(row.original.id).internal_notes"
+              :rows="2"
+              autoresize
+              :maxrows="10"
+              size="sm"
+              placeholder="Escribe la nota interna"
+              class="w-full"
+              :aria-label="`Notas internas de ${row.original.folio}`"
+              :disabled="rowStatus[row.original.id] === 'saving'"
+              :color="row.original.internal_notes ? 'primary' : 'error'"
+              :highlight="!row.original.internal_notes"
+              @blur="() => void commitDraft(row.original.id)"
+              @keydown.esc="revertDraft(row.original.id)"
+            />
+            <PortalTmsMissingValue
+              v-if="!row.original.internal_notes"
+              label="Sin nota interna"
+            />
+          </div>
+          <PortalTmsMissingValue
+            v-if="isTmsRescueReadOnly(row.original) && !row.original.internal_notes"
+            label="Sin nota interna"
           />
         </template>
 
         <template #ready-cell="{ row }">
-          <UBadge
+          <UCheckbox
+            :model-value="row.original.ready"
+            :disabled="
+              isTmsRescueReadOnly(row.original)
+              || rowStatus[row.original.id] === 'saving'
+            "
             :color="row.original.ready ? 'success' : 'error'"
-            variant="subtle"
-            :label="row.original.ready ? 'Listo' : 'Pendiente'"
+            :label="row.original.ready ? 'Listo' : 'No listo'"
+            :ui="{ label: row.original.ready ? 'text-success' : 'text-error' }"
+            @update:model-value="
+              (value) => void toggleReady(row.original.id, value === true)
+            "
           />
         </template>
 

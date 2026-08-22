@@ -73,16 +73,36 @@ function normalizeSearchText(value: string): string {
     .trim();
 }
 
-/** Folio y total; el buscador es local porque el endpoint no pagina. */
+/** Folio, responsable, unidad, descripción y montos; el buscador es local. */
 export function matchesFillOcSearch(
-  item: Pick<FillOcPendingItem, 'folio' | 'total'>,
+  item: Pick<
+    FillOcPendingItem,
+    | 'folio'
+    | 'responsable'
+    | 'vehicle'
+    | 'service_description'
+    | 'sub_total'
+    | 'iva'
+    | 'total'
+  >,
   term: string,
 ): boolean {
   const needle = normalizeSearchText(term);
   if (!needle) return true;
 
   const haystack = normalizeSearchText(
-    `${item.folio} ${item.total} ${formatFillOcMoney(item.total)}`,
+    [
+      item.folio,
+      item.responsable,
+      item.vehicle,
+      item.service_description,
+      item.sub_total,
+      item.iva,
+      item.total,
+      formatFillOcMoney(item.sub_total),
+      formatFillOcMoney(item.iva),
+      formatFillOcMoney(item.total),
+    ].join(' '),
   );
   return haystack.includes(needle);
 }

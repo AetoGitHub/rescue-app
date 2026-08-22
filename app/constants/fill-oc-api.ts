@@ -4,6 +4,12 @@ export const FILL_OC_API_KEY_HEADER = 'x-api-key';
 
 export const FILL_OC_QUERY_KEY = ['fill-oc'] as const;
 
+export const FILL_OC_POLL_INTERVAL_MS = 30_000;
+
+export const FILL_OC_AUTH_TOKEN_API_PATH = '/api/auth/api-key/token/';
+
+export const FILL_OC_STAFF_PROXY_PREFIX = '/api/fill-oc/staff';
+
 /** Query `key` de preview local. En producción el backend las rechaza. */
 export const FILL_OC_MOCK_KEY = {
   list: 'mock',
@@ -28,9 +34,12 @@ export const FILL_OC_LABELS = {
   savedBadge: 'OC guardada',
   successToast: 'Orden de compra guardada',
   errorToast: 'No se pudo guardar la OC',
-  searchPlaceholder: 'Buscar por folio o total',
+  searchPlaceholder: 'Buscar folio, responsable, unidad…',
   noSearchResults: 'Sin coincidencias',
   noSearchResultsDescription: 'Prueba con otro folio o limpia la búsqueda.',
+  evidenceLabel: 'Descargar evidencia de rescate',
+  evidenceEmpty: 'No hay archivos para descargar',
+  commentsTitle: 'Abrir chat del rescate',
   missingKeyTitle: 'Falta la clave de acceso',
   missingKeyDescription:
     'Abre el enlace completo que recibiste; debe incluir el parámetro «key».',

@@ -35,10 +35,12 @@ const toast = useToast();
 const { uploadPurchaseOrders } = useTmsPurchaseOrderUpload();
 
 const rescueOptions = computed(() =>
-  props.rescues.map((rescue) => ({
-    label: `${rescue.folio} · OC ${rescue.remittance_folio || '—'}`,
-    value: rescue.id,
-  })),
+  props.rescues
+    .filter((rescue) => !isTmsRescueReadOnly(rescue))
+    .map((rescue) => ({
+      label: `${rescue.folio} · OC ${rescue.remittance_folio || '—'}`,
+      value: rescue.id,
+    })),
 );
 
 function rescueLabel(rescueId: number | null): string {
@@ -76,6 +78,8 @@ const hasRetryableFiles = computed(
 
 function assignFile(assignment: TmsPurchaseOrderAssignment, rescueId: number) {
   if (!assignment.file.url) return;
+  const rescue = props.rescues.find((item) => item.id === rescueId);
+  if (!rescue || isTmsRescueReadOnly(rescue)) return;
   assignment.rescueId = rescueId;
   assignment.status = 'assigned';
   emit('assign', { rescueId, url: assignment.file.url });
@@ -116,6 +120,10 @@ async function onSubmit(
         && assignment.rescueId != null
         && assignment.file.url
       ) {
+        const rescue = props.rescues.find(
+          (item) => item.id === assignment.rescueId,
+        );
+        if (rescue && isTmsRescueReadOnly(rescue)) continue;
         emit('assign', {
           rescueId: assignment.rescueId,
           url: assignment.file.url,

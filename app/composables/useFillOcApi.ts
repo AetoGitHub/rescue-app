@@ -3,6 +3,7 @@ import type { MaybeRefOrGetter } from 'vue';
 import {
   FILL_OC_API_PATH,
   FILL_OC_LABELS,
+  FILL_OC_POLL_INTERVAL_MS,
   FILL_OC_QUERY_KEY,
 } from '~/constants/fill-oc-api';
 import type {
@@ -26,6 +27,11 @@ function emptyFillOcListResult(
 export function useFillOcList(apiKey: MaybeRefOrGetter<string>) {
   const apiFetch = useApiFetch();
   const key = computed(() => toValue(apiKey).trim());
+  const lastGood = ref<FillOcListResult | null>(null);
+
+  watch(key, () => {
+    lastGood.value = null;
+  });
 
   /**
    * No re-lanzar el fetch: en SSR un 401 con statusCode dispara error.vue.
@@ -37,7 +43,9 @@ export function useFillOcList(apiKey: MaybeRefOrGetter<string>) {
     query: async ({ signal }): Promise<FillOcListResult> => {
       if (isFillOcMockKey(key.value)) {
         await delayFillOcMock();
-        return getFillOcMockListResult(key.value);
+        const mock = getFillOcMockListResult(key.value);
+        if (mock.errorStatus == null) lastGood.value = mock;
+        return mock;
       }
 
       try {
@@ -45,16 +53,20 @@ export function useFillOcList(apiKey: MaybeRefOrGetter<string>) {
           query: { key: key.value },
           signal,
         });
-        return {
+        const result: FillOcListResult = {
           items: Array.isArray(payload) ? payload : [],
           errorStatus: null,
           errorMessage: '',
         };
+        lastGood.value = result;
+        return result;
       } catch (error) {
-        return emptyFillOcListResult(
-          getFetchStatusCode(error) ?? 500,
-          getFetchErrorMessage(error),
-        );
+        const status = getFetchStatusCode(error) ?? 500;
+        if (status === 401 || status === 403 || lastGood.value == null) {
+          lastGood.value = null;
+          return emptyFillOcListResult(status, getFetchErrorMessage(error));
+        }
+        return lastGood.value;
       }
     },
   });
@@ -70,6 +82,22 @@ export function useFillOcList(apiKey: MaybeRefOrGetter<string>) {
     return status === 401 || status === 403;
   });
   const errorMessage = computed(() => data.value?.errorMessage ?? '');
+
+  if (import.meta.client) {
+    let pollTimer: ReturnType<typeof setInterval> | undefined;
+
+    onMounted(() => {
+      pollTimer = setInterval(() => {
+        if (document.visibilityState === 'hidden') return;
+        if (!key.value) return;
+        void refresh();
+      }, FILL_OC_POLL_INTERVAL_MS);
+    });
+
+    onBeforeUnmount(() => {
+      if (pollTimer) clearInterval(pollTimer);
+    });
+  }
 
   return {
     items,
@@ -87,7 +115,7 @@ export function useFillOcMutation(apiKey: MaybeRefOrGetter<string>) {
   const toast = useToast();
 
   /**
-   * Sin invalidar la lista: la tarjeta muestra su animación de guardado y se
+   * Sin invalidar la lista: la fila muestra su animación de guardado y se
    * retira localmente; un refetch inmediato la haría desaparecer antes.
    */
   const { mutateAsync, asyncStatus } = useMutation({

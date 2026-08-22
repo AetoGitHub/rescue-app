@@ -9,6 +9,8 @@ describe('getFillOcMockListResult', () => {
     expect(result.items.length).toBeGreaterThan(0);
     expect(result.items[0]).toMatchObject({
       folio: 'RES-2026-00012',
+      responsable: 'TEST TEST',
+      vehicle: 'Unidad 12',
       total: '3450.00',
     });
   });

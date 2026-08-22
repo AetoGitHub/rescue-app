@@ -3,6 +3,7 @@ import type {
   TmsPurchaseOrderAssignment,
   TmsPurchaseOrderUploadFile,
   TmsRescue,
+  TmsRescueFilters,
   TmsRescueListResponse,
 } from '~/interfaces/portals/tms';
 
@@ -10,7 +11,70 @@ function normalizeTmsRescue(rescue: TmsRescue): TmsRescue {
   return {
     ...rescue,
     ready: rescue.ready === true,
+    correct_upload: rescue.correct_upload === true,
   };
+}
+
+export function isTmsRescueReadOnly(
+  rescue: Pick<TmsRescue, 'correct_upload'>,
+): boolean {
+  return rescue.correct_upload === true;
+}
+
+/** Campos que el portal exige para considerar el rescate completo. */
+const TMS_REQUIRED_FIELDS = [
+  'pdf_alegra',
+  'xml_alegra',
+  'remittance_folio',
+  'invoice_folio',
+  'oc_pdf',
+  'internal_notes',
+] as const;
+
+export function tmsRescueMissingFields(rescue: TmsRescue): string[] {
+  return TMS_REQUIRED_FIELDS.filter((field) => !rescue[field]?.trim());
+}
+
+export function isTmsRescueComplete(rescue: TmsRescue): boolean {
+  return tmsRescueMissingFields(rescue).length === 0;
+}
+
+export type TmsTriStateOption = 'all' | 'true' | 'false';
+
+/** El select vive en la barra de filtros, así que el label va dentro de cada opción. */
+export function tmsTriStateItems(
+  label: string,
+): { label: string; value: TmsTriStateOption }[] {
+  return [
+    { label: `${label}: todos`, value: 'all' },
+    { label: `${label}: sí`, value: 'true' },
+    { label: `${label}: no`, value: 'false' },
+  ];
+}
+
+export function toTmsTriState(value: TmsTriStateOption): boolean | null {
+  if (value === 'all') return null;
+  return value === 'true';
+}
+
+export function buildTmsRescueQuery(
+  filters: TmsRescueFilters | undefined,
+): Record<string, string> {
+  const query: Record<string, string> = {};
+  if (typeof filters?.ready === 'boolean') query.ready = String(filters.ready);
+  if (typeof filters?.confirm === 'boolean') {
+    query.confirm = String(filters.confirm);
+  }
+  return query;
+}
+
+export function serializeTmsRescueFilters(
+  filters: TmsRescueFilters | undefined,
+): string[] {
+  return [
+    `ready:${filters?.ready ?? 'all'}`,
+    `confirm:${filters?.confirm ?? 'all'}`,
+  ];
 }
 
 export function normalizeTmsRescuePage(
@@ -49,7 +113,9 @@ export function assignTmsPurchaseOrders(
     }
 
     const matches = rescues.filter(
-      (rescue) => comparableFolio(rescue.remittance_folio) === orderNumber,
+      (rescue) =>
+        comparableFolio(rescue.remittance_folio) === orderNumber
+        && !isTmsRescueReadOnly(rescue),
     );
 
     if (matches.length === 1) {

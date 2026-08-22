@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   assignTmsPurchaseOrders,
+  buildTmsRescueQuery,
   describeTmsAssignment,
   formatTmsUploadFeedback,
+  isTmsRescueComplete,
+  isTmsRescueReadOnly,
   matchesTmsRescueSearch,
   normalizeTmsRescuePage,
   retryableTmsUploadFiles,
+  serializeTmsRescueFilters,
   summarizeTmsAssignments,
+  tmsRescueMissingFields,
+  tmsTriStateItems,
+  toTmsTriState,
 } from '../../app/utils/tms-portal';
 import { tmsRescueDraftSchema, tmsRescueDraftToUpdateBody } from '../../app/schemas/tms-portal';
 import type {
@@ -28,6 +35,7 @@ function rescue(
     invoice_folio: `C${id}`,
     oc_pdf: null,
     ready: false,
+    correct_upload: false,
   };
 }
 
@@ -44,12 +52,73 @@ function upload(
 }
 
 describe('TMS portal mapping', () => {
-  it('normalizes missing ready as false', () => {
+  it('normalizes missing ready and correct_upload as false', () => {
     const { results } = normalizeTmsRescuePage([
-      { ...rescue(1, '100'), ready: true },
-      { ...rescue(2, '200'), ready: undefined as unknown as boolean },
+      { ...rescue(1, '100'), ready: true, correct_upload: true },
+      {
+        ...rescue(2, '200'),
+        ready: undefined as unknown as boolean,
+        correct_upload: undefined as unknown as boolean,
+      },
     ]);
-    expect(results.map((row) => row.ready)).toEqual([true, false]);
+    expect(results.map((row) => [row.ready, row.correct_upload])).toEqual([
+      [true, true],
+      [false, false],
+    ]);
+    expect(isTmsRescueReadOnly(results[0]!)).toBe(true);
+    expect(isTmsRescueReadOnly(results[1]!)).toBe(false);
+  });
+
+  it('marks a rescue complete only when every document and note exists', () => {
+    const incomplete = rescue(1, '100');
+    expect(isTmsRescueComplete(incomplete)).toBe(false);
+    expect(tmsRescueMissingFields(incomplete)).toEqual([
+      'pdf_alegra',
+      'xml_alegra',
+      'oc_pdf',
+    ]);
+
+    const complete = {
+      ...incomplete,
+      pdf_alegra: 'https://files.test/a.pdf',
+      xml_alegra: 'https://files.test/a.xml',
+      oc_pdf: 'https://files.test/oc.pdf',
+    };
+    expect(isTmsRescueComplete(complete)).toBe(true);
+    expect(tmsRescueMissingFields(complete)).toEqual([]);
+
+    expect(isTmsRescueComplete({ ...complete, internal_notes: '   ' })).toBe(false);
+  });
+
+  it('sends ready and confirm only when the filter is a boolean', () => {
+    expect(buildTmsRescueQuery(undefined)).toEqual({});
+    expect(buildTmsRescueQuery({ ready: null, confirm: undefined })).toEqual({});
+    expect(buildTmsRescueQuery({ ready: true, confirm: false })).toEqual({
+      ready: 'true',
+      confirm: 'false',
+    });
+  });
+
+  it('keys the query per filter combination', () => {
+    expect(serializeTmsRescueFilters({ ready: true, confirm: null })).toEqual([
+      'ready:true',
+      'confirm:all',
+    ]);
+    expect(serializeTmsRescueFilters(undefined)).toEqual([
+      'ready:all',
+      'confirm:all',
+    ]);
+  });
+
+  it('maps the select option to a tri-state filter', () => {
+    expect(toTmsTriState('all')).toBeNull();
+    expect(toTmsTriState('true')).toBe(true);
+    expect(toTmsTriState('false')).toBe(false);
+    expect(tmsTriStateItems('Listo').map((item) => item.label)).toEqual([
+      'Listo: todos',
+      'Listo: sí',
+      'Listo: no',
+    ]);
   });
 
   it('normalizes legacy arrays and preserves cursor responses', () => {
@@ -85,6 +154,14 @@ describe('TMS portal mapping', () => {
       { rescueId: null, status: 'unmatched' },
       { rescueId: null, status: 'failed' },
     ]);
+  });
+
+  it('does not auto-assign a remittance match that is already locked', () => {
+    const [assignment] = assignTmsPurchaseOrders(
+      [upload('100')],
+      [{ ...rescue(1, '100'), correct_upload: true }],
+    );
+    expect(assignment).toMatchObject({ rescueId: null, status: 'unmatched' });
   });
 
   it('leaves duplicate remittance matches for manual assignment', () => {

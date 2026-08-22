@@ -31,7 +31,7 @@ function openScenario(key: string) {
 
 <template>
   <div class="border-b border-warning/30 bg-warning/10 px-4 py-2">
-    <div class="mx-auto flex w-full max-w-xl flex-wrap items-center gap-2">
+    <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-2">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-warning">
         Preview local
       </p>

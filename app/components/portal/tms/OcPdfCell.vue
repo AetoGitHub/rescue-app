@@ -3,6 +3,7 @@ const props = defineProps<{
   folio: string;
   url: string | null;
   disabled?: boolean;
+  readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -17,7 +18,7 @@ const pendingFile = ref<File | null>(null);
 const isUploading = ref(false);
 
 async function onFileChange(value: File | null | undefined) {
-  if (!value || isUploading.value) return;
+  if (!value || isUploading.value || props.readonly) return;
 
   isUploading.value = true;
   try {
@@ -73,39 +74,38 @@ async function onFileChange(value: File | null | undefined) {
         icon="i-lucide-file-check-2"
         label="Ver OC"
       />
-      <UBadge
+      <PortalTmsMissingValue
         v-else
-        color="warning"
-        variant="subtle"
-        size="sm"
-        label="Pendiente"
+        label="Sin PDF"
       />
 
-      <UFileUpload
-        v-model="pendingFile"
-        variant="button"
-        size="sm"
-        color="neutral"
-        accept=".pdf,application/pdf"
-        reset
-        :preview="false"
-        :disabled="disabled"
-        :icon="url ? 'i-lucide-refresh-cw' : 'i-lucide-upload'"
-        :label="url ? 'Reemplazar' : 'Cargar PDF'"
-        :aria-label="`Cargar PDF de la orden de compra de ${folio}`"
-        @update:model-value="onFileChange"
-      />
+      <template v-if="!readonly">
+        <UFileUpload
+          v-model="pendingFile"
+          variant="button"
+          size="sm"
+          color="neutral"
+          accept=".pdf,application/pdf"
+          reset
+          :preview="false"
+          :disabled="disabled"
+          :icon="url ? 'i-lucide-refresh-cw' : 'i-lucide-upload'"
+          :label="url ? 'Cambiar' : 'Cargar'"
+          :aria-label="`Cargar PDF de la orden de compra de ${folio}`"
+          @update:model-value="onFileChange"
+        />
 
-      <UButton
-        v-if="url"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        icon="i-lucide-trash-2"
-        :disabled="disabled"
-        :aria-label="`Quitar PDF de la orden de compra de ${folio}`"
-        @click="emit('remove')"
-      />
+        <UButton
+          v-if="url"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          icon="i-lucide-trash-2"
+          :disabled="disabled"
+          :aria-label="`Quitar PDF de la orden de compra de ${folio}`"
+          @click="emit('remove')"
+        />
+      </template>
     </template>
   </div>
 </template>

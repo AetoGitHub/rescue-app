@@ -27,11 +27,12 @@ useHead({
 </script>
 
 <template>
-  <main class="min-h-svh bg-muted/30">
+  <main class="flex min-h-svh flex-col bg-muted/30">
     <AdministrativeFillOcDevPreview v-if="isDev" />
 
     <AdministrativeFillOcList
       v-if="apiKey"
+      class="flex min-h-0 flex-1 flex-col"
       :api-key="apiKey"
     />
 
