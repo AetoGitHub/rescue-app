@@ -155,12 +155,10 @@ function applyPercentIncreaseToAll() {
   toast.add({ title: 'Aumento aplicado a todos', color: 'success' });
 }
 
+const importModalOpen = ref(false);
+
 function onImportPrices() {
-  toast.add({
-    title: 'Importar precios',
-    description: 'Esta función estará disponible próximamente.',
-    color: 'info',
-  });
+  importModalOpen.value = true;
 }
 
 const removingId = ref<number | null>(null);
@@ -375,5 +373,10 @@ async function confirmRemove(row: ContractItemEditableRow) {
         @click="onImportPrices"
       />
     </div>
+
+    <CatalogContractImportPricesModal
+      v-model:open="importModalOpen"
+      :contract-id="contractId"
+    />
   </section>
 </template>
