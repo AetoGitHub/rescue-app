@@ -102,7 +102,7 @@ const multiplierLabel = computed(() => {
 
 const contractTitle = computed(
   () =>
-    clientDetail.value?.business_name || clientDetail.value?.name || 'Contrato',
+    clientDetail.value?.name || clientDetail.value?.business_name || 'Contrato',
 );
 
 const {
