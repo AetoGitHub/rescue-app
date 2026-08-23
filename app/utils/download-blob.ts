@@ -20,3 +20,25 @@ export function downloadBlob(blob: Blob, filename: string): void {
 
   setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
 }
+
+/**
+ * Extrae el nombre de archivo de un header `Content-Disposition`, soportando
+ * tanto `filename="..."` como el formato codificado `filename*=UTF-8''...`.
+ */
+export function filenameFromContentDisposition(
+  header: string | null | undefined,
+): string | null {
+  if (!header) return null;
+
+  const encodedMatch = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(header);
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1].trim().replace(/^"|"$/g, ''));
+    } catch {
+      // Ignorar y probar con el formato simple.
+    }
+  }
+
+  const simpleMatch = /filename="?([^";]+)"?/i.exec(header);
+  return simpleMatch?.[1]?.trim() || null;
+}

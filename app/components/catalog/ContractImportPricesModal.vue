@@ -39,11 +39,14 @@ function stringifySkippedDetail(detail: unknown): string {
 async function handleDownloadFormat() {
   isDownloadingFormat.value = true;
   try {
-    const blob = await $fetch<Blob>(
+    const response = await $fetch.raw<Blob>(
       CONTRACT_IMPORT_PRICES_TEMPLATE_PATH(props.contractId),
       { responseType: 'blob' },
     );
-    downloadBlob(blob, `contrato_${props.contractId}_items.xlsx`);
+    const filename =
+      filenameFromContentDisposition(response.headers.get('content-disposition'))
+      || `contrato_${props.contractId}_items.xlsx`;
+    downloadBlob(response._data as Blob, filename);
   } catch (error) {
     toast.add({
       title: CONTRACT_IMPORT_PRICES_LABELS.downloadErrorTitle,
