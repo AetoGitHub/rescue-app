@@ -19,8 +19,15 @@ const DEFAULT_ZOOM = 10;
 const SELECTED_ZOOM = 12;
 const PLACES_LIBRARIES = ['maps', 'marker', 'places'] as const;
 const initialCenter = ref({ ...DEFAULT_CENTER });
+const mapZoom = ref(DEFAULT_ZOOM);
 const geolocationPending = ref(false);
 const sharedMapRef = ref<{ getMap: () => google.maps.Map | null } | null>(null);
+/** Coordinates written by map interaction, so the watcher skips recentering. */
+const mapInteractionKey = ref<string | null>(null);
+
+function coordinatesKey(lat: number, lng: number) {
+  return `${lat.toFixed(6)},${lng.toFixed(6)}`;
+}
 
 function parseCoordinate(value: string | null | undefined): number | undefined {
   if (value == null) return undefined;
@@ -49,6 +56,7 @@ const markerLatLng = computed(() => {
 function panToOnce(lat: number, lng: number, zoom = SELECTED_ZOOM, attempt = 0) {
   const map = sharedMapRef.value?.getMap();
   if (map) {
+    mapZoom.value = zoom;
     map.panTo({ lat, lng });
     map.setZoom(zoom);
     return;
@@ -58,17 +66,23 @@ function panToOnce(lat: number, lng: number, zoom = SELECTED_ZOOM, attempt = 0) 
   }
 }
 
-function setCoordinates(lat: number, lng: number) {
+function setCoordinates(lat: number, lng: number, options?: { pan?: boolean }) {
+  const shouldPan = options?.pan ?? true;
+  if (!shouldPan) {
+    mapInteractionKey.value = coordinatesKey(lat, lng);
+  }
   latitude.value = lat.toFixed(6);
   longitude.value = lng.toFixed(6);
-  panToOnce(lat, lng);
+  if (shouldPan) {
+    panToOnce(lat, lng);
+  }
 }
 
 function onMapClick(event: google.maps.MapMouseEvent) {
   const lat = event.latLng?.lat();
   const lng = event.latLng?.lng();
   if (lat == null || lng == null) return;
-  setCoordinates(lat, lng);
+  setCoordinates(lat, lng, { pan: false });
 }
 
 function onMarkerDragEnd(event: google.maps.MapMouseEvent) {
@@ -134,6 +148,10 @@ watch(
     if (lat == null || lng == null) return;
     const [prevLat, prevLng] = previous ?? [undefined, undefined];
     if (prevLat === lat && prevLng === lng) return;
+    if (mapInteractionKey.value === coordinatesKey(lat, lng)) {
+      mapInteractionKey.value = null;
+      return;
+    }
     recenterFromModel();
   },
 );
@@ -174,7 +192,7 @@ defineExpose({ recenterFromModel });
         <SharedMap
           ref="sharedMapRef"
           :center="initialCenter"
-          :zoom="hasCoordinates ? SELECTED_ZOOM : DEFAULT_ZOOM"
+          :zoom="mapZoom"
           :libraries="[...PLACES_LIBRARIES]"
           map-class="h-72 w-full"
           @click="onMapClick"
