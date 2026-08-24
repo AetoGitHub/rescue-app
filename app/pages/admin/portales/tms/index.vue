@@ -294,6 +294,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
 
 <template>
   <AdminListPageShell
+    fluid
     navbar-title="Portal TMS"
     title="TMS"
     description="Edita el PDF de la orden de compra y las notas internas en la tabla; se guardan al salir del campo. Las filas en verde ya tienen toda la documentación."

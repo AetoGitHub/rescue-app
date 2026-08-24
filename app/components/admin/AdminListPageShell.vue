@@ -8,11 +8,18 @@ import {
   adminListToolbarClass,
 } from '~/constants/admin-list-layout';
 
-defineProps<{
+const props = defineProps<{
   navbarTitle: string;
   title: string;
   description?: string;
+  /** Quita el ancho máximo del contenedor: para tablas con muchas columnas. */
+  fluid?: boolean;
 }>();
+
+const containerClass = computed(() => [
+  adminListContainerClass,
+  props.fluid ? 'max-w-none' : '',
+]);
 </script>
 
 <template>
@@ -21,7 +28,7 @@ defineProps<{
       <SharedNavbar :title="navbarTitle" />
     </template>
     <template #body>
-      <UContainer :class="adminListContainerClass">
+      <UContainer :class="containerClass">
         <div :class="adminListToolbarClass">
           <div class="min-w-0">
             <h1 :class="adminListPageTitleClass">
