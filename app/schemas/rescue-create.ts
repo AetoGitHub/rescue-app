@@ -9,7 +9,6 @@ import {
   emptyCatalogDropdownSelection,
   type CatalogDropdownSelection,
 } from '~/interfaces/shared/catalog-dropdown.interface';
-import { getContractItemById } from '~/utils/rescue-company-settings';
 import { isQuoteOptionalForServiceType } from '~/utils/rescue-request';
 import { TMS_CLIENT_LABEL } from '~/constants/tms-portal-api';
 const RESCUE_SERVICE_TYPES = [
@@ -121,7 +120,6 @@ type RescueQuoteLineInput = z.infer<typeof rescueQuoteLineSchema>;
 function validateQuoteLineAtIndex(
   line: RescueQuoteLineInput,
   index: number,
-  settings: RescueCompanySettings | null | undefined,
   ctx: z.RefinementCtx,
 ) {
   if (line.service.value == null) {
@@ -145,30 +143,10 @@ function validateQuoteLineAtIndex(
         path: ['quote_lines', index, 'unit_cost'],
       });
     }
-    if (line.contract_item_id != null) {
-      const item = getContractItemById(settings, line.contract_item_id);
-      if (item == null) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'La variante de convenio ya no está disponible',
-          path: ['quote_lines', index, 'contract_item_id'],
-        });
-      } else if (
-        line.service.value != null
-        && item.service_id !== line.service.value
-      ) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'El servicio no coincide con el convenio seleccionado',
-          path: ['quote_lines', index, 'service', 'value'],
-        });
-      }
-    }
 }
 
 function refineQuoteLines(
   quoteLines: RescueQuoteLineInput[],
-  settings: RescueCompanySettings | null | undefined,
   ctx: z.RefinementCtx,
   options: { required: boolean },
 ) {
@@ -186,7 +164,7 @@ function refineQuoteLines(
 
   quoteLines.forEach((line, index) => {
     if (line.service.value == null) return;
-    validateQuoteLineAtIndex(line, index, settings, ctx);
+    validateQuoteLineAtIndex(line, index, ctx);
   });
 }
 
@@ -196,7 +174,7 @@ function createRescueStepQuoteSchema(required: boolean) {
       quote_lines: z.array(rescueQuoteLineSchema),
     })
     .superRefine((data, ctx) => {
-      refineQuoteLines(data.quote_lines, undefined, ctx, { required });
+      refineQuoteLines(data.quote_lines, ctx, { required });
     });
 }
 
@@ -207,12 +185,7 @@ function createRescueStepQuoteWithSettingsSchema(required: boolean) {
       company_settings: z.custom<RescueCompanySettings | null>(),
     })
     .superRefine((data, ctx) => {
-      refineQuoteLines(
-        data.quote_lines,
-        data.company_settings,
-        ctx,
-        { required },
-      );
+      refineQuoteLines(data.quote_lines, ctx, { required });
     });
 }
 
@@ -292,7 +265,7 @@ export const rescueCreateFormSchema = z
       });
     }
 
-    refineQuoteLines(data.quote_lines, undefined, ctx, {
+    refineQuoteLines(data.quote_lines, ctx, {
       required: !isQuoteOptionalForServiceType(data.service_type),
     });
     refineTmsInternalNotes(data, ctx);
