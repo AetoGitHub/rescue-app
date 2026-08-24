@@ -109,43 +109,60 @@ const filteredRows = computed(() =>
   ),
 );
 
+/**
+ * Anchos fijos por columna: con `table-fixed` la tabla siempre cabe en el
+ * contenedor y «Notas internas» (sin ancho) absorbe el espacio restante.
+ */
+function columnWidth(width: string) {
+  return { class: { th: width, td: `${width} align-top` } };
+}
+
 const columns: TableColumn<TmsRescueDisplay>[] = [
-  { accessorKey: 'id', header: 'ID' },
-  { accessorKey: 'folio', header: 'Folio' },
-  { accessorKey: 'pdf_alegra', header: 'PDF Alegra' },
-  { accessorKey: 'xml_alegra', header: 'XML Alegra' },
-  { accessorKey: 'remittance_folio', header: 'Orden de compra' },
-  { accessorKey: 'invoice_folio', header: 'Factura' },
+  { accessorKey: 'id', header: 'ID', meta: columnWidth('w-12') },
+  { accessorKey: 'folio', header: 'Folio', meta: columnWidth('w-36') },
+  {
+    accessorKey: 'pdf_alegra',
+    header: 'PDF Alegra',
+    meta: columnWidth('w-24'),
+  },
+  {
+    accessorKey: 'xml_alegra',
+    header: 'XML Alegra',
+    meta: columnWidth('w-24'),
+  },
+  {
+    accessorKey: 'remittance_folio',
+    header: 'Orden de compra',
+    meta: columnWidth('w-28'),
+  },
+  {
+    accessorKey: 'invoice_folio',
+    header: 'Factura',
+    meta: columnWidth('w-28'),
+  },
   {
     accessorKey: 'oc_pdf',
     header: 'PDF OC',
-    meta: { class: { th: 'w-32', td: 'w-32 align-top' } },
+    meta: columnWidth('w-28'),
   },
   {
     accessorKey: 'internal_notes',
     header: 'Notas internas',
-    meta: {
-      class: {
-        th: 'w-full min-w-32',
-        td: 'w-full min-w-32 whitespace-normal align-top',
-      },
-    },
+    meta: { class: { td: 'align-top' } },
   },
-  {
-    accessorKey: 'ready',
-    header: 'Listo',
-    meta: { class: { th: 'w-36', td: 'w-36 align-top' } },
-  },
+  { accessorKey: 'ready', header: 'Listo', meta: columnWidth('w-32') },
 ];
 
 /**
- * Padding contenido para no reintroducir scroll horizontal; el carril reservado
- * del scroll vertical y el `pe` extra evitan que «Listo» quede bajo la barra.
+ * `table-fixed` evita el scroll horizontal (la causa de que «Listo» quedara
+ * pegado al borde) y el carril de scroll reservado impide que la barra vertical
+ * se monte sobre la última columna.
  */
 const tableUi = {
   root: '[scrollbar-gutter:stable]',
-  th: 'px-3 py-2 whitespace-normal last:pe-5',
-  td: 'px-3 py-2 last:pe-5',
+  base: 'w-full table-fixed',
+  th: 'px-2.5 py-2 whitespace-normal',
+  td: 'px-2.5 py-2 whitespace-normal',
 } as const;
 
 const tableMeta = {
@@ -573,7 +590,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         </template>
 
         <template #folio-cell="{ row }">
-          <div class="flex items-center gap-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
             <span class="font-semibold text-highlighted">
               {{ row.original.folio }}
             </span>
@@ -598,7 +615,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             target="_blank"
             color="neutral"
             variant="subtle"
-            size="sm"
+            size="xs"
             icon="i-lucide-file-text"
             label="PDF"
           />
@@ -612,7 +629,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
             target="_blank"
             color="neutral"
             variant="subtle"
-            size="sm"
+            size="xs"
             icon="i-lucide-file-code-2"
             label="XML"
           />
