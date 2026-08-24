@@ -21,6 +21,7 @@ const {
   isLoadingMore,
   isError,
   errorMessage,
+  asyncStatus,
   hasNextPage,
   loadNextPage,
   refresh,
@@ -53,6 +54,12 @@ const rows = computed(() =>
     controller.sortColumn.value,
     controller.sortDescending.value,
   ),
+);
+
+const filtering = computed(
+  () =>
+    debouncedSearch.value.trim().length > 0
+    || controller.activeFilterCount.value > 0,
 );
 
 const summary = computed(() => summarizePendingInvoiceRows(filteredRows.value));
@@ -157,25 +164,22 @@ async function onEvidenceZip(
         :option-rows="searchedRows"
         :controller="controller"
         :downloading-evidence-key="downloadingEvidenceKey"
+        :has-next-page="hasNextPage"
+        :load-next-page="loadNextPage"
+        :async-status="asyncStatus"
+        :filtering="filtering"
         @comment="openComments"
         @attention="openInOperations"
         @detail="openDetail"
         @evidence-zip="onEvidenceZip"
       />
 
-      <div
-        v-if="hasNextPage || isLoadingMore"
-        class="flex justify-center py-2"
+      <p
+        v-if="isLoadingMore"
+        class="text-center text-xs text-muted"
       >
-        <UButton
-          color="neutral"
-          variant="subtle"
-          :loading="isLoadingMore"
-          :disabled="isLoadingMore"
-          label="Cargar más"
-          @click="() => void loadNextPage()"
-        />
-      </div>
+        Cargando más eventos…
+      </p>
     </template>
 
     <LazyPendingInvoiceCommentModal

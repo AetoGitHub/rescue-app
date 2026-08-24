@@ -102,6 +102,12 @@ export function assignTmsPurchaseOrders(
   files: TmsPurchaseOrderUploadFile[],
   rescues: TmsRescue[],
 ): TmsPurchaseOrderAssignment[] {
+  const reservedRescueIds = new Set(
+    rescues
+      .filter((rescue) => Boolean(rescue.oc_pdf?.trim()))
+      .map((rescue) => rescue.id),
+  );
+
   return files.map((file) => {
     if (!file.url) {
       return { file, rescueId: null, status: 'failed' };
@@ -113,19 +119,32 @@ export function assignTmsPurchaseOrders(
     }
 
     const matches = rescues.filter(
-      (rescue) =>
-        comparableFolio(rescue.remittance_folio) === orderNumber
-        && !isTmsRescueReadOnly(rescue),
+      (rescue) => comparableFolio(rescue.remittance_folio) === orderNumber,
     );
 
-    if (matches.length === 1) {
-      return { file, rescueId: matches[0]!.id, status: 'assigned' };
+    const occupied = matches.find((rescue) =>
+      reservedRescueIds.has(rescue.id),
+    );
+    if (occupied) {
+      return { file, rescueId: occupied.id, status: 'blocked' };
+    }
+
+    const editableMatches = matches.filter(
+      (rescue) => !isTmsRescueReadOnly(rescue),
+    );
+    if (editableMatches.length === 1) {
+      reservedRescueIds.add(editableMatches[0]!.id);
+      return {
+        file,
+        rescueId: editableMatches[0]!.id,
+        status: 'assigned',
+      };
     }
 
     return {
       file,
       rescueId: null,
-      status: matches.length > 1 ? 'ambiguous' : 'unmatched',
+      status: editableMatches.length > 1 ? 'ambiguous' : 'unmatched',
     };
   });
 }
@@ -133,6 +152,7 @@ export function assignTmsPurchaseOrders(
 export interface TmsUploadSummary {
   total: number;
   assigned: number;
+  blocked: number;
   pending: number;
   failed: number;
 }
@@ -144,11 +164,12 @@ export function summarizeTmsAssignments(
     (summary, assignment) => {
       summary.total += 1;
       if (assignment.status === 'assigned') summary.assigned += 1;
+      else if (assignment.status === 'blocked') summary.blocked += 1;
       else if (assignment.status === 'failed') summary.failed += 1;
       else summary.pending += 1;
       return summary;
     },
-    { total: 0, assigned: 0, pending: 0, failed: 0 },
+    { total: 0, assigned: 0, blocked: 0, pending: 0, failed: 0 },
   );
 }
 
@@ -188,6 +209,17 @@ export function describeTmsAssignment(
     };
   }
 
+  if (status === 'blocked') {
+    return {
+      label: 'Ya tiene OC',
+      reason: orderNumber
+        ? `La orden ${orderNumber} ya tiene un PDF asignado. No se reemplazó.`
+        : 'El rescate ya tiene un PDF de orden de compra. No se reemplazó.',
+      icon: 'i-lucide-lock',
+      color: 'warning',
+    };
+  }
+
   if (status === 'ambiguous') {
     return {
       label: 'Varias coincidencias',
@@ -222,6 +254,7 @@ export function formatTmsUploadFeedback(summary: TmsUploadSummary): {
 } {
   const parts = [
     `${summary.assigned} asignada${summary.assigned === 1 ? '' : 's'}`,
+    `${summary.blocked} bloqueada${summary.blocked === 1 ? '' : 's'}`,
     `${summary.pending} por asignar`,
     `${summary.failed} con error`,
   ];
@@ -240,7 +273,12 @@ export function formatTmsUploadFeedback(summary: TmsUploadSummary): {
         ? `Lote procesado con ${summary.failed} error${summary.failed === 1 ? '' : 'es'}`
         : 'Lote procesado',
     description: `${summary.total} PDF${summary.total === 1 ? '' : 's'}: ${parts.join(' · ')}`,
-    color: summary.failed > 0 || summary.assigned === 0 ? 'warning' : 'success',
+    color:
+      summary.failed > 0
+      || summary.blocked > 0
+      || summary.assigned === 0
+        ? 'warning'
+        : 'success',
   };
 }
 

@@ -53,5 +53,5 @@ export type TmsRowSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 export interface TmsPurchaseOrderAssignment {
   file: TmsPurchaseOrderUploadFile;
   rescueId: number | null;
-  status: 'assigned' | 'unmatched' | 'ambiguous' | 'failed';
+  status: 'assigned' | 'blocked' | 'unmatched' | 'ambiguous' | 'failed';
 }

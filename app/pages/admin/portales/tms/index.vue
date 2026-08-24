@@ -32,6 +32,7 @@ const readyOverrides = reactive<Record<number, boolean | undefined>>({});
 const rowStatus = reactive<Record<number, TmsRowSaveStatus>>({});
 const rowErrors = reactive<Record<number, string | null>>({});
 const savedTimers = new Map<number, ReturnType<typeof setTimeout>>();
+const ocAssignmentLocks = new Set<number>();
 
 const readyFilterItems = tmsTriStateItems('Listo');
 const confirmFilterItems = tmsTriStateItems('Confirmado');
@@ -130,14 +131,18 @@ const columns: TableColumn<TmsRescueDisplay>[] = [
   {
     accessorKey: 'ready',
     header: 'Listo',
-    meta: { class: { th: 'w-24', td: 'w-24 align-top' } },
+    meta: { class: { th: 'w-28', td: 'w-28 align-top' } },
   },
 ];
 
-/** Padding compacto: evita el scroll horizontal en escritorio. */
+/**
+ * Padding contenido para no reintroducir scroll horizontal; el carril reservado
+ * del scroll vertical y el `pe` extra evitan que «Listo» quede bajo la barra.
+ */
 const tableUi = {
-  th: 'px-2.5 py-2 whitespace-normal',
-  td: 'px-2.5 py-2',
+  root: '[scrollbar-gutter:stable]',
+  th: 'px-3 py-2 whitespace-normal last:pe-5',
+  td: 'px-3 py-2 last:pe-5',
 } as const;
 
 const tableMeta = {
@@ -231,13 +236,6 @@ function revertDraft(rescueId: number) {
   rowStatus[rescueId] = 'idle';
 }
 
-function clearOcPdf(rescueId: number) {
-  const source = rows.value.find((item) => item.id === rescueId);
-  if (!source || isTmsRescueReadOnly(source)) return;
-  draftFor(rescueId).oc_pdf = '';
-  void commitDraft(rescueId);
-}
-
 async function toggleReady(rescueId: number, value: boolean) {
   if (rowStatus[rescueId] === 'saving') return;
 
@@ -268,8 +266,16 @@ async function toggleReady(rescueId: number, value: boolean) {
 
 async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
   const rescue = displayRows.value.find((item) => item.id === payload.rescueId);
-  if (!rescue || isTmsRescueReadOnly(rescue)) return;
+  if (
+    !rescue
+    || isTmsRescueReadOnly(rescue)
+    || Boolean(rescue.oc_pdf?.trim())
+    || ocAssignmentLocks.has(payload.rescueId)
+  ) {
+    return;
+  }
 
+  ocAssignmentLocks.add(payload.rescueId);
   const body: TmsRescueUpdateBody = {
     id: payload.rescueId,
     oc_pdf: payload.url,
@@ -278,6 +284,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
   rowStatus[payload.rescueId] = 'saving';
   const saved = await updateRescue(body, { silentSuccess: true });
   if (!saved) {
+    ocAssignmentLocks.delete(payload.rescueId);
     rowErrors[payload.rescueId] = 'No se pudo guardar la orden de compra';
     rowStatus[payload.rescueId] = 'error';
     return;
@@ -288,6 +295,7 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
     oc_pdf: payload.url,
   };
   rowErrors[payload.rescueId] = null;
+  ocAssignmentLocks.delete(payload.rescueId);
   flashSaved(payload.rescueId);
 }
 </script>
@@ -493,7 +501,6 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
                 :readonly="isTmsRescueReadOnly(rescue)"
                 :disabled="rowStatus[rescue.id] === 'saving'"
                 @uploaded="(url) => void assignPurchaseOrder({ rescueId: rescue.id, url })"
-                @remove="clearOcPdf(rescue.id)"
               />
             </UFormField>
 
@@ -621,7 +628,6 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
               :readonly="isTmsRescueReadOnly(row.original)"
               :disabled="rowStatus[row.original.id] === 'saving'"
               @uploaded="(url) => void assignPurchaseOrder({ rescueId: row.original.id, url })"
-              @remove="clearOcPdf(row.original.id)"
             />
             <p
               v-if="rowErrors[row.original.id]"

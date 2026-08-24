@@ -19,9 +19,10 @@ const emit = defineEmits<{
 
 const STATUS_WEIGHT: Record<TmsPurchaseOrderAssignment['status'], number> = {
   failed: 0,
-  ambiguous: 1,
-  unmatched: 2,
-  assigned: 3,
+  blocked: 1,
+  ambiguous: 2,
+  unmatched: 3,
+  assigned: 4,
 };
 
 const open = ref(false);
@@ -34,20 +35,31 @@ const processingCount = ref(0);
 const toast = useToast();
 const { uploadPurchaseOrders } = useTmsPurchaseOrderUpload();
 
-const rescueOptions = computed(() =>
-  props.rescues
-    .filter((rescue) => !isTmsRescueReadOnly(rescue))
+const rescueOptions = computed(() => {
+  const assignedRescueIds = new Set(
+    assignments.value
+      .filter((assignment) => assignment.status === 'assigned')
+      .map((assignment) => assignment.rescueId),
+  );
+
+  return props.rescues
+    .filter(
+      (rescue) =>
+        !isTmsRescueReadOnly(rescue)
+        && !rescue.oc_pdf?.trim()
+        && !assignedRescueIds.has(rescue.id),
+    )
     .map((rescue) => ({
       label: `${rescue.folio} · OC ${rescue.remittance_folio || '—'}`,
       value: rescue.id,
-    })),
-);
+    }));
+});
 
 function rescueLabel(rescueId: number | null): string {
   if (rescueId == null) return '';
-  return (
-    rescueOptions.value.find((option) => option.value === rescueId)?.label ?? ''
-  );
+  const rescue = props.rescues.find((item) => item.id === rescueId);
+  if (!rescue) return '';
+  return `${rescue.folio} · OC ${rescue.remittance_folio || '—'}`;
 }
 
 const STATUS_TEXT_CLASS = {
@@ -79,7 +91,22 @@ const hasRetryableFiles = computed(
 function assignFile(assignment: TmsPurchaseOrderAssignment, rescueId: number) {
   if (!assignment.file.url) return;
   const rescue = props.rescues.find((item) => item.id === rescueId);
-  if (!rescue || isTmsRescueReadOnly(rescue)) return;
+  const assignedInBatch = assignments.value.some(
+    (item) =>
+      item !== assignment
+      && item.status === 'assigned'
+      && item.rescueId === rescueId,
+  );
+  if (
+    !rescue
+    || isTmsRescueReadOnly(rescue)
+    || Boolean(rescue.oc_pdf?.trim())
+    || assignedInBatch
+  ) {
+    assignment.rescueId = rescue?.id ?? null;
+    assignment.status = 'blocked';
+    return;
+  }
   assignment.rescueId = rescueId;
   assignment.status = 'assigned';
   emit('assign', { rescueId, url: assignment.file.url });
@@ -243,6 +270,13 @@ function resetModal() {
               :label="`${summary.pending} por asignar`"
             />
             <UBadge
+              v-if="summary.blocked > 0"
+              color="warning"
+              variant="subtle"
+              icon="i-lucide-lock"
+              :label="`${summary.blocked} bloqueadas`"
+            />
+            <UBadge
               :color="summary.failed > 0 ? 'error' : 'neutral'"
               variant="subtle"
               :label="`${summary.failed} con error`"
@@ -307,7 +341,11 @@ function resetModal() {
             </div>
 
             <div
-              v-if="assignment.status !== 'assigned' && assignment.file.url"
+              v-if="
+                assignment.status !== 'assigned'
+                && assignment.status !== 'blocked'
+                && assignment.file.url
+              "
               class="flex flex-col gap-2 sm:flex-row"
             >
               <USelectMenu
@@ -348,6 +386,13 @@ function resetModal() {
                 @click="reopenAssignment(assignment)"
               />
             </div>
+            <p
+              v-else-if="assignment.status === 'blocked'"
+              class="text-xs text-warning"
+            >
+              Rescate {{ rescueLabel(assignment.rescueId) || 'identificado' }}:
+              conserva la OC que ya tenía asignada.
+            </p>
           </li>
         </ul>
       </div>

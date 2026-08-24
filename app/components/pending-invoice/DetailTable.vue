@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue';
+import type { AsyncStatus } from '@pinia/colada';
 import type { TableColumn } from '@nuxt/ui';
 import type { PendingInvoiceRow } from '~/interfaces/invoicing/pending-invoice';
 import type {
@@ -24,7 +25,26 @@ const props = defineProps<{
   optionRows: PendingInvoiceRow[];
   controller: ReturnType<typeof usePendingInvoiceColumnFilters>;
   downloadingEvidenceKey?: string | null;
+  hasNextPage?: boolean;
+  loadNextPage?: () => unknown;
+  asyncStatus?: AsyncStatus;
+  filtering?: boolean;
 }>();
+
+const tableRef = useTemplateRef('table');
+const hasNextPageRef = computed(() => props.hasNextPage ?? false);
+const asyncStatusRef = computed(
+  () => props.asyncStatus ?? ('idle' as AsyncStatus),
+);
+const autoFillRef = computed(() => props.filtering ?? false);
+
+usePaginatedTableInfiniteScroll({
+  tableRef,
+  hasNextPage: hasNextPageRef,
+  loadNextPage: () => props.loadNextPage?.(),
+  asyncStatus: asyncStatusRef,
+  autoFill: autoFillRef,
+});
 
 const emit = defineEmits<{
   comment: [row: PendingInvoiceRow];
@@ -314,6 +334,7 @@ const tableMeta = {
 
 <template>
   <UTable
+    ref="table"
     sticky
     :columns="columns"
     :data="rows"

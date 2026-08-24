@@ -10,6 +10,11 @@ interface PaginatedTableInfiniteScrollOptions {
   distance?: number;
   /** Scroll container; defaults to `tableRef.$el` (Nuxt UI infinite-scroll pattern). */
   scrollRootRef?: Readonly<Ref<HTMLElement | null>>;
+  /**
+   * When true, load the next page if the table does not overflow
+   * (client-side filters can leave too few visible rows to scroll).
+   */
+  autoFill?: Ref<boolean>;
 }
 
 export function usePaginatedTableInfiniteScroll(
@@ -68,6 +73,39 @@ export function usePaginatedTableInfiniteScroll(
         stopScroll?.();
         stopScroll = undefined;
       });
+    },
+    { immediate: true, flush: 'post' },
+  );
+
+  const distance = options.distance ?? 200;
+
+  function tryAutoFill() {
+    if (!options.autoFill?.value) return;
+    if (
+      !options.hasNextPage.value
+      || options.asyncStatus.value === 'loading'
+    ) {
+      return;
+    }
+
+    const el = resolveScrollRoot();
+    if (!el || el.clientHeight <= 0) return;
+
+    if (el.scrollHeight <= el.clientHeight + distance) {
+      void options.loadNextPage();
+    }
+  }
+
+  watch(
+    () => [
+      options.autoFill?.value ?? false,
+      options.hasNextPage.value,
+      options.asyncStatus.value,
+      resolveScrollRoot()?.clientHeight ?? 0,
+      resolveScrollRoot()?.scrollHeight ?? 0,
+    ],
+    () => {
+      tryAutoFill();
     },
     { immediate: true, flush: 'post' },
   );

@@ -8,7 +8,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   uploaded: [url: string];
-  remove: [];
 }>();
 
 const { uploadPurchaseOrders } = useTmsPurchaseOrderUpload();
@@ -80,7 +79,7 @@ async function onFileChange(value: File | null | undefined) {
       />
 
       <div
-        v-if="!readonly"
+        v-if="!readonly && !url"
         class="flex items-center gap-1"
       >
         <UFileUpload
@@ -92,21 +91,10 @@ async function onFileChange(value: File | null | undefined) {
           reset
           :preview="false"
           :disabled="disabled"
-          :icon="url ? 'i-lucide-refresh-cw' : 'i-lucide-upload'"
-          :label="url ? 'Cambiar' : 'Cargar'"
+          icon="i-lucide-upload"
+          label="Cargar"
           :aria-label="`Cargar PDF de la orden de compra de ${folio}`"
           @update:model-value="onFileChange"
-        />
-
-        <UButton
-          v-if="url"
-          color="neutral"
-          variant="ghost"
-          size="xs"
-          icon="i-lucide-trash-2"
-          :disabled="disabled"
-          :aria-label="`Quitar PDF de la orden de compra de ${folio}`"
-          @click="emit('remove')"
         />
       </div>
     </template>

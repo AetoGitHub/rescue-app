@@ -164,6 +164,28 @@ describe('TMS portal mapping', () => {
     expect(assignment).toMatchObject({ rescueId: null, status: 'unmatched' });
   });
 
+  it('blocks assignment when the matching rescue already has an OC', () => {
+    const [assignment] = assignTmsPurchaseOrders(
+      [upload('100')],
+      [{ ...rescue(1, '100'), oc_pdf: 'https://files.test/existing.pdf' }],
+    );
+    expect(assignment).toMatchObject({ rescueId: 1, status: 'blocked' });
+    expect(describeTmsAssignment(assignment!).reason).toContain(
+      'ya tiene un PDF asignado',
+    );
+  });
+
+  it('blocks duplicate files from assigning the same rescue in one batch', () => {
+    const assignments = assignTmsPurchaseOrders(
+      [upload('100'), upload('100')],
+      [rescue(1, '100')],
+    );
+    expect(assignments.map((assignment) => assignment.status)).toEqual([
+      'assigned',
+      'blocked',
+    ]);
+  });
+
   it('leaves duplicate remittance matches for manual assignment', () => {
     const [assignment] = assignTmsPurchaseOrders(
       [upload('100')],
@@ -188,7 +210,13 @@ describe('TMS portal mapping', () => {
     );
 
     const summary = summarizeTmsAssignments(assignments);
-    expect(summary).toEqual({ total: 3, assigned: 1, pending: 1, failed: 1 });
+    expect(summary).toEqual({
+      total: 3,
+      assigned: 1,
+      blocked: 0,
+      pending: 1,
+      failed: 1,
+    });
 
     const feedback = formatTmsUploadFeedback(summary);
     expect(feedback.color).toBe('warning');
@@ -201,6 +229,7 @@ describe('TMS portal mapping', () => {
     const feedback = formatTmsUploadFeedback({
       total: 2,
       assigned: 0,
+      blocked: 0,
       pending: 0,
       failed: 2,
     });

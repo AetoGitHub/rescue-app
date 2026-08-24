@@ -137,6 +137,7 @@ export function usePendingInvoiceList() {
     isLoadingMore,
     isError,
     errorMessage,
+    asyncStatus,
     hasNextPage,
     loadNextPage,
     refresh,
