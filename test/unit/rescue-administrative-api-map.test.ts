@@ -190,6 +190,8 @@ const ADMINISTRATIVE_DETAIL_API_EXAMPLE = {
   client_id: 2,
   client_name: 'CLIENTE CON CREDITO',
   location_description: 'xxx',
+  service_description: 'Cambio de llanta',
+  internal_notes: 'Folio de orden 2616071',
   sale_price: null,
   operative_status: 'closed',
   admin_status: 'unattended',
@@ -231,6 +233,8 @@ describe('mapAdministrativeDetailFromApi', () => {
     expect(detail.seller_name).toBe('Osvaldo Valentin Garcia');
     expect(detail.latitude).toBe('19.435861');
     expect(detail.longitude).toBe('-99.143275');
+    expect(detail.service_description).toBe('Cambio de llanta');
+    expect(detail.internal_notes).toBe('Folio de orden 2616071');
     expect(detail.unlocked_until).toBeNull();
   });
 
@@ -341,6 +345,22 @@ describe('administrativeDetailToCardDetail', () => {
     const card = administrativeDetailToCardDetail(detail);
     expect(card.latitude).toBe('19.1');
     expect(card.net_profit).toBe('90');
+    expect(card.service_description).toBe('');
+    expect(card.internal_notes).toBeNull();
+  });
+
+  it('forwards service_description and internal_notes from the API', () => {
+    const detail = mapAdministrativeDetailFromApi({
+      id: 2,
+      folio: 'R-2',
+      admin_status: 'unattended',
+      operative_status: 'closed',
+      service_description: 'Grúa local',
+      internal_notes: 'Cliente pide factura',
+    });
+    const card = administrativeDetailToCardDetail(detail);
+    expect(card.service_description).toBe('Grúa local');
+    expect(card.internal_notes).toBe('Cliente pide factura');
   });
 });
 

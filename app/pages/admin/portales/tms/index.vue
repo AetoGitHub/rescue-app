@@ -25,6 +25,7 @@ useHead({ title: 'Portal TMS' });
 const search = ref('');
 const readyFilter = ref<TmsTriStateOption>('all');
 const confirmFilter = ref<TmsTriStateOption>('all');
+const ocPdfFilter = ref<TmsTriStateOption>('all');
 const tableRef = useTemplateRef('table');
 const drafts = reactive<Record<number, TmsRescueDraftState>>({});
 /** Refleja el check de "Listo" mientras el backend confirma el cambio. */
@@ -36,10 +37,12 @@ const ocAssignmentLocks = new Set<number>();
 
 const readyFilterItems = tmsTriStateItems('Listo');
 const confirmFilterItems = tmsTriStateItems('Confirmado');
+const ocPdfFilterItems = tmsTriStateItems('PDF OC');
 
 const filters = computed<TmsRescueFilters>(() => ({
   ready: toTmsTriState(readyFilter.value),
   confirm: toTmsTriState(confirmFilter.value),
+  oc_pdf: toTmsTriState(ocPdfFilter.value),
 }));
 
 const {
@@ -350,6 +353,16 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         icon="i-lucide-badge-check"
         variant="subtle"
         class="w-full sm:w-52"
+        :ui="{ base: 'bg-default' }"
+      />
+      <USelect
+        v-model="ocPdfFilter"
+        :items="ocPdfFilterItems"
+        value-key="value"
+        label-key="label"
+        icon="i-lucide-file-text"
+        variant="subtle"
+        class="w-full sm:w-44"
         :ui="{ base: 'bg-default' }"
       />
       <UBadge

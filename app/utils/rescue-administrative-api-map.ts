@@ -178,6 +178,7 @@ export function mapAdministrativeDetailFromApi(
 
   return {
     ...card,
+    internal_notes: readString(raw, 'internal_notes'),
     unlocked_until: readUnlockUntil(raw) ?? card.unlocked_until,
     net_profit:
       readString(raw, 'net_profit') ?? readString(raw, 'provider_profit'),
@@ -232,6 +233,7 @@ export function cardToAdministrativePreviewDetail(
 ): AdministrativeRescueDetail {
   return {
     ...card,
+    internal_notes: null,
     client_type: 'CASH',
     client_billing_type: 'DIRECT_INVOICE',
     billing_type: 'DIRECT_INVOICE',
@@ -272,6 +274,7 @@ export function administrativeDetailToCardDetail(
     client_name: detail.client_name,
     service_description: detail.service_description,
     location_description: detail.location_description,
+    internal_notes: detail.internal_notes,
     sale_price: detail.sale_price,
     operative_status: detail.operative_status,
     operator_id: detail.operator_id,

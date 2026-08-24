@@ -90,23 +90,32 @@ describe('TMS portal mapping', () => {
     expect(isTmsRescueComplete({ ...complete, internal_notes: '   ' })).toBe(false);
   });
 
-  it('sends ready and confirm only when the filter is a boolean', () => {
+  it('sends ready, confirm and oc_pdf only when the filter is a boolean', () => {
     expect(buildTmsRescueQuery(undefined)).toEqual({});
-    expect(buildTmsRescueQuery({ ready: null, confirm: undefined })).toEqual({});
-    expect(buildTmsRescueQuery({ ready: true, confirm: false })).toEqual({
+    expect(
+      buildTmsRescueQuery({ ready: null, confirm: undefined, oc_pdf: null }),
+    ).toEqual({});
+    expect(
+      buildTmsRescueQuery({ ready: true, confirm: false, oc_pdf: true }),
+    ).toEqual({
       ready: 'true',
       confirm: 'false',
+      oc_pdf: 'true',
     });
   });
 
   it('keys the query per filter combination', () => {
-    expect(serializeTmsRescueFilters({ ready: true, confirm: null })).toEqual([
+    expect(
+      serializeTmsRescueFilters({ ready: true, confirm: null, oc_pdf: false }),
+    ).toEqual([
       'ready:true',
       'confirm:all',
+      'oc_pdf:false',
     ]);
     expect(serializeTmsRescueFilters(undefined)).toEqual([
       'ready:all',
       'confirm:all',
+      'oc_pdf:all',
     ]);
   });
 

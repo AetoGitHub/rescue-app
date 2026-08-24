@@ -20,6 +20,7 @@ export type TmsTriState = boolean | null | undefined;
 export interface TmsRescueFilters {
   ready?: TmsTriState;
   confirm?: TmsTriState;
+  oc_pdf?: TmsTriState;
 }
 
 export type TmsRescueListResponse =

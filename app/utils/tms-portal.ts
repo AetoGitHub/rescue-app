@@ -65,6 +65,9 @@ export function buildTmsRescueQuery(
   if (typeof filters?.confirm === 'boolean') {
     query.confirm = String(filters.confirm);
   }
+  if (typeof filters?.oc_pdf === 'boolean') {
+    query.oc_pdf = String(filters.oc_pdf);
+  }
   return query;
 }
 
@@ -74,6 +77,7 @@ export function serializeTmsRescueFilters(
   return [
     `ready:${filters?.ready ?? 'all'}`,
     `confirm:${filters?.confirm ?? 'all'}`,
+    `oc_pdf:${filters?.oc_pdf ?? 'all'}`,
   ];
 }
 

@@ -60,6 +60,7 @@ function detail(
     client_name: 'Acme',
     service_description: '',
     location_description: '',
+    internal_notes: null,
     vehicle: null,
     operator_id: null,
     operator_name: null,

@@ -51,6 +51,7 @@ export interface AdministrativeRescueCard {
 }
 
 export interface AdministrativeRescueDetail extends AdministrativeRescueCard {
+  internal_notes: string | null;
   client_type: string;
   /** API `client_billing_type`; alias `billing_type` on legacy payloads */
   client_billing_type: ClientBillingType;
