@@ -126,15 +126,15 @@ const columns: TableColumn<TmsRescueDisplay>[] = [
     header: 'Notas internas',
     meta: {
       class: {
-        th: 'w-full min-w-40',
-        td: 'w-full min-w-40 whitespace-normal align-top',
+        th: 'w-full min-w-32',
+        td: 'w-full min-w-32 whitespace-normal align-top',
       },
     },
   },
   {
     accessorKey: 'ready',
     header: 'Listo',
-    meta: { class: { th: 'w-28', td: 'w-28 align-top' } },
+    meta: { class: { th: 'w-36', td: 'w-36 align-top' } },
   },
 ];
 
