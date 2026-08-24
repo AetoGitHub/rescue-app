@@ -522,10 +522,25 @@ function mapContractLine(it: Record<string, unknown>): ContractLineFormRow {
   };
 }
 
+/** The contract detail may expose the client as an id or as a nested object. */
+function readClientId(raw: Record<string, unknown>): number | undefined {
+  const candidates = [raw.client, raw.client_id];
+  for (const candidate of candidates) {
+    const value =
+      typeof candidate === 'object' && candidate != null
+        ? ((candidate as Record<string, unknown>).id ??
+          (candidate as Record<string, unknown>).client_id)
+        : candidate;
+    if (value == null || value === '') continue;
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+}
+
 export function mapContractHeaderDetail(
   raw: Record<string, unknown>,
 ): ContractHeaderFromDetail {
-  const client = raw.client ?? raw.client_id;
   const clientName =
     typeof raw.client_name === 'string'
       ? raw.client_name
@@ -534,7 +549,7 @@ export function mapContractHeaderDetail(
         : '';
 
   return {
-    client: client != null && client !== '' ? Number(client) : undefined,
+    client: readClientId(raw),
     clientName,
     notes: String(raw.notes ?? ''),
   };
@@ -543,14 +558,13 @@ export function mapContractHeaderDetail(
 export function mapContractDetailToForm(
   raw: Record<string, unknown>,
 ): ContractFormFromDetail {
-  const client = raw.client ?? raw.client_id;
   const itemsRaw = raw.items;
   const lines = Array.isArray(itemsRaw)
     ? (itemsRaw as Record<string, unknown>[]).map(mapContractLine)
     : [];
 
   return {
-    client: client != null && client !== '' ? Number(client) : undefined,
+    client: readClientId(raw),
     notes: String(raw.notes ?? ''),
     items:
       lines.length > 0

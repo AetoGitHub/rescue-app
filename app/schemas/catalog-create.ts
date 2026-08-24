@@ -335,8 +335,10 @@ export function contractItemFormToUpdateBody(
 
 export function contractHeaderFormToUpdateBody(
   input: z.output<typeof contractHeaderUpdateSchema>,
+  clientId: number,
 ): ContractUpdateBody {
   return {
+    client: clientId,
     notes: input.notes,
   };
 }

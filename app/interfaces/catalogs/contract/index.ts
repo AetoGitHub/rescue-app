@@ -35,6 +35,7 @@ export interface ContractCreateBody {
 }
 
 export interface ContractUpdateBody {
+  client: number;
   notes: string;
 }
 

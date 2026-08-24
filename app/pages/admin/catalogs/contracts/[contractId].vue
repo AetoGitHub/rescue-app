@@ -148,7 +148,16 @@ function onHeaderSubmit(payload: {
   data: ZodInfer<typeof contractHeaderUpdateSchema>;
 }) {
   if (headerSaveStatus.value === 'loading') return;
-  saveHeader(contractHeaderFormToUpdateBody(payload.data));
+  const client = clientId.value;
+  if (client == null) {
+    toast.add({
+      title: 'No se pudo guardar el contrato',
+      description: 'El contrato no tiene cliente asociado.',
+      color: 'error',
+    });
+    return;
+  }
+  saveHeader(contractHeaderFormToUpdateBody(payload.data, client));
 }
 
 const { onFormError: onHeaderFormError } = useFormValidationFeedback();
