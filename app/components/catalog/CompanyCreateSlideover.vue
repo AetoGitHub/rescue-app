@@ -118,24 +118,24 @@ const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier
 const loanMultiplierModel = useStringNumberModel(toRef(state, 'loan_multiplier'));
 
 const hasLinkedCredit = computed(() => editingCreditId.value != null);
+const isCreditType = computed(() => isCreditClientType(state.client_type));
 
 const companyCredit = useCompanyCredit({
   companyId: computed(() => editingId.value),
   enabled: computed(
-    () => isEdit.value && editingId.value != null && detailLoaded.value,
+    () =>
+      isEdit.value
+      && editingId.value != null
+      && detailLoaded.value
+      && isCreditType.value,
   ),
 });
 
 const creditLoadError = computed(
-  () => isEdit.value && companyCredit.error.value != null,
+  () => isEdit.value && isCreditType.value && companyCredit.error.value != null,
 );
 const showCreditSection = computed(
-  () =>
-    !creditLoadError.value
-    && (
-      (!isEdit.value && state.client_type === 'CREDIT')
-      || (isEdit.value && (hasLinkedCredit.value || state.client_type === 'CREDIT'))
-    ),
+  () => isCreditType.value && !creditLoadError.value,
 );
 const creditCreateNote = computed(() =>
   isEdit.value && !hasLinkedCredit.value && showCreditSection.value
@@ -276,7 +276,7 @@ const { mutate, asyncStatus } = useMutation({
         method: 'PUT',
         body,
       });
-      if (credit) {
+      if (credit && body.client_type === 'CREDIT') {
         if (createCredit) {
           try {
             await $fetch(companyCreditCreatePath(), {
@@ -384,6 +384,7 @@ function buildSubmitBody(
 function isCreatingCredit(): boolean {
   return (
     isEdit.value
+    && isCreditType.value
     && !hasLinkedCredit.value
     && showCreditSection.value
   );
@@ -392,8 +393,9 @@ function isCreatingCredit(): boolean {
 function needsCreditValidation(
   data: CompanyCreateBody | CompanyUpdateBody,
 ): boolean {
+  if (data.client_type !== 'CREDIT') return false;
   const updatingCredit = isEdit.value && hasLinkedCredit.value;
-  const creditOnCreate = !isEdit.value && data.client_type === 'CREDIT';
+  const creditOnCreate = !isEdit.value;
   return isCreatingCredit() || updatingCredit || creditOnCreate;
 }
 
@@ -424,16 +426,12 @@ function onCreditSubmit(
   if (companyData == null) return;
   pendingCompanyData.value = null;
 
-  let body = companyData;
   const creatingCredit = isCreatingCredit();
-  if (creatingCredit && body.client_type !== 'CREDIT') {
-    body = { ...body, client_type: 'CREDIT' };
-  }
 
   mutate({
-    body,
+    body: companyData,
     id: editingId.value,
-    credit: payload.data,
+    credit: companyData.client_type === 'CREDIT' ? payload.data : undefined,
     createCredit: creatingCredit,
   });
 }

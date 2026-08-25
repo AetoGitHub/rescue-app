@@ -25,7 +25,7 @@ export function mapCompanyDetail(
     phone: formatMexicoPhoneInput(String(raw.phone ?? '')),
     email: String(raw.email ?? ''),
     address: String(raw.address ?? ''),
-    client_type: String(raw.client_type ?? 'CREDIT'),
+    client_type: normalizeClientType(raw.client_type),
     billing_type: String(raw.billing_type ?? 'DIRECT_INVOICE'),
     commission_type: String(raw.commission_type ?? 'PERCENTAGE'),
     commission_value: String(raw.commission_value ?? '0.00'),
