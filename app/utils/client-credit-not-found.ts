@@ -1,16 +1,24 @@
-import { extractFetchErrorData } from '~/utils/fetch-error-message';
-
-function getFetchStatusCode(error: unknown): number | undefined {
-  if (!error || typeof error !== 'object') return undefined;
-  const e = error as Record<string, unknown>;
-  const code = e.statusCode ?? e.status;
-  if (typeof code === 'number' && Number.isFinite(code)) return code;
-  return undefined;
-}
+import {
+  extractFetchErrorData,
+  getFetchErrorMessage,
+  getFetchStatusCode,
+} from '~/utils/fetch-error-message';
 
 export function isClientCreditNotFoundError(error: unknown): boolean {
-  if (getFetchStatusCode(error) === 404) return true;
+  const code = getFetchStatusCode(error);
+  if (code === 400 || code === 404) return true;
   const data = extractFetchErrorData(error);
   const status = data?.status;
   return typeof status === 'string' && /no encontrado/i.test(status);
+}
+
+export function isCompanyCreditServerError(error: unknown): boolean {
+  return getFetchStatusCode(error) === 500;
+}
+
+export function getCompanyCreditLoadErrorMessage(error: unknown): string {
+  if (isCompanyCreditServerError(error)) {
+    return 'Error del servidor al cargar el crédito. El problema está en el servidor, no en el proxy.';
+  }
+  return getFetchErrorMessage(error);
 }

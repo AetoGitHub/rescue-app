@@ -118,11 +118,6 @@ const priceMultiplierModel = useStringNumberModel(toRef(state, 'price_multiplier
 const loanMultiplierModel = useStringNumberModel(toRef(state, 'loan_multiplier'));
 
 const hasLinkedCredit = computed(() => editingCreditId.value != null);
-const showCreditSection = computed(
-  () =>
-    (!isEdit.value && state.client_type === 'CREDIT')
-    || (isEdit.value && (hasLinkedCredit.value || state.client_type === 'CREDIT')),
-);
 
 const companyCredit = useCompanyCredit({
   companyId: computed(() => editingId.value),
@@ -130,6 +125,25 @@ const companyCredit = useCompanyCredit({
     () => isEdit.value && editingId.value != null && detailLoaded.value,
   ),
 });
+
+const creditLoadError = computed(
+  () => isEdit.value && companyCredit.error.value != null,
+);
+const showCreditSection = computed(
+  () =>
+    !creditLoadError.value
+    && (
+      (!isEdit.value && state.client_type === 'CREDIT')
+      || (isEdit.value && (hasLinkedCredit.value || state.client_type === 'CREDIT'))
+    ),
+);
+const creditCreateNote = computed(() =>
+  isEdit.value && !hasLinkedCredit.value && showCreditSection.value
+    ? 'Esta compañía no tiene línea de crédito. Completa los datos para crearla.'
+    : undefined,
+);
+const creditLoadErrorMessage = computed(() => companyCredit.errorMessage.value);
+const creditLoadIsServerError = computed(() => companyCredit.isServerError.value);
 
 function syncCreditFromComposable() {
   const view = companyCredit.view.value;
@@ -241,6 +255,10 @@ function fetchAlegraContactsDropdown(
 
 const queryCache = useQueryCache();
 
+type CompanySaveResult = {
+  creditWarning?: string;
+};
+
 const { mutate, asyncStatus } = useMutation({
   mutation: async ({
     body,
@@ -252,7 +270,7 @@ const { mutate, asyncStatus } = useMutation({
     id: number | null;
     credit?: z.infer<typeof creditFormSchema>;
     createCredit?: boolean;
-  }) => {
+  }): Promise<CompanySaveResult> => {
     if (id != null) {
       await $fetch(`/api/catalogue/company/update/${id}/`, {
         method: 'PUT',
@@ -260,10 +278,16 @@ const { mutate, asyncStatus } = useMutation({
       });
       if (credit) {
         if (createCredit) {
-          await $fetch(companyCreditCreatePath(), {
-            method: 'POST',
-            body: creditFormToCompanyCreateBody(id, credit),
-          });
+          try {
+            await $fetch(companyCreditCreatePath(), {
+              method: 'POST',
+              body: creditFormToCompanyCreateBody(id, credit),
+            });
+          } catch (error) {
+            return {
+              creditWarning: `La compañía se actualizó, pero no se pudo crear el crédito. ${getFetchErrorMessage(error)}`,
+            };
+          }
         } else {
           const creditId = editingCreditId.value;
           if (creditId == null) {
@@ -279,7 +303,7 @@ const { mutate, asyncStatus } = useMutation({
         await companyCredit.refresh();
         syncCreditFromComposable();
       }
-      return;
+      return {};
     }
 
     const created = await $fetch<{ id: number }>(
@@ -294,21 +318,28 @@ const { mutate, asyncStatus } = useMutation({
           body: creditFormToCompanyCreateBody(created.id, credit),
         });
       } catch (error) {
-        await queryCache.invalidateQueries({ key: ['companies'] });
-        throw new Error(
-          `Compañía creada, pero no se pudo registrar el crédito. ${getFetchErrorMessage(error)}`,
-        );
+        return {
+          creditWarning: `No se pudo registrar el crédito. Puedes crearlo al editar la compañía. ${getFetchErrorMessage(error)}`,
+        };
       }
     }
 
-    return created;
+    return {};
   },
-  async onSuccess() {
+  async onSuccess(result) {
     const wasEdit = editingId.value != null;
-    toast.add({
-      title: wasEdit ? 'Compañía actualizada' : 'Compañía creada',
-      color: 'success',
-    });
+    if (result?.creditWarning) {
+      toast.add({
+        title: wasEdit ? 'Compañía actualizada' : 'Compañía creada',
+        description: result.creditWarning,
+        color: 'warning',
+      });
+    } else {
+      toast.add({
+        title: wasEdit ? 'Compañía actualizada' : 'Compañía creada',
+        color: 'success',
+      });
+    }
     await queryCache.invalidateQueries({ key: ['companies'] });
     closeWithoutConfirm();
     resetForm();
@@ -355,7 +386,6 @@ function isCreatingCredit(): boolean {
     isEdit.value
     && !hasLinkedCredit.value
     && showCreditSection.value
-    && (parseClientMoney(creditState.limit) ?? 0) > 0
   );
 }
 
@@ -583,10 +613,23 @@ async function requestSubmit() {
           />
         </UFormField>
 
+        <UAlert
+          v-if="creditLoadError"
+          color="error"
+          variant="subtle"
+          icon="i-lucide-server-crash"
+          :title="creditLoadIsServerError
+            ? 'Error del servidor'
+            : 'No se pudo cargar el crédito'"
+          :description="creditLoadErrorMessage"
+          :ui="{ root: 'border border-error/30' }"
+        />
+
         <CatalogClientCreditFormSection
           v-if="showCreditSection"
           ref="creditFormSectionRef"
           v-model:credit-state="creditState"
+          :note="creditCreateNote"
           requires-purchase-order-label="La compañía requiere orden de compra"
           block-label="Bloquear crédito de la compañía"
           @submit="onCreditSubmit"

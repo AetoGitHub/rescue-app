@@ -6,7 +6,11 @@ import type {
   CreditFormState,
 } from '~/interfaces/catalogs/credit';
 import { mapCreditDetail } from '~/utils/catalog-detail-map';
-import { isClientCreditNotFoundError } from '~/utils/client-credit-not-found';
+import {
+  getCompanyCreditLoadErrorMessage,
+  isClientCreditNotFoundError,
+  isCompanyCreditServerError,
+} from '~/utils/client-credit-not-found';
 
 export type CompanyCreditViewModel = {
   notFound: boolean;
@@ -107,8 +111,11 @@ export function useCompanyCredit(options: {
   const creditId = computed(() => view.value?.creditId ?? null);
   const hasCreditLine = computed(() => creditId.value != null);
   const isPending = computed(() => asyncStatus.value === 'loading');
+  const isServerError = computed(() =>
+    error.value != null && isCompanyCreditServerError(error.value),
+  );
   const errorMessage = computed(() =>
-    error.value != null ? getFetchErrorMessage(error.value) : '',
+    error.value != null ? getCompanyCreditLoadErrorMessage(error.value) : '',
   );
 
   function invalidate() {
@@ -126,6 +133,7 @@ export function useCompanyCredit(options: {
     hasCreditLine,
     notFound,
     isPending,
+    isServerError,
     asyncStatus,
     error,
     errorMessage,
