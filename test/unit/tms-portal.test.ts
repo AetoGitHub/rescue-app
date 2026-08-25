@@ -90,32 +90,50 @@ describe('TMS portal mapping', () => {
     expect(isTmsRescueComplete({ ...complete, internal_notes: '   ' })).toBe(false);
   });
 
-  it('sends ready, confirm and oc_pdf only when the filter is a boolean', () => {
+  it('sends ready, confirm, oc_pdf and correct_upload only when the filter is a boolean', () => {
     expect(buildTmsRescueQuery(undefined)).toEqual({});
     expect(
-      buildTmsRescueQuery({ ready: null, confirm: undefined, oc_pdf: null }),
+      buildTmsRescueQuery({
+        ready: null,
+        confirm: undefined,
+        oc_pdf: null,
+        correct_upload: null,
+      }),
     ).toEqual({});
     expect(
-      buildTmsRescueQuery({ ready: true, confirm: false, oc_pdf: true }),
+      buildTmsRescueQuery({
+        ready: true,
+        confirm: false,
+        oc_pdf: true,
+        correct_upload: false,
+      }),
     ).toEqual({
       ready: 'true',
       confirm: 'false',
       oc_pdf: 'true',
+      correct_upload: 'false',
     });
   });
 
   it('keys the query per filter combination', () => {
     expect(
-      serializeTmsRescueFilters({ ready: true, confirm: null, oc_pdf: false }),
+      serializeTmsRescueFilters({
+        ready: true,
+        confirm: null,
+        oc_pdf: false,
+        correct_upload: false,
+      }),
     ).toEqual([
       'ready:true',
       'confirm:all',
       'oc_pdf:false',
+      'correct_upload:false',
     ]);
     expect(serializeTmsRescueFilters(undefined)).toEqual([
       'ready:all',
       'confirm:all',
       'oc_pdf:all',
+      'correct_upload:all',
     ]);
   });
 

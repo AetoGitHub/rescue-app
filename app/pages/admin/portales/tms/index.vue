@@ -26,6 +26,7 @@ const search = ref('');
 const readyFilter = ref<TmsTriStateOption>('all');
 const confirmFilter = ref<TmsTriStateOption>('all');
 const ocPdfFilter = ref<TmsTriStateOption>('all');
+const correctUploadFilter = ref<TmsTriStateOption>('all');
 const tableRef = useTemplateRef('table');
 const drafts = reactive<Record<number, TmsRescueDraftState>>({});
 /** Refleja el check de "Listo" mientras el backend confirma el cambio. */
@@ -38,11 +39,13 @@ const ocAssignmentLocks = new Set<number>();
 const readyFilterItems = tmsTriStateItems('Listo');
 const confirmFilterItems = tmsTriStateItems('Confirmado');
 const ocPdfFilterItems = tmsTriStateItems('PDF OC');
+const correctUploadFilterItems = tmsTriStateItems('Subidos en plataforma');
 
 const filters = computed<TmsRescueFilters>(() => ({
   ready: toTmsTriState(readyFilter.value),
   confirm: toTmsTriState(confirmFilter.value),
   oc_pdf: toTmsTriState(ocPdfFilter.value),
+  correct_upload: toTmsTriState(correctUploadFilter.value),
 }));
 
 const {
@@ -380,6 +383,16 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
         icon="i-lucide-file-text"
         variant="subtle"
         class="w-full sm:w-44"
+        :ui="{ base: 'bg-default' }"
+      />
+      <USelect
+        v-model="correctUploadFilter"
+        :items="correctUploadFilterItems"
+        value-key="value"
+        label-key="label"
+        icon="i-lucide-cloud-upload"
+        variant="subtle"
+        class="w-full sm:w-60"
         :ui="{ base: 'bg-default' }"
       />
       <UBadge

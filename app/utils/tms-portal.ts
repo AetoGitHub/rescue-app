@@ -68,6 +68,9 @@ export function buildTmsRescueQuery(
   if (typeof filters?.oc_pdf === 'boolean') {
     query.oc_pdf = String(filters.oc_pdf);
   }
+  if (typeof filters?.correct_upload === 'boolean') {
+    query.correct_upload = String(filters.correct_upload);
+  }
   return query;
 }
 
@@ -78,6 +81,7 @@ export function serializeTmsRescueFilters(
     `ready:${filters?.ready ?? 'all'}`,
     `confirm:${filters?.confirm ?? 'all'}`,
     `oc_pdf:${filters?.oc_pdf ?? 'all'}`,
+    `correct_upload:${filters?.correct_upload ?? 'all'}`,
   ];
 }
 

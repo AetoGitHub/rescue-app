@@ -21,6 +21,7 @@ export interface TmsRescueFilters {
   ready?: TmsTriState;
   confirm?: TmsTriState;
   oc_pdf?: TmsTriState;
+  correct_upload?: TmsTriState;
 }
 
 export type TmsRescueListResponse =
