@@ -270,6 +270,7 @@ function formatApiMoney(value: string | number | null | undefined): string {
             </span>
             <span class="tabular-nums text-right">
               <span class="block text-xs text-muted">
+                {{ QUOTE_SUMMARY_LABELS.technicalCost }}:
                 {{ formatApiMoney(service.real_cost) }}
               </span>
               {{ formatApiMoney(service.total) }}
@@ -296,6 +297,30 @@ function formatApiMoney(value: string | number | null | undefined): string {
             <span>{{ QUOTE_SUMMARY_LABELS.totalQuoted }}</span>
             <span class="tabular-nums text-primary">
               {{ formatApiMoney(readOnlySummary.total) }}
+            </span>
+          </div>
+        </div>
+
+        <div
+          class="space-y-1.5 rounded-lg bg-elevated px-3 py-2.5 ring-1 ring-default/60"
+        >
+          <p
+            class="text-[11px] font-medium uppercase tracking-wider text-muted"
+          >
+            {{ QUOTE_SUMMARY_LABELS.internalReference }}
+          </p>
+          <div class="flex justify-between gap-4 text-muted">
+            <span>{{ QUOTE_SUMMARY_LABELS.technicalCost }}</span>
+            <span class="tabular-nums">
+              {{ formatApiMoney(readOnlySummary.technicalCost) }}
+            </span>
+          </div>
+          <div class="flex justify-between gap-4">
+            <span class="font-medium text-highlighted">
+              {{ QUOTE_SUMMARY_LABELS.utility }}
+            </span>
+            <span class="font-semibold tabular-nums text-highlighted">
+              {{ formatApiMoney(readOnlySummary.profit) }}
             </span>
           </div>
         </div>
