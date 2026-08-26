@@ -31,6 +31,7 @@ function buildRow(overrides: Partial<PendingInvoiceRow> = {}): PendingInvoiceRow
     evidencia_rescate: true,
     evidencia_pagos: false,
     oc: null,
+    oc_pdf: null,
     ...overrides,
   };
 }

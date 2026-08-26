@@ -1,34 +1,57 @@
 import { useInfiniteQuery } from '@pinia/colada';
+import type { PendingInvoiceColumnMeta } from '~/constants/pending-invoice';
 import {
   PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
+  PENDING_INVOICE_DEFAULT_ORDERING,
   PENDING_INVOICE_LIST_PATH,
   PENDING_INVOICE_LIST_QUERY_KEY,
+  type PendingInvoiceDropdownFilterId,
 } from '~/constants/pending-invoice-api';
 import type { PendingInvoiceTabValue } from '~/constants/pending-invoice';
 import type {
   PendingInvoiceApiRow,
-  PendingInvoiceCompanySelection,
+  PendingInvoiceFilterSelection,
 } from '~/interfaces/invoicing/pending-invoice';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { mapPendingInvoiceApiRow } from '~/utils/pending-invoice-map';
+import { summarizePendingInvoiceRows } from '~/utils/pending-invoice-aggregate';
 import {
-  filterPendingInvoiceRows,
-  summarizePendingInvoiceRows,
-} from '~/utils/pending-invoice-aggregate';
-import { pendingInvoiceCompanyQuery } from '~/utils/pending-invoice-dashboard-map';
+  pendingInvoiceCsvIdQuery,
+  pendingInvoiceOrderingParam,
+} from '~/utils/pending-invoice-dashboard-map';
 import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
 
 /**
  * Shared pending-invoice state for Por Facturar.
  *
  * Company filter and active tab live in `useState` so matrix → detail jumps
- * stay in sync. Seller/matrix tabs fetch their own endpoints.
+ * stay in sync. Seller/matrix tabs only consume `company`.
  */
 export function usePendingInvoiceList() {
   const apiFetch = useApiFetch();
-  const selectedCompanies = useState<PendingInvoiceCompanySelection[]>(
+  const selectedCompanies = useState<PendingInvoiceFilterSelection[]>(
     'pending-invoice-companies',
     () => [],
+  );
+  const selectedClients = useState<PendingInvoiceFilterSelection[]>(
+    'pending-invoice-clients',
+    () => [],
+  );
+  const selectedOperators = useState<PendingInvoiceFilterSelection[]>(
+    'pending-invoice-operators',
+    () => [],
+  );
+  const selectedVehicles = useState<PendingInvoiceFilterSelection[]>(
+    'pending-invoice-vehicles',
+    () => [],
+  );
+  const selectedAuthorizers = useState<PendingInvoiceFilterSelection[]>(
+    'pending-invoice-authorizers',
+    () => [],
+  );
+  const ordering = useState<string>(
+    'pending-invoice-ordering',
+    () => PENDING_INVOICE_DEFAULT_ORDERING,
   );
   const activeTab = useState<PendingInvoiceTabValue>(
     'pending-invoice-tab',
@@ -36,17 +59,42 @@ export function usePendingInvoiceList() {
   );
 
   const companyQuery = computed(() =>
-    pendingInvoiceCompanyQuery(selectedCompanies.value),
+    pendingInvoiceCsvIdQuery(selectedCompanies.value),
   );
-  const companyNames = computed(() =>
-    selectedCompanies.value.map(company => company.name).filter(Boolean),
+  const clientQuery = computed(() =>
+    pendingInvoiceCsvIdQuery(selectedClients.value),
   );
+  const operatorQuery = computed(() =>
+    pendingInvoiceCsvIdQuery(selectedOperators.value),
+  );
+  const vehicleQuery = computed(() =>
+    pendingInvoiceCsvIdQuery(selectedVehicles.value),
+  );
+  const authorizerQuery = computed(() =>
+    pendingInvoiceCsvIdQuery(selectedAuthorizers.value),
+  );
+
+  const dropdownSelections: Record<
+    PendingInvoiceDropdownFilterId,
+    typeof selectedCompanies
+  > = {
+    company: selectedCompanies,
+    client: selectedClients,
+    operator: selectedOperators,
+    vehicle: selectedVehicles,
+    authorizer: selectedAuthorizers,
+  };
 
   const baseQuery = computed(() => {
     const query: Record<string, PaginatedQueryValue> = {
       admin_status: PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
+      ordering: ordering.value,
     };
     if (companyQuery.value != null) query.company = companyQuery.value;
+    if (clientQuery.value != null) query.client = clientQuery.value;
+    if (operatorQuery.value != null) query.operator = operatorQuery.value;
+    if (vehicleQuery.value != null) query.vehicle = vehicleQuery.value;
+    if (authorizerQuery.value != null) query.authorizer = authorizerQuery.value;
     return query;
   });
 
@@ -64,7 +112,12 @@ export function usePendingInvoiceList() {
   >({
     key: () => [
       PENDING_INVOICE_LIST_QUERY_KEY,
-      serializeCompanyQuery(companyQuery.value),
+      companyQuery.value ?? '',
+      clientQuery.value ?? '',
+      operatorQuery.value ?? '',
+      vehicleQuery.value ?? '',
+      authorizerQuery.value ?? '',
+      ordering.value,
     ],
     initialPageParam: null,
     query: ({ pageParam }) =>
@@ -84,12 +137,7 @@ export function usePendingInvoiceList() {
     );
   });
 
-  /** Client-side name filter as a safety net while the API may ignore `company`. */
-  const scopedRows = computed(() =>
-    filterPendingInvoiceRows(rows.value, {
-      companies: companyNames.value,
-    }),
-  );
+  const scopedRows = computed(() => rows.value);
 
   const summary = computed(() => summarizePendingInvoiceRows(scopedRows.value));
 
@@ -103,9 +151,29 @@ export function usePendingInvoiceList() {
     () => asyncStatus.value === 'loading' && rows.value.length > 0,
   );
   const isError = computed(() => error.value != null);
-  const errorMessage = computed(() =>
-    error.value != null ? getFetchErrorMessage(error.value) : '',
+  const errorMessage = computed(
+    () => (error.value != null ? getFetchErrorMessage(error.value) : ''),
   );
+
+  function selectionFor(
+    key: PendingInvoiceDropdownFilterId,
+  ): PendingInvoiceFilterSelection[] {
+    return dropdownSelections[key].value;
+  }
+
+  function setSelection(
+    key: PendingInvoiceDropdownFilterId,
+    values: PendingInvoiceFilterSelection[],
+  ) {
+    dropdownSelections[key].value = values;
+  }
+
+  function applyOrdering(
+    meta: Pick<PendingInvoiceColumnMeta, 'ordering' | 'invertOrdering'>,
+    descending: boolean,
+  ) {
+    ordering.value = pendingInvoiceOrderingParam(meta, descending);
+  }
 
   function focusCompany(input: {
     id?: number | null;
@@ -125,11 +193,22 @@ export function usePendingInvoiceList() {
     selectedCompanies.value = [];
   }
 
+  function clearDetailDropdownFilters() {
+    selectedClients.value = [];
+    selectedOperators.value = [];
+    selectedVehicles.value = [];
+    selectedAuthorizers.value = [];
+  }
+
   return {
     rows,
     selectedCompanies,
+    selectedClients,
+    selectedOperators,
+    selectedVehicles,
+    selectedAuthorizers,
     companyQuery,
-    companyNames,
+    ordering,
     activeTab,
     scopedRows,
     summary,
@@ -141,14 +220,11 @@ export function usePendingInvoiceList() {
     hasNextPage,
     loadNextPage,
     refresh,
+    selectionFor,
+    setSelection,
+    applyOrdering,
     focusCompany,
     clearCompanies,
+    clearDetailDropdownFilters,
   };
-}
-
-function serializeCompanyQuery(
-  value: string | string[] | undefined,
-): string {
-  if (value == null) return '';
-  return Array.isArray(value) ? value.join(',') : value;
 }

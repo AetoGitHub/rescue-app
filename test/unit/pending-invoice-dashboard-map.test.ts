@@ -9,6 +9,8 @@ import {
   mapPendingInvoiceDaysPromColor,
   pendingInvoiceCompanyQuery,
   pendingInvoiceCompanyQueryIds,
+  pendingInvoiceCsvIdQuery,
+  pendingInvoiceOrderingParam,
 } from '../../app/utils/pending-invoice-dashboard-map';
 
 describe('pendingInvoiceCompanyQuery', () => {
@@ -18,14 +20,14 @@ describe('pendingInvoiceCompanyQuery', () => {
     ).toBe('4');
   });
 
-  it('returns an array of ids for multi-select', () => {
+  it('returns a comma-separated list for multi-select', () => {
     expect(
       pendingInvoiceCompanyQuery([
         { id: 1, name: 'A' },
         { id: 0, name: 'fallback' },
         { id: 4, name: 'B' },
       ]),
-    ).toEqual(['1', '4']);
+    ).toBe('1,4');
   });
 
   it('returns undefined when there are no positive ids', () => {
@@ -34,6 +36,31 @@ describe('pendingInvoiceCompanyQuery', () => {
       pendingInvoiceCompanyQuery([{ id: 0, name: 'Solo nombre' }]),
     ).toBeUndefined();
     expect(pendingInvoiceCompanyQueryIds([{ id: 0, name: 'x' }])).toEqual([]);
+    expect(pendingInvoiceCsvIdQuery([{ id: 2, name: 'A' }, { id: 9, name: 'B' }])).toBe(
+      '2,9',
+    );
+  });
+});
+
+describe('pendingInvoiceOrderingParam', () => {
+  it('prefixes a minus for descending API fields', () => {
+    expect(pendingInvoiceOrderingParam({ ordering: 'total' }, true)).toBe('-total');
+    expect(pendingInvoiceOrderingParam({ ordering: 'folio' }, false)).toBe('folio');
+  });
+
+  it('inverts dias so more days maps to older dates', () => {
+    expect(
+      pendingInvoiceOrderingParam(
+        { ordering: 'date', invertOrdering: true },
+        true,
+      ),
+    ).toBe('date');
+    expect(
+      pendingInvoiceOrderingParam(
+        { ordering: 'date', invertOrdering: true },
+        false,
+      ),
+    ).toBe('-date');
   });
 });
 

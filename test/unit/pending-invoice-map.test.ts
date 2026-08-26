@@ -4,6 +4,7 @@ import {
   daysSincePendingInvoiceDate,
   mapPendingInvoiceApiRow,
   monthKeyFromPendingInvoiceDate,
+  parsePendingInvoiceDate,
 } from '../../app/utils/pending-invoice-map';
 import {
   pendingInvoiceEvidenceType,
@@ -76,12 +77,13 @@ describe('pending-invoice-map', () => {
     ).toBe('Sin atender');
   });
 
-  it('prefers API evidence flags and OC when present', () => {
+  it('prefers purchase_order and oc_pdf from the API', () => {
     const row = mapPendingInvoiceApiRow(
       buildApiRow({
         has_service_evidence: false,
         has_payment_evidence: true,
-        purchase_order_number: 'OC-55',
+        purchase_order: 'OC-55',
+        oc_pdf: 'https://files.example/oc.pdf',
         admin_status: 'in_remittance',
       }),
       reference,
@@ -89,6 +91,23 @@ describe('pending-invoice-map', () => {
     expect(row.evidencia_rescate).toBe(false);
     expect(row.evidencia_pagos).toBe(true);
     expect(row.oc).toBe('OC-55');
+    expect(row.oc_pdf).toBe('https://files.example/oc.pdf');
+  });
+
+  it('does not invent evidence or OC when the API omits them', () => {
+    const row = mapPendingInvoiceApiRow(buildApiRow(), reference);
+    expect(row.evidencia_rescate).toBe(false);
+    expect(row.evidencia_pagos).toBe(false);
+    expect(row.oc).toBeNull();
+    expect(row.oc_pdf).toBeNull();
+  });
+
+  it('parses DD/MM/AAAA dates from the pending-invoice report', () => {
+    expect(parsePendingInvoiceDate('01/08/2026')?.toISOString()).toBe(
+      '2026-08-01T00:00:00.000Z',
+    );
+    expect(monthKeyFromPendingInvoiceDate('15/01/2026')).toBe('2026-01');
+    expect(daysSincePendingInvoiceDate('10/08/2026', reference)).toBe(2);
   });
 
   it('derives month key and age from the ISO date', () => {

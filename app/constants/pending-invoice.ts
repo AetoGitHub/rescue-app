@@ -1,3 +1,8 @@
+import type {
+  PendingInvoiceDropdownFilterId,
+  PendingInvoiceOrderingField,
+} from '~/constants/pending-invoice-api';
+
 export type PendingInvoiceTabValue = 'detail' | 'seller' | 'matrix';
 
 export const PENDING_INVOICE_TAB_ITEMS = [
@@ -51,6 +56,8 @@ export type PendingInvoiceColumnId =
   | 'dias'
   | 'status'
   | 'descripcion'
+  | 'purchase_order'
+  | 'oc_pdf'
   | 'costo_tecnico'
   | 'subtotal'
   | 'iva'
@@ -63,24 +70,89 @@ export interface PendingInvoiceColumnMeta {
   label: string;
   /** Numeric and date columns sort by value and align right. */
   kind: 'text' | 'number' | 'money' | 'date' | 'flag';
+  /** API `ordering` field. Prefix `-` is applied for descending. */
+  ordering?: PendingInvoiceOrderingField;
+  /**
+   * When set, the Excel header filter loads options from the matching
+   * pending-invoice dropdown endpoint and sends ids as a comma-separated QP.
+   */
+  dropdown?: PendingInvoiceDropdownFilterId;
+  /**
+   * `dias` is the inverse of `date` (more days = older). When true, the
+   * descending UI flag is flipped before sending `ordering`.
+   */
+  invertOrdering?: boolean;
 }
 
 export const PENDING_INVOICE_DETAIL_COLUMNS: PendingInvoiceColumnMeta[] = [
-  { id: 'folio', label: 'Folio', kind: 'text' },
-  { id: 'compania_grupo', label: 'Cliente', kind: 'text' },
-  { id: 'compania', label: 'Compañía', kind: 'text' },
-  { id: 'responsable', label: 'Responsable', kind: 'text' },
-  { id: 'unidad', label: 'Unidad', kind: 'text' },
-  { id: 'autorizador', label: 'Autorizador', kind: 'text' },
-  { id: 'mes', label: 'Mes', kind: 'text' },
-  { id: 'fecha', label: 'Fecha', kind: 'date' },
-  { id: 'dias', label: 'Días', kind: 'number' },
-  { id: 'status', label: 'Status', kind: 'text' },
-  { id: 'descripcion', label: 'Descripción', kind: 'text' },
-  { id: 'costo_tecnico', label: 'Costo técnico', kind: 'money' },
-  { id: 'subtotal', label: 'Subtotal', kind: 'money' },
-  { id: 'iva', label: 'IVA', kind: 'money' },
-  { id: 'total', label: 'Total c/IVA', kind: 'money' },
+  { id: 'folio', label: 'Folio', kind: 'text', ordering: 'folio' },
+  {
+    id: 'compania_grupo',
+    label: 'Cliente',
+    kind: 'text',
+    ordering: 'client_name',
+    dropdown: 'client',
+  },
+  {
+    id: 'compania',
+    label: 'Compañía',
+    kind: 'text',
+    ordering: 'company_name',
+    dropdown: 'company',
+  },
+  {
+    id: 'responsable',
+    label: 'Responsable',
+    kind: 'text',
+    ordering: 'operator_name',
+    dropdown: 'operator',
+  },
+  {
+    id: 'unidad',
+    label: 'Unidad',
+    kind: 'text',
+    ordering: 'vehicle',
+    dropdown: 'vehicle',
+  },
+  {
+    id: 'autorizador',
+    label: 'Autorizador',
+    kind: 'text',
+    ordering: 'authorizer',
+    dropdown: 'authorizer',
+  },
+  { id: 'mes', label: 'Mes', kind: 'text', ordering: 'date' },
+  { id: 'fecha', label: 'Fecha', kind: 'date', ordering: 'date' },
+  {
+    id: 'dias',
+    label: 'Días',
+    kind: 'number',
+    ordering: 'date',
+    invertOrdering: true,
+  },
+  { id: 'status', label: 'Status', kind: 'text', ordering: 'admin_status' },
+  {
+    id: 'descripcion',
+    label: 'Descripción',
+    kind: 'text',
+    ordering: 'service_description',
+  },
+  {
+    id: 'purchase_order',
+    label: 'OC',
+    kind: 'text',
+    ordering: 'purchase_order',
+  },
+  { id: 'oc_pdf', label: 'PDF OC', kind: 'flag' },
+  {
+    id: 'costo_tecnico',
+    label: 'Costo técnico',
+    kind: 'money',
+    ordering: 'technical_cost',
+  },
+  { id: 'subtotal', label: 'Subtotal', kind: 'money', ordering: 'sub_total' },
+  { id: 'iva', label: 'IVA', kind: 'money', ordering: 'iva' },
+  { id: 'total', label: 'Total c/IVA', kind: 'money', ordering: 'total' },
   { id: 'evidencia_rescate', label: 'Evid. rescate', kind: 'flag' },
   { id: 'evidencia_pagos', label: 'Evid. pagos', kind: 'flag' },
 ];

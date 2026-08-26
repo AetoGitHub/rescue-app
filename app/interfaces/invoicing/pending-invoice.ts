@@ -11,29 +11,34 @@ export type PendingInvoiceAdminStatus =
 
 export type PendingInvoiceDaysPromColor = 'verde' | 'amarillo' | 'rojo';
 
-/** Shared company filter selection (catalogue dropdown id + label). */
-export interface PendingInvoiceCompanySelection {
+/** Shared multi-select filter (dropdown id + label). */
+export interface PendingInvoiceFilterSelection {
   id: number;
   name: string;
 }
+
+/** @deprecated Use PendingInvoiceFilterSelection. */
+export type PendingInvoiceCompanySelection = PendingInvoiceFilterSelection;
 
 /** Raw row from `GET /api/dashboard/pending_invoice/`. */
 export interface PendingInvoiceApiRow {
   id: number;
   folio: string;
-  company_name: string;
+  company_name: string | null;
   client_name: string;
-  operator_name: string;
+  operator_name: string | null;
   date: string;
   vehicle: string | null;
-  authorizer: string;
+  authorizer: string | null;
   service_description: string;
   sub_total: string | number;
   iva: string | number;
   total: string | number;
   technical_cost: string | number;
-  /** Present when the backend starts sending it. */
   admin_status?: PendingInvoiceAdminStatus | string | null;
+  purchase_order?: string | null;
+  oc_pdf?: string | null;
+  /** Legacy aliases still accepted while older payloads exist. */
   oc?: string | null;
   purchase_order_number?: string | null;
   has_service_evidence?: boolean | null;
@@ -65,6 +70,7 @@ export interface PendingInvoiceRow {
   evidencia_rescate: boolean;
   evidencia_pagos: boolean;
   oc: string | null;
+  oc_pdf: string | null;
 }
 
 export interface PendingInvoiceSummary {

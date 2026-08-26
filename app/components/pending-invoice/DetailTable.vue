@@ -3,11 +3,14 @@ import { h, resolveComponent } from 'vue';
 import type { AsyncStatus } from '@pinia/colada';
 import type { TableColumn } from '@nuxt/ui';
 import type { PendingInvoiceRow } from '~/interfaces/invoicing/pending-invoice';
+import {
+  PENDING_INVOICE_DETAIL_COLUMNS,
+  pendingInvoiceExcelTableUi,
+} from '~/constants/pending-invoice';
 import type {
   PendingInvoiceColumnId,
   PendingInvoiceColumnMeta,
 } from '~/constants/pending-invoice';
-import { PENDING_INVOICE_DETAIL_COLUMNS } from '~/constants/pending-invoice';
 import type { PendingInvoiceEvidenceColumn } from '~/utils/pending-invoice-evidence';
 import {
   daysSemaphoreColor,
@@ -57,7 +60,9 @@ const UBadge = resolveComponent('UBadge');
 const UIcon = resolveComponent('UIcon');
 const ColumnHeaderFilter = resolveComponent('PendingInvoiceColumnHeaderFilter');
 
-const HEADER_CLASS = 'bg-inverted text-inverted';
+const { applyOrdering } = usePendingInvoiceList();
+
+const HEADER_CLASS = 'bg-sheet-header text-sheet-header-foreground';
 
 interface ColumnLayout {
   th: string;
@@ -77,6 +82,8 @@ const COLUMN_LAYOUT: Record<PendingInvoiceColumnId, ColumnLayout> = {
   dias: { th: 'w-20', td: 'w-20', align: 'end' },
   status: { th: 'w-28', td: 'w-28' },
   descripcion: { th: 'w-72', td: 'max-w-72' },
+  purchase_order: { th: 'w-32', td: 'max-w-32' },
+  oc_pdf: { th: 'w-20', td: 'w-20', align: 'center' },
   costo_tecnico: { th: 'w-32', td: 'w-32', align: 'end' },
   subtotal: { th: 'w-32', td: 'w-32', align: 'end' },
   iva: { th: 'w-28', td: 'w-28', align: 'end' },
@@ -203,6 +210,25 @@ function cellFor(columnId: PendingInvoiceColumnId) {
           { class: 'block whitespace-normal text-pretty text-muted' },
           data.descripcion || '—',
         );
+      case 'purchase_order':
+        return truncatedCell(data.oc || '—');
+      case 'oc_pdf': {
+        if (!data.oc_pdf) {
+          return h('span', { class: 'text-dimmed' }, '—');
+        }
+        return h(
+          'a',
+          {
+            href: data.oc_pdf,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            class: 'inline-flex text-primary hover:text-primary/80',
+            title: 'Abrir PDF de la orden de compra',
+            'aria-label': 'Abrir PDF de la orden de compra',
+          },
+          [h(UIcon, { name: 'i-lucide-file-text', class: 'size-4' })],
+        );
+      }
       case 'costo_tecnico':
         return moneyCell(data.costo_tecnico);
       case 'subtotal':
@@ -222,22 +248,27 @@ function cellFor(columnId: PendingInvoiceColumnId) {
 
 function headerFor(meta: PendingInvoiceColumnMeta) {
   const layout = COLUMN_LAYOUT[meta.id];
+  const filterable =
+    meta.dropdown != null
+    || (meta.kind !== 'money' && meta.id !== 'oc_pdf' && meta.id !== 'purchase_order');
 
   return () =>
     h(ColumnHeaderFilter, {
       label: meta.label,
       kind: meta.kind,
       align: layout.align === 'end' ? 'end' : 'start',
-      // Money columns have ~one distinct value per row, so only sorting helps.
-      filterable: meta.kind !== 'money',
+      filterable,
+      dropdown: meta.dropdown,
       options: pendingInvoiceColumnOptions(props.optionRows, meta.id),
       selected: props.controller.selectionFor(meta.id),
       sortActive: props.controller.sortColumn.value === meta.id,
       sortDescending: props.controller.sortDescending.value,
       'onUpdate:selected': (values: string[]) =>
         props.controller.setSelection(meta.id, values),
-      onSort: (descending: boolean) =>
-        props.controller.applySort(meta.id, descending),
+      onSort: (descending: boolean) => {
+        props.controller.applySort(meta.id, descending);
+        applyOrdering(meta, descending);
+      },
     });
 }
 
@@ -252,7 +283,7 @@ const columns = computed<TableColumn<PendingInvoiceRow>[]>(() => {
       h(
         'span',
         {
-          class: 'font-bold text-inverted',
+          class: 'font-bold text-sheet-header-foreground',
           title: 'En remisión sin número de OC',
         },
         '!',
@@ -284,7 +315,7 @@ const columns = computed<TableColumn<PendingInvoiceRow>[]>(() => {
     header: () =>
       h(UIcon, {
         name: 'i-lucide-message-square',
-        class: 'size-3.5 text-inverted',
+        class: 'size-3.5 text-sheet-header-foreground',
         'aria-label': 'Comentarios',
       }),
     meta: {
@@ -341,8 +372,7 @@ const tableMeta = {
     :meta="tableMeta"
     empty="Ningún evento coincide con los filtros."
     :ui="{
-      root: 'min-h-0 flex-1 overflow-auto rounded-lg border border-muted bg-default',
-      thead: '[&>tr]:bg-inverted',
+      ...pendingInvoiceExcelTableUi,
       th: 'py-2 px-2.5 text-xs',
       td: 'py-1.5 px-2.5 text-sm align-middle',
     }"

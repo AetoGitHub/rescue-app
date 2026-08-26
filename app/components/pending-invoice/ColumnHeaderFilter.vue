@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { PendingInvoiceColumnMeta } from '~/constants/pending-invoice';
+import type { PendingInvoiceDropdownFilterId } from '~/constants/pending-invoice-api';
+import { PENDING_INVOICE_DROPDOWN_PATHS } from '~/constants/pending-invoice-api';
 import type { PendingInvoiceCell } from '~/utils/pending-invoice-aggregate';
+import type { CatalogDropdownFetcher } from '~/composables/useCatalogDropdown';
+import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
+import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
+import type { PendingInvoiceFilterSelection } from '~/interfaces/invoicing/pending-invoice';
 
 const props = withDefaults(
   defineProps<{
@@ -12,10 +18,12 @@ const props = withDefaults(
     sortDescending: boolean;
     filterable?: boolean;
     align?: 'start' | 'end';
+    dropdown?: PendingInvoiceDropdownFilterId;
   }>(),
   {
     filterable: true,
     align: 'start',
+    dropdown: undefined,
   },
 );
 
@@ -25,8 +33,35 @@ const emit = defineEmits<{
 }>();
 
 const open = ref(false);
+const listRef = useTemplateRef<{ resetSearch: () => void }>('dropdownList');
+const apiFetch = useApiFetch();
+const { selectionFor, setSelection } = usePendingInvoiceList();
 
-const isFiltered = computed(() => props.selected.length > 0);
+const isDropdown = computed(() => props.dropdown != null);
+
+const dropdownSelected = computed({
+  get: (): PendingInvoiceFilterSelection[] =>
+    props.dropdown ? selectionFor(props.dropdown) : [],
+  set: (values: PendingInvoiceFilterSelection[]) => {
+    if (props.dropdown) setSelection(props.dropdown, values);
+  },
+});
+
+const fetchDropdown: CatalogDropdownFetcher = (name, options) => {
+  const path = props.dropdown
+    ? PENDING_INVOICE_DROPDOWN_PATHS[props.dropdown]
+    : PENDING_INVOICE_DROPDOWN_PATHS.company;
+  return apiFetch<PaginatedResponse<CatalogDropdownRow>>(path, {
+    query: buildPaginatedQuery({ name }, options?.cursor ?? null),
+    signal: options?.signal,
+  });
+};
+
+const isFiltered = computed(() =>
+  isDropdown.value
+    ? dropdownSelected.value.length > 0
+    : props.selected.length > 0,
+);
 
 const sortLabels = computed(() => {
   if (props.kind === 'number' || props.kind === 'money') {
@@ -42,25 +77,31 @@ const sortLabels = computed(() => {
 });
 
 const sortIcon = computed(() => {
-  if (!props.sortActive) return 'i-lucide-chevrons-up-down';
-  return props.sortDescending ? 'i-lucide-arrow-down' : 'i-lucide-arrow-up';
+  if (!props.sortActive) return 'i-lucide-arrow-up-down';
+  return props.sortDescending
+    ? 'i-lucide-arrow-down-wide-narrow'
+    : 'i-lucide-arrow-up-narrow-wide';
 });
 
 function applySort(descending: boolean) {
   emit('sort', descending);
   open.value = false;
 }
+
+watch(open, isOpen => {
+  if (!isOpen) listRef.value?.resetSearch();
+});
 </script>
 
 <template>
   <UPopover
     v-model:open="open"
     :content="{ align, side: 'bottom' }"
-    :ui="{ content: 'w-64 p-3' }"
+    :ui="{ content: 'w-72 p-3' }"
   >
     <button
       type="button"
-      class="group flex w-full items-center gap-1.5 text-left text-inverted transition-opacity hover:opacity-80"
+      class="group flex w-full items-center gap-1.5 text-left text-sheet-header-foreground transition-opacity hover:opacity-80"
       :class="align === 'end' ? 'justify-end' : undefined"
     >
       <span class="truncate">{{ label }}</span>
@@ -84,7 +125,7 @@ function applySort(descending: boolean) {
           />
           <span
             v-if="isFiltered"
-            class="absolute -end-1 -top-0.5 size-1.5 rounded-full bg-primary ring-1 ring-inverted"
+            class="absolute -end-1 -top-0.5 size-1.5 rounded-full bg-primary ring-1 ring-sheet-header"
           />
         </span>
       </span>
@@ -117,7 +158,17 @@ function applySort(descending: boolean) {
           />
         </div>
 
-        <template v-if="filterable">
+        <template v-if="filterable && isDropdown && dropdown">
+          <USeparator />
+          <PendingInvoiceDropdownFilterList
+            ref="dropdownList"
+            v-model:selected="dropdownSelected"
+            :fetcher="fetchDropdown"
+            :search-placeholder="`Buscar en ${label.toLowerCase()}…`"
+          />
+        </template>
+
+        <template v-else-if="filterable">
           <USeparator />
           <PendingInvoiceFilterValueList
             :options="options"

@@ -18,6 +18,41 @@ function toText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+const PENDING_INVOICE_DMY_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+
+/** Accepts `DD/MM/AAAA` from the API, with ISO as a fallback. */
+export function parsePendingInvoiceDate(value: string): Date | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const dmy = PENDING_INVOICE_DMY_RE.exec(trimmed);
+  if (dmy) {
+    const day = Number(dmy[1]);
+    const month = Number(dmy[2]);
+    const year = Number(dmy[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (
+      date.getUTCFullYear() !== year
+      || date.getUTCMonth() !== month - 1
+      || date.getUTCDate() !== day
+    ) {
+      return null;
+    }
+    return date;
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function utcDateParts(date: Date) {
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth(),
+    day: date.getUTCDate(),
+  };
+}
+
 /** Stable 32-bit hash so mock flags match between SSR and client. */
 export function hashPendingInvoiceFolio(folio: string): number {
   let hash = 2166136261;
@@ -29,17 +64,14 @@ export function hashPendingInvoiceFolio(folio: string): number {
 }
 
 export function daysSincePendingInvoiceDate(
-  iso: string,
+  value: string,
   reference = new Date(),
 ): number {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return 0;
+  const date = parsePendingInvoiceDate(value);
+  if (date == null) return 0;
 
-  const start = Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-  );
+  const startParts = utcDateParts(date);
+  const start = Date.UTC(startParts.year, startParts.month, startParts.day);
   const end = Date.UTC(
     reference.getFullYear(),
     reference.getMonth(),
@@ -48,15 +80,16 @@ export function daysSincePendingInvoiceDate(
   return Math.max(0, Math.round((end - start) / 86_400_000));
 }
 
-export function monthKeyFromPendingInvoiceDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '0000-00';
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+export function monthKeyFromPendingInvoiceDate(value: string): string {
+  const date = parsePendingInvoiceDate(value);
+  if (date == null) return '0000-00';
+  const { year, month } = utcDateParts(date);
+  return `${year}-${String(month + 1).padStart(2, '0')}`;
 }
 
-export function monthLabelFromPendingInvoiceDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '—';
+export function monthLabelFromPendingInvoiceDate(value: string): string {
+  const date = parsePendingInvoiceDate(value);
+  if (date == null) return '—';
   const label = date
     .toLocaleDateString('es-MX', { month: 'short', timeZone: 'UTC' })
     .replace('.', '');
@@ -71,23 +104,6 @@ function mapAdminStatus(
   if (normalized === 'in_remittance') return 'En remisión';
   if (normalized === 'unattended') return 'Sin atender';
   return null;
-}
-
-function mockStatus(folio: string): PendingInvoiceStatus {
-  return hashPendingInvoiceFolio(folio) % 100 < 45
-    ? 'En remisión'
-    : 'Sin atender';
-}
-
-function mockOc(folio: string, status: PendingInvoiceStatus): string | null {
-  if (status !== 'En remisión') return null;
-  const hash = hashPendingInvoiceFolio(`${folio}:oc`);
-  if (hash % 100 >= 60) return null;
-  return `OC-${10000 + (hash % 90000)}`;
-}
-
-function mockFlag(folio: string, salt: string, chancePercent: number): boolean {
-  return hashPendingInvoiceFolio(`${folio}:${salt}`) % 100 < chancePercent;
 }
 
 function resolveId(raw: PendingInvoiceApiRow): number {
@@ -105,20 +121,14 @@ export function mapPendingInvoiceApiRow(
   const status =
     mapAdminStatus(
       typeof raw.admin_status === 'string' ? raw.admin_status : null,
-    ) ?? mockStatus(folio);
+    ) ?? 'Sin atender';
 
-  const ocFromApi =
-    toText(raw.oc) || toText(raw.purchase_order_number) || null;
-  const oc = ocFromApi ?? mockOc(folio, status);
-
-  const evidenciaRescate =
-    typeof raw.has_service_evidence === 'boolean'
-      ? raw.has_service_evidence
-      : mockFlag(folio, 'service', 70);
-  const evidenciaPagos =
-    typeof raw.has_payment_evidence === 'boolean'
-      ? raw.has_payment_evidence
-      : mockFlag(folio, 'payment', 45);
+  const oc =
+    toText(raw.purchase_order)
+    || toText(raw.oc)
+    || toText(raw.purchase_order_number)
+    || null;
+  const ocPdf = toText(raw.oc_pdf) || null;
 
   return {
     id: resolveId(raw),
@@ -138,9 +148,10 @@ export function mapPendingInvoiceApiRow(
     subtotal: toNumber(raw.sub_total),
     iva: toNumber(raw.iva),
     total: toNumber(raw.total),
-    evidencia_rescate: evidenciaRescate,
-    evidencia_pagos: evidenciaPagos,
+    evidencia_rescate: raw.has_service_evidence === true,
+    evidencia_pagos: raw.has_payment_evidence === true,
     oc,
+    oc_pdf: ocPdf,
   };
 }
 

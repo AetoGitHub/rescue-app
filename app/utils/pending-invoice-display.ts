@@ -2,6 +2,7 @@ import type {
   PendingInvoiceDaysPromColor,
   PendingInvoiceRow,
 } from '~/interfaces/invoicing/pending-invoice';
+import { parsePendingInvoiceDate } from '~/utils/pending-invoice-map';
 
 export type DaysSemaphoreColor = 'success' | 'warning' | 'error';
 
@@ -93,27 +94,29 @@ export function formatPendingInvoiceMoneyCompact(value: number): string {
   return pendingInvoiceCompactMoneyFormatter.format(value);
 }
 
-export function formatPendingInvoiceDate(iso: string | null | undefined): string {
-  if (!iso?.trim()) return '—';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
+export function formatPendingInvoiceDate(value: string | null | undefined): string {
+  if (!value?.trim()) return '—';
+  const date = parsePendingInvoiceDate(value);
+  if (date == null) return value;
   return date.toLocaleDateString('es-MX', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
 export function formatPendingInvoiceDateShort(
-  iso: string | null | undefined,
+  value: string | null | undefined,
 ): string {
-  if (!iso?.trim()) return '—';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
+  if (!value?.trim()) return '—';
+  const date = parsePendingInvoiceDate(value);
+  if (date == null) return value;
   return date.toLocaleDateString('es-MX', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 

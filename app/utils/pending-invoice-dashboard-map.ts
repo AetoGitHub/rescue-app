@@ -1,3 +1,5 @@
+import type { PendingInvoiceColumnMeta } from '~/constants/pending-invoice';
+import { PENDING_INVOICE_DEFAULT_ORDERING } from '~/constants/pending-invoice-api';
 import type {
   PendingInvoiceByResponsibleApiRow,
   PendingInvoiceCompanyMatrixApiCell,
@@ -46,7 +48,7 @@ export function mapPendingInvoiceDaysPromColor(
   return null;
 }
 
-/** Positive company ids for the `company` query param. */
+/** Positive ids for multi-value dashboard query params. */
 export function pendingInvoiceCompanyQueryIds(
   companies: PendingInvoiceCompanySelection[],
 ): number[] {
@@ -54,15 +56,30 @@ export function pendingInvoiceCompanyQueryIds(
 }
 
 /**
- * `company` query value: one id, or repeated ids as a string array for `$fetch`.
+ * Comma-separated ids for `?company=`, `?client=`, etc.
  */
+export function pendingInvoiceCsvIdQuery(
+  items: PendingInvoiceCompanySelection[],
+): string | undefined {
+  const ids = pendingInvoiceCompanyQueryIds(items);
+  if (ids.length === 0) return undefined;
+  return ids.join(',');
+}
+
+/** @deprecated Use pendingInvoiceCsvIdQuery. */
 export function pendingInvoiceCompanyQuery(
   companies: PendingInvoiceCompanySelection[],
-): string | string[] | undefined {
-  const ids = pendingInvoiceCompanyQueryIds(companies).map(String);
-  if (ids.length === 0) return undefined;
-  if (ids.length === 1) return ids[0];
-  return ids;
+): string | undefined {
+  return pendingInvoiceCsvIdQuery(companies);
+}
+
+export function pendingInvoiceOrderingParam(
+  meta: Pick<PendingInvoiceColumnMeta, 'ordering' | 'invertOrdering'> | null | undefined,
+  descending: boolean,
+): string {
+  if (meta?.ordering == null) return PENDING_INVOICE_DEFAULT_ORDERING;
+  const apiDescending = meta.invertOrdering === true ? !descending : descending;
+  return apiDescending ? `-${meta.ordering}` : meta.ordering;
 }
 
 export function mapPendingInvoiceByResponsibleRow(

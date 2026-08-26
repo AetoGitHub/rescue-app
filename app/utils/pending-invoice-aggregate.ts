@@ -7,6 +7,7 @@ import {
   formatPendingInvoiceDateShort,
   formatPendingInvoiceMoney,
 } from '~/utils/pending-invoice-display';
+import { parsePendingInvoiceDate } from '~/utils/pending-invoice-map';
 
 export type PendingInvoiceColumnFilters = Partial<
   Record<PendingInvoiceColumnId, string[]>
@@ -30,7 +31,7 @@ export function pendingInvoiceCell(
   switch (columnId) {
     case 'fecha':
       return {
-        value: row.fecha.slice(0, 10),
+        value: row.fecha,
         label: formatPendingInvoiceDateShort(row.fecha),
       };
     case 'dias':
@@ -66,10 +67,19 @@ export function pendingInvoiceCell(
           ? 'Con evidencia de pagos'
           : 'Sin evidencia de pagos',
       };
+    case 'purchase_order': {
+      const text = row.oc?.trim() ? row.oc : '—';
+      return { value: text, label: text };
+    }
+    case 'oc_pdf':
+      return {
+        value: row.oc_pdf ? 'si' : 'no',
+        label: row.oc_pdf ? 'Con PDF de OC' : 'Sin PDF de OC',
+      };
     case 'mes':
       return { value: row.mes_key, label: `${row.mes} · ${row.mes_key}` };
     default: {
-      const raw = row[columnId];
+      const raw = row[columnId as keyof PendingInvoiceRow];
       const text = typeof raw === 'string' && raw.trim() ? raw : '—';
       return { value: text, label: text };
     }
@@ -92,13 +102,17 @@ function sortValueOf(
     case 'total':
       return row.total;
     case 'fecha':
-      return new Date(row.fecha).getTime();
+      return parsePendingInvoiceDate(row.fecha)?.getTime() ?? 0;
     case 'mes':
       return row.mes_key;
     case 'evidencia_rescate':
       return row.evidencia_rescate ? 1 : 0;
     case 'evidencia_pagos':
       return row.evidencia_pagos ? 1 : 0;
+    case 'purchase_order':
+      return row.oc ?? '';
+    case 'oc_pdf':
+      return row.oc_pdf ? 1 : 0;
     default:
       return pendingInvoiceCell(row, columnId).value;
   }

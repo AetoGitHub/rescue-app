@@ -4,6 +4,7 @@ import type { PendingInvoiceRow } from '~/interfaces/invoicing/pending-invoice';
 import {
   RESCUE_EVIDENCE_ZIP_WEBHOOK_DEFAULT,
 } from '~/constants/rescue-evidence-api';
+import { PENDING_INVOICE_DETAIL_COLUMNS } from '~/constants/pending-invoice';
 import {
   filterPendingInvoiceRows,
   sortPendingInvoiceRows,
@@ -25,6 +26,11 @@ const {
   hasNextPage,
   loadNextPage,
   refresh,
+  selectedClients,
+  selectedOperators,
+  selectedVehicles,
+  selectedAuthorizers,
+  clearDetailDropdownFilters,
 } = usePendingInvoiceList();
 const controller = usePendingInvoiceColumnFilters();
 const apiFetch = useApiFetch();
@@ -48,18 +54,35 @@ const filteredRows = computed(() =>
   }),
 );
 
-const rows = computed(() =>
-  sortPendingInvoiceRows(
+const rows = computed(() => {
+  const columnId = controller.sortColumn.value;
+  const meta = PENDING_INVOICE_DETAIL_COLUMNS.find(column => column.id === columnId);
+  if (meta?.ordering) return filteredRows.value;
+  return sortPendingInvoiceRows(
     filteredRows.value,
-    controller.sortColumn.value,
+    columnId,
     controller.sortDescending.value,
-  ),
+  );
+});
+
+const dropdownFilterCount = computed(
+  () =>
+    [
+      selectedClients.value,
+      selectedOperators.value,
+      selectedVehicles.value,
+      selectedAuthorizers.value,
+    ].filter(selection => selection.length > 0).length,
+);
+
+const activeFilterCount = computed(
+  () => controller.activeFilterCount.value + dropdownFilterCount.value,
 );
 
 const filtering = computed(
   () =>
     debouncedSearch.value.trim().length > 0
-    || controller.activeFilterCount.value > 0,
+    || activeFilterCount.value > 0,
 );
 
 const summary = computed(() => summarizePendingInvoiceRows(filteredRows.value));
@@ -84,6 +107,11 @@ function openDetail(row: PendingInvoiceRow) {
     path: '/admin/administrativo',
     query: { rescue: String(row.id) },
   });
+}
+
+function onClearFilters() {
+  controller.clearAll();
+  clearDetailDropdownFilters();
 }
 
 async function onEvidenceZip(
@@ -128,8 +156,8 @@ async function onEvidenceZip(
       v-model:search="search"
       :event-count="summary.eventos"
       :total="summary.total"
-      :active-filter-count="controller.activeFilterCount.value"
-      @clear-filters="controller.clearAll()"
+      :active-filter-count="activeFilterCount"
+      @clear-filters="onClearFilters"
     />
 
     <div
