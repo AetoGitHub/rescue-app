@@ -27,10 +27,11 @@
     "@pinia/colada-nuxt": "1.0.1",
     "@pinia/nuxt": "0.11.3",
     "@sentry/core": "10.69.0",
-    "@sentry/nuxt": "^10.69.0",
+    "@sentry/nuxt": "10",
     "@vueuse/core": "^14.3.0",
     "eslint": "^10.3.0",
     "firebase": "^12.15.0",
+    "import-in-the-middle": "^3.3.3",
     "nuxt": "^4.4.4",
     "nuxt-auth-utils": "0.5.29",
     "nuxt-authorization": "^0.3.5",
@@ -56,5 +57,10 @@
     "playwright-core": "^1.60.0",
     "vitest": "^3.2.4",
     "vue-tsc": "^3.0.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@vercel/nft": "^0.27.4"
+    }
   }
 }

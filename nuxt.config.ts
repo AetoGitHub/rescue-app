@@ -85,7 +85,7 @@ export default defineNuxtConfig({
 
   sentry: {
     org: 'aeto-team',
-    project: 'rescues-web',
+    project: 'rescue-app',
     authToken: process.env.SENTRY_AUTH_TOKEN,
     sourcemaps: {
       filesToDeleteAfterUpload: [
