@@ -1,6 +1,8 @@
-# Nuxt Minimal Starter
+# AETO Rescue (rescue-app)
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Frontend Nuxt de operación de rescates. La documentación del proyecto está en **[docs/README.md](./docs/README.md)** (español).
+
+Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) for framework details.
 
 ## Setup
 

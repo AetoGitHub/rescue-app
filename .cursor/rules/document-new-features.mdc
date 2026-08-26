@@ -1,0 +1,44 @@
+---
+description: Toda funcionalidad nueva o cambio de módulo debe documentarse en Markdown bajo docs/
+alwaysApply: true
+---
+
+# Documentar cada cambio en Markdown
+
+Si el trabajo **añade, cambia o elimina** comportamiento de producto, un módulo, una página, un composable de API, un schema Zod, una ruta Nitro o una convención de código, **actualiza o crea** un archivo en `docs/` **en el mismo cambio**.
+
+No dejes documentación solo en comentarios de código o en el mensaje de commit.
+
+## Dónde escribir
+
+| Qué cambió | Dónde documentar |
+|---|---|
+| Índice / mapa | `docs/README.md` |
+| Arranque local, env, scripts | `docs/getting-started.md` |
+| Capas, módulos Nuxt, proxy | `docs/architecture.md` |
+| Formularios, paginación, auto-imports, nombres de componentes | `docs/conventions.md` |
+| Rutas HTTP usadas por el frontend o Nitro | `docs/api.md` (solo paths **reales** en código) |
+| Dominio (rescate, catálogo, auth, pagos, etc.) | `docs/domains/*.md` |
+| Cómo documentar | `docs/how-to-document.md` |
+| Entrada breve de este conjunto | `docs/CHANGELOG-docs.md` |
+
+Si el dominio no encaja, crea `docs/domains/<slug>.md` y enlázalo desde `docs/README.md`.
+
+## Qué incluir
+
+- Ruta de página (`app/pages/...`) y URL de usuario.
+- Composables, schemas (`app/schemas/`) y constantes de path (`app/constants/`).
+- Paths `/api/...` **copiados del código**; no inventar endpoints.
+- Roles / abilities (`shared/abilities.ts`, `admin-route-access.ts`) si aplica.
+- Variables de entorno **solo por nombre**, nunca valores secretos.
+
+## Idioma
+
+Prosa en **español**. Nombres de código, APIs y archivos en **inglés** como en el repo.
+
+## Checklist (PR / commit)
+
+1. ¿Hay un MD en `docs/` que un compañero pueda seguir sin leer todo el diff?
+2. ¿El índice `docs/README.md` apunta al archivo nuevo?
+3. ¿`docs/api.md` lista paths nuevos o cambiados?
+4. ¿Las reglas de `.cursor/rules/` siguen alineadas si cambió una convención?
