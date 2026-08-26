@@ -65,6 +65,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         icon: 'i-lucide-file-clock',
         ability: accessAdministrative,
       },
+      {
+        label: 'Por cobrar',
+        to: '/admin/por-cobrar',
+        icon: 'i-lucide-hand-coins',
+        ability: accessAdministrative,
+      },
     ],
   },
   {
