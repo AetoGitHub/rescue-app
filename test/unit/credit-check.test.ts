@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import { assertClientCreditForQuote } from '~/utils/credit-check';
+import { emptyQuoteLinePriceFields } from '~/utils/rescue-quote-lines';
 
 function filledLine(): RescueQuoteLine {
   return {
@@ -10,7 +11,7 @@ function filledLine(): RescueQuoteLine {
     quantity: 1,
     unit_cost: 1000,
     contract_item_id: null,
-    applied_price: 0,
+    ...emptyQuoteLinePriceFields(),
   };
 }
 

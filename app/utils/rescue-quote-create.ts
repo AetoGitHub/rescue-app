@@ -14,6 +14,7 @@ import {
   type QuoteLinePricing,
   type QuotePricingOptions,
 } from '~/utils/quote-pricing';
+import { buildQuoteLineBlameDataRaw } from '~/utils/quote-line-price-sync';
 
 export function formatQuoteDecimal(value: number): string {
   return roundQuoteMoney(value).toFixed(2);
@@ -44,10 +45,12 @@ function mapServiceLine(
     real_cost: formatQuoteDecimal(row.costSubtotal),
     pre_total: formatQuoteDecimal(row.lineTotalCalculated),
     applied_price: formatQuoteDecimal(row.appliedPrice),
+    client_price: formatQuoteDecimal(row.clientPrice),
     percenaje_apply: linePercentajeApply(row, commissionFixedPool),
     amount_applied: formatQuoteDecimal(row.fixedShare),
     amount_rounded: formatQuoteDecimal(row.roundingAdd),
     total: formatQuoteDecimal(row.lineTotal),
+    blame_data_raw: buildQuoteLineBlameDataRaw(line) ?? null,
   };
 }
 

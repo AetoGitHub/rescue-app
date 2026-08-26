@@ -9,6 +9,7 @@ import {
   catalogDropdownSelection,
   emptyCatalogDropdownSelection,
 } from '~/interfaces/shared/catalog-dropdown.interface';
+import { emptyQuoteLinePriceFields } from '~/utils/rescue-quote-lines';
 
 const creditSnapshot: ClientCreditSnapshot = {
   client_type: 'CREDIT',
@@ -23,7 +24,7 @@ function filledLine(): RescueQuoteLine {
     quantity: 1,
     unit_cost: 1000,
     contract_item_id: null,
-    applied_price: 0,
+    ...emptyQuoteLinePriceFields(),
   };
 }
 
@@ -71,7 +72,7 @@ describe('quoteLinesHaveFilledEntries', () => {
           quantity: 0,
           unit_cost: 0,
           contract_item_id: null,
-          applied_price: 0,
+          ...emptyQuoteLinePriceFields(),
         },
       ]),
     ).toBe(false);

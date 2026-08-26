@@ -10,6 +10,7 @@ import type {
 import { isContractLine } from '~/utils/rescue-company-settings';
 import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
+import { emptyQuoteLinePriceFields } from '~/utils/rescue-quote-lines';
 
 export interface QuotePricingOptions {
   ivaRate?: number;
@@ -35,6 +36,12 @@ export interface QuoteLinePricing {
   appliedPrice: number;
   /** True when applied price differs from lineTotalCalculated. */
   isAppliedPriceCustom: boolean;
+  /** Venta AETO unitario (initializer = unit_cost × multiplier). */
+  clientPrice: number;
+  /** Calculated venta AETO before user override. */
+  clientPriceInitializer: number;
+  /** True when client price differs from the initializer. */
+  isClientPriceCustom: boolean;
   roundingAdd: number;
   lineTotal: number;
 }
@@ -126,6 +133,64 @@ function lineBaseFinal(line: Pick<RescueQuoteLine, 'quantity' | 'unit_cost'>): n
   return qty * unit;
 }
 
+export function quoteClientPriceInitializer(
+  unitCost: number,
+  priceMultiplier: number,
+  isContractLine: boolean,
+): number {
+  const unit = Number.isFinite(unitCost) ? unitCost : 0;
+  if (isContractLine) return roundQuoteMoney(unit);
+  const multiplier = Number.isFinite(priceMultiplier) ? priceMultiplier : 1;
+  return roundQuoteMoney(unit * multiplier);
+}
+
+export function quoteClientPriceFromApplied(
+  appliedPrice: number,
+  quantity: number,
+): number {
+  if (!Number.isFinite(quantity) || quantity <= 0) return 0;
+  return roundQuoteMoney(appliedPrice / quantity);
+}
+
+export function quoteAppliedFromClientPrice(
+  clientPrice: number,
+  quantity: number,
+): number {
+  const qty = Number.isFinite(quantity) ? quantity : 0;
+  const unit = Number.isFinite(clientPrice) ? clientPrice : 0;
+  return roundQuoteMoney(unit * qty);
+}
+
+function resolveLineClientPrice(
+  line: Pick<RescueQuoteLine, 'client_price' | 'quantity'>,
+  initializer: number,
+  appliedPrice: number,
+  isAppliedPriceCustom: boolean,
+): { clientPrice: number; isClientPriceCustom: boolean } {
+  const raw = line.client_price;
+  if (raw != null && Number.isFinite(raw) && raw > 0) {
+    const clientPrice = roundQuoteMoney(raw);
+    return {
+      clientPrice,
+      isClientPriceCustom: clientPrice !== roundQuoteMoney(initializer),
+    };
+  }
+  if (isAppliedPriceCustom) {
+    const clientPrice = quoteClientPriceFromApplied(
+      appliedPrice,
+      line.quantity,
+    );
+    return {
+      clientPrice,
+      isClientPriceCustom: clientPrice !== roundQuoteMoney(initializer),
+    };
+  }
+  return {
+    clientPrice: initializer,
+    isClientPriceCustom: false,
+  };
+}
+
 function applyLineRounding(
   lineTotalCalculated: number,
   roundToTen: boolean,
@@ -172,6 +237,9 @@ function emptyLinePricing(line: RescueQuoteLine): QuoteLinePricing {
     lineTotalCalculated: 0,
     appliedPrice: 0,
     isAppliedPriceCustom: false,
+    clientPrice: 0,
+    clientPriceInitializer: 0,
+    isClientPriceCustom: false,
     roundingAdd: 0,
     lineTotal: 0,
   };
@@ -332,6 +400,17 @@ export function computeQuotePricing(
         appliedPrice,
         roundToTen,
       );
+      const clientPriceInitializer = quoteClientPriceInitializer(
+        draft.line.unit_cost,
+        priceMultiplier,
+        true,
+      );
+      const { clientPrice, isClientPriceCustom } = resolveLineClientPrice(
+        draft.line,
+        clientPriceInitializer,
+        appliedPrice,
+        isAppliedPriceCustom,
+      );
       return {
         line: draft.line,
         isContractLine: true,
@@ -343,6 +422,9 @@ export function computeQuotePricing(
         lineTotalCalculated: costSubtotal,
         appliedPrice,
         isAppliedPriceCustom,
+        clientPrice,
+        clientPriceInitializer,
+        isClientPriceCustom,
         roundingAdd,
         lineTotal,
       };
@@ -366,6 +448,22 @@ export function computeQuotePricing(
       appliedPrice,
       roundToTen,
     );
+    const clientPriceInitializer = quoteClientPriceInitializer(
+      draft.line.unit_cost,
+      priceMultiplier,
+      false,
+    );
+    const { clientPrice, isClientPriceCustom } = isLoanQuote
+      ? {
+          clientPrice: clientPriceInitializer,
+          isClientPriceCustom: false,
+        }
+      : resolveLineClientPrice(
+          draft.line,
+          clientPriceInitializer,
+          appliedPrice,
+          isAppliedPriceCustom,
+        );
 
     return {
       line: draft.line,
@@ -378,6 +476,9 @@ export function computeQuotePricing(
       lineTotalCalculated,
       appliedPrice,
       isAppliedPriceCustom,
+      clientPrice,
+      clientPriceInitializer,
+      isClientPriceCustom,
       roundingAdd,
       lineTotal,
     };
@@ -445,7 +546,7 @@ export function computeQuoteLineTotals(
     quantity: line.quantity,
     unit_cost: line.unit_cost,
     contract_item_id: line.contract_item_id ?? null,
-    applied_price: 0,
+    ...emptyQuoteLinePriceFields(),
   };
   const summary = computeQuotePricing([fullLine], settings, options);
   const row = summary.lines[0]!;

@@ -244,7 +244,11 @@ const totalChargedDetail = computed(() => {
             class="mt-1 space-y-0.5 tabular-nums text-muted"
           >
             <li>
-              Cantidad × pago unitario → base:
+              Costo técnico unitario:
+              {{ formatQuoteMoney(row.line.unit_cost) }}
+            </li>
+            <li>
+              Cantidad × costo técnico → base:
               {{ row.line.quantity }} ×
               {{ formatQuoteMoney(row.line.unit_cost) }} =
               {{ formatQuoteMoney(row.baseFinal) }}
@@ -252,6 +256,11 @@ const totalChargedDetail = computed(() => {
             <li v-if="!row.isContractLine">
               Tras multiplicador →
               {{ formatQuoteMoney(row.afterMultiplier) }}
+            </li>
+            <li>
+              Venta AETO unitario
+              {{ row.isClientPriceCustom ? '(custom)' : '(initializer)' }}:
+              {{ formatQuoteMoney(row.clientPrice) }}
             </li>
             <li v-if="fixedShareExplanation(row)">
               {{ fixedShareExplanation(row) }}
@@ -271,7 +280,7 @@ const totalChargedDetail = computed(() => {
               {{ formatQuoteMoney(row.lineTotalCalculated) }}
             </li>
             <li v-if="row.isAppliedPriceCustom">
-              Precio a aplicar (custom):
+              Precio a aplicar total (custom):
               {{ formatQuoteMoney(row.appliedPrice) }}
             </li>
             <li v-if="row.roundingAdd !== 0">

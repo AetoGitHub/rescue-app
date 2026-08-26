@@ -7,10 +7,12 @@ import {
 } from '~/interfaces/shared/catalog-dropdown.interface';
 import {
   computeQuotePricing,
+  quoteClientPriceInitializer,
   roundQuoteMoney,
   roundQuoteToNearestTen,
   type QuotePricingSummary,
 } from '~/utils/quote-pricing';
+import { emptyQuoteLinePriceFields } from '~/utils/rescue-quote-lines';
 
 function line(
   partial: Partial<RescueQuoteLine> & Pick<RescueQuoteLine, 'quantity' | 'unit_cost'>,
@@ -21,7 +23,12 @@ function line(
     quantity: partial.quantity,
     unit_cost: partial.unit_cost,
     contract_item_id: partial.contract_item_id ?? null,
+    ...emptyQuoteLinePriceFields(),
     applied_price: partial.applied_price ?? 0,
+    client_price: partial.client_price ?? 0,
+    priceOverrideSource: partial.priceOverrideSource ?? 'none',
+    blame_client_price: partial.blame_client_price ?? null,
+    blame_applied_price: partial.blame_applied_price ?? null,
   };
 }
 
@@ -32,7 +39,7 @@ function emptyLine(): RescueQuoteLine {
     quantity: 0,
     unit_cost: 0,
     contract_item_id: null,
-    applied_price: 0,
+    ...emptyQuoteLinePriceFields(),
   };
 }
 
@@ -56,6 +63,8 @@ function expectAllMoneyRounded(result: QuotePricingSummary) {
     expectAtMostTwoDecimals(row.sellerFixedShare);
     expectAtMostTwoDecimals(row.lineTotalCalculated);
     expectAtMostTwoDecimals(row.appliedPrice);
+    expectAtMostTwoDecimals(row.clientPrice);
+    expectAtMostTwoDecimals(row.clientPriceInitializer);
     expectAtMostTwoDecimals(row.roundingAdd);
     expectAtMostTwoDecimals(row.lineTotal);
   }
@@ -562,8 +571,68 @@ describe('computeQuotePricing', () => {
     expect(loanPricing.lines.every((row) => row.roundingAdd === 0)).toBe(true);
     expect(loanPricing.lines[0]!.appliedPrice).toBe(2002);
     expect(loanPricing.lines[0]!.isAppliedPriceCustom).toBe(false);
+    expect(loanPricing.lines[0]!.clientPrice).toBe(2002);
+    expect(loanPricing.lines[0]!.clientPriceInitializer).toBe(2002);
     expect(loanPricing.sellerCommission).toBe(0);
     expect(loanPricing.roundingAddTotal).toBe(0);
     expect(loanPricing.subtotalLines).toBe(3002);
+  });
+
+  it('initializes venta AETO as unit_cost × multiplier (not including commissions)', () => {
+    const result = computeQuotePricing(
+      [line({ quantity: 3, unit_cost: 360 })],
+      baseSettings,
+      { ivaRate: 0, roundToTen: false },
+    );
+    const row = result.lines[0]!;
+
+    expect(row.clientPriceInitializer).toBe(396);
+    expect(row.clientPrice).toBe(396);
+    expect(row.isClientPriceCustom).toBe(false);
+    expect(row.afterMultiplier).toBe(1188);
+    expect(row.lineTotalCalculated).toBeGreaterThan(row.afterMultiplier);
+  });
+
+  it('skips multiplier on convenio for venta AETO initializer', () => {
+    const result = computeQuotePricing(
+      [
+        line({
+          quantity: 2,
+          unit_cost: 500,
+          contract_item_id: 10,
+        }),
+      ],
+      baseSettings,
+      { ivaRate: 0, roundToTen: false },
+    );
+
+    expect(result.lines[0]!.clientPriceInitializer).toBe(500);
+    expect(result.lines[0]!.clientPrice).toBe(500);
+    expect(result.lines[0]!.afterMultiplier).toBe(1000);
+  });
+
+  it('derives venta AETO from applied_price / qty when applied is custom', () => {
+    const result = computeQuotePricing(
+      [line({ quantity: 3, unit_cost: 360, applied_price: 2000 })],
+      { ...baseSettings, commissions: { ...baseSettings.commissions, commission_fixed: 0, price_multiplier: 1 } },
+      { ivaRate: 0, roundToTen: false },
+    );
+    const row = result.lines[0]!;
+
+    expect(row.clientPriceInitializer).toBe(360);
+    expect(row.appliedPrice).toBe(2000);
+    expect(row.isAppliedPriceCustom).toBe(true);
+    expect(row.clientPrice).toBe(666.67);
+    expect(row.isClientPriceCustom).toBe(true);
+  });
+});
+
+describe('quoteClientPriceInitializer', () => {
+  it('multiplies unit cost for standard lines', () => {
+    expect(quoteClientPriceInitializer(360, 1.1, false)).toBe(396);
+  });
+
+  it('returns unit cost for contract lines', () => {
+    expect(quoteClientPriceInitializer(360, 1.1, true)).toBe(360);
   });
 });

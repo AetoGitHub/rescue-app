@@ -21,6 +21,15 @@ export const QUOTE_SUMMARY_LABELS = {
   roundingPerLine: 'Ajuste por redondeo al diez',
 } as const;
 
+export const QUOTE_LINE_COLUMN_LABELS = {
+  service: 'Servicio',
+  quantity: 'Cantidad',
+  technicalUnitCost: 'Costo técnico unitario',
+  aetoUnit: 'Venta AETO unitario',
+  appliedPriceTotal: 'Precio a aplicar total',
+  total: 'Total',
+} as const;
+
 /** Copy for the dev-only quote pricing breakdown panel. */
 export const QUOTE_DEV_BREAKDOWN_COPY = {
   rulesTitle: 'Reglas de precio (qué paga el cliente vs. referencia interna)',
@@ -52,4 +61,5 @@ export const QUOTE_DEV_UNLOCK_COPY = {
   panelTitleDev: 'Desglose de cotización (solo desarrollo)',
   panelTitleAdmin: 'Desglose de cotización (debug administrativo)',
   panelHintAdmin: 'Atajo: Ctrl+Shift+Q para ocultar',
+  simulatePayloadLabel: 'Simular envío al backend',
 } as const;

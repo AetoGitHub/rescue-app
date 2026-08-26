@@ -106,6 +106,12 @@ export const rescueStepSupplierSchema = z.object({
   supplier: z.number().int().positive().nullable().optional(),
 });
 
+const quoteBlameFieldSchema = z.object({
+  original: z.string(),
+  user_id: z.number(),
+  username: z.string(),
+});
+
 const rescueQuoteLineSchema = z.object({
   id: z.string(),
   service: catalogSelectionSchema,
@@ -113,6 +119,12 @@ const rescueQuoteLineSchema = z.object({
   unit_cost: z.number(),
   contract_item_id: z.number().int().positive().nullable(),
   applied_price: z.number(),
+  client_price: z.number().default(0),
+  priceOverrideSource: z
+    .enum(['none', 'client_price', 'applied_price'])
+    .default('none'),
+  blame_client_price: quoteBlameFieldSchema.nullable().default(null),
+  blame_applied_price: quoteBlameFieldSchema.nullable().default(null),
 });
 
 type RescueQuoteLineInput = z.infer<typeof rescueQuoteLineSchema>;
@@ -139,8 +151,15 @@ function validateQuoteLineAtIndex(
     if (!Number.isFinite(line.unit_cost) || line.unit_cost < 0) {
       ctx.addIssue({
         code: 'custom',
-        message: 'El pago unitario no puede ser negativo',
+        message: 'El costo técnico unitario no puede ser negativo',
         path: ['quote_lines', index, 'unit_cost'],
+      });
+    }
+    if (!Number.isFinite(line.client_price) || line.client_price < 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'El venta AETO unitario no puede ser negativo',
+        path: ['quote_lines', index, 'client_price'],
       });
     }
 }
