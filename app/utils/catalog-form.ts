@@ -151,6 +151,7 @@ const catalogInputNumberBase = {
 export const catalogCurrencyInputProps: InputNumberProps = {
   ...catalogInputNumberBase,
   step: 0.01,
+  stepSnapping: false,
   formatOptions: {
     style: 'currency',
     currency: CATALOG_CURRENCY,
@@ -162,7 +163,9 @@ export const catalogCurrencyInputProps: InputNumberProps = {
 
 export const catalogPercentInputProps: InputNumberProps = {
   ...catalogInputNumberBase,
-  step: 0.01,
+  // style: 'percent' stores a fraction (1.80% → 0.018). step 0.01 snaps to 1%.
+  step: 0.0001,
+  stepSnapping: false,
   formatOptions: {
     style: 'percent',
     minimumFractionDigits: 0,
@@ -173,6 +176,7 @@ export const catalogPercentInputProps: InputNumberProps = {
 export const catalogNumberInputProps: InputNumberProps = {
   ...catalogInputNumberBase,
   step: 0.01,
+  stepSnapping: false,
   formatOptions: {
     style: 'decimal',
     minimumFractionDigits: 0,
@@ -192,6 +196,7 @@ export const catalogIntegerInputProps: InputNumberProps = {
 export const catalogCoordinateInputProps: InputNumberProps = {
   ...catalogInputNumberBase,
   step: 0.000001,
+  stepSnapping: false,
   formatOptions: {
     style: 'decimal',
     minimumFractionDigits: 0,

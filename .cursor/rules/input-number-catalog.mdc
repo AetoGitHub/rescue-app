@@ -35,6 +35,8 @@ Bind the preset that matches the field semantics with `v-bind`:
 
 For `commission_value`, remount or rebind when `commission_type` changes so currency vs percent formatting does not stick.
 
+`style: 'percent'` stores a fraction (`1.80%` → `0.018`). Decimal presets use `stepSnapping: false`. Percent `step` is `0.0001` so values like 1.80% are not snapped to 2%.
+
 ## Phone fields
 
 Use plain `UInput` (not `UInputNumber`) with digit-only formatting:
