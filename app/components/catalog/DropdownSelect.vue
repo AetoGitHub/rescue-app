@@ -58,18 +58,19 @@ const inner = computed({
   get: () => model.value.value ?? undefined,
   set: (v: number | undefined) => {
     if (v == null) {
+      if (model.value.value == null && !model.value.label.trim()) return;
       model.value = emptyCatalogDropdownSelection();
       return;
     }
     const row = items.value.find((item) => item.id === v);
+    const label = row?.name ?? model.value.label;
+    if (model.value.value === v && model.value.label === label) return;
     model.value = {
       value: v,
-      label: row?.name ?? model.value.label,
+      label,
     };
   },
 });
-
-const selectKey = computed(() => String(inner.value ?? 'empty'));
 
 watch(
   () => model.value.value,
@@ -103,7 +104,6 @@ onMounted(() => {
   <div class="w-full space-y-1">
     <USelectMenu
       ref="selectMenu"
-      :key="selectKey"
       v-model="inner"
       v-model:search-term="searchTerm"
       ignore-filter

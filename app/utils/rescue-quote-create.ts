@@ -50,7 +50,7 @@ function mapServiceLine(
     amount_applied: formatQuoteDecimal(row.fixedShare),
     amount_rounded: formatQuoteDecimal(row.roundingAdd),
     total: formatQuoteDecimal(row.lineTotal),
-    blame_data_raw: buildQuoteLineBlameDataRaw(line) ?? null,
+    blame_data_raw: buildQuoteLineBlameDataRaw(line),
   };
 }
 

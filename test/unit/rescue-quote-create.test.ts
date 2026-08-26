@@ -114,7 +114,7 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(s0!.percenaje_apply).toBe('50.00');
     expect(s0!.amount_rounded).toBe('0.00');
     expect(s0!.total).toBe('800.00');
-    expect(s0!.blame_data_raw).toBeNull();
+    expect(s0!.blame_data_raw).toEqual({});
 
     expect(s1!.amount_applied).toBe('150.00');
     expect(s1!.applied_price).toBe('480.00');
@@ -299,6 +299,29 @@ describe('buildRescueQuoteUpdateBody', () => {
   it('returns null when no filled quote lines', () => {
     expect(buildRescueQuoteUpdateBody([emptyLine()], baseSettings)).toBeNull();
   });
+
+  it('sends blame_data_raw as {} on each service when there is no override', () => {
+    const lines = [
+      line({ quantity: 1, unit_cost: 500, service: catalogDropdownSelection(2) }),
+    ];
+    const body = buildRescueQuoteUpdateBody(
+      lines,
+      {
+        ...baseSettings,
+        commissions: {
+          ...baseSettings.commissions,
+          price_multiplier: 1,
+          commission_fixed: 0,
+        },
+        contract: null,
+      },
+      { ivaRate: 0, roundToTen: false },
+    );
+
+    expect(body).not.toBeNull();
+    expect(body!).not.toHaveProperty('blame_data_raw');
+    expect(body!.services[0]!.blame_data_raw).toEqual({});
+  });
 });
 
 describe('buildRescueQuoteCreateBody without client seller', () => {
@@ -373,9 +396,9 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
     expect(body!.total).toBe('1972.00');
     expect(body!).not.toHaveProperty('applied_price');
     expect(body!).not.toHaveProperty('blame_data_raw');
-    expect(body!.services[0]!.blame_data_raw).toBeNull();
-    expect(body!.services[1]!.blame_data_raw).toBeNull();
-    expect(body!.services[2]!.blame_data_raw).toBeNull();
+    expect(body!.services[0]!.blame_data_raw).toEqual({});
+    expect(body!.services[1]!.blame_data_raw).toEqual({});
+    expect(body!.services[2]!.blame_data_raw).toEqual({});
   });
 
   it('sends blame_data_raw on each service row, populated only for explicit overrides', () => {

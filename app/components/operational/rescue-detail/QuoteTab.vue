@@ -7,7 +7,6 @@ import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings
 import type { RescueQuoteDetail } from '~/interfaces/rescue/quote';
 import type { ClientCreditSnapshot } from '~/schemas/rescue-create';
 import { canEditRescueQuoteWithUnlock } from '~/utils/rescue-quote-tab';
-import { mapRescueQuoteDetailFromApi } from '~/utils/rescue-quote-detail-map';
 import { summarizeRescueQuoteDetail } from '~/utils/rescue-quote-display';
 import { QUOTE_SUMMARY_LABELS } from '~/constants/quote-pricing';
 
@@ -151,9 +150,20 @@ watch(
 
 watch(companySettings, (settings) => {
   if (!editable.value) return;
-  const detail = quoteDetail.value;
-  if (detail == null || settings == null) return;
-  quoteLines.value = mapRescueQuoteDetailFromApi(detail, settings);
+  if (quoteDetail.value == null || settings == null) return;
+  // Patch contract ids in place. Replacing the whole array remounts every
+  // CatalogDropdownSelect and can leave a USelectMenu overlay that blocks clicks.
+  for (const line of quoteLines.value) {
+    if (line.contract_item_id != null) continue;
+    const inferred = inferQuoteLineContractItemId(
+      line.service.value,
+      line.unit_cost,
+      settings,
+    );
+    if (inferred != null) {
+      line.contract_item_id = inferred;
+    }
+  }
 });
 
 watch(readOnlyCompanySettings, (settings) => {

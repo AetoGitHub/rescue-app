@@ -69,8 +69,8 @@ Constantes: `app/constants/rescue-api.ts`, `rescue-operative-flow.ts`, `rescue-q
 | `POST /api/rescue/change_phase/:id/` | Transiciones operativas |
 | `POST /api/rescue/revert_cancellation/:id/` | Revertir cancelación |
 | `POST /api/rescue/claim/:id/` | Obtener / reclamar rescate |
-| `POST /api/rescue/quote/create/` | Cotización al crear |
-| `GET/PUT /api/rescue/quote/detail/:id/` y `.../update/:id/` | Cotización |
+| `POST /api/rescue/quote/create/` | Cotización al crear. Body: `buildRescueQuoteCreateBody`. Cada `services[]` incluye `blame_data_raw` (`{}` si no hay override). |
+| `GET/PUT /api/rescue/quote/detail/:id/` y `.../update/:id/` | Cotización. Update: `buildRescueQuoteUpdateBody` (mismo `services[].blame_data_raw`). |
 | `GET /api/quotes/:id` | PDF (Nitro → `NUXT_QUOTE_PDF_API_URL`) |
 | `GET /api/rescue/evidence/:id/` y `.../create/` | Evidencias |
 | `GET/POST /api/chat/:id/messages/` y `.../create/` | Chat operativo |

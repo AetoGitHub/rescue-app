@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { nextTick, reactive, watch } from 'vue';
 import type { RescueQuoteLine } from '~/interfaces/rescue';
-import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
+import { emptyCatalogDropdownSelection, catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import {
   applyContractToLine,
   dedupeContractItemsByService,
@@ -131,6 +132,42 @@ describe('applyContractToLine', () => {
     expect(line.unit_cost).toBe(620);
     expect(line.client_price).toBe(500);
     expect(line.service).toBe(serviceRef);
+  });
+
+  it('does not replace service object identity when the line already has that service id', () => {
+    const service = catalogDropdownSelection(3, 'Servicio convenio');
+    const line = quoteLine({ service });
+    applyContractToLine(line, contractItem);
+    expect(line.service).toBe(service);
+    expect(line.contract_item_id).toBe(10);
+    expect(line.unit_cost).toBe(500);
+  });
+
+  it('does not retrigger a service-identity watcher after applying convenio', async () => {
+    const service = catalogDropdownSelection(3, 'Servicio convenio');
+    const line = reactive(quoteLine({ service }));
+    let runs = 0;
+
+    watch(
+      () => line.service,
+      () => {
+        runs += 1;
+        if (runs > 25) {
+          throw new Error(
+            'applyContractToLine retriggered a service-identity watch loop',
+          );
+        }
+        applyContractToLine(line, contractItem);
+      },
+      { immediate: true },
+    );
+
+    await nextTick();
+    await nextTick();
+
+    expect(runs).toBe(1);
+    expect(line.contract_item_id).toBe(10);
+    expect(line.service.value).toBe(3);
   });
 });
 

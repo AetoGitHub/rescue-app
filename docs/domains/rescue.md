@@ -40,6 +40,26 @@ Componentes bajo `app/components/operational/rescue-detail/` (tags `OperationalR
 
 Utils `app/utils/quote-pricing.ts` y constantes `app/constants/quote-pricing.ts`. Hay un desglose de desarrollo (`useQuotePricingDevUnlock`, `QuotePricingDevBreakdown`).
 
+Venta AETO de un convenio usa el **precio de contrato**, no `unit_cost × multiplicador`.
+
+### Payload de servicios (`blame_data_raw`)
+
+Create y update (`buildRescueQuoteCreateBody` / `buildRescueQuoteUpdateBody` en `app/utils/rescue-quote-create.ts`) envían `services[].blame_data_raw` **siempre**:
+
+- `{}` si no hay override explícito de venta AETO ni de precio aplicado.
+- Objeto con `client_price` y/o `applied_price` (`original`, `user_id`, `username`) cuando el operador sí cambió el precio.
+
+No va `null` ni se omite el campo. El header de la cotización **no** lleva `blame_data_raw`.
+
+### Por qué se congelaba la UI de cotización
+
+Al elegir un servicio con convenio, `applyContractToLine` reemplazaba `line.service` por un objeto nuevo (mismo id). Eso:
+
+1. Disparaba de nuevo los watchers de la fila (sync de convenio y de precios).
+2. En `CatalogDropdownSelect`, un `:key` ligado al id **remontaba** `USelectMenu` mientras el menú cerraba, y el overlay portalizado de Reka/Nuxt UI quedaba encima de la página (`pointer-events`) — nada era clicable.
+
+Mitigación: no sustituir `service` si el id ya coincide; no remontar el select al cambiar la selección; sincronizar precios solo cuando el snapshot cambia (`deep: true`); al hidratar el detalle, parchear `contract_item_id` en sitio (ids estables `String(service.id)`) en lugar de recrear el array de filas.
+
 ## Settings
 
 - Generales: `RESCUE_GENERAL_SETTINGS_PATH`.

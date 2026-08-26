@@ -26,8 +26,8 @@ export interface RescueQuoteServiceCreateBody {
   amount_applied?: string;
   amount_rounded?: string;
   total: string;
-  /** Per quote line. `null` when the user did not explicitly override venta AETO or applied total. */
-  blame_data_raw: QuoteLineBlameDataRaw | null;
+  /** Per quote line. `{}` when the user did not explicitly override venta AETO or applied total. */
+  blame_data_raw: QuoteLineBlameDataRaw;
 }
 
 export interface RescueQuoteCreateBody {

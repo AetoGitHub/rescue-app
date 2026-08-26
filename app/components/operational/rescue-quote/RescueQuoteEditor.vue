@@ -139,7 +139,7 @@ watch(
 
     previousCalculatedByLineId.value = nextMap;
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 
 function resetLineAppliedPrice(line: RescueQuoteLine) {
@@ -269,7 +269,10 @@ function onApplyClassifierLines(payload: QuoteClassifierApplyPayload) {
 }
 
 watch(
-  () => quoteLines.value.map((line) => line.service.value ?? '').join(','),
+  [
+    () => quoteLines.value.map((line) => line.service.value ?? '').join(','),
+    settings,
+  ],
   () => {
     for (const line of quoteLines.value) {
       syncLineContract(line);

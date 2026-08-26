@@ -141,9 +141,8 @@ describe('mapRescueQuoteDetailFromApi', () => {
     expect(lines[1]!.contract_item_id).toBeNull();
   });
 
-  it('generates unique local ids for each line', () => {
+  it('uses stable ids from the API service row', () => {
     const lines = mapRescueQuoteDetailFromApi(sampleDetail);
-    const ids = lines.map((line) => line.id);
-    expect(new Set(ids).size).toBe(ids.length);
+    expect(lines.map((line) => line.id)).toEqual(['9', '10']);
   });
 });

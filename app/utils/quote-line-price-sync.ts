@@ -48,7 +48,7 @@ export function parseQuoteBlameField(raw: unknown): QuoteBlameField | null {
 
 export function buildQuoteLineBlameDataRaw(
   line: Pick<RescueQuoteLine, 'blame_client_price' | 'blame_applied_price'>,
-): QuoteLineBlameDataRaw | undefined {
+): QuoteLineBlameDataRaw {
   const data: QuoteLineBlameDataRaw = {};
   if (line.blame_client_price != null) {
     data.client_price = line.blame_client_price;
@@ -56,7 +56,7 @@ export function buildQuoteLineBlameDataRaw(
   if (line.blame_applied_price != null) {
     data.applied_price = line.blame_applied_price;
   }
-  return Object.keys(data).length > 0 ? data : undefined;
+  return data;
 }
 
 export function parseQuoteLineBlameDataRaw(raw: unknown): {
@@ -140,6 +140,15 @@ function inferOverrideSourceFromBlame(
   return 'none';
 }
 
+function assignLineAmount(
+  line: RescueQuoteLine,
+  key: 'applied_price' | 'client_price',
+  value: number,
+): void {
+  if (line[key] === value) return;
+  line[key] = value;
+}
+
 export function syncQuoteLinePricesFromCalculated(
   line: RescueQuoteLine,
   calculatedApplied: number,
@@ -147,31 +156,36 @@ export function syncQuoteLinePricesFromCalculated(
   previousCalculatedApplied: number | undefined,
 ): void {
   if (previousCalculatedApplied == null) {
-    line.priceOverrideSource = inferOverrideSourceFromBlame(line);
+    const inferred = inferOverrideSourceFromBlame(line);
+    if (line.priceOverrideSource !== inferred) {
+      line.priceOverrideSource = inferred;
+    }
 
     if (line.priceOverrideSource === 'client_price') {
-      line.applied_price = quoteAppliedFromClientPrice(
-        line.client_price,
-        line.quantity,
+      assignLineAmount(
+        line,
+        'applied_price',
+        quoteAppliedFromClientPrice(line.client_price, line.quantity),
       );
       return;
     }
 
     if (line.priceOverrideSource === 'applied_price') {
       if (!(line.client_price > 0)) {
-        line.client_price = quoteClientPriceFromApplied(
-          line.applied_price,
-          line.quantity,
+        assignLineAmount(
+          line,
+          'client_price',
+          quoteClientPriceFromApplied(line.applied_price, line.quantity),
         );
       }
       return;
     }
 
     if (!(line.applied_price > 0)) {
-      line.applied_price = calculatedApplied;
+      assignLineAmount(line, 'applied_price', calculatedApplied);
     }
     if (!(line.client_price > 0)) {
-      line.client_price = clientPriceInitializer;
+      assignLineAmount(line, 'client_price', clientPriceInitializer);
     }
 
     const appliedCustom =
@@ -185,32 +199,36 @@ export function syncQuoteLinePricesFromCalculated(
 
     if (appliedCustom) {
       line.priceOverrideSource = 'applied_price';
-      line.client_price = quoteClientPriceFromApplied(
-        line.applied_price,
-        line.quantity,
+      assignLineAmount(
+        line,
+        'client_price',
+        quoteClientPriceFromApplied(line.applied_price, line.quantity),
       );
     } else if (clientCustom) {
       line.priceOverrideSource = 'client_price';
-      line.applied_price = quoteAppliedFromClientPrice(
-        line.client_price,
-        line.quantity,
+      assignLineAmount(
+        line,
+        'applied_price',
+        quoteAppliedFromClientPrice(line.client_price, line.quantity),
       );
     }
     return;
   }
 
   if (line.priceOverrideSource === 'client_price') {
-    line.applied_price = quoteAppliedFromClientPrice(
-      line.client_price,
-      line.quantity,
+    assignLineAmount(
+      line,
+      'applied_price',
+      quoteAppliedFromClientPrice(line.client_price, line.quantity),
     );
     return;
   }
 
   if (line.priceOverrideSource === 'applied_price') {
-    line.client_price = quoteClientPriceFromApplied(
-      line.applied_price,
-      line.quantity,
+    assignLineAmount(
+      line,
+      'client_price',
+      quoteClientPriceFromApplied(line.applied_price, line.quantity),
     );
     return;
   }
@@ -219,7 +237,7 @@ export function syncQuoteLinePricesFromCalculated(
     roundQuoteMoney(line.applied_price)
     === roundQuoteMoney(previousCalculatedApplied)
   ) {
-    line.applied_price = calculatedApplied;
+    assignLineAmount(line, 'applied_price', calculatedApplied);
   }
-  line.client_price = clientPriceInitializer;
+  assignLineAmount(line, 'client_price', clientPriceInitializer);
 }

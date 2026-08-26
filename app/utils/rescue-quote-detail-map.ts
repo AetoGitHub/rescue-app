@@ -13,11 +13,12 @@ function parseApiMoney(value: string | null | undefined): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function inferContractItemId(
-  serviceId: number,
+export function inferQuoteLineContractItemId(
+  serviceId: number | null,
   unitCost: number,
   settings: RescueCompanySettings | null | undefined,
 ): number | null {
+  if (serviceId == null) return null;
   const item = findContractItemForService(settings, serviceId);
   if (item == null) return null;
   if (roundQuoteMoney(item.price) !== roundQuoteMoney(unitCost)) return null;
@@ -49,14 +50,14 @@ export function mapRescueQuoteDetailFromApi(
     const blame = parseQuoteLineBlameDataRaw(service.blame_data_raw);
 
     return {
-      id: crypto.randomUUID(),
+      id: String(service.id),
       service: catalogDropdownSelection(
         service.service_id,
         String(service.service_name ?? ''),
       ),
       quantity,
       unit_cost: unitCost,
-      contract_item_id: inferContractItemId(
+      contract_item_id: inferQuoteLineContractItemId(
         service.service_id,
         unitCost,
         settings,

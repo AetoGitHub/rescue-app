@@ -96,17 +96,22 @@ export function applyContractToLine(
   line: RescueQuoteLine,
   contractItem: RescueContractItem,
 ): void {
-  // Idempotent: reassigning `service` on every sync retriggers quote-line
-  // watchers and freezes the cotización UI when the service has a convenio.
+  // Idempotent: a new `service` object retriggers quote-line watchers and
+  // remounts CatalogDropdownSelect (USelectMenu overlay) which freezes the
+  // cotización UI when the chosen service has a convenio.
   if (line.contract_item_id === contractItem.id) {
     return;
   }
 
   line.contract_item_id = contractItem.id;
-  line.service = catalogDropdownSelection(
-    contractItem.service_id,
-    contractItem.service_name,
-  );
+  if (line.service.value !== contractItem.service_id) {
+    line.service = catalogDropdownSelection(
+      contractItem.service_id,
+      contractItem.service_name,
+    );
+  } else if (!line.service.label.trim() && contractItem.service_name) {
+    line.service.label = contractItem.service_name;
+  }
   line.unit_cost = contractItem.price;
   if (line.priceOverrideSource === 'none') {
     line.client_price = contractItem.price;

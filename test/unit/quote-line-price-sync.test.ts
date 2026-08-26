@@ -4,6 +4,7 @@ import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.i
 import {
   applyAppliedPriceOverride,
   applyClientPriceOverride,
+  buildQuoteLineBlameDataRaw,
   resetQuoteLinePriceOverrides,
   syncQuoteLinePricesFromCalculated,
 } from '~/utils/quote-line-price-sync';
@@ -87,6 +88,12 @@ describe('quote line price sync', () => {
     expect(row.applied_price).toBe(1188);
     expect(row.client_price).toBe(396);
     expect(row.priceOverrideSource).toBe('none');
+
+    const appliedRef = row.applied_price;
+    const clientRef = row.client_price;
+    syncQuoteLinePricesFromCalculated(row, 1188, 396, 1188);
+    expect(row.applied_price).toBe(appliedRef);
+    expect(row.client_price).toBe(clientRef);
   });
 
   it('does not move convenio AETO when only unit_cost changes', () => {
@@ -114,5 +121,24 @@ describe('quote line price sync', () => {
 
     expect(row.applied_price).toBe(2000);
     expect(row.client_price).toBe(500);
+  });
+});
+
+describe('buildQuoteLineBlameDataRaw', () => {
+  it('returns {} when there is no explicit override', () => {
+    const row = line({ quantity: 1, unit_cost: 100 });
+    expect(buildQuoteLineBlameDataRaw(row)).toEqual({});
+  });
+
+  it('includes only the overridden field', () => {
+    const row = line({ quantity: 3, unit_cost: 360 });
+    applyAppliedPriceOverride(row, 2000, 1080, user);
+    expect(buildQuoteLineBlameDataRaw(row)).toEqual({
+      applied_price: {
+        original: '1080.00',
+        user_id: 7,
+        username: 'operador',
+      },
+    });
   });
 });
