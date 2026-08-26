@@ -10,6 +10,7 @@ import {
   buildRescueQuoteUpdateBody,
   formatQuoteDecimal,
 } from '~/utils/rescue-quote-create';
+import { emptyQuoteLinePriceFields } from '~/utils/rescue-quote-lines';
 
 function line(
   partial: Partial<RescueQuoteLine> & Pick<RescueQuoteLine, 'quantity' | 'unit_cost'>,
@@ -20,7 +21,12 @@ function line(
     quantity: partial.quantity,
     unit_cost: partial.unit_cost,
     contract_item_id: partial.contract_item_id ?? null,
+    ...emptyQuoteLinePriceFields(),
     applied_price: partial.applied_price ?? 0,
+    client_price: partial.client_price ?? 0,
+    priceOverrideSource: partial.priceOverrideSource ?? 'none',
+    blame_client_price: partial.blame_client_price ?? null,
+    blame_applied_price: partial.blame_applied_price ?? null,
   };
 }
 
@@ -31,7 +37,7 @@ function emptyLine(): RescueQuoteLine {
     quantity: 0,
     unit_cost: 0,
     contract_item_id: null,
-    applied_price: 0,
+    ...emptyQuoteLinePriceFields(),
   };
 }
 
@@ -103,10 +109,12 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(s0!.real_cost).toBe('500.00');
     expect(s0!.pre_total).toBe('800.00');
     expect(s0!.applied_price).toBe('800.00');
+    expect(s0!.client_price).toBe('550.00');
     expect(s0!.amount_applied).toBe('250.00');
     expect(s0!.percenaje_apply).toBe('50.00');
     expect(s0!.amount_rounded).toBe('0.00');
     expect(s0!.total).toBe('800.00');
+    expect(s0!.blame_data_raw).toBeNull();
 
     expect(s1!.amount_applied).toBe('150.00');
     expect(s1!.applied_price).toBe('480.00');
@@ -359,9 +367,56 @@ describe('buildRescueQuoteCreateBody without client seller', () => {
 
     expect(body!.services[0]!.pre_total).toBe('800.00');
     expect(body!.services[0]!.applied_price).toBe('900.00');
+    expect(body!.services[0]!.client_price).toBe('900.00');
     expect(body!.services[0]!.total).toBe('900.00');
     expect(body!.sub_total).toBe('1700.00');
     expect(body!.total).toBe('1972.00');
     expect(body!).not.toHaveProperty('applied_price');
+    expect(body!).not.toHaveProperty('blame_data_raw');
+    expect(body!.services[0]!.blame_data_raw).toBeNull();
+    expect(body!.services[1]!.blame_data_raw).toBeNull();
+    expect(body!.services[2]!.blame_data_raw).toBeNull();
+  });
+
+  it('sends blame_data_raw on each service row, populated only for explicit overrides', () => {
+    const overridden = line({
+      quantity: 3,
+      unit_cost: 360,
+      service: catalogDropdownSelection(1),
+      applied_price: 2000,
+      client_price: 666.67,
+      priceOverrideSource: 'applied_price',
+      blame_applied_price: {
+        original: '1080.00',
+        user_id: 7,
+        username: 'operador',
+      },
+    });
+
+    const body = buildRescueQuoteCreateBody(
+      42,
+      [overridden],
+      {
+        ...baseSettings,
+        commissions: {
+          ...baseSettings.commissions,
+          price_multiplier: 1,
+          commission_fixed: 0,
+        },
+      },
+      { ivaRate: 0, roundToTen: false },
+    );
+
+    expect(body!).not.toHaveProperty('blame_data_raw');
+    expect(body!.services[0]!.client_price).toBe('666.67');
+    expect(body!.services[0]!.applied_price).toBe('2000.00');
+    expect(body!.services[0]!.blame_data_raw).toEqual({
+      applied_price: {
+        original: '1080.00',
+        user_id: 7,
+        username: 'operador',
+      },
+    });
+    expect(body!.services[0]!.blame_data_raw).not.toHaveProperty('client_price');
   });
 });

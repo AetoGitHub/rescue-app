@@ -1,5 +1,18 @@
 import type { RescueCommissionType } from '~/interfaces/rescue/company-settings';
 
+export type QuotePriceOverrideSource = 'none' | 'client_price' | 'applied_price';
+
+export interface QuoteBlameField {
+  original: string;
+  user_id: number;
+  username: string;
+}
+
+export interface QuoteLineBlameDataRaw {
+  client_price?: QuoteBlameField;
+  applied_price?: QuoteBlameField;
+}
+
 export interface RescueQuoteServiceCreateBody {
   service: number;
   quantity: number;
@@ -7,10 +20,14 @@ export interface RescueQuoteServiceCreateBody {
   pre_total: string;
   /** Precio a aplicar for this line (before IVA / after money round). */
   applied_price: string;
+  /** Venta AETO unitario (initializer = unit_cost × multiplier, or user override). */
+  client_price: string;
   percenaje_apply?: string;
   amount_applied?: string;
   amount_rounded?: string;
   total: string;
+  /** Per quote line. `null` when the user did not explicitly override venta AETO or applied total. */
+  blame_data_raw: QuoteLineBlameDataRaw | null;
 }
 
 export interface RescueQuoteCreateBody {
@@ -42,10 +59,12 @@ export interface RescueQuoteServiceDetail {
   real_cost: string;
   pre_total: string;
   applied_price?: string | null;
+  client_price?: string | null;
   percenaje_apply: string;
   amount_applied: string;
   amount_rounded: string;
   total: string;
+  blame_data_raw?: QuoteLineBlameDataRaw | null;
 }
 
 export interface RescueQuoteDetail {

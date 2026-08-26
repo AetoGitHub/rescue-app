@@ -115,7 +115,11 @@ function formatMoney(value: string | number | null | undefined): string {
               </td>
               <td class="py-2 pr-3 text-right tabular-nums text-highlighted">
                 {{
-                  guestQuoteDisplayUnitPrice(service.total, service.quantity)
+                  guestQuoteDisplayUnitPrice(
+                    service.total,
+                    service.quantity,
+                    service.client_price,
+                  )
                 }}
               </td>
               <td class="py-2 pr-3 text-right tabular-nums text-muted">

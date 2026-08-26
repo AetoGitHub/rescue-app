@@ -2,10 +2,13 @@ import { catalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.i
 import type { RescueQuoteLine } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
 import type { RescueQuoteDetail } from '~/interfaces/rescue/quote';
+import { parseQuoteLineBlameDataRaw } from '~/utils/quote-line-price-sync';
 import { roundQuoteMoney } from '~/utils/quote-pricing';
 import { findContractItemForService } from '~/utils/rescue-company-settings';
+import { emptyQuoteLinePriceFields } from '~/utils/rescue-quote-lines';
 
-function parseApiMoney(value: string): number {
+function parseApiMoney(value: string | null | undefined): number {
+  if (value == null) return 0;
   const parsed = Number(String(value).replace(/,/g, ''));
   return Number.isFinite(parsed) ? parsed : 0;
 }
@@ -42,6 +45,8 @@ export function mapRescueQuoteDetailFromApi(
         : fromPreTotal > 0
           ? fromPreTotal
           : fromTotal;
+    const fromClientPrice = parseApiMoney(service.client_price);
+    const blame = parseQuoteLineBlameDataRaw(service.blame_data_raw);
 
     return {
       id: crypto.randomUUID(),
@@ -56,7 +61,12 @@ export function mapRescueQuoteDetailFromApi(
         unitCost,
         settings,
       ),
+      ...emptyQuoteLinePriceFields(),
       applied_price: appliedPrice,
+      client_price: fromClientPrice,
+      priceOverrideSource: blame.priceOverrideSource,
+      blame_client_price: blame.blame_client_price,
+      blame_applied_price: blame.blame_applied_price,
     };
   });
 }

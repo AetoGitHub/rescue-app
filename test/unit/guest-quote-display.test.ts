@@ -14,4 +14,8 @@ describe('guestQuoteDisplayUnitPrice', () => {
     expect(guestQuoteDisplayUnitPrice('5000', 0)).toBe('$0');
     expect(guestQuoteDisplayUnitPrice('5000', -1)).toBe('$0');
   });
+
+  it('prefers persisted client_price over total / quantity', () => {
+    expect(guestQuoteDisplayUnitPrice('2000', 3, '666.67')).toBe('$666.67');
+  });
 });

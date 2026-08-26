@@ -11,6 +11,7 @@ import {
   catalogDropdownSelection,
   emptyCatalogDropdownSelection,
 } from '~/interfaces/shared/catalog-dropdown.interface';
+import { emptyQuoteLinePriceFields } from '~/utils/rescue-quote-lines';
 
 const emptyQuoteLine = {
   id: 'line-1',
@@ -18,7 +19,7 @@ const emptyQuoteLine = {
   quantity: 1,
   unit_cost: 0,
   contract_item_id: null as number | null,
-  applied_price: 0,
+  ...emptyQuoteLinePriceFields(),
 };
 
 const validQuoteLine = {
@@ -27,7 +28,7 @@ const validQuoteLine = {
   quantity: 2,
   unit_cost: 500,
   contract_item_id: null as number | null,
-  applied_price: 0,
+  ...emptyQuoteLinePriceFields(),
 };
 
 const baseFormFields = {
@@ -85,6 +86,18 @@ describe('getRescueStepQuoteSchema', () => {
         {
           ...validQuoteLine,
           quantity: 0,
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects negative venta AETO unitario', () => {
+    const result = getRescueStepQuoteSchema('rescue').safeParse({
+      quote_lines: [
+        {
+          ...validQuoteLine,
+          client_price: -1,
         },
       ],
     });

@@ -11,6 +11,8 @@ import {
 } from '~/constants/quote-editor-tabs';
 import {
   DEFAULT_IVA_RATE,
+  QUOTE_DEV_UNLOCK_COPY,
+  QUOTE_LINE_COLUMN_LABELS,
   QUOTE_SUMMARY_LABELS,
 } from '~/constants/quote-pricing';
 import {
@@ -94,6 +96,10 @@ watch(
   },
 );
 
+const { user: sessionUser } = useUserSession();
+
+const isDev = import.meta.dev;
+
 const previousCalculatedByLineId = ref(new Map<string, number>());
 
 const pricing = computed(() =>
@@ -108,6 +114,8 @@ watch(
     pricing.value.lines.map((row) => ({
       id: row.line.id,
       calc: row.lineTotalCalculated,
+      initializer: row.clientPriceInitializer,
+      qty: row.line.quantity,
     })),
   (rows) => {
     const prevMap = previousCalculatedByLineId.value;
@@ -120,16 +128,12 @@ watch(
       const prev = prevMap.get(row.id);
       nextMap.set(row.id, row.calc);
 
-      if (prev == null) {
-        if (!(line.applied_price > 0)) {
-          line.applied_price = row.calc;
-        }
-        continue;
-      }
-
-      if (roundQuoteMoney(line.applied_price) === roundQuoteMoney(prev)) {
-        line.applied_price = row.calc;
-      }
+      syncQuoteLinePricesFromCalculated(
+        line,
+        row.calc,
+        row.initializer,
+        prev,
+      );
     }
 
     previousCalculatedByLineId.value = nextMap;
@@ -139,7 +143,59 @@ watch(
 
 function resetLineAppliedPrice(line: RescueQuoteLine) {
   const row = pricing.value.lines.find((entry) => entry.line.id === line.id);
-  line.applied_price = row?.lineTotalCalculated ?? 0;
+  resetQuoteLinePriceOverrides(
+    line,
+    row?.lineTotalCalculated ?? 0,
+    row?.clientPriceInitializer ?? 0,
+  );
+}
+
+function onClientPriceChange(line: RescueQuoteLine, value: number) {
+  const row = lineRow(line);
+  applyClientPriceOverride(
+    line,
+    value,
+    row?.clientPriceInitializer ?? 0,
+    sessionUser.value,
+  );
+}
+
+function onAppliedPriceChange(line: RescueQuoteLine, value: number) {
+  const row = lineRow(line);
+  applyAppliedPriceOverride(
+    line,
+    value,
+    row?.lineTotalCalculated ?? 0,
+    sessionUser.value,
+  );
+}
+
+function isLinePriceCustom(line: RescueQuoteLine): boolean {
+  const row = lineRow(line);
+  return (
+    line.priceOverrideSource !== 'none'
+    || Boolean(row?.isAppliedPriceCustom)
+    || Boolean(row?.isClientPriceCustom)
+  );
+}
+
+function logDevQuotePayload() {
+  const quote = buildRescueQuoteCreateBody(
+    0,
+    quoteLines.value,
+    settings.value,
+    {
+      clientSellerId: props.clientSellerId,
+      serviceType: props.serviceType,
+    },
+  );
+  console.log('[dev] rescue quote payload', {
+    service_type: props.serviceType,
+    client_id: props.clientId,
+    client_seller_id: props.clientSellerId,
+    quote,
+    quote_lines: quoteLines.value,
+  });
 }
 
 const {
@@ -319,12 +375,24 @@ watch(
             <tr
               class="border-b border-default bg-elevated/50 text-left text-xs uppercase tracking-wide text-muted"
             >
-              <th class="px-3 py-2 font-medium">Servicio</th>
-              <th class="w-24 px-3 py-2 font-medium">Cantidad</th>
-              <th class="w-36 px-3 py-2 font-medium">Costo unit.</th>
-              <th class="w-36 px-3 py-2 font-medium">Tras multiplic.</th>
-              <th class="w-44 px-3 py-2 font-medium">Precio a aplicar</th>
-              <th class="w-32 px-3 py-2 font-medium text-right">Total</th>
+              <th class="px-3 py-2 font-medium">
+                {{ QUOTE_LINE_COLUMN_LABELS.service }}
+              </th>
+              <th class="w-24 px-3 py-2 font-medium">
+                {{ QUOTE_LINE_COLUMN_LABELS.quantity }}
+              </th>
+              <th class="w-36 px-3 py-2 font-medium">
+                {{ QUOTE_LINE_COLUMN_LABELS.technicalUnitCost }}
+              </th>
+              <th class="w-44 px-3 py-2 font-medium">
+                {{ QUOTE_LINE_COLUMN_LABELS.aetoUnit }}
+              </th>
+              <th class="w-44 px-3 py-2 font-medium">
+                {{ QUOTE_LINE_COLUMN_LABELS.appliedPriceTotal }}
+              </th>
+              <th class="w-32 px-3 py-2 font-medium text-right">
+                {{ QUOTE_LINE_COLUMN_LABELS.total }}
+              </th>
               <th class="w-10 px-2 py-2" />
             </tr>
           </thead>
@@ -382,9 +450,35 @@ watch(
                 </UFormField>
               </td>
               <td class="px-3 py-2 align-top">
-                <span class="font-medium tabular-nums">
-                  {{ formatQuoteMoney(lineRow(line)?.afterMultiplier ?? 0) }}
+                <span
+                  v-if="serviceType === 'loan'"
+                  class="font-medium tabular-nums"
+                >
+                  {{ formatQuoteMoney(lineRow(line)?.clientPrice ?? 0) }}
                 </span>
+                <div v-else class="space-y-1">
+                  <UFormField
+                    :name="`quote_lines.${index}.client_price`"
+                    class="min-w-0"
+                  >
+                    <OperationalRescueQuoteLiveNumberInput
+                      :model-value="line.client_price"
+                      :min="0"
+                      @update:model-value="onClientPriceChange(line, $event)"
+                    />
+                  </UFormField>
+                  <p
+                    v-if="isLinePriceCustom(line)"
+                    class="text-xs text-muted tabular-nums"
+                  >
+                    Calculado:
+                    {{
+                      formatQuoteMoney(
+                        lineRow(line)?.clientPriceInitializer ?? 0,
+                      )
+                    }}
+                  </p>
+                </div>
               </td>
               <td class="px-3 py-2 align-top">
                 <span
@@ -400,8 +494,9 @@ watch(
                       class="min-w-0 flex-1"
                     >
                       <OperationalRescueQuoteLiveNumberInput
-                        v-model="line.applied_price"
+                        :model-value="line.applied_price"
                         :min="0"
+                        @update:model-value="onAppliedPriceChange(line, $event)"
                       />
                     </UFormField>
                     <UButton
@@ -410,13 +505,13 @@ watch(
                       variant="ghost"
                       icon="i-lucide-rotate-ccw"
                       size="xs"
-                      :disabled="!lineRow(line)?.isAppliedPriceCustom"
-                      aria-label="Restablecer precio a aplicar"
+                      :disabled="!isLinePriceCustom(line)"
+                      aria-label="Restablecer precios de la fila"
                       @click="resetLineAppliedPrice(line)"
                     />
                   </div>
                   <p
-                    v-if="lineRow(line)?.isAppliedPriceCustom"
+                    v-if="isLinePriceCustom(line)"
                     class="text-xs text-muted tabular-nums"
                   >
                     Calculado:
@@ -460,6 +555,16 @@ watch(
         <UIcon name="i-lucide-plus" class="size-4" />
         Agregar servicio
       </button>
+
+      <UButton
+        v-if="isDev"
+        type="button"
+        color="neutral"
+        variant="outline"
+        icon="i-lucide-bug"
+        :label="QUOTE_DEV_UNLOCK_COPY.simulatePayloadLabel"
+        @click="logDevQuotePayload"
+      />
 
       <div
         v-if="hasQuoteLines"

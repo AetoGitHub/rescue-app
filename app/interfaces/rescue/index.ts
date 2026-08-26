@@ -1,4 +1,8 @@
 import type { CatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
+import type {
+  QuoteBlameField,
+  QuotePriceOverrideSource,
+} from '~/interfaces/rescue/quote';
 
 export type {
   RescueChatMessage,
@@ -77,10 +81,15 @@ export interface RescueQuoteLine {
   /** Set when the line uses a contract/convenio item variant. */
   contract_item_id: number | null;
   /**
-   * Precio a aplicar for this line (before per-line $10 rounding).
+   * Precio a aplicar total for this line (before per-line $10 rounding).
    * When 0 / unset, pricing uses the calculated line total.
    */
   applied_price: number;
+  /** Venta AETO unitario. When 0 / unset, pricing uses unit_cost × multiplier. */
+  client_price: number;
+  priceOverrideSource: QuotePriceOverrideSource;
+  blame_client_price: QuoteBlameField | null;
+  blame_applied_price: QuoteBlameField | null;
 }
 
 export interface RescueCreateBody {

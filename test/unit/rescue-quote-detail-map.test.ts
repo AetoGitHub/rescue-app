@@ -74,12 +74,15 @@ describe('mapRescueQuoteDetailFromApi', () => {
       quantity: 1,
       unit_cost: 500,
       applied_price: 850,
+      client_price: 0,
+      priceOverrideSource: 'none',
     });
     expect(lines[1]).toMatchObject({
       service: { value: 2, label: 'Maniobra' },
       quantity: 2,
       unit_cost: 300,
       applied_price: 900,
+      client_price: 0,
     });
   });
 
@@ -98,6 +101,37 @@ describe('mapRescueQuoteDetailFromApi', () => {
 
     const lines = mapRescueQuoteDetailFromApi(detail);
     expect(lines[0]!.applied_price).toBe(920.5);
+  });
+
+  it('maps client_price and blame_data_raw when present', () => {
+    const detail: RescueQuoteDetail = {
+      ...sampleDetail,
+      services: [
+        {
+          ...sampleDetail.services[0]!,
+          applied_price: '2000.00',
+          client_price: '666.67',
+          blame_data_raw: {
+            applied_price: {
+              original: '1080.00',
+              user_id: 7,
+              username: 'operador',
+            },
+          },
+        },
+      ],
+    };
+
+    const lines = mapRescueQuoteDetailFromApi(detail);
+    expect(lines[0]!.client_price).toBe(666.67);
+    expect(lines[0]!.applied_price).toBe(2000);
+    expect(lines[0]!.priceOverrideSource).toBe('applied_price');
+    expect(lines[0]!.blame_applied_price).toEqual({
+      original: '1080.00',
+      user_id: 7,
+      username: 'operador',
+    });
+    expect(lines[0]!.blame_client_price).toBeNull();
   });
 
   it('infers contract_item_id when unit cost matches convenio price', () => {
