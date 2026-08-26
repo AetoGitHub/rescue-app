@@ -7,7 +7,7 @@ import type {
   RescueCompanyCommissions,
   RescueCompanySettings,
 } from '~/interfaces/rescue/company-settings';
-import { isContractLine } from '~/utils/rescue-company-settings';
+import { getContractItemById, isContractLine } from '~/utils/rescue-company-settings';
 import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import { emptyQuoteLinePriceFields } from '~/utils/rescue-quote-lines';
@@ -36,7 +36,7 @@ export interface QuoteLinePricing {
   appliedPrice: number;
   /** True when applied price differs from lineTotalCalculated. */
   isAppliedPriceCustom: boolean;
-  /** Venta AETO unitario (initializer = unit_cost × multiplier). */
+  /** Venta AETO unitario (convenio = precio de contrato; si no, unit_cost × multiplier). */
   clientPrice: number;
   /** Calculated venta AETO before user override. */
   clientPriceInitializer: number;
@@ -137,9 +137,15 @@ export function quoteClientPriceInitializer(
   unitCost: number,
   priceMultiplier: number,
   isContractLine: boolean,
+  contractPrice?: number | null,
 ): number {
   const unit = Number.isFinite(unitCost) ? unitCost : 0;
-  if (isContractLine) return roundQuoteMoney(unit);
+  if (isContractLine) {
+    if (contractPrice != null && Number.isFinite(contractPrice)) {
+      return roundQuoteMoney(contractPrice);
+    }
+    return roundQuoteMoney(unit);
+  }
   const multiplier = Number.isFinite(priceMultiplier) ? priceMultiplier : 1;
   return roundQuoteMoney(unit * multiplier);
 }
@@ -392,18 +398,25 @@ export function computeQuotePricing(
 
     if (draft.isContractLine) {
       const costSubtotal = roundQuoteMoney(draft.costSubtotal);
-      const { appliedPrice, isAppliedPriceCustom } = resolveLineAppliedPrice(
-        draft.line,
-        costSubtotal,
-      );
-      const { lineTotal, roundingAdd } = applyLineRounding(
-        appliedPrice,
-        roundToTen,
-      );
+      const contractPrice =
+        getContractItemById(settings, draft.line.contract_item_id)?.price ?? null;
       const clientPriceInitializer = quoteClientPriceInitializer(
         draft.line.unit_cost,
         priceMultiplier,
         true,
+        contractPrice,
+      );
+      const sellingTotal = quoteAppliedFromClientPrice(
+        clientPriceInitializer,
+        draft.line.quantity,
+      );
+      const { appliedPrice, isAppliedPriceCustom } = resolveLineAppliedPrice(
+        draft.line,
+        sellingTotal,
+      );
+      const { lineTotal, roundingAdd } = applyLineRounding(
+        appliedPrice,
+        roundToTen,
       );
       const { clientPrice, isClientPriceCustom } = resolveLineClientPrice(
         draft.line,
@@ -419,7 +432,7 @@ export function computeQuotePricing(
         afterMultiplier: costSubtotal,
         fixedShare: 0,
         sellerFixedShare: 0,
-        lineTotalCalculated: costSubtotal,
+        lineTotalCalculated: sellingTotal,
         appliedPrice,
         isAppliedPriceCustom,
         clientPrice,

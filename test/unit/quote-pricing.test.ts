@@ -611,6 +611,31 @@ describe('computeQuotePricing', () => {
     expect(result.lines[0]!.afterMultiplier).toBe(1000);
   });
 
+  it('keeps convenio venta AETO on contract price when unit_cost changes', () => {
+    const result = computeQuotePricing(
+      [
+        line({
+          quantity: 3,
+          unit_cost: 300,
+          contract_item_id: 10,
+        }),
+      ],
+      baseSettings,
+      { ivaRate: 0, roundToTen: false },
+    );
+    const row = result.lines[0]!;
+
+    expect(row.clientPriceInitializer).toBe(500);
+    expect(row.clientPrice).toBe(500);
+    expect(row.isClientPriceCustom).toBe(false);
+    expect(row.costSubtotal).toBe(900);
+    expect(row.lineTotalCalculated).toBe(1500);
+    expect(row.appliedPrice).toBe(1500);
+    expect(row.lineTotal).toBe(1500);
+    expect(row.afterMultiplier).toBe(900);
+    expect(result.profit).toBe(600);
+  });
+
   it('derives venta AETO from applied_price / qty when applied is custom', () => {
     const result = computeQuotePricing(
       [line({ quantity: 3, unit_cost: 360, applied_price: 2000 })],
@@ -632,7 +657,11 @@ describe('quoteClientPriceInitializer', () => {
     expect(quoteClientPriceInitializer(360, 1.1, false)).toBe(396);
   });
 
-  it('returns unit cost for contract lines', () => {
+  it('returns unit cost for contract lines when convenio price is missing', () => {
     expect(quoteClientPriceInitializer(360, 1.1, true)).toBe(360);
+  });
+
+  it('prefers convenio price over unit cost', () => {
+    expect(quoteClientPriceInitializer(300, 1.1, true, 500)).toBe(500);
   });
 });

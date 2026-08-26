@@ -108,6 +108,9 @@ export function applyContractToLine(
     contractItem.service_name,
   );
   line.unit_cost = contractItem.price;
+  if (line.priceOverrideSource === 'none') {
+    line.client_price = contractItem.price;
+  }
 }
 
 export function clearContractFromLine(line: RescueQuoteLine): void {

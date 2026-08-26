@@ -120,6 +120,7 @@ describe('applyContractToLine', () => {
     const line = quoteLine();
     applyContractToLine(line, contractItem);
     expect(line.unit_cost).toBe(500);
+    expect(line.client_price).toBe(500);
     expect(line.contract_item_id).toBe(10);
     expect(line.service.value).toBe(3);
     expect(line.service.label).toBe('Servicio convenio');
@@ -128,6 +129,7 @@ describe('applyContractToLine', () => {
     line.unit_cost = 620;
     applyContractToLine(line, contractItem);
     expect(line.unit_cost).toBe(620);
+    expect(line.client_price).toBe(500);
     expect(line.service).toBe(serviceRef);
   });
 });

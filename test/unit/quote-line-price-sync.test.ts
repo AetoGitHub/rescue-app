@@ -89,6 +89,23 @@ describe('quote line price sync', () => {
     expect(row.priceOverrideSource).toBe('none');
   });
 
+  it('does not move convenio AETO when only unit_cost changes', () => {
+    const row = line({
+      quantity: 3,
+      unit_cost: 500,
+      contract_item_id: 10,
+      client_price: 500,
+      applied_price: 1500,
+    });
+
+    row.unit_cost = 300;
+    syncQuoteLinePricesFromCalculated(row, 1500, 500, 1500);
+
+    expect(row.client_price).toBe(500);
+    expect(row.applied_price).toBe(1500);
+    expect(row.priceOverrideSource).toBe('none');
+  });
+
   it('keeps applied total and back-fills AETO when quantity changes after applied override', () => {
     const row = line({ quantity: 3, unit_cost: 360 });
     applyAppliedPriceOverride(row, 2000, 1080, user);
