@@ -12,6 +12,7 @@ import {
 import {
   DEFAULT_IVA_RATE,
   QUOTE_DEV_UNLOCK_COPY,
+  QUOTE_LINE_COLUMN_GROUPS,
   QUOTE_LINE_COLUMN_LABELS,
   QUOTE_SUMMARY_LABELS,
 } from '~/constants/quote-pricing';
@@ -371,29 +372,82 @@ watch(
         class="overflow-x-auto rounded-lg border border-default"
       >
         <table class="w-full min-w-160 text-sm sm:min-w-275">
+          <colgroup>
+            <col>
+            <col class="w-24">
+          </colgroup>
+          <colgroup>
+            <col class="w-36">
+            <col class="w-44">
+          </colgroup>
+          <col class="w-2">
+          <colgroup>
+            <col class="w-44">
+            <col class="w-32">
+          </colgroup>
+          <col class="w-10">
           <thead>
-            <tr
-              class="border-b border-default bg-elevated/50 text-left text-xs uppercase tracking-wide text-muted"
-            >
-              <th class="px-3 py-2 font-medium">
+            <tr class="text-xs">
+              <th
+                scope="col"
+                rowspan="2"
+                class="border-b border-default bg-default px-3 py-2 text-left align-bottom font-medium uppercase tracking-wide text-muted"
+              >
                 {{ QUOTE_LINE_COLUMN_LABELS.service }}
               </th>
-              <th class="w-24 px-3 py-2 font-medium">
+              <th
+                scope="col"
+                rowspan="2"
+                class="border-b border-default bg-default px-3 py-2 text-left align-bottom font-medium uppercase tracking-wide text-muted"
+              >
                 {{ QUOTE_LINE_COLUMN_LABELS.quantity }}
               </th>
-              <th class="w-36 px-3 py-2 font-medium">
+              <th
+                scope="colgroup"
+                colspan="2"
+                class="border-t-2 border-b border-info bg-info/10 px-3 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-info"
+              >
+                {{ QUOTE_LINE_COLUMN_GROUPS.unit }}
+              </th>
+              <th
+                rowspan="2"
+                aria-hidden="true"
+                class="w-2 border-y border-default bg-accented p-0"
+              />
+              <th
+                scope="colgroup"
+                colspan="2"
+                class="border-t-2 border-b border-primary bg-primary/10 px-3 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-primary"
+              >
+                {{ QUOTE_LINE_COLUMN_GROUPS.lineTotal }}
+              </th>
+              <th
+                rowspan="2"
+                class="border-b border-default bg-default px-2 py-2"
+              />
+            </tr>
+            <tr class="border-b border-default text-left text-xs uppercase tracking-wide text-muted">
+              <th
+                scope="col"
+                class="bg-info/10 px-3 py-2 font-medium"
+              >
                 {{ QUOTE_LINE_COLUMN_LABELS.technicalUnitCost }}
               </th>
-              <th class="w-44 px-3 py-2 font-medium">
+              <th scope="col" class="bg-info/10 px-3 py-2 font-medium">
                 {{ QUOTE_LINE_COLUMN_LABELS.aetoUnit }}
               </th>
-              <th class="w-44 px-3 py-2 font-medium">
+              <th
+                scope="col"
+                class="bg-primary/10 px-3 py-2 font-medium"
+              >
                 {{ QUOTE_LINE_COLUMN_LABELS.appliedPriceTotal }}
               </th>
-              <th class="w-32 px-3 py-2 font-medium text-right">
+              <th
+                scope="col"
+                class="bg-primary/10 px-3 py-2 text-right font-medium"
+              >
                 {{ QUOTE_LINE_COLUMN_LABELS.total }}
               </th>
-              <th class="w-10 px-2 py-2" />
             </tr>
           </thead>
           <tbody>
@@ -441,7 +495,7 @@ watch(
                   />
                 </UFormField>
               </td>
-              <td class="px-3 py-2 align-top sm:w-36">
+              <td class="bg-info/5 px-3 py-2 align-top sm:w-36">
                 <UFormField :name="`quote_lines.${index}.unit_cost`" required>
                   <OperationalRescueQuoteLiveNumberInput
                     v-model="line.unit_cost"
@@ -449,7 +503,7 @@ watch(
                   />
                 </UFormField>
               </td>
-              <td class="px-3 py-2 align-top">
+              <td class="bg-info/5 px-3 py-2 align-top">
                 <span
                   v-if="serviceType === 'loan'"
                   class="font-medium tabular-nums"
@@ -480,7 +534,11 @@ watch(
                   </p>
                 </div>
               </td>
-              <td class="px-3 py-2 align-top">
+              <td
+                aria-hidden="true"
+                class="w-2 bg-accented p-0"
+              />
+              <td class="bg-primary/5 px-3 py-2 align-top">
                 <span
                   v-if="serviceType === 'loan'"
                   class="font-medium tabular-nums"
@@ -519,7 +577,7 @@ watch(
                   </p>
                 </div>
               </td>
-              <td class="px-3 py-2 align-top text-right">
+              <td class="bg-primary/5 px-3 py-2 align-top text-right">
                 <span class="font-semibold tabular-nums text-primary">
                   {{ formatQuoteMoney(lineRow(line)?.lineTotal ?? 0) }}
                 </span>

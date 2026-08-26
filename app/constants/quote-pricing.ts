@@ -21,12 +21,17 @@ export const QUOTE_SUMMARY_LABELS = {
   roundingPerLine: 'Ajuste por redondeo al diez',
 } as const;
 
+export const QUOTE_LINE_COLUMN_GROUPS = {
+  unit: 'Precio unitario',
+  lineTotal: 'Total de la partida',
+} as const;
+
 export const QUOTE_LINE_COLUMN_LABELS = {
   service: 'Servicio',
   quantity: 'Cantidad',
-  technicalUnitCost: 'Costo técnico unitario',
-  aetoUnit: 'Venta AETO unitario',
-  appliedPriceTotal: 'Precio a aplicar total',
+  technicalUnitCost: 'Costo técnico',
+  aetoUnit: 'Venta AETO',
+  appliedPriceTotal: 'Precio a aplicar',
   total: 'Total',
 } as const;
 
