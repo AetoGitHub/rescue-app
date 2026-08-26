@@ -57,10 +57,5 @@
     "playwright-core": "^1.60.0",
     "vitest": "^3.2.4",
     "vue-tsc": "^3.0.5"
-  },
-  "pnpm": {
-    "overrides": {
-      "@vercel/nft": "^0.27.4"
-    }
   }
 }
