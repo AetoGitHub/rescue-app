@@ -4,10 +4,6 @@ import {
   apiFractionToPercentString,
   formatMexicoPhoneInput,
 } from '~/utils/catalog-form';
-import {
-  apiFractionToPercentString,
-  formatMexicoPhoneInput,
-} from '~/utils/catalog-form';
 
 const USER_ROLE_VALUES = new Set<UserRole>(
   USER_ROLE_OPTIONS.map((o) => o.value),
