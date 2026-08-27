@@ -68,6 +68,11 @@ const columns: TableColumn<User>[] = [
     header: 'Rol',
   },
   {
+    id: 'commission',
+    header: 'Comisión',
+    cell: ({ row }) => formatUserCommissionPercent(row.original.commission),
+  },
+  {
     accessorKey: 'phone',
     header: 'Teléfono',
     cell: ({ row }) =>

@@ -1,5 +1,13 @@
 import { USER_ROLE_OPTIONS } from '~/constants/user-select-options';
 import type { UserRole } from '~/interfaces/auth/user';
+import {
+  apiFractionToPercentString,
+  formatMexicoPhoneInput,
+} from '~/utils/catalog-form';
+import {
+  apiFractionToPercentString,
+  formatMexicoPhoneInput,
+} from '~/utils/catalog-form';
 
 const USER_ROLE_VALUES = new Set<UserRole>(
   USER_ROLE_OPTIONS.map((o) => o.value),
@@ -37,8 +45,19 @@ export function mapUserDetail(raw: Record<string, unknown>): UserFormState {
     email: String(raw.email ?? ''),
     role,
     phone: formatMexicoPhoneInput(String(raw.phone ?? '')),
-    commission: String(raw.commission ?? '0.00'),
+    commission: apiFractionToPercentString(String(raw.commission ?? '0.00')),
     password: '',
     is_active: Boolean(raw.is_active ?? true),
   };
+}
+
+/** Lista de usuarios: `0.7` → `70%`. Si el API manda `70`, también muestra `70%`. */
+export function formatUserCommissionPercent(
+  value: string | null | undefined,
+): string {
+  if (value == null || String(value).trim() === '') return '—';
+  const human = Number(apiFractionToPercentString(String(value)));
+  if (!Number.isFinite(human)) return '—';
+  if (human === 0) return '0%';
+  return `${human % 1 === 0 ? human.toFixed(0) : human.toFixed(2).replace(/\.?0+$/, '')}%`;
 }

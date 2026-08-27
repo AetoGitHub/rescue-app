@@ -3,6 +3,7 @@
 ## Pagar (admin)
 
 - `/admin/pagar` — listados operativo/vendedor y carrito (`PAYMENT_OPERATIVE_LIST_PATH`, `PAYMENT_SELLER_LIST_PATH`, `PAYMENT_CART_PATH`, `PAYMENT_CART_PAY_PATH`). Ability: `accessPayments`.
+- Columnas de la tabla (tras checkbox, nombre, folio y tipo): **Tasa**, **Comisión**, **Utilidad**, luego cliente, cierre y estatus.
 - `/admin/pagar/checkout` — checkout del carrito.
 - Crear deuda: `CreateDebtModal` → `POST /api/payment/debt/create/` (schema `payment-debt-create.ts`). Esa ruta API es `accessPayments`; el listado `GET /api/payment/debt/` es `accessMyBalance`.
 

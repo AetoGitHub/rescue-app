@@ -76,6 +76,33 @@ export function useStringNumberModel(
   });
 }
 
+/** Strip a trailing % so "70" and "70%" parse the same. */
+export function parsePercentInput(value: string): number | undefined {
+  return parseStringNumber(value.trim().replace(/%/g, ''));
+}
+
+/**
+ * Form state stores a human percent (`70` / `70%`).
+ * The API stores a fraction (`0.7`).
+ */
+export function percentStringToApiFraction(value: string): string {
+  const parsed = parsePercentInput(value);
+  if (parsed == null) return '0.00';
+  const fraction = parsed / 100;
+  return fraction.toFixed(4).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
+
+/**
+ * API fraction (`0.7`) → form percent string (`70.00`).
+ * Values already stored as 70 stay 70 (legacy rows).
+ */
+export function apiFractionToPercentString(value: string): string {
+  const parsed = parsePercentInput(value);
+  if (parsed == null) return '0.00';
+  const human = parsed <= 1 ? parsed * 100 : parsed;
+  return formatStringNumber(human, 2);
+}
+
 export function usePercentStringNumberModel(
   source: Ref<string>,
   options: StringNumberModelOptions = {},

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { UserCreateBody, UserUpdateBody } from '~/interfaces/auth/user';
-import { USER_ROLE_OPTIONS } from '~/constants/user-select-options';
+import {
+  USER_COMMISSION_FIELD_HELP,
+  USER_ROLE_OPTIONS,
+} from '~/constants/user-select-options';
 import {
   adminUserPasswordResetSchema,
   type AdminUserPasswordResetOutput,
@@ -347,7 +350,12 @@ async function requestPasswordResetSubmit() {
             variant="subtle"
           />
         </UFormField>
-        <UFormField label="Comisión" name="commission" required>
+        <UFormField
+          label="Comisión"
+          name="commission"
+          required
+          :help="USER_COMMISSION_FIELD_HELP"
+        >
           <UInputNumber
             v-model="commissionModel"
             v-bind="catalogPercentInputProps"

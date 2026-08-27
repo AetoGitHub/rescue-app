@@ -426,12 +426,6 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
         ),
     },
     {
-      id: 'client_name',
-      header: 'Cliente',
-      cell: ({ row }) =>
-        h('span', formatOptionalCell(row.original.client_name)),
-    },
-    {
       id: 'service_type',
       header: 'Tipo',
       cell: ({ row }) => {
@@ -443,26 +437,6 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
           label: badge.label,
         });
       },
-    },
-    {
-      id: 'created_at',
-      header: 'Cierre',
-      cell: ({ row }) =>
-        h(
-          'span',
-          { class: 'text-muted' },
-          formatPaymentDate(row.original.created_at),
-        ),
-    },
-    {
-      id: 'profit',
-      header: 'Utilidad',
-      cell: ({ row }) =>
-        h(
-          'span',
-          { class: 'tabular-nums text-primary' },
-          formatRescueCardMoney(row.original.profit),
-        ),
     },
     {
       id: 'commission_rate',
@@ -482,6 +456,32 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
           'span',
           { class: 'tabular-nums text-primary' },
           formatRescueCardMoney(row.original.amount),
+        ),
+    },
+    {
+      id: 'profit',
+      header: 'Utilidad',
+      cell: ({ row }) =>
+        h(
+          'span',
+          { class: 'tabular-nums text-primary' },
+          formatRescueCardMoney(row.original.profit),
+        ),
+    },
+    {
+      id: 'client_name',
+      header: 'Cliente',
+      cell: ({ row }) =>
+        h('span', formatOptionalCell(row.original.client_name)),
+    },
+    {
+      id: 'created_at',
+      header: 'Cierre',
+      cell: ({ row }) =>
+        h(
+          'span',
+          { class: 'text-muted' },
+          formatPaymentDate(row.original.created_at),
         ),
     },
     {

@@ -1,19 +1,17 @@
 import * as z from 'zod';
 import type { UserCreateBody, UserUpdateBody } from '~/interfaces/auth/user';
-
-function parseCommissionPercent(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (trimmed === '') return undefined;
-  const parsed = Number(trimmed.replace(/,/g, ''));
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
+import {
+  normalizeMexicoPhone,
+  parsePercentInput,
+  percentStringToApiFraction,
+} from '~/utils/catalog-form';
 
 const commissionField = z
   .string()
   .transform((s) => s.trim())
   .pipe(
     z.string().refine((s) => {
-      const n = parseCommissionPercent(s);
+      const n = parsePercentInput(s);
       return n != null && n >= 0 && n <= 100;
     }, { error: 'La comisión debe estar entre 0 y 100' }),
   );
@@ -86,7 +84,7 @@ export function userCreateToCreateBody(
     email: input.email,
     role: input.role,
     phone: input.phone,
-    commission: input.commission,
+    commission: percentStringToApiFraction(input.commission),
     password: input.password,
   };
 }
@@ -101,7 +99,7 @@ export function userUpdateToUpdateBody(
     email: input.email,
     role: input.role,
     phone: input.phone,
-    commission: input.commission,
+    commission: percentStringToApiFraction(input.commission),
     is_active: input.is_active,
   };
   return body;
