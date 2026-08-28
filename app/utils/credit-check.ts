@@ -1,7 +1,12 @@
+import { SESSION_EXPIRED_MESSAGE } from '#shared/constants/session';
 import { creditCheckPath } from '~/constants/client-credit-api';
 import type { CreditCheckResponse } from '~/interfaces/catalogs/credit';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
+import {
+  getFetchErrorMessage,
+  getFetchStatusCode,
+} from '~/utils/fetch-error-message';
 import { buildRescueQuoteCreateBody } from '~/utils/rescue-quote-create';
 
 type CreditCheckFetcher = <T>(
@@ -14,9 +19,14 @@ type CreditCheckFetcher = <T>(
   },
 ) => Promise<T>;
 
+export type CreditCheckGateKind = 'insufficient' | 'session' | 'unavailable';
+
 export type CreditCheckGateResult =
   | { ok: true }
-  | { ok: false; message: string };
+  | { ok: false; kind: CreditCheckGateKind; title: string; message: string };
+
+export const CREDIT_CHECK_UNAVAILABLE_TITLE = 'No se pudo validar el crédito';
+export const CREDIT_INSUFFICIENT_TITLE = 'Crédito insuficiente';
 
 /**
  * Validates client credit before creating a quote.
@@ -48,11 +58,32 @@ export async function assertClientCreditForQuote(
     });
 
     if (!response.status) {
-      return { ok: false, message: response.message };
+      return {
+        ok: false,
+        kind: 'insufficient',
+        title: CREDIT_INSUFFICIENT_TITLE,
+        message: response.message,
+      };
     }
 
     return { ok: true };
   } catch (error) {
-    return { ok: false, message: getFetchErrorMessage(error) };
+    const status = getFetchStatusCode(error);
+    const message = getFetchErrorMessage(error);
+    if (status === 401 || status === 403) {
+      return {
+        ok: false,
+        kind: 'session',
+        title: SESSION_EXPIRED_MESSAGE,
+        message,
+      };
+    }
+
+    return {
+      ok: false,
+      kind: 'unavailable',
+      title: CREDIT_CHECK_UNAVAILABLE_TITLE,
+      message,
+    };
   }
 }

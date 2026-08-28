@@ -1,4 +1,6 @@
 import { joinURL, withQuery } from 'ufo';
+import { REQUEST_ID_HEADER } from '#shared/constants/session';
+import { requireProxySession } from '../../utils/django-proxy';
 import { forwardFetchError } from '../../utils/forward-fetch-error';
 import {
   buildQuotePdfUpstreamQuery,
@@ -28,15 +30,7 @@ function quotePdfErrorMessage(body: unknown): string {
 }
 
 export default defineEventHandler(async (event) => {
-  const session = await requireUserSession(event);
-  const token = session.token?.trim();
-
-  if (!token) {
-    throw createError({
-      statusCode: 401,
-      message: 'Sesión no válida',
-    });
-  }
+  const { token, requestId } = await requireProxySession(event);
 
   const rescueId = parseQuotePdfRescueId(getRouterParam(event, 'id'));
   if (rescueId == null) {
@@ -57,6 +51,7 @@ export default defineEventHandler(async (event) => {
   const headers = {
     Authorization: quotePdfAuthorizationHeader(token),
     'Accept-Language': 'es',
+    [REQUEST_ID_HEADER]: requestId,
   };
 
   if (download) {

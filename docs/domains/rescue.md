@@ -28,7 +28,7 @@ Componentes bajo `app/components/operational/rescue-detail/` (tags `OperationalR
 - Botones y validaciones de UI: `app/utils/rescue-operative-flow.ts` y copy en `rescue-operative-flow.ts` (cotización requerida para autorización, evidencias para cerrar, anticipo, crédito en préstamos, etc.).
 - Reclamar: `useRescueClaimMutation` → `/api/rescue/claim/:id/`.
 - Revertir cancelación: motivo desde dropdown `multipurpose` (`cancellation_reason` / `reacceptance_reason`).
-- Cotización: `RescueQuoteEditor`, `useRescueQuoteSave`, `useRescueQuoteDetail`, `useRescueQuotePdf`.
+- Cotización: `RescueQuoteEditor`, `useRescueQuoteSave`, `useRescueQuoteDetail`, `useRescueQuotePdf`. El gate de crédito antes de crear cotización clasifica 401/sesión vs crédito insuficiente vs error de validación.
 - Clasificador IA: `POST /api/quote/classify` (`useQuoteClassifierApply`) → n8n.
 - Proveedor: búsqueda `useRescueSupplierSearch`, assign `useRescueSupplierAssign`, mapa en el wizard.
 - Evidencias: `useRescueEvidenceList` / `useRescueEvidenceCreate`.

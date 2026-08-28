@@ -4,6 +4,7 @@ Sentry.init({
   // If set up, you can use your runtime config here
   // dsn: useRuntimeConfig().public.sentry.dsn,
   dsn: "https://8e300f1d1a565f5f77d14e8a2d49bf67@o4509453945798656.ingest.us.sentry.io/4511872253755392",
+  tunnel: "/tunnel",
 
   // We recommend adjusting this value in production, or using tracesSampler
   // for finer control

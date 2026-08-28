@@ -1,10 +1,13 @@
 import { joinURL, withQuery } from 'ufo';
 import { accessMyBalance } from '#shared/abilities';
 import { buildOperativeBalanceQuery } from '#shared/utils/payment-balance-query';
+import {
+  proxyDjangoRequest,
+  requireProxySession,
+} from '../../../utils/django-proxy';
 
 export default defineEventHandler(async (event) => {
-  const session = await requireUserSession(event);
-  const token = session?.token;
+  const { token, requestId } = await requireProxySession(event);
   const apiUrl = useRuntimeConfig().apiUrl;
 
   await authorize(event, accessMyBalance);
@@ -25,10 +28,5 @@ export default defineEventHandler(async (event) => {
     built,
   );
 
-  return proxyRequest(event, target, {
-    headers: {
-      Authorization: `Token ${token}`,
-      'Accept-Language': 'es',
-    },
-  });
+  return proxyDjangoRequest(event, target, token, requestId);
 });

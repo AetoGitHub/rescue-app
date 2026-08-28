@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
         is_superuser: Boolean(response.is_superuser),
       },
       token: response.token,
+      tokenRefreshedAt: Date.now(),
     },
     { maxAge: SESSION_MAX_AGE },
   );

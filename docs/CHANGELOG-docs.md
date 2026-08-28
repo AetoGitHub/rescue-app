@@ -2,6 +2,12 @@
 
 Registro de cambios al conjunto `docs/` (no al producto).
 
+## 2026-08-28
+
+- Auth/proxy: refresh de token con TTL de 10 min y mutex; 401 `session_expired` si no hay token; `X-Request-Id` hacia Django y de vuelta al browser.
+- Observabilidad: Sentry reporta 401/403 de API (no login) y fallos de sesión en Nitro; el túnel usa el mismo DSN que el client SDK.
+- Cotización: el check de crédito ya no titula cualquier fallo como «Crédito insuficiente».
+
 ## 2026-08-26
 
 - Usuarios: comisión del formulario (`70` / `70%`) se envía como fracción (`0.7`); la lista muestra el campo `commission` del API como porcentaje. El campo tiene helper «escribes 70 y se guarda 0.7».

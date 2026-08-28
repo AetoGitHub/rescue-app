@@ -19,10 +19,13 @@ Campos (`shared/types/auth.d.ts`):
 
 - `user.id`, `user.name`, `user.role`, `user.is_superuser?`
 - `token` (Django Token)
+- `tokenRefreshedAt` (epoch ms; último refresh exitoso)
 
-TTL: `SESSION_MAX_AGE` = 7 días.
+TTL cookie: `SESSION_MAX_AGE` = 7 días.
 
-Refresh: en cada `sessionHooks.fetch`, Nitro pega a Django `/api/auth/refresh/` con el Token actual y sustituye user+token.
+Refresh (`server/utils/auth-refresh.ts`): en `sessionHooks.fetch`, Nitro llama a Django `GET /api/auth/refresh/` **solo** si `isAuthRefreshDue` (TTL `AUTH_REFRESH_TTL_MS` = 10 min). Un mutex por token evita refreshes concurrentes que se pisen. 401/403 → `clearUserSession` + error `data.code = session_expired` (`SESSION_EXPIRED_MESSAGE`). Sin token en sesión el proxy no manda `Authorization: Token undefined`.
+
+El 401 de sesión **no** redirige solo a `/login`; la UI muestra el mensaje estable. Un fallo HTTP del check de crédito (`POST /api/credit/check/`) tampoco se titula «Crédito insuficiente»: eso queda para `status: false` en HTTP 200.
 
 ## Roles (`shared/utils/auth-roles.ts`)
 

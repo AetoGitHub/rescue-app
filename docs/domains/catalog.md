@@ -32,7 +32,7 @@ Constantes `app/constants/client-credit-api.ts`. Composables: `useClientCredit`,
 
 Tipos de cliente (`CLIENT_TYPE_OPTIONS`): `CASH`, `CREDIT`, `PUBLIC`. Facturación (`BILLING_TYPE_OPTIONS`): `DIRECT_INVOICE`, `MANUAL`, `REMISSION`.
 
-Al guardar cliente con crédito, `ClientCreateSlideover` llama `/api/credit/create/` o `/api/credit/update/:id/` además del catálogo.
+Al crear cotización, `assertClientCreditForQuote` llama `POST /api/credit/check/`. Solo `status: false` (HTTP 200) se muestra como «Crédito insuficiente». Un 401/403 es sesión; cualquier otro error es «No se pudo validar el crédito».
 
 ## Contratos
 

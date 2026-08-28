@@ -7,10 +7,11 @@ Este archivo lista **paths que aparecen en el código** de `rescue-app`. No es u
 - Helper: `useApiFetch()` → `useRequestFetch()` (reenvía cookies de sesión en SSR).
 - Destino: mismo origen `/api/...`.
 - Nitro catch-all (`server/api/[...].ts`):
-  - `requireUserSession`
+  - `X-Request-Id` (generado o reenviado)
+  - `requireUserSession` + token no vacío (si no: 401 `session_expired`)
   - `authorize(event, abilityForApiPath(event.path))`
   - Proxy a `runtimeConfig.apiUrl` + el mismo path
-  - Headers: `Authorization: Token <token>`, `Accept-Language: es`
+  - Headers: `Authorization: Token <token>`, `Accept-Language: es`, `X-Request-Id`
 
 ## Autorización por prefijo de path API
 
@@ -48,7 +49,7 @@ Nota: `/api/credit/check/`, `/api/credit/create/`, unlocks, etc. **no** coincide
 | `POST /api/auth/password-reset/request` | ver `server/api/auth/password-reset/request.post.ts` |
 | `POST /api/auth/password-reset/confirm` | ver handler homónimo |
 | `GET /api/auth/api-key/token/` | Token staff para fill-oc (sesión + Api-Key hacia Django) |
-| (servidor) `GET /api/auth/refresh/` | Lo llama Nitro al hidratar sesión, no el browser directamente |
+| (servidor) `GET /api/auth/refresh/` | Lo llama Nitro al hidratar sesión si pasó el TTL de 10 min, no el browser directamente |
 
 ## Paginación
 

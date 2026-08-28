@@ -1,3 +1,8 @@
+import {
+  SESSION_EXPIRED_CODE,
+  SESSION_EXPIRED_MESSAGE,
+} from '#shared/constants/session';
+
 function stringifyDetail(detail: unknown): string | null {
   if (typeof detail === 'string') {
     const s = detail.trim();
@@ -14,7 +19,7 @@ function stringifyDetail(detail: unknown): string | null {
 }
 
 function stringifyFieldErrors(data: Record<string, unknown>): string | null {
-  const skip = new Set(['detail', 'message', 'non_field_errors']);
+  const skip = new Set(['detail', 'message', 'non_field_errors', 'code']);
   const parts: string[] = [];
 
   for (const [key, val] of Object.entries(data)) {
@@ -50,6 +55,25 @@ function containsLikelyUrl(text: string): boolean {
   return /https?:\/\//i.test(text);
 }
 
+const GENERIC_HTTP_REASON =
+  /^(unauthorized|forbidden|bad request|not found|internal server error|bad gateway|gateway timeout|service unavailable|too many requests|conflict|request timeout)$/i;
+
+const OFETCH_STATUS_LINE =
+  /^\[(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\]/i;
+
+const DRF_AUTH_DETAIL =
+  /authentication credentials were not provided|invalid token|token expired|^not authenticated$/i;
+
+export function isUnusableFetchErrorText(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+  if (containsLikelyUrl(trimmed)) return true;
+  if (OFETCH_STATUS_LINE.test(trimmed)) return true;
+  if (GENERIC_HTTP_REASON.test(trimmed)) return true;
+  if (DRF_AUTH_DETAIL.test(trimmed)) return true;
+  return false;
+}
+
 export function extractFetchErrorData(error: unknown): Record<string, unknown> | null {
   if (!error || typeof error !== 'object') return null;
   const err = error as Record<string, unknown>;
@@ -79,6 +103,10 @@ export function getApiDetailMessage(error: unknown): string | null {
   const data = extractFetchErrorData(error);
   if (!data) return null;
   return stringifyDetail(data.detail);
+}
+
+function isSessionExpiredPayload(data: Record<string, unknown> | null): boolean {
+  return data?.code === SESSION_EXPIRED_CODE;
 }
 
 export function getPasswordResetErrorMessage(error: unknown): string {
@@ -157,25 +185,41 @@ export function getSafeLoginErrorMessage(error: unknown): string {
   return 'No se pudo iniciar sesión. Intenta de nuevo.';
 }
 
+function usableApiMessage(data: Record<string, unknown> | null): string | null {
+  if (!data) return null;
+  const fromData = readErrorDataAsString(data);
+  if (fromData && !isUnusableFetchErrorText(fromData)) return fromData;
+  return null;
+}
+
 export function getFetchErrorMessage(error: unknown): string {
   if (!error || typeof error !== 'object') {
     return 'No se pudo completar la operación.';
   }
 
   const data = extractFetchErrorData(error);
-  if (data) {
-    const fromData = readErrorDataAsString(data);
-    if (fromData) return fromData;
+  if (isSessionExpiredPayload(data)) {
+    return SESSION_EXPIRED_MESSAGE;
+  }
+
+  const code = getFetchStatusCode(error);
+  const fromApi = usableApiMessage(data);
+  if (fromApi) return fromApi;
+
+  if (code === 401 || code === 403) {
+    return SESSION_EXPIRED_MESSAGE;
   }
 
   const err = error as Record<string, unknown>;
 
   if (typeof err.statusMessage === 'string' && err.statusMessage.trim()) {
-    return err.statusMessage.trim();
+    const statusMessage = err.statusMessage.trim();
+    if (!isUnusableFetchErrorText(statusMessage)) return statusMessage;
   }
 
   if (typeof err.message === 'string' && err.message.trim()) {
-    return err.message.trim();
+    const msg = err.message.trim();
+    if (!isUnusableFetchErrorText(msg)) return msg;
   }
 
   return 'No se pudo completar la operación.';

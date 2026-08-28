@@ -139,8 +139,11 @@ export function useRescueQuoteSave(
     );
     if (!creditGate.ok) {
       toast.add({
-        title: 'Crédito insuficiente',
-        description: creditGate.message,
+        title: creditGate.title,
+        description:
+          creditGate.message !== creditGate.title
+            ? creditGate.message
+            : undefined,
         color: 'error',
       });
       return false;
