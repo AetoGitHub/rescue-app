@@ -42,6 +42,8 @@ Utils `app/utils/quote-pricing.ts` y constantes `app/constants/quote-pricing.ts`
 
 Venta AETO de un convenio usa el **precio de contrato**, no `unit_cost × multiplicador`.
 
+El **costo técnico** (`unit_cost` / `real_cost`) sí se puede cambiar aunque la línea tenga convenio. Al hidratar, `unit_cost = real_cost / quantity` y el convenio se reconoce por `service_id`, no porque el costo coincida con el precio de contrato. El watcher del editor solo vuelve a poner el precio del convenio cuando el operador **cambia el servicio**, no cuando cargan los settings o se reabre la cotización.
+
 ### Payload de servicios (`blame_data_raw`)
 
 Create y update (`buildRescueQuoteCreateBody` / `buildRescueQuoteUpdateBody` en `app/utils/rescue-quote-create.ts`) envían `services[].blame_data_raw` **siempre**:

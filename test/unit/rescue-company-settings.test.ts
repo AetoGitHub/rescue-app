@@ -134,6 +134,19 @@ describe('applyContractToLine', () => {
     expect(line.service).toBe(serviceRef);
   });
 
+  it('keeps an existing technical cost when first linking a hydrated convenio line', () => {
+    const line = quoteLine({
+      service: catalogDropdownSelection(3, 'Servicio convenio'),
+      unit_cost: 150,
+    });
+
+    applyContractToLine(line, contractItem, { overwritePrices: false });
+
+    expect(line.contract_item_id).toBe(10);
+    expect(line.unit_cost).toBe(150);
+    expect(line.client_price).toBe(500);
+  });
+
   it('does not replace service object identity when the line already has that service id', () => {
     const service = catalogDropdownSelection(3, 'Servicio convenio');
     const line = quoteLine({ service });

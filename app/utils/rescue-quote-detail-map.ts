@@ -15,14 +15,10 @@ function parseApiMoney(value: string | null | undefined): number {
 
 export function inferQuoteLineContractItemId(
   serviceId: number | null,
-  unitCost: number,
   settings: RescueCompanySettings | null | undefined,
 ): number | null {
   if (serviceId == null) return null;
-  const item = findContractItemForService(settings, serviceId);
-  if (item == null) return null;
-  if (roundQuoteMoney(item.price) !== roundQuoteMoney(unitCost)) return null;
-  return item.id;
+  return findContractItemForService(settings, serviceId)?.id ?? null;
 }
 
 export function mapRescueQuoteDetailFromApi(
@@ -59,7 +55,6 @@ export function mapRescueQuoteDetailFromApi(
       unit_cost: unitCost,
       contract_item_id: inferQuoteLineContractItemId(
         service.service_id,
-        unitCost,
         settings,
       ),
       ...emptyQuoteLinePriceFields(),

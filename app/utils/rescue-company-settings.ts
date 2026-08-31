@@ -95,6 +95,7 @@ export function isContractLine(
 export function applyContractToLine(
   line: RescueQuoteLine,
   contractItem: RescueContractItem,
+  options?: { overwritePrices?: boolean },
 ): void {
   // Idempotent: a new `service` object retriggers quote-line watchers and
   // remounts CatalogDropdownSelect (USelectMenu overlay) which freezes the
@@ -112,8 +113,16 @@ export function applyContractToLine(
   } else if (!line.service.label.trim() && contractItem.service_name) {
     line.service.label = contractItem.service_name;
   }
-  line.unit_cost = contractItem.price;
-  if (line.priceOverrideSource === 'none') {
+
+  // Keep hydrated / edited technical cost. Convenio is only the default
+  // when the operator just picked the service (or the line is still empty).
+  const overwritePrices = options?.overwritePrices ?? line.unit_cost <= 0;
+  if (overwritePrices) {
+    line.unit_cost = contractItem.price;
+    if (line.priceOverrideSource === 'none') {
+      line.client_price = contractItem.price;
+    }
+  } else if (line.priceOverrideSource === 'none' && !(line.client_price > 0)) {
     line.client_price = contractItem.price;
   }
 }

@@ -233,7 +233,10 @@ function lineRow(line: RescueQuoteLine) {
   return pricing.value.lines.find((row) => row.line.id === line.id);
 }
 
-function syncLineContract(line: RescueQuoteLine) {
+function syncLineContract(
+  line: RescueQuoteLine,
+  overwritePrices = false,
+) {
   if (line.service.value == null) {
     clearContractFromLine(line);
     return;
@@ -241,7 +244,7 @@ function syncLineContract(line: RescueQuoteLine) {
 
   const item = findContractItemForService(settings.value, line.service.value);
   if (item) {
-    applyContractToLine(line, item);
+    applyContractToLine(line, item, { overwritePrices });
     return;
   }
 
@@ -273,9 +276,13 @@ watch(
     () => quoteLines.value.map((line) => line.service.value ?? '').join(','),
     settings,
   ],
-  () => {
-    for (const line of quoteLines.value) {
-      syncLineContract(line);
+  ([serviceKey], previous) => {
+    const prevIds = (previous?.[0] ?? '').split(',');
+    const nextIds = serviceKey.split(',');
+    for (const [index, line] of quoteLines.value.entries()) {
+      const serviceChanged =
+        previous != null && prevIds[index] !== nextIds[index];
+      syncLineContract(line, serviceChanged);
     }
   },
 );

@@ -134,11 +134,30 @@ describe('mapRescueQuoteDetailFromApi', () => {
     expect(lines[0]!.blame_client_price).toBeNull();
   });
 
-  it('infers contract_item_id when unit cost matches convenio price', () => {
+  it('infers contract_item_id when the service is on the convenio', () => {
     const lines = mapRescueQuoteDetailFromApi(sampleDetail, baseSettings);
 
     expect(lines[0]!.contract_item_id).toBe(10);
     expect(lines[1]!.contract_item_id).toBeNull();
+  });
+
+  it('keeps a modified technical cost and still marks the convenio line', () => {
+    const detail: RescueQuoteDetail = {
+      ...sampleDetail,
+      technical_cost: '450.00',
+      services: [
+        {
+          ...sampleDetail.services[0]!,
+          quantity: 3,
+          real_cost: '450.00',
+        },
+      ],
+    };
+
+    const lines = mapRescueQuoteDetailFromApi(detail, baseSettings);
+
+    expect(lines[0]!.unit_cost).toBe(150);
+    expect(lines[0]!.contract_item_id).toBe(10);
   });
 
   it('uses stable ids from the API service row', () => {

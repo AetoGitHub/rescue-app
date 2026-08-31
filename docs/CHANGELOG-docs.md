@@ -2,6 +2,10 @@
 
 Registro de cambios al conjunto `docs/` (no al producto).
 
+## 2026-08-31
+
+- Cotización: el costo técnico de una línea convenio se puede modificar; al recargar ya no se pisa con el precio de contrato.
+
 ## 2026-08-28
 
 - Auth/proxy: refresh de token con TTL de 10 min y mutex; 401 `session_expired` si no hay token; `X-Request-Id` hacia Django y de vuelta al browser.

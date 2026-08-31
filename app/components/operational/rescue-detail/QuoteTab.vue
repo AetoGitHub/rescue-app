@@ -157,7 +157,6 @@ watch(companySettings, (settings) => {
     if (line.contract_item_id != null) continue;
     const inferred = inferQuoteLineContractItemId(
       line.service.value,
-      line.unit_cost,
       settings,
     );
     if (inferred != null) {
