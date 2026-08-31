@@ -13,14 +13,23 @@ Ability de estas rutas: `accessAdministrative` (admin).
 - Mutaciones: `useRescueAdministrativeMutation` → `change_admin_status` o `administrative/change_phase` (legacy OC).
 - Detalle: `app/components/administrative/rescue-detail/` (`AdministrativeRescueDetail*`).
 - Refresh cruzado: path Firebase `rescue_2/counters/general/administrative_view_refresh`.
+- Resumen por columna: `GET /api/rescue/administrative/cards/summary/` (`RESCUE_ADMINISTRATIVE_CARDS_SUMMARY_PATH`). El badge de la columna y el total de «N resultados» del kanban usan el **`count` del backend**, no el número de tarjetas ya cargadas. El mapper acepta `sub_total` (canónico) o `subtotal` (alias).
 
 ## Por facturar
 
-`/admin/por-facturar` — dashboard de facturas pendientes (`PENDING_INVOICE_LIST_PATH` y agregados `by_responsible`, `company_matrix`). Componentes `app/components/pending-invoice/`.
+`/admin/por-facturar` — `app/pages/admin/por-facturar/index.vue`. Lista: `GET /api/dashboard/pending_invoice/` (`PENDING_INVOICE_LIST_PATH`). Agregados: `by_responsible`, `company_matrix`. Componentes `app/components/pending-invoice/`.
+
+- Resumen: `GET /api/dashboard/pending_invoice/summary/` (`PENDING_INVOICE_SUMMARY_PATH`, `usePendingInvoiceSummary`). Mismos filtros de dropdown que la lista (sin `cursor` ni `ordering`).
+- Totales de cabecera y toolbar: **`count`** (eventos) y **`sub_total`** etiquetado **Total sin IVA**. No se suman las filas cargadas en el cliente.
+- Scroll infinito de detalle: `useInfiniteQuery` + `getNextCursorPageParam`. `loadNextPage` no dispara si `isFetchingNextPage` / `isPending`, ni cuando `next` es null o no trae `cursor` (`canLoadNextCursorPage` en `catalog-pagination.ts`).
 
 ## Por cobrar
 
-`/admin/por-cobrar` — `PENDING_CHARGE_LIST_PATH` y dropdowns de compañías/clientes. Componentes `app/components/pending-charge/`.
+`/admin/por-cobrar` — `app/pages/admin/por-cobrar/index.vue`. Lista: `GET /api/dashboard/pending_charge/` (`PENDING_CHARGE_LIST_PATH`). Componentes `app/components/pending-charge/`.
+
+- Resumen: `GET /api/dashboard/pending_charge/summary/` (`PENDING_CHARGE_SUMMARY_PATH`, `usePendingChargeSummary`). Mismos filtros `company` / `client` / `status` que la lista.
+- Totales: **`count`** (clientes) y **`sub_total`** como **Total sin IVA**.
+- El load-more de la tabla usa el mismo guard de cursor que Por facturar.
 
 ## Dashboard genérico
 

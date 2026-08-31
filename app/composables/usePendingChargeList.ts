@@ -69,7 +69,8 @@ export function usePendingChargeList() {
     data,
     asyncStatus,
     hasNextPage,
-    loadNextPage,
+    loadNextPage: fetchNextPage,
+    isPending,
     error,
     refresh,
   } = useInfiniteQuery<
@@ -101,17 +102,36 @@ export function usePendingChargeList() {
     ),
   );
 
-  const summary = computed(() => summarizePendingChargeRows(rows.value));
+  const isFetchingNextPage = ref(false);
 
   const isInitialLoading = computed(
     () =>
-      asyncStatus.value === 'loading'
+      (asyncStatus.value === 'loading' || isPending.value)
       && rows.value.length === 0
       && error.value == null,
   );
   const isLoadingMore = computed(
-    () => asyncStatus.value === 'loading' && rows.value.length > 0,
+    () =>
+      isFetchingNextPage.value
+      || (asyncStatus.value === 'loading' && rows.value.length > 0),
   );
+
+  function loadNextPage() {
+    if (
+      !canLoadNextCursorPage({
+        hasNextPage: hasNextPage.value,
+        isFetchingNextPage: isFetchingNextPage.value,
+        isPending: isPending.value || asyncStatus.value === 'loading',
+      })
+    ) {
+      return;
+    }
+
+    isFetchingNextPage.value = true;
+    return Promise.resolve(fetchNextPage()).finally(() => {
+      isFetchingNextPage.value = false;
+    });
+  }
   const isError = computed(() => error.value != null);
   const errorMessage = computed(
     () => (error.value != null ? getFetchErrorMessage(error.value) : ''),
@@ -152,10 +172,12 @@ export function usePendingChargeList() {
     selectedClients,
     selectedStatuses,
     companyQuery,
+    clientQuery,
+    statusQuery,
     ordering,
-    summary,
     isInitialLoading,
     isLoadingMore,
+    isFetchingNextPage,
     isError,
     errorMessage,
     asyncStatus,

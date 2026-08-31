@@ -52,7 +52,13 @@ export function usePendingInvoiceByResponsible() {
   watch(
     [hasNextPage, asyncStatus],
     ([canLoadMore, status]) => {
-      if (canLoadMore && status !== 'loading') {
+      if (
+        canLoadNextCursorPage({
+          hasNextPage: canLoadMore,
+          isFetchingNextPage: status === 'loading',
+          isPending: status === 'loading',
+        })
+      ) {
         void loadNextPage();
       }
     },

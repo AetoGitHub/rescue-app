@@ -5,15 +5,29 @@ useHead({
   title: 'Por cobrar',
 });
 
-const { summary, selectedCompanies } = usePendingChargeList();
+const { selectedCompanies } = usePendingChargeList();
+const {
+  summary,
+  isLoading: isSummaryLoading,
+  isError: isSummaryError,
+} = usePendingChargeSummary();
 
-const headerSubtitle = computed(() => {
-  const base = `${formatPendingInvoiceHeaderDate()} · ${summary.value.clientes} cliente${summary.value.clientes === 1 ? '' : 's'} · ${formatPendingInvoiceMoney(summary.value.total)} con IVA · Facturado sin pagar`;
+const summaryCountLabel = computed(() =>
+  isSummaryError.value ? '—' : String(summary.value.count),
+);
+const summaryTotalLabel = computed(() =>
+  isSummaryError.value
+    ? '—'
+    : formatPendingInvoiceMoney(summary.value.sub_total),
+);
 
+const headerContext = computed(() => {
   const companyCount = selectedCompanies.value.length;
-  if (companyCount === 0) return base;
-
-  return `${base} · ${companyCount} compañía${companyCount === 1 ? '' : 's'}`;
+  const companyLabel =
+    companyCount > 0
+      ? ` · ${companyCount} compañía${companyCount === 1 ? '' : 's'}`
+      : '';
+  return `${formatPendingInvoiceHeaderDate()} · Facturado sin pagar${companyLabel}`;
 });
 </script>
 
@@ -38,11 +52,47 @@ const headerSubtitle = computed(() => {
               Por cobrar
             </h1>
             <p class="text-sm text-muted">
-              {{ headerSubtitle }}
+              {{ headerContext }}
             </p>
           </div>
 
-          <PendingChargeCompanyFilter class="shrink-0" />
+          <div class="flex flex-wrap items-end gap-6 sm:justify-end">
+            <div class="flex flex-col gap-0.5">
+              <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
+                Clientes
+              </p>
+              <p
+                v-if="isSummaryLoading"
+                class="text-lg font-semibold tabular-nums text-muted"
+              >
+                …
+              </p>
+              <p
+                v-else
+                class="text-lg font-semibold tabular-nums text-highlighted"
+              >
+                {{ summaryCountLabel }}
+              </p>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
+                Total sin IVA
+              </p>
+              <p
+                v-if="isSummaryLoading"
+                class="text-lg font-semibold tabular-nums text-muted"
+              >
+                …
+              </p>
+              <p
+                v-else
+                class="text-lg font-semibold tabular-nums text-highlighted"
+              >
+                {{ summaryTotalLabel }}
+              </p>
+            </div>
+            <PendingChargeCompanyFilter class="shrink-0" />
+          </div>
         </div>
 
         <PendingChargeDetailTab />

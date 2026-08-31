@@ -8,7 +8,6 @@ import { PENDING_INVOICE_DETAIL_COLUMNS } from '~/constants/pending-invoice';
 import {
   filterPendingInvoiceRows,
   sortPendingInvoiceRows,
-  summarizePendingInvoiceRows,
 } from '~/utils/pending-invoice-aggregate';
 import {
   downloadPendingInvoiceEvidenceZip,
@@ -32,6 +31,11 @@ const {
   selectedAuthorizers,
   clearDetailDropdownFilters,
 } = usePendingInvoiceList();
+const {
+  summary,
+  isLoading: isSummaryLoading,
+  isError: isSummaryError,
+} = usePendingInvoiceSummary();
 const controller = usePendingInvoiceColumnFilters();
 const apiFetch = useApiFetch();
 const toast = useToast();
@@ -84,8 +88,6 @@ const filtering = computed(
     debouncedSearch.value.trim().length > 0
     || activeFilterCount.value > 0,
 );
-
-const summary = computed(() => summarizePendingInvoiceRows(filteredRows.value));
 
 const commentRow = ref<PendingInvoiceRow | null>(null);
 const isCommentOpen = ref(false);
@@ -154,8 +156,10 @@ async function onEvidenceZip(
   <div class="flex min-h-0 flex-1 flex-col gap-3">
     <PendingInvoiceDetailToolbar
       v-model:search="search"
-      :event-count="summary.eventos"
-      :total="summary.total"
+      :event-count="summary.count"
+      :sub-total="summary.sub_total"
+      :is-summary-loading="isSummaryLoading"
+      :is-summary-error="isSummaryError"
       :active-filter-count="activeFilterCount"
       @clear-filters="onClearFilters"
     />

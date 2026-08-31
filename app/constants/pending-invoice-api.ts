@@ -1,5 +1,8 @@
 export const PENDING_INVOICE_LIST_PATH = '/api/dashboard/pending_invoice/';
 
+export const PENDING_INVOICE_SUMMARY_PATH =
+  '/api/dashboard/pending_invoice/summary/';
+
 export const PENDING_INVOICE_BY_RESPONSIBLE_PATH =
   '/api/dashboard/by_responsible/';
 
@@ -11,6 +14,9 @@ export const PENDING_INVOICE_DEFAULT_ADMIN_STATUS =
   'unattended,in_remittance' as const;
 
 export const PENDING_INVOICE_LIST_QUERY_KEY = 'pending-invoice-list' as const;
+
+export const PENDING_INVOICE_SUMMARY_QUERY_KEY =
+  'pending-invoice-summary' as const;
 
 export const PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY =
   'pending-invoice-by-responsible' as const;

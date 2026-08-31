@@ -14,7 +14,6 @@ import type {
 } from '~/interfaces/invoicing/pending-invoice';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { mapPendingInvoiceApiRow } from '~/utils/pending-invoice-map';
-import { summarizePendingInvoiceRows } from '~/utils/pending-invoice-aggregate';
 import {
   pendingInvoiceCsvIdQuery,
   pendingInvoiceOrderingParam,
@@ -102,7 +101,8 @@ export function usePendingInvoiceList() {
     data,
     asyncStatus,
     hasNextPage,
-    loadNextPage,
+    loadNextPage: fetchNextPage,
+    isPending,
     error,
     refresh,
   } = useInfiniteQuery<
@@ -139,17 +139,36 @@ export function usePendingInvoiceList() {
 
   const scopedRows = computed(() => rows.value);
 
-  const summary = computed(() => summarizePendingInvoiceRows(scopedRows.value));
+  const isFetchingNextPage = ref(false);
 
   const isInitialLoading = computed(
     () =>
-      asyncStatus.value === 'loading' &&
+      (asyncStatus.value === 'loading' || isPending.value) &&
       rows.value.length === 0 &&
       error.value == null,
   );
   const isLoadingMore = computed(
-    () => asyncStatus.value === 'loading' && rows.value.length > 0,
+    () =>
+      isFetchingNextPage.value
+      || (asyncStatus.value === 'loading' && rows.value.length > 0),
   );
+
+  function loadNextPage() {
+    if (
+      !canLoadNextCursorPage({
+        hasNextPage: hasNextPage.value,
+        isFetchingNextPage: isFetchingNextPage.value,
+        isPending: isPending.value || asyncStatus.value === 'loading',
+      })
+    ) {
+      return;
+    }
+
+    isFetchingNextPage.value = true;
+    return Promise.resolve(fetchNextPage()).finally(() => {
+      isFetchingNextPage.value = false;
+    });
+  }
   const isError = computed(() => error.value != null);
   const errorMessage = computed(
     () => (error.value != null ? getFetchErrorMessage(error.value) : ''),
@@ -208,12 +227,16 @@ export function usePendingInvoiceList() {
     selectedVehicles,
     selectedAuthorizers,
     companyQuery,
+    clientQuery,
+    operatorQuery,
+    vehicleQuery,
+    authorizerQuery,
     ordering,
     activeTab,
     scopedRows,
-    summary,
     isInitialLoading,
     isLoadingMore,
+    isFetchingNextPage,
     isError,
     errorMessage,
     asyncStatus,

@@ -16,6 +16,11 @@ const {
   selectedStatuses,
   clearDetailFilters,
 } = usePendingChargeList();
+const {
+  summary,
+  isLoading: isSummaryLoading,
+  isError: isSummaryError,
+} = usePendingChargeSummary();
 const controller = usePendingChargeColumnFilters();
 
 const search = ref('');
@@ -62,8 +67,6 @@ const filtering = computed(
     || activeFilterCount.value > 0,
 );
 
-const summary = computed(() => summarizePendingChargeRows(filteredRows.value));
-
 function onClearFilters() {
   controller.clearAll();
   clearDetailFilters();
@@ -74,8 +77,10 @@ function onClearFilters() {
   <div class="flex min-h-0 flex-1 flex-col gap-3">
     <PendingChargeDetailToolbar
       v-model:search="search"
-      :client-count="summary.clientes"
-      :total="summary.total"
+      :client-count="summary.count"
+      :sub-total="summary.sub_total"
+      :is-summary-loading="isSummaryLoading"
+      :is-summary-error="isSummaryError"
       :active-filter-count="activeFilterCount"
       @clear-filters="onClearFilters"
     />

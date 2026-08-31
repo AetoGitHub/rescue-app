@@ -1,6 +1,12 @@
 export const PENDING_CHARGE_LIST_PATH = '/api/dashboard/pending_charge/';
 
+export const PENDING_CHARGE_SUMMARY_PATH =
+  '/api/dashboard/pending_charge/summary/';
+
 export const PENDING_CHARGE_LIST_QUERY_KEY = 'pending-charge-list' as const;
+
+export const PENDING_CHARGE_SUMMARY_QUERY_KEY =
+  'pending-charge-summary' as const;
 
 export const PENDING_CHARGE_COMPANIES_DROPDOWN_PATH =
   '/api/dashboard/pending_charge/companies/dropdown/' as const;

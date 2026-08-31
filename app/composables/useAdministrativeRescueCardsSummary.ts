@@ -23,7 +23,7 @@ export function useAdministrativeRescueCardsSummary(
       ...administrativeCardsApiFiltersKey(filtersValue.value, statusValue.value),
     ],
     query: ({ signal }) =>
-      apiFetch<AdministrativeRescueCardsSummary>(
+      apiFetch<unknown>(
         RESCUE_ADMINISTRATIVE_CARDS_SUMMARY_PATH,
         {
           query: queryParams.value,
@@ -32,7 +32,11 @@ export function useAdministrativeRescueCardsSummary(
       ),
   });
 
-  const subtotal = computed(() => data.value?.subtotal ?? 0);
+  const mapped = computed<AdministrativeRescueCardsSummary | null>(() =>
+    data.value != null ? mapAdministrativeCardsSummary(data.value) : null,
+  );
+  const count = computed(() => mapped.value?.count ?? 0);
+  const subtotal = computed(() => mapped.value?.sub_total ?? 0);
   const subtotalLabel = computed(() =>
     error.value != null ? '—' : formatRescueCardMoney(subtotal.value),
   );
@@ -40,7 +44,8 @@ export function useAdministrativeRescueCardsSummary(
   const isError = computed(() => error.value != null);
 
   return {
-    data,
+    data: mapped,
+    count,
     subtotal,
     subtotalLabel,
     isLoading,

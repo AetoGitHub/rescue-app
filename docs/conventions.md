@@ -74,6 +74,7 @@ interface PaginatedResponse<T> {
 - Aplanar: `flattenPaginatedPages`.
 - Listas nuevas: `useCatalogInfiniteList` o el mismo patrón.
 - Auth: `useApiFetch()`, no `$fetch` desnudo en páginas/composables autenticados.
+- Load-more: no disparar si ya hay fetch en curso (`isFetchingNextPage` / `asyncStatus === 'loading'` / `isPending`). Parar cuando `hasNextPage` es false (`next` null o sin `cursor`). Guard: `canLoadNextCursorPage`.
 
 Alegra y APIs cuyo `next` es un offset (string tipo `"30"`): `getNextOffsetPageParam` (mismo archivo).
 

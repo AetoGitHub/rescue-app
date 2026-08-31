@@ -56,3 +56,22 @@ export function flattenPaginatedPages<T>(
 ): T[] {
   return pages?.flatMap((page) => page.results) ?? [];
 }
+
+export interface CursorLoadMoreGuardInput {
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  isPending?: boolean;
+}
+
+/**
+ * Load-more may run only when a cursor page exists and no fetch is in flight.
+ * `hasNextPage` must already come from `getNextCursorPageParam` (null `next`
+ * or a `next` without `cursor` → false).
+ */
+export function canLoadNextCursorPage(
+  input: CursorLoadMoreGuardInput,
+): boolean {
+  if (input.isFetchingNextPage) return false;
+  if (input.isPending) return false;
+  return input.hasNextPage;
+}

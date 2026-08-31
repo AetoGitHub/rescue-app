@@ -53,20 +53,22 @@ defineExpose({
         <div class="flex shrink-0 items-center gap-1.5">
           <USkeleton
             v-if="isSubtotalLoading"
-            class="h-4 w-16"
+            class="h-4 w-24"
           />
-          <span
-            v-else-if="subtotalLabel"
-            class="text-xs font-semibold tabular-nums text-highlighted"
-          >
-            {{ subtotalLabel }}
-          </span>
-          <UBadge
-            color="neutral"
-            variant="soft"
-            size="sm"
-            :label="String(count)"
-          />
+          <template v-else>
+            <span
+              v-if="subtotalLabel"
+              class="text-xs font-semibold tabular-nums text-highlighted"
+            >
+              {{ subtotalLabel }}
+            </span>
+            <UBadge
+              color="neutral"
+              variant="soft"
+              size="sm"
+              :label="String(count)"
+            />
+          </template>
         </div>
       </div>
     </div>

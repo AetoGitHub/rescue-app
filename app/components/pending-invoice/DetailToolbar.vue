@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { PENDING_INVOICE_SEARCH_PLACEHOLDER } from '~/constants/pending-invoice';
-import { formatPendingInvoiceMoney } from '~/utils/pending-invoice-display';
 
 const props = defineProps<{
   eventCount: number;
-  total: number;
+  subTotal: number;
   activeFilterCount: number;
+  isSummaryLoading?: boolean;
+  isSummaryError?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -14,10 +15,10 @@ const emit = defineEmits<{
 
 const search = defineModel<string>('search', { required: true });
 
-const summaryLabel = computed(
-  () =>
-    `${props.eventCount} evento${props.eventCount === 1 ? '' : 's'} · ${formatPendingInvoiceMoney(props.total)} c/IVA`,
-);
+const countLabel = computed(() => {
+  const count = props.eventCount;
+  return `${count} evento${count === 1 ? '' : 's'}`;
+});
 
 // ZIP por compañía — deshabilitado de momento (endpoint/flujo pendiente).
 // import { PENDING_INVOICE_ZIP_TOAST } from '~/constants/pending-invoice';
@@ -67,8 +68,28 @@ const summaryLabel = computed(
     />
 
     <div class="flex items-center gap-3 sm:ms-auto">
-      <p class="text-sm whitespace-nowrap text-muted">
-        {{ summaryLabel }}
+      <p
+        v-if="isSummaryLoading"
+        class="text-sm whitespace-nowrap text-muted"
+      >
+        …
+      </p>
+      <p
+        v-else-if="isSummaryError"
+        class="text-sm whitespace-nowrap text-muted"
+      >
+        —
+      </p>
+      <p
+        v-else
+        class="text-sm whitespace-nowrap text-muted"
+      >
+        {{ countLabel }}
+        <span class="text-dimmed">·</span>
+        <span class="font-medium text-highlighted">Total sin IVA</span>
+        <span class="font-semibold tabular-nums text-highlighted">
+          {{ formatPendingInvoiceMoney(subTotal) }}
+        </span>
       </p>
       <!--
       <UButton

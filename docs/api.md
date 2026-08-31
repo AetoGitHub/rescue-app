@@ -101,7 +101,7 @@ Invitado (token en URL; handlers Nitro dedicados):
 | `GET /api/rescue/administrative/cards/` | Kanban (`status` requerido en comentarios del kanban) |
 | `GET /api/rescue/administrative/list/` | Lista |
 | `GET /api/rescue/administrative/cards/:id/` | Detalle |
-| `GET /api/rescue/administrative/cards/summary/` | Resumen |
+| `GET /api/rescue/administrative/cards/summary/` | Resumen por columna (`count`, `sub_total` / `subtotal`, `total`, `net_profit`) |
 | `POST /api/rescue/change_admin_status/:id/` | Transición de billing |
 | `POST /api/rescue/administrative/change_phase/:id/` | Marcado `@deprecated` para OC hasta confirmar contrato |
 | `POST /api/rescue/administrative/revert_cancellation/:id/` | Revertir cancelación admin |
@@ -145,8 +145,11 @@ Invitado (token en URL; handlers Nitro dedicados):
 - `/api/payment/debt/`, `/api/payment/debt/create/`
 - `/api/payment/receipt/` y `/api/payment/receipt/:id/`
 - Handler Nitro extra: `GET /api/payment/balance/operative` (`server/api/payment/balance/operative.get.ts`) — existe además del path con slash en constants; no asumir que son el mismo contrato sin leer ambos.
-- `/api/dashboard/pending_invoice/`, `by_responsible/`, `company_matrix/`
-- Dropdowns `pending_invoice` y `pending_charge` bajo `/api/dashboard/...`
+- `/api/dashboard/pending_invoice/`, `/api/dashboard/pending_invoice/summary/`
+- `/api/dashboard/pending_invoice/` dropdowns (`companies`, `clients`, `operators`, `vehicles`, `authorizers`)
+- `/api/dashboard/by_responsible/`, `/api/dashboard/company_matrix/`
+- `/api/dashboard/pending_charge/`, `/api/dashboard/pending_charge/summary/`
+- `/api/dashboard/pending_charge/` dropdowns (`companies`, `clients`)
 
 ## Configuración y usuarios
 

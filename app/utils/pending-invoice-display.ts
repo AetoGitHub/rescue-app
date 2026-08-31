@@ -171,3 +171,10 @@ export function formatOptionalPendingCell(value: string | null | undefined): str
   const trimmed = value?.trim();
   return trimmed ? trimmed : '—';
 }
+
+/** Backend `sub_total` labeled as the portfolio total without IVA. */
+export function formatDashboardSummarySinIva(
+  subTotal: number,
+): string {
+  return `Total sin IVA ${formatPendingInvoiceMoney(subTotal)}`;
+}

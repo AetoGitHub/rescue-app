@@ -35,8 +35,10 @@ const {
 } = useAdministrativeRescueCards(() => props.status, () => props.filters);
 
 const {
+  count: backendCount,
   subtotalLabel,
   isLoading: isSubtotalLoading,
+  isError: isSummaryError,
   refresh: refreshSummary,
 } = useAdministrativeRescueCardsSummary(() => props.status, () => props.filters);
 
@@ -44,10 +46,15 @@ const displayRows = computed(() =>
   filterAdministrativeCardsLocally(rows.value, props.filters),
 );
 
+const columnCount = computed(() =>
+  isSummaryError.value ? 0 : backendCount.value,
+);
+
 watch(
-  displayRows,
-  (cards) => {
-    emit('count', props.status, cards.length);
+  [columnCount, isSubtotalLoading],
+  ([count, loading]) => {
+    if (loading) return;
+    emit('count', props.status, count);
   },
   { immediate: true },
 );
@@ -96,7 +103,7 @@ function retryColumn() {
     :subtotal-label="subtotalLabel"
     :is-subtotal-loading="isSubtotalLoading"
     :items="displayRows"
-    :count="displayRows.length"
+    :count="columnCount"
     :is-initial-loading="isInitialLoading"
     :is-loading-more="isLoadingMore"
     :is-error="columnHasError"

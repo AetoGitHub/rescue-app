@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   daysSemaphoreColor,
+  formatDashboardSummarySinIva,
   formatMatrixMonthLabel,
+  formatPendingInvoiceMoney,
   matrixCellAgeClass,
   monthsBehindCurrent,
   needsAttention,
@@ -84,6 +86,14 @@ describe('pending-invoice-display', () => {
     it('does not flag when OC exists or status differs', () => {
       expect(needsAttention({ status: 'En remisión', oc: 'OC-123' })).toBe(false);
       expect(needsAttention({ status: 'Sin atender', oc: null })).toBe(false);
+    });
+  });
+
+  describe('formatDashboardSummarySinIva', () => {
+    it('labels the backend sub_total as Total sin IVA', () => {
+      expect(formatDashboardSummarySinIva(1500)).toBe(
+        `Total sin IVA ${formatPendingInvoiceMoney(1500)}`,
+      );
     });
   });
 });

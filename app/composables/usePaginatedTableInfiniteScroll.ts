@@ -30,22 +30,33 @@ export function usePaginatedTableInfiniteScroll(
     return options.tableRef.value?.$el ?? null;
   }
 
+  const isFetchingNextPage = ref(false);
+
+  function canLoad() {
+    return canLoadNextCursorPage({
+      hasNextPage: options.hasNextPage.value,
+      isFetchingNextPage: isFetchingNextPage.value,
+      isPending: options.asyncStatus.value === 'loading',
+    });
+  }
+
+  function loadMore() {
+    if (!canLoad()) return;
+    isFetchingNextPage.value = true;
+    void Promise.resolve(options.loadNextPage()).finally(() => {
+      isFetchingNextPage.value = false;
+    });
+  }
+
   function attachInfiniteScroll(el: HTMLElement) {
     const result = useInfiniteScroll(
       el,
       () => {
-        if (
-          options.hasNextPage.value
-          && options.asyncStatus.value !== 'loading'
-        ) {
-          void options.loadNextPage();
-        }
+        loadMore();
       },
       {
         distance: options.distance ?? 200,
-        canLoadMore: () =>
-          options.hasNextPage.value
-          && options.asyncStatus.value !== 'loading',
+        canLoadMore: canLoad,
       },
     );
 
@@ -81,18 +92,13 @@ export function usePaginatedTableInfiniteScroll(
 
   function tryAutoFill() {
     if (!options.autoFill?.value) return;
-    if (
-      !options.hasNextPage.value
-      || options.asyncStatus.value === 'loading'
-    ) {
-      return;
-    }
+    if (!canLoad()) return;
 
     const el = resolveScrollRoot();
     if (!el || el.clientHeight <= 0) return;
 
     if (el.scrollHeight <= el.clientHeight + distance) {
-      void options.loadNextPage();
+      loadMore();
     }
   }
 

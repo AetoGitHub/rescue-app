@@ -62,6 +62,8 @@ useInfiniteQuery({
 
 Flatten rows with `flattenPaginatedPages(data.value?.pages)`.
 
+Load-more must not fire while a page is in flight (`isFetchingNextPage` / `asyncStatus === 'loading'` / `isPending`) and must stop when `getNextCursorPageParam` is `null`. Use `canLoadNextCursorPage` from `app/utils/catalog-pagination.ts`.
+
 ## Auth
 
 Use `useApiFetch()` (not bare `$fetch`) for paginated requests in pages/composables so the session token is forwarded.

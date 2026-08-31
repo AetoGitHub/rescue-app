@@ -13,24 +13,33 @@ interface ScrollContainerInfiniteLoadOptions {
 export function useScrollContainerInfiniteLoad(
   options: ScrollContainerInfiniteLoadOptions,
 ) {
+  const isFetchingNextPage = ref(false);
+
+  function canLoad() {
+    if (options.disabled?.value) return false;
+    return canLoadNextCursorPage({
+      hasNextPage: options.hasNextPage.value,
+      isFetchingNextPage: isFetchingNextPage.value,
+      isPending: options.asyncStatus.value === 'loading',
+    });
+  }
+
+  function loadMore() {
+    if (!canLoad()) return;
+    isFetchingNextPage.value = true;
+    void Promise.resolve(options.loadNextPage()).finally(() => {
+      isFetchingNextPage.value = false;
+    });
+  }
+
   useInfiniteScroll(
     () => options.containerRef.value,
     () => {
-      if (options.disabled?.value) return;
-
-      if (
-        options.hasNextPage.value
-        && options.asyncStatus.value !== 'loading'
-      ) {
-        void options.loadNextPage();
-      }
+      loadMore();
     },
     {
       distance: options.distance ?? 200,
-      canLoadMore: () =>
-        !options.disabled?.value
-        && options.hasNextPage.value
-        && options.asyncStatus.value !== 'loading',
+      canLoadMore: canLoad,
     },
   );
 }
