@@ -75,6 +75,7 @@ interface PaginatedResponse<T> {
 - Listas nuevas: `useCatalogInfiniteList` o el mismo patrón.
 - Auth: `useApiFetch()`, no `$fetch` desnudo en páginas/composables autenticados.
 - Load-more: no disparar si ya hay fetch en curso (`isFetchingNextPage` / `asyncStatus === 'loading'` / `isPending`). Parar cuando `hasNextPage` es false (`next` null o sin `cursor`). Guard: `canLoadNextCursorPage`.
+- Un `useInfiniteQuery` por lista. Si el composable lo usan página, toolbar y tabla, envolverlo en `defineQuery` de Pinia Colada. Varias instancias no comparten el `nextPage` interno: `loadNextPage` refetcha la página 1 **sin** `cursor`.
 
 Alegra y APIs cuyo `next` es un offset (string tipo `"30"`): `getNextOffsetPageParam` (mismo archivo).
 

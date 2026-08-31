@@ -4,7 +4,7 @@ Registro de cambios al conjunto `docs/` (no al producto).
 
 ## 2026-08-31
 
-- Administrativo / cobranza: el summary de columnas expone `count`; Por facturar y Por cobrar usan `GET /api/dashboard/pending_invoice/summary/` y `GET /api/dashboard/pending_charge/summary/` (`sub_total` = total sin IVA). El scroll infinito no dispara load-more mientras hay fetch en curso.
+- Administrativo / cobranza: el summary de columnas expone `count`; Por facturar y Por cobrar usan `GET /api/dashboard/pending_invoice/summary/` y `GET /api/dashboard/pending_charge/summary/` (`sub_total` = total sin IVA). El scroll infinito de Por facturar/Por cobrar usa una sola `useInfiniteQuery` (`defineQuery`) y manda el `cursor` extraído de `next`.
 - Cotización: el costo técnico de una línea convenio se puede modificar; al recargar ya no se pisa con el precio de contrato.
 
 ## 2026-08-28

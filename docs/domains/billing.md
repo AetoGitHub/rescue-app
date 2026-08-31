@@ -21,7 +21,7 @@ Ability de estas rutas: `accessAdministrative` (admin).
 
 - Resumen: `GET /api/dashboard/pending_invoice/summary/` (`PENDING_INVOICE_SUMMARY_PATH`, `usePendingInvoiceSummary`). Mismos filtros de dropdown que la lista (sin `cursor` ni `ordering`).
 - Totales de cabecera y toolbar: **`count`** (eventos) y **`sub_total`** etiquetado **Total sin IVA**. No se suman las filas cargadas en el cliente.
-- Scroll infinito de detalle: `useInfiniteQuery` + `getNextCursorPageParam`. `loadNextPage` no dispara si `isFetchingNextPage` / `isPending`, ni cuando `next` es null o no trae `cursor` (`canLoadNextCursorPage` en `catalog-pagination.ts`).
+- Scroll infinito de detalle: `usePendingInvoiceList` es un `defineQuery` (una sola `useInfiniteQuery`). Si `next` es `null`, no hay más páginas. Si trae `?cursor=`, la siguiente petición es el mismo path + filtros + ese `cursor`. `loadNextPage` no dispara si ya hay fetch en curso (`canLoadNextCursorPage`).
 
 ## Por cobrar
 

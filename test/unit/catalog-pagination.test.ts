@@ -23,6 +23,9 @@ describe('extractCursorFromPaginatedNext', () => {
         'http://localhost:8010/api/dashboard/pending_invoice/?page=2',
       ),
     ).toBeNull();
+    expect(
+      extractCursorFromPaginatedNext('/api/dashboard/pending_invoice/'),
+    ).toBeNull();
   });
 });
 

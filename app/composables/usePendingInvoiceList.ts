@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@pinia/colada';
+import { defineQuery, useInfiniteQuery } from '@pinia/colada';
 import type { PendingInvoiceColumnMeta } from '~/constants/pending-invoice';
 import {
   PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
@@ -23,10 +23,14 @@ import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
 /**
  * Shared pending-invoice state for Por Facturar.
  *
+ * Wrapped in `defineQuery` so page / toolbar / table / summary share **one**
+ * `useInfiniteQuery`. Multiple instances each keep their own `nextPage`
+ * closure; `loadNextPage` then refetches page 1 (no `cursor`) forever.
+ *
  * Company filter and active tab live in `useState` so matrix → detail jumps
  * stay in sync. Seller/matrix tabs only consume `company`.
  */
-export function usePendingInvoiceList() {
+export const usePendingInvoiceList = defineQuery(() => {
   const apiFetch = useApiFetch();
   const selectedCompanies = useState<PendingInvoiceFilterSelection[]>(
     'pending-invoice-companies',
@@ -250,4 +254,4 @@ export function usePendingInvoiceList() {
     clearCompanies,
     clearDetailDropdownFilters,
   };
-}
+});

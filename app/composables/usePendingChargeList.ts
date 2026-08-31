@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@pinia/colada';
+import { defineQuery, useInfiniteQuery } from '@pinia/colada';
 import type { PendingChargeColumnMeta } from '~/constants/pending-charge';
 import {
   PENDING_CHARGE_LIST_PATH,
@@ -16,10 +16,13 @@ import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
 /**
  * Shared pending-charge state for Por Cobrar.
  *
+ * Wrapped in `defineQuery` so header / toolbar / table / summary share one
+ * infinite query (same `nextPage` / `cursor` as Por Facturar).
+ *
  * Company/client/status filters live in `useState` so the page header and
  * column popovers stay in sync.
  */
-export function usePendingChargeList() {
+export const usePendingChargeList = defineQuery(() => {
   const apiFetch = useApiFetch();
   const selectedCompanies = useState<PendingChargeFilterSelection[]>(
     'pending-charge-companies',
@@ -190,4 +193,4 @@ export function usePendingChargeList() {
     clearCompanies,
     clearDetailFilters,
   };
-}
+});

@@ -75,6 +75,10 @@ Use `useApiFetch()` (not bare `$fetch`) for paginated requests in pages/composab
 - `getNextCursorPageParam`
 - `flattenPaginatedPages`
 
+## Shared list composables
+
+If page, toolbar, table, and summary all call the same composable, wrap it in Pinia Colada `defineQuery`. Each `useInfiniteQuery()` keeps its own `nextPage` closure; extra instances make `loadNextPage` refetch page 1 without `cursor`.
+
 ## New infinite lists
 
 Any new table, kanban column, or load-more UI must reuse `useCatalogInfiniteList` or mirror this pattern. Dropdowns that only load the first page do not need `cursor` until infinite scroll is added.
