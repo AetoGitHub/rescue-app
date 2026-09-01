@@ -145,9 +145,9 @@ Invitado (token en URL; handlers Nitro dedicados):
 - `/api/payment/debt/`, `/api/payment/debt/create/`
 - `/api/payment/receipt/` y `/api/payment/receipt/:id/`
 - Handler Nitro extra: `GET /api/payment/balance/operative` (`server/api/payment/balance/operative.get.ts`) — existe además del path con slash en constants; no asumir que son el mismo contrato sin leer ambos.
-- `/api/dashboard/pending_invoice/`, `/api/dashboard/pending_invoice/summary/`
+- `/api/dashboard/pending_invoice/`, `/api/dashboard/pending_invoice/summary/` (filtros `start_date` / `end_date` en ISO-8601 con offset local)
 - `/api/dashboard/pending_invoice/` dropdowns (`companies`, `clients`, `operators`, `vehicles`, `authorizers`)
-- `/api/dashboard/by_responsible/`, `/api/dashboard/company_matrix/`
+- `/api/dashboard/by_responsible/`, `/api/dashboard/company_matrix/` (mismos `start_date` / `end_date` que Por facturar)
 - `/api/dashboard/pending_charge/`, `/api/dashboard/pending_charge/summary/`
 - `/api/dashboard/pending_charge/` dropdowns (`companies`, `clients`)
 

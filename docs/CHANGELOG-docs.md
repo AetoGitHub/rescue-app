@@ -2,6 +2,10 @@
 
 Registro de cambios al conjunto `docs/` (no al producto).
 
+## 2026-09-01
+
+- Por facturar: filtros `start_date` y `end_date` (campos de fecha en cabecera). Se envían como datetime ISO con el offset de la zona horaria del usuario (inicio y fin del día local).
+
 ## 2026-08-31
 
 - Administrativo / cobranza: el summary de columnas expone `count`; Por facturar y Por cobrar usan `GET /api/dashboard/pending_invoice/summary/` y `GET /api/dashboard/pending_charge/summary/` (`sub_total` = total sin IVA). El scroll infinito de Por facturar/Por cobrar usa una sola `useInfiniteQuery` (`defineQuery`) y manda el `cursor` extraído de `next`.

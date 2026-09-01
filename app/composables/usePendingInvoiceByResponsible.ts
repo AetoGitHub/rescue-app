@@ -14,11 +14,13 @@ import { mapPendingInvoiceByResponsibleRow } from '~/utils/pending-invoice-dashb
  */
 export function usePendingInvoiceByResponsible() {
   const apiFetch = useApiFetch();
-  const { companyQuery } = usePendingInvoiceList();
+  const { companyQuery, startDateQuery, endDateQuery } = usePendingInvoiceList();
 
   const baseQuery = computed(() => {
     const query: Record<string, PaginatedQueryValue> = {};
     if (companyQuery.value != null) query.company = companyQuery.value;
+    if (startDateQuery.value != null) query.start_date = startDateQuery.value;
+    if (endDateQuery.value != null) query.end_date = endDateQuery.value;
     return query;
   });
 
@@ -37,6 +39,8 @@ export function usePendingInvoiceByResponsible() {
     key: () => [
       PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY,
       serializeCompanyQuery(companyQuery.value),
+      startDateQuery.value ?? '',
+      endDateQuery.value ?? '',
     ],
     initialPageParam: null,
     query: ({ pageParam }) =>

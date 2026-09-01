@@ -19,6 +19,7 @@ import {
   pendingInvoiceOrderingParam,
 } from '~/utils/pending-invoice-dashboard-map';
 import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
+import type { CalendarDateParts } from '~/utils/payment-list-query';
 
 /**
  * Shared pending-invoice state for Por Facturar.
@@ -27,8 +28,9 @@ import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
  * `useInfiniteQuery`. Multiple instances each keep their own `nextPage`
  * closure; `loadNextPage` then refetches page 1 (no `cursor`) forever.
  *
- * Company filter and active tab live in `useState` so matrix → detail jumps
- * stay in sync. Seller/matrix tabs only consume `company`.
+ * Company filter, date range and active tab live in `useState` so matrix →
+ * detail jumps stay in sync. Seller/matrix tabs consume `company` plus
+ * `start_date` / `end_date`.
  */
 export const usePendingInvoiceList = defineQuery(() => {
   const apiFetch = useApiFetch();
@@ -51,6 +53,14 @@ export const usePendingInvoiceList = defineQuery(() => {
   const selectedAuthorizers = useState<PendingInvoiceFilterSelection[]>(
     'pending-invoice-authorizers',
     () => [],
+  );
+  const startDate = useState<CalendarDateParts | null>(
+    'pending-invoice-start-date',
+    () => null,
+  );
+  const endDate = useState<CalendarDateParts | null>(
+    'pending-invoice-end-date',
+    () => null,
   );
   const ordering = useState<string>(
     'pending-invoice-ordering',
@@ -76,6 +86,12 @@ export const usePendingInvoiceList = defineQuery(() => {
   const authorizerQuery = computed(() =>
     pendingInvoiceCsvIdQuery(selectedAuthorizers.value),
   );
+  const startDateQuery = computed(() =>
+    calendarDateToZonedApiDateTime(startDate.value, 'start'),
+  );
+  const endDateQuery = computed(() =>
+    calendarDateToZonedApiDateTime(endDate.value, 'end'),
+  );
 
   const dropdownSelections: Record<
     PendingInvoiceDropdownFilterId,
@@ -98,6 +114,8 @@ export const usePendingInvoiceList = defineQuery(() => {
     if (operatorQuery.value != null) query.operator = operatorQuery.value;
     if (vehicleQuery.value != null) query.vehicle = vehicleQuery.value;
     if (authorizerQuery.value != null) query.authorizer = authorizerQuery.value;
+    if (startDateQuery.value != null) query.start_date = startDateQuery.value;
+    if (endDateQuery.value != null) query.end_date = endDateQuery.value;
     return query;
   });
 
@@ -121,6 +139,8 @@ export const usePendingInvoiceList = defineQuery(() => {
       operatorQuery.value ?? '',
       vehicleQuery.value ?? '',
       authorizerQuery.value ?? '',
+      startDateQuery.value ?? '',
+      endDateQuery.value ?? '',
       ordering.value,
     ],
     initialPageParam: null,
@@ -223,6 +243,11 @@ export const usePendingInvoiceList = defineQuery(() => {
     selectedAuthorizers.value = [];
   }
 
+  function clearDates() {
+    startDate.value = null;
+    endDate.value = null;
+  }
+
   return {
     rows,
     selectedCompanies,
@@ -230,11 +255,15 @@ export const usePendingInvoiceList = defineQuery(() => {
     selectedOperators,
     selectedVehicles,
     selectedAuthorizers,
+    startDate,
+    endDate,
     companyQuery,
     clientQuery,
     operatorQuery,
     vehicleQuery,
     authorizerQuery,
+    startDateQuery,
+    endDateQuery,
     ordering,
     activeTab,
     scopedRows,
@@ -252,6 +281,7 @@ export const usePendingInvoiceList = defineQuery(() => {
     applyOrdering,
     focusCompany,
     clearCompanies,
+    clearDates,
     clearDetailDropdownFilters,
   };
 });

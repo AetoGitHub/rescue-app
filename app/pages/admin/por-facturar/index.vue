@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PENDING_INVOICE_TAB_ITEMS } from '~/constants/pending-invoice';
+import type { CalendarDateParts } from '~/utils/payment-list-query';
 import {
   adminLinkTabsFlexClass,
   adminLinkTabsFlexUi,
@@ -10,7 +11,8 @@ useHead({
   title: 'Por Facturar',
 });
 
-const { activeTab, selectedCompanies } = usePendingInvoiceList();
+const { activeTab, selectedCompanies, startDate, endDate } =
+  usePendingInvoiceList();
 const {
   summary,
   isLoading: isSummaryLoading,
@@ -26,13 +28,23 @@ const summaryTotalLabel = computed(() =>
     : formatPendingInvoiceMoney(summary.value.sub_total),
 );
 
+function formatHeaderFilterDate(parts: CalendarDateParts) {
+  const day = String(parts.day).padStart(2, '0');
+  const month = String(parts.month).padStart(2, '0');
+  return `${day}/${month}/${parts.year}`;
+}
+
 const headerContext = computed(() => {
   const companyCount = selectedCompanies.value.length;
   const companyLabel =
     companyCount > 0
       ? ` · ${companyCount} compañía${companyCount === 1 ? '' : 's'}`
       : '';
-  return `${formatPendingInvoiceHeaderDate()} · Remisión + Sin atender${companyLabel}`;
+  const dateLabel =
+    startDate.value != null || endDate.value != null
+      ? ` · ${startDate.value != null ? formatHeaderFilterDate(startDate.value) : '…'} – ${endDate.value != null ? formatHeaderFilterDate(endDate.value) : '…'}`
+      : '';
+  return `${formatPendingInvoiceHeaderDate()} · Remisión + Sin atender${dateLabel}${companyLabel}`;
 });
 </script>
 
@@ -96,6 +108,7 @@ const headerContext = computed(() => {
                 {{ summaryTotalLabel }}
               </p>
             </div>
+            <PendingInvoiceDateRangeFilter class="shrink-0" />
             <PendingInvoiceCompanyFilter class="shrink-0" />
           </div>
         </div>

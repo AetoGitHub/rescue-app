@@ -15,7 +15,7 @@ export function usePendingInvoiceCompanyMatrix(
   months: MaybeRefOrGetter<number>,
 ) {
   const apiFetch = useApiFetch();
-  const { companyQuery } = usePendingInvoiceList();
+  const { companyQuery, startDateQuery, endDateQuery } = usePendingInvoiceList();
   const monthsValue = computed(() => toValue(months));
 
   const {
@@ -28,12 +28,16 @@ export function usePendingInvoiceCompanyMatrix(
       PENDING_INVOICE_COMPANY_MATRIX_QUERY_KEY,
       String(monthsValue.value),
       serializeCompanyQuery(companyQuery.value),
+      startDateQuery.value ?? '',
+      endDateQuery.value ?? '',
     ],
     query: () => {
       const query: Record<string, PaginatedQueryValue> = {
         months: String(monthsValue.value),
       };
       if (companyQuery.value != null) query.company = companyQuery.value;
+      if (startDateQuery.value != null) query.start_date = startDateQuery.value;
+      if (endDateQuery.value != null) query.end_date = endDateQuery.value;
       return apiFetch<PendingInvoiceCompanyMatrixApiRow[]>(
         PENDING_INVOICE_COMPANY_MATRIX_PATH,
         { query },

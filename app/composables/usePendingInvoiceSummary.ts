@@ -11,7 +11,7 @@ import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
  * Sibling of `GET /api/dashboard/pending_invoice/`:
  * `GET /api/dashboard/pending_invoice/summary/`.
  *
- * Reuses the same dropdown filters as `usePendingInvoiceList`.
+ * Reuses the same dropdown and date filters as `usePendingInvoiceList`.
  */
 export function usePendingInvoiceSummary() {
   const apiFetch = useApiFetch();
@@ -21,6 +21,8 @@ export function usePendingInvoiceSummary() {
     operatorQuery,
     vehicleQuery,
     authorizerQuery,
+    startDateQuery,
+    endDateQuery,
   } = usePendingInvoiceList();
 
   const baseQuery = computed(() => {
@@ -32,6 +34,8 @@ export function usePendingInvoiceSummary() {
     if (operatorQuery.value != null) query.operator = operatorQuery.value;
     if (vehicleQuery.value != null) query.vehicle = vehicleQuery.value;
     if (authorizerQuery.value != null) query.authorizer = authorizerQuery.value;
+    if (startDateQuery.value != null) query.start_date = startDateQuery.value;
+    if (endDateQuery.value != null) query.end_date = endDateQuery.value;
     return query;
   });
 
@@ -43,6 +47,8 @@ export function usePendingInvoiceSummary() {
       operatorQuery.value ?? '',
       vehicleQuery.value ?? '',
       authorizerQuery.value ?? '',
+      startDateQuery.value ?? '',
+      endDateQuery.value ?? '',
     ],
     query: ({ signal }) =>
       apiFetch<unknown>(PENDING_INVOICE_SUMMARY_PATH, {
