@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T">
+<script setup lang="ts" generic="T extends { id?: number }">
 import { operationalKanbanColumnClass } from '~/constants/admin-list-layout';
 interface Props<T> {
   title: string;
@@ -14,7 +14,7 @@ interface Props<T> {
   errorMessage?: string;
 }
 
-withDefaults(defineProps<Props<T>>(), {
+const props = withDefaults(defineProps<Props<T>>(), {
   subtotalLabel: '',
   isSubtotalLoading: false,
   isInitialLoading: false,
@@ -29,6 +29,11 @@ const emit = defineEmits<{
 }>();
 
 const scrollContainerRef = ref<HTMLElement | null>(null);
+
+const virtualizer = useKanbanVirtualList(
+  computed(() => props.items),
+  scrollContainerRef,
+);
 
 defineExpose({
   scrollContainerRef,
@@ -65,7 +70,7 @@ defineExpose({
 
     <div
       ref="scrollContainerRef"
-      class="min-h-0 flex-1 overflow-y-auto space-y-2 bg-accented p-2"
+      class="min-h-0 flex-1 overflow-y-auto bg-accented p-2 [overflow-anchor:none]"
     >
       <template v-if="isInitialLoading">
         <UCard
@@ -110,9 +115,24 @@ defineExpose({
       </div>
 
       <template v-else>
-        <slot v-for="item in items" :key="(item as { id?: number }).id ?? item" :item="item">
-          <UCard>{{ item }}</UCard>
-        </slot>
+        <div
+          v-if="items.length > 0"
+          class="relative w-full"
+          :style="{ height: `${virtualizer.getTotalSize()}px` }"
+        >
+          <div
+            v-for="virtualRow in virtualizer.getVirtualItems()"
+            :key="virtualRow.index"
+            :ref="(el) => virtualizer.measureElement(el as Element)"
+            :data-index="virtualRow.index"
+            class="absolute left-0 top-0 w-full"
+            :style="{ transform: `translateY(${virtualRow.start}px)` }"
+          >
+            <slot :item="items[virtualRow.index]!">
+              <UCard>{{ items[virtualRow.index] }}</UCard>
+            </slot>
+          </div>
+        </div>
 
         <p
           v-if="items.length === 0"
