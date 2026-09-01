@@ -1,8 +1,12 @@
+import { today } from '@internationalized/date';
 import { describe, expect, it } from 'vitest';
 import {
   applyPendingInvoiceDateQuery,
   calendarDateToZonedApiDateTime,
   formatUtcOffsetIso,
+  isPendingInvoiceDefaultDateRange,
+  pendingInvoiceDefaultEndDate,
+  pendingInvoiceDefaultStartDate,
 } from '../../app/utils/pending-invoice-date-query';
 
 function date(year: number, month: number, day: number) {
@@ -61,6 +65,35 @@ describe('pending-invoice-date-query', () => {
     ).toEqual({
       start_date: '2026-03-05T00:00:00+00:00',
     });
+  });
+
+  it('defaults the range to the first of the current month through today', () => {
+    const timeZone = 'America/Mexico_City';
+    const now = today(timeZone);
+    expect(pendingInvoiceDefaultStartDate(timeZone)).toEqual({
+      year: now.year,
+      month: now.month,
+      day: 1,
+    });
+    expect(pendingInvoiceDefaultEndDate(timeZone)).toEqual({
+      year: now.year,
+      month: now.month,
+      day: now.day,
+    });
+    expect(
+      isPendingInvoiceDefaultDateRange(
+        { year: now.year, month: now.month, day: 1 },
+        { year: now.year, month: now.month, day: now.day },
+        timeZone,
+      ),
+    ).toBe(true);
+    expect(
+      isPendingInvoiceDefaultDateRange(
+        { year: now.year, month: now.month, day: 1 },
+        { year: 2020, month: 1, day: 1 },
+        timeZone,
+      ),
+    ).toBe(false);
   });
 
   it('applies both query params when both dates are set', () => {

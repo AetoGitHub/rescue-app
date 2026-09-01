@@ -3,8 +3,8 @@ const { startDate, endDate, clearDates } = usePendingInvoiceList();
 
 const startDateMax = computed(() => endDate.value ?? undefined);
 const endDateMin = computed(() => startDate.value ?? undefined);
-const hasDates = computed(
-  () => startDate.value != null || endDate.value != null,
+const canResetDates = computed(
+  () => !isPendingInvoiceDefaultDateRange(startDate.value, endDate.value),
 );
 
 watch(startDate, from => {
@@ -45,11 +45,11 @@ watch(endDate, to => {
     </div>
 
     <UButton
-      v-if="hasDates"
+      v-if="canResetDates"
       color="neutral"
       variant="ghost"
       icon="i-lucide-x"
-      aria-label="Quitar filtro de fechas"
+      aria-label="Restablecer fechas al mes actual"
       @click="clearDates"
     />
   </div>

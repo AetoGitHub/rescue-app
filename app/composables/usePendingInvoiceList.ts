@@ -56,11 +56,11 @@ export const usePendingInvoiceList = defineQuery(() => {
   );
   const startDate = useState<CalendarDateParts | null>(
     'pending-invoice-start-date',
-    () => null,
+    () => pendingInvoiceDefaultStartDate(),
   );
   const endDate = useState<CalendarDateParts | null>(
     'pending-invoice-end-date',
-    () => null,
+    () => pendingInvoiceDefaultEndDate(),
   );
   const ordering = useState<string>(
     'pending-invoice-ordering',
@@ -244,8 +244,8 @@ export const usePendingInvoiceList = defineQuery(() => {
   }
 
   function clearDates() {
-    startDate.value = null;
-    endDate.value = null;
+    startDate.value = pendingInvoiceDefaultStartDate();
+    endDate.value = pendingInvoiceDefaultEndDate();
   }
 
   return {

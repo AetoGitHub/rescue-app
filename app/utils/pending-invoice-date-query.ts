@@ -1,12 +1,51 @@
 import {
   CalendarDateTime,
   getLocalTimeZone,
+  startOfMonth,
+  today,
   toZoned,
 } from '@internationalized/date';
-import type { CalendarDateParts } from '~/utils/payment-list-query';
+import {
+  compareCalendarDateParts,
+  type CalendarDateParts,
+} from '~/utils/payment-list-query';
 import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
 
 export type PendingInvoiceDateBoundary = 'start' | 'end';
+
+function calendarDatePartsToday(
+  timeZone: string = getLocalTimeZone(),
+): CalendarDateParts {
+  const value = today(timeZone);
+  return { year: value.year, month: value.month, day: value.day };
+}
+
+/** First calendar day of the current month in the user's timezone. */
+export function pendingInvoiceDefaultStartDate(
+  timeZone: string = getLocalTimeZone(),
+): CalendarDateParts {
+  const value = startOfMonth(today(timeZone));
+  return { year: value.year, month: value.month, day: value.day };
+}
+
+/** Today's calendar day in the user's timezone. */
+export function pendingInvoiceDefaultEndDate(
+  timeZone: string = getLocalTimeZone(),
+): CalendarDateParts {
+  return calendarDatePartsToday(timeZone);
+}
+
+export function isPendingInvoiceDefaultDateRange(
+  startDate: CalendarDateParts | null | undefined,
+  endDate: CalendarDateParts | null | undefined,
+  timeZone: string = getLocalTimeZone(),
+): boolean {
+  if (startDate == null || endDate == null) return false;
+  return (
+    compareCalendarDateParts(startDate, pendingInvoiceDefaultStartDate(timeZone)) === 0
+    && compareCalendarDateParts(endDate, pendingInvoiceDefaultEndDate(timeZone)) === 0
+  );
+}
 
 function padDatePart(value: number): string {
   return String(value).padStart(2, '0');

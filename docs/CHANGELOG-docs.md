@@ -4,7 +4,7 @@ Registro de cambios al conjunto `docs/` (no al producto).
 
 ## 2026-09-01
 
-- Por facturar: filtros `start_date` y `end_date` (campos de fecha en cabecera). Se envían como datetime ISO con el offset de la zona horaria del usuario (inicio y fin del día local).
+- Por facturar: filtros `start_date` y `end_date` (campos de fecha en cabecera). Se envían como datetime ISO con el offset de la zona horaria del usuario a los tres listados y al summary. Default: primer día del mes actual → hoy.
 
 ## 2026-08-31
 
