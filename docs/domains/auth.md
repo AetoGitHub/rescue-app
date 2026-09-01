@@ -71,6 +71,8 @@ Fuente: `shared/utils/admin-route-access.ts`. Middleware `authorization.ts`: si 
 
 `app/pages/admin.vue` aplica `auth` + `authorization` a todas las hijas. **Excepción:** `llenar-oc.vue` declara `path: '/admin/llenar-oc'` y **no** es hija de ese layout de middlewares.
 
+Las rutas `/admin/**` no se renderizan en el servidor (`routeRules` en `nuxt.config.ts`). Un refresh o enlace directo hidrata en el cliente; `nuxt-auth-utils` lee la cookie con `GET /api/_auth/session` **antes** de que el middleware `auth` evalúe `loggedIn`. El login (`POST /api/auth/login` + `setUserSession`) no cambia: la cookie HttpOnly sigue en el mismo origen. `useApiFetch()` en el cliente reenvía esa cookie; no hace falta `useRequestHeaders` de SSR.
+
 ## Nav
 
 `ADMIN_NAV_SECTIONS` en `useAdminNavConfig.ts`. Items ocultos si `denies`. Compañías y categorías tienen página pero **no** aparecen en el sidebar (se llega por URL o desde otros flujos).

@@ -1,11 +1,14 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  assertPurchaseOrderJobId,
+  buildPurchaseOrderJobUrl,
   buildPurchaseOrderUploadUrl,
   extractPurchaseOrderPartialResponse,
+  normalizePurchaseOrderJob,
+  normalizePurchaseOrderJobAccepted,
   normalizePurchaseOrderUploadResponse,
   parsePurchaseOrderPdfParts,
   purchaseOrderPartsToFormData,
-  rejectedFilesToUploadResults,
   type PurchaseOrderMultipartPart,
 } from '../../server/utils/purchase-order-upload';
 
@@ -39,7 +42,20 @@ describe('purchase-order upload server helpers', () => {
     );
   });
 
-  it('accepts one to twenty PDFs and forwards the files field', () => {
+  it('builds the job status URL from the quote PDF service', () => {
+    expect(buildPurchaseOrderJobUrl('', 'abc-1')).toBe(
+      'http://localhost:5000/purchase-orders/jobs/abc-1',
+    );
+    expect(buildPurchaseOrderJobUrl('https://pdf.test/base/', 'job-9')).toBe(
+      'https://pdf.test/base/purchase-orders/jobs/job-9',
+    );
+    expect(assertPurchaseOrderJobId('job-42')).toBe('job-42');
+    expect(() => assertPurchaseOrderJobId('../secret')).toThrow(
+      'Identificador de trabajo inválido',
+    );
+  });
+
+  it('accepts one to one hundred PDFs and forwards the files field', () => {
     const { accepted, rejected } = parsePurchaseOrderPdfParts([
       part('one.pdf'),
       part('two.pdf', 'application/octet-stream'),
@@ -49,44 +65,67 @@ describe('purchase-order upload server helpers', () => {
     expect(accepted).toHaveLength(2);
     expect(rejected).toEqual([]);
     expect(form.getAll('files')).toHaveLength(2);
+    expect(
+      parsePurchaseOrderPdfParts(Array.from({ length: 100 }, (_, index) => part(`${index}.pdf`)))
+        .accepted,
+    ).toHaveLength(100);
   });
 
-  it('keeps the valid PDFs of a mixed batch and reports the rest per file', () => {
-    const { accepted, rejected } = parsePurchaseOrderPdfParts([
-      part('one.pdf'),
-      part('image.png', 'image/png'),
-      { name: 'files', filename: 'empty.pdf', type: 'application/pdf', data: new Uint8Array() },
-    ]);
-
-    expect(accepted.map((file) => file.filename)).toEqual(['one.pdf']);
-    expect(rejectedFilesToUploadResults(rejected)).toEqual([
-      {
-        fileName: 'image.png',
-        orderNumber: null,
-        url: null,
-        extracted: false,
-        error: 'Solo se aceptan archivos PDF',
-      },
-      {
-        fileName: 'empty.pdf',
-        orderNumber: null,
-        url: null,
-        extracted: false,
-        error: 'El archivo está vacío',
-      },
-    ]);
-  });
-
-  it('rejects empty, oversized, and fully invalid batches', () => {
+  it('rejects mixed, empty, oversized, and over-limit batches', () => {
     expect(() => parsePurchaseOrderPdfParts([])).toThrow(
       'Selecciona al menos un archivo PDF',
     );
     expect(() =>
-      parsePurchaseOrderPdfParts(Array.from({ length: 21 }, () => part('oc.pdf'))),
-    ).toThrow('Puedes subir hasta 20 archivos PDF por lote');
+      parsePurchaseOrderPdfParts(Array.from({ length: 101 }, () => part('oc.pdf'))),
+    ).toThrow('Puedes subir hasta 100 archivos PDF');
     expect(() =>
       parsePurchaseOrderPdfParts([part('image.png', 'image/png')]),
-    ).toThrow('Selecciona únicamente archivos PDF');
+    ).toThrow('Solo se aceptan archivos PDF');
+    expect(() =>
+      parsePurchaseOrderPdfParts([
+        part('one.pdf'),
+        { name: 'files', filename: 'empty.pdf', type: 'application/pdf', data: new Uint8Array() },
+      ]),
+    ).toThrow('El archivo está vacío');
+    expect(() =>
+      parsePurchaseOrderPdfParts([
+        {
+          name: 'files',
+          filename: 'big.pdf',
+          type: 'application/pdf',
+          data: new Uint8Array(10 * 1024 * 1024 + 1),
+        },
+      ]),
+    ).toThrow('Cada PDF debe pesar 10 MB o menos');
+  });
+
+  it('normalizes the 202 job acceptance and later snapshots', () => {
+    expect(
+      normalizePurchaseOrderJobAccepted({ jobId: 'job-1', total: 80 }),
+    ).toEqual({ jobId: 'job-1', total: 80 });
+
+    expect(
+      normalizePurchaseOrderJob({
+        jobId: 'job-1',
+        status: 'processing',
+        total: 80,
+        completed: 23,
+        files: [
+          {
+            fileName: 'oc.pdf',
+            orderNumber: '2616071',
+            url: 'https://files.test/oc.pdf',
+            extracted: true,
+          },
+        ],
+      }),
+    ).toMatchObject({
+      jobId: 'job-1',
+      status: 'processing',
+      total: 80,
+      completed: 23,
+      files: [{ fileName: 'oc.pdf', extracted: true }],
+    });
   });
 
   it('normalizes partial upload results without dropping file errors', () => {

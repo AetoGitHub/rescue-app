@@ -129,6 +129,11 @@ export function mapPendingInvoiceApiRow(
     || toText(raw.purchase_order_number)
     || null;
   const ocPdf = toText(raw.oc_pdf) || null;
+  const factura =
+    toText(raw.invoice_folio)
+    || toText(raw.invoice_number)
+    || toText(raw.factura)
+    || null;
 
   return {
     id: resolveId(raw),
@@ -152,6 +157,7 @@ export function mapPendingInvoiceApiRow(
     evidencia_pagos: raw.has_payment_evidence === true,
     oc,
     oc_pdf: ocPdf,
+    factura,
   };
 }
 

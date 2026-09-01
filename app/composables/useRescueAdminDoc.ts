@@ -1,5 +1,11 @@
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
+import {
+  PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY,
+  PENDING_INVOICE_COMPANY_MATRIX_QUERY_KEY,
+  PENDING_INVOICE_LIST_QUERY_KEY,
+  PENDING_INVOICE_SUMMARY_QUERY_KEY,
+} from '~/constants/pending-invoice-api';
 import { RESCUE_ADMIN_DOC_PATH } from '~/constants/rescue-admin-doc-api';
 import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
 
@@ -23,6 +29,18 @@ async function invalidateAdministrativeBoardQueries(
   });
   await queryCache.invalidateQueries({
     key: ['administrative-rescue-list'],
+  });
+  await queryCache.invalidateQueries({
+    key: [PENDING_INVOICE_LIST_QUERY_KEY],
+  });
+  await queryCache.invalidateQueries({
+    key: [PENDING_INVOICE_SUMMARY_QUERY_KEY],
+  });
+  await queryCache.invalidateQueries({
+    key: [PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY],
+  });
+  await queryCache.invalidateQueries({
+    key: [PENDING_INVOICE_COMPANY_MATRIX_QUERY_KEY],
   });
 }
 

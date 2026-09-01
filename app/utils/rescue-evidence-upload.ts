@@ -1,4 +1,6 @@
 import {
+  RESCUE_ADMIN_OC_PDF_MAX_BYTES,
+  RESCUE_ADMIN_OC_PDF_STORAGE_FOLDER,
   RESCUE_ADMIN_PAYMENT_STORAGE_FOLDER,
   RESCUE_EVIDENCE_PAYMENT_MAX_BYTES,
   RESCUE_EVIDENCE_SERVICE_MAX_BYTES,
@@ -73,6 +75,20 @@ export function buildAdministrativePaymentStoragePath(rescueId: number): string 
 
 export function isAdministrativePaymentFileAllowed(file: File): boolean {
   return isRescueEvidenceFileAllowed(file, RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER);
+}
+
+export function buildAdministrativeOcPdfStoragePath(rescueId: number): string {
+  return `${RESCUE_EVIDENCE_STORAGE_PREFIX}/${rescueId}/${RESCUE_ADMIN_OC_PDF_STORAGE_FOLDER}`;
+}
+
+export function isAdministrativeOcPdfFileAllowed(file: File): boolean {
+  const ext = fileExtension(file.name);
+  if (ext !== 'pdf') return false;
+  return file.size <= RESCUE_ADMIN_OC_PDF_MAX_BYTES;
+}
+
+export function administrativeOcPdfAcceptAttribute(): string {
+  return '.pdf,application/pdf';
 }
 
 /** Webhook URL with literal slashes in `path` (n8n spec), not %2F from URLSearchParams. */

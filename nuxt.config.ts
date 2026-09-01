@@ -34,6 +34,15 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // Authenticated dashboard is a logged-in ops tool: no SEO, data is client-fetched
+  // (Pinia Colada). SSR here only added session TTFB + hydration on full loads.
+  // Login, password-reset, and guest token pages stay universal-rendered.
+  routeRules: {
+    '/admin/**': { ssr: false },
+  },
+
+  spaLoadingTemplate: true,
+
   app: {
     head: {
       title: 'Rescates',

@@ -1,6 +1,15 @@
 import { joinURL } from 'ufo';
 import { QUOTE_PDF_API_DEFAULT } from '~/constants/quote-pdf-api';
+import {
+  PURCHASE_ORDER_JOB_SEGMENT,
+  PURCHASE_ORDER_UPLOAD_SEGMENT,
+  TMS_PURCHASE_ORDER_MAX_FILE_BYTES,
+  TMS_PURCHASE_ORDER_MAX_FILES,
+} from '~/constants/tms-portal-api';
 import type {
+  TmsPurchaseOrderJob,
+  TmsPurchaseOrderJobAccepted,
+  TmsPurchaseOrderJobStatus,
   TmsPurchaseOrderUploadFile,
   TmsPurchaseOrderUploadResponse,
 } from '~/interfaces/portals/tms';
@@ -23,19 +32,39 @@ export interface PurchaseOrderParseResult {
   rejected: PurchaseOrderRejectedFile[];
 }
 
-const MAX_FILES_PER_BATCH = 20;
-
 export function buildPurchaseOrderUploadUrl(baseUrl: string): string {
-  return joinURL(baseUrl.trim() || QUOTE_PDF_API_DEFAULT, '/purchase-orders/upload');
+  return joinURL(baseUrl.trim() || QUOTE_PDF_API_DEFAULT, PURCHASE_ORDER_UPLOAD_SEGMENT);
 }
 
 export function resolvePurchaseOrderUploadUrl(): string {
   return buildPurchaseOrderUploadUrl(resolveQuotePdfApiUrl());
 }
 
+export function buildPurchaseOrderJobUrl(baseUrl: string, jobId: string): string {
+  return joinURL(
+    baseUrl.trim() || QUOTE_PDF_API_DEFAULT,
+    `${PURCHASE_ORDER_JOB_SEGMENT}/${jobId}`,
+  );
+}
+
+export function resolvePurchaseOrderJobUrl(jobId: string): string {
+  return buildPurchaseOrderJobUrl(resolveQuotePdfApiUrl(), jobId);
+}
+
+export function assertPurchaseOrderJobId(raw: string | undefined): string {
+  const jobId = raw?.trim() ?? '';
+  if (!/^[A-Za-z0-9._:-]{1,128}$/.test(jobId)) {
+    throw createError({
+      statusCode: 400,
+      message: 'Identificador de trabajo inválido',
+    });
+  }
+  return jobId;
+}
+
 /**
- * Separa los PDFs válidos de los que el usuario no debería reintentar, para que
- * un archivo inválido no invalide el lote completo.
+ * Valida el lote antes de reenviarlo al servicio de PDFs. Un archivo inválido
+ * aborta el POST para que el job.total coincida con lo que el usuario envió.
  */
 export function parsePurchaseOrderPdfParts(
   parts: PurchaseOrderMultipartPart[] | undefined,
@@ -48,10 +77,10 @@ export function parsePurchaseOrderPdfParts(
       message: 'Selecciona al menos un archivo PDF',
     });
   }
-  if (files.length > MAX_FILES_PER_BATCH) {
+  if (files.length > TMS_PURCHASE_ORDER_MAX_FILES) {
     throw createError({
       statusCode: 400,
-      message: `Puedes subir hasta ${MAX_FILES_PER_BATCH} archivos PDF por lote`,
+      message: `Puedes subir hasta ${TMS_PURCHASE_ORDER_MAX_FILES} archivos PDF`,
     });
   }
 
@@ -75,13 +104,20 @@ export function parsePurchaseOrderPdfParts(
       rejected.push({ fileName: filename, reason: 'El archivo está vacío' });
       return;
     }
+    if (part.data.byteLength > TMS_PURCHASE_ORDER_MAX_FILE_BYTES) {
+      rejected.push({
+        fileName: filename,
+        reason: 'Cada PDF debe pesar 10 MB o menos',
+      });
+      return;
+    }
     accepted.push(part);
   });
 
-  if (accepted.length === 0) {
+  if (rejected.length > 0) {
     throw createError({
       statusCode: 400,
-      message: 'Selecciona únicamente archivos PDF',
+      message: rejected[0]?.reason ?? 'Selecciona únicamente archivos PDF',
     });
   }
 
@@ -120,6 +156,21 @@ function readString(
   for (const key of keys) {
     const value = record[key];
     if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+function readNumber(
+  record: Record<string, unknown>,
+  keys: string[],
+): number | null {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
   }
   return null;
 }
@@ -216,6 +267,71 @@ export function normalizePurchaseOrderUploadResponse(
   );
 
   return { files: appendMissingResults(files, sentFileNames) };
+}
+
+export function normalizePurchaseOrderJobAccepted(
+  value: unknown,
+): TmsPurchaseOrderJobAccepted {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+    throw createError({
+      statusCode: 502,
+      message: 'Respuesta inválida del servicio de órdenes de compra',
+    });
+  }
+
+  const record = value as Record<string, unknown>;
+  const jobId = readString(record, ['jobId', 'job_id', 'id']);
+  const total = readNumber(record, ['total']);
+
+  if (!jobId || total == null || total < 0) {
+    throw createError({
+      statusCode: 502,
+      message: 'Respuesta inválida del servicio de órdenes de compra',
+    });
+  }
+
+  return { jobId, total };
+}
+
+function normalizeJobStatus(value: unknown): TmsPurchaseOrderJobStatus {
+  if (value === 'pending' || value === 'processing' || value === 'done') {
+    return value;
+  }
+  return 'processing';
+}
+
+export function normalizePurchaseOrderJob(value: unknown): TmsPurchaseOrderJob {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+    throw createError({
+      statusCode: 502,
+      message: 'Respuesta inválida del trabajo de órdenes de compra',
+    });
+  }
+
+  const record = value as Record<string, unknown>;
+  const jobId = readString(record, ['jobId', 'job_id', 'id']);
+  const total = readNumber(record, ['total']);
+  const completed = readNumber(record, ['completed']);
+
+  if (!jobId || total == null) {
+    throw createError({
+      statusCode: 502,
+      message: 'Respuesta inválida del trabajo de órdenes de compra',
+    });
+  }
+
+  const entries = readUploadEntries(record.files) ?? [];
+  const files = entries.map((entry, index) =>
+    normalizeUploadFile(entry, `Archivo ${index + 1}`),
+  );
+
+  return {
+    jobId,
+    status: normalizeJobStatus(record.status),
+    total,
+    completed: completed ?? files.length,
+    files,
+  };
 }
 
 /**

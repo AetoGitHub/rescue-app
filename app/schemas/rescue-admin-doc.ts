@@ -5,6 +5,15 @@ const optionalFolioField = z
   .transform((s) => s.trim())
   .transform((s) => (s.length > 0 ? s : null));
 
+const optionalOcPdfUrlField = z
+  .string()
+  .trim()
+  .refine(
+    (value) => value.length === 0 || URL.canParse(value),
+    'La URL del PDF de orden de compra no es válida',
+  )
+  .transform((value) => (value.length > 0 ? value : null));
+
 const adminDocFoliosBase = z.object({
   remittance_folio: optionalFolioField,
   invoice_folio: optionalFolioField,
@@ -33,6 +42,7 @@ export const rescueAdminDocSchema = withAtLeastOneFolio(adminDocFoliosBase);
 export const rescueAdminDocCopySchema = withAtLeastOneFolio(
   adminDocFoliosBase.extend({
     extra_rescues: z.array(z.number().int().positive()),
+    oc_pdf: optionalOcPdfUrlField,
   }),
 );
 
@@ -40,6 +50,7 @@ export type RescueAdminDocFormState = {
   remittance_folio: string;
   invoice_folio: string;
   extra_rescues: number[];
+  oc_pdf: string;
 };
 
 export type RescueAdminDocFormOutput = z.infer<typeof rescueAdminDocCopySchema>;
@@ -48,6 +59,7 @@ export interface RescueAdminDocBody {
   remittance_folio: string | null;
   invoice_folio: string | null;
   extra_rescues: number[];
+  oc_pdf: string | null;
 }
 
 export function parseRescueAdminDocInput(input: {
@@ -64,6 +76,7 @@ export function rescueAdminDocToBody(
     remittance_folio: data.remittance_folio,
     invoice_folio: data.invoice_folio,
     extra_rescues: data.extra_rescues,
+    oc_pdf: data.oc_pdf,
   };
 }
 

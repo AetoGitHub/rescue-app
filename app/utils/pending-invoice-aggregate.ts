@@ -76,6 +76,10 @@ export function pendingInvoiceCell(
         value: row.oc_pdf ? 'si' : 'no',
         label: row.oc_pdf ? 'Con PDF de OC' : 'Sin PDF de OC',
       };
+    case 'factura': {
+      const text = row.factura?.trim() ? row.factura : '—';
+      return { value: text, label: text };
+    }
     case 'mes':
       return { value: row.mes_key, label: `${row.mes} · ${row.mes_key}` };
     default: {
@@ -113,6 +117,8 @@ function sortValueOf(
       return row.oc ?? '';
     case 'oc_pdf':
       return row.oc_pdf ? 1 : 0;
+    case 'factura':
+      return row.factura ?? '';
     default:
       return pendingInvoiceCell(row, columnId).value;
   }
@@ -126,6 +132,7 @@ const SEARCHABLE_KEYS: PendingInvoiceColumnId[] = [
   'autorizador',
   'responsable',
   'descripcion',
+  'factura',
 ];
 
 function matchesSearch(row: PendingInvoiceRow, term: string): boolean {

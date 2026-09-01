@@ -4,6 +4,10 @@ Registro de cambios al conjunto `docs/` (no al producto).
 
 ## 2026-09-01
 
+- Portal TMS: la carga de OC pasa a job asíncrono. Nitro reenvía `POST /api/portals/tms/purchase-orders/upload` y `GET /api/portals/tms/purchase-orders/jobs/:jobId` al servicio de PDFs (`NUXT_QUOTE_PDF_API_URL`). El cliente hace poll 1.5 s, pinta por `fileName` y notifica al terminar.
+- Renderizado: `/admin/**` pasa a SPA (`routeRules` `ssr: false` en Nuxt 4.4). Login y páginas de token siguen en SSR. Se documenta `spa-loading-template.html` y el fetch de sesión en el cliente.
+- Administrativo: al enviar remisión/factura desde el kanban se puede adjuntar un PDF de OC (`oc_pdf`). Se sube a Firebase y va en `POST /api/rescue/admin_doc/:id/`.
+- Por facturar: columnas `oc_pdf` y `factura` al inicio de la tabla de detalle; subida 1×1 de PDF de OC (Firebase) y captura del número de factura vía `POST /api/rescue/admin_doc/:id/` (sin remisión).
 - Por facturar: filtros `start_date` y `end_date` (campos de fecha en cabecera). Se envían como datetime ISO con el offset de la zona horaria del usuario a los tres listados y al summary. Default: primer día del mes actual → hoy.
 
 ## 2026-08-31

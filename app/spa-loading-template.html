@@ -1,0 +1,78 @@
+<div class="spa-loader" role="status" aria-live="polite">
+  <div class="spa-loader__spinner" aria-hidden="true"></div>
+  <p class="spa-loader__brand">
+    <span class="spa-loader__brand-dark">AETO</span><span class="spa-loader__brand-accent">RESCUE</span>
+  </p>
+  <p class="spa-loader__label">Cargando…</p>
+</div>
+<style>
+  .spa-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 1031;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: #fff;
+    color: #171717;
+    font-family: Barlow, ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .spa-loader__spinner {
+    width: 28px;
+    height: 28px;
+    box-sizing: border-box;
+    border: solid 2px #d1d5db;
+    border-top-color: #10b981;
+    border-radius: 50%;
+    animation: spa-loader-spin 600ms linear infinite;
+  }
+
+  .spa-loader__brand {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .spa-loader__brand-accent {
+    color: #10b981;
+  }
+
+  .spa-loader__label {
+    margin: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #737373;
+  }
+
+  @keyframes spa-loader-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .spa-loader {
+      background: #0a0a0a;
+      color: #fafafa;
+    }
+
+    .spa-loader__spinner {
+      border-color: #404040;
+      border-top-color: #34d399;
+    }
+
+    .spa-loader__brand-accent {
+      color: #34d399;
+    }
+
+    .spa-loader__label {
+      color: #a3a3a3;
+    }
+  }
+</style>

@@ -78,7 +78,7 @@ Constantes: `app/constants/rescue-api.ts`, `rescue-operative-flow.ts`, `rescue-q
 | `GET /api/rescue/supplier/:id/` | Proveedor del rescate |
 | `POST /api/rescue/approve_link/:id/generate/` | Link de autorización |
 | `GET /api/rescue/dropdown/` | Dropdowns de rescate |
-| `GET/POST /api/rescue/admin_doc/:id/` | Documentos admin en el detalle |
+| `POST /api/rescue/admin_doc/:id/` | Documentos admin (kanban y celdas 1×1 de Por facturar). Kanban: `rescueAdminDocToBody` — `remittance_folio`, `invoice_folio`, `extra_rescues`, `oc_pdf`. Por facturar: `pendingInvoiceAdminDocToBody` — mismos campos, `remittance_folio: null` y `extra_rescues: []` |
 | `GET /api/rescue/settings/general/` | Settings generales |
 | `GET /api/rescue/client/settings/:id/` | Settings por cliente |
 | `POST /api/quote/classify` | Clasificador n8n (sesión requerida) |
@@ -164,7 +164,8 @@ Invitado (token en URL; handlers Nitro dedicados):
 
 - `/api/invoicing/client_portal/tms/rescues/`
 - `/api/invoicing/client_portal/tms/trigger/`
-- `POST /api/portals/tms/purchase-orders/upload` (Nitro)
+- `POST /api/portals/tms/purchase-orders/upload` (Nitro → `{NUXT_QUOTE_PDF_API_URL}/purchase-orders/upload`, 202 `{ jobId, total }`)
+- `GET /api/portals/tms/purchase-orders/jobs/:jobId` (Nitro → `{NUXT_QUOTE_PDF_API_URL}/purchase-orders/jobs/:jobId`)
 - `/api/nexxt-step/fill_oc/` (Api-Key; también aliases `fill-oc` en `server/api/nexxt-step/`)
 - `/api/fill-oc/staff/*` → reescribe a `/api/...` en Django con Token de chat
 

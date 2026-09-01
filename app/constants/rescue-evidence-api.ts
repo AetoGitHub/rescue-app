@@ -36,6 +36,10 @@ export const RESCUE_EVIDENCE_STORAGE_PREFIX = 'rescue-2/rescue';
 /** Administrative client payment evidence (change_admin_status), not provider evidence. */
 export const RESCUE_ADMIN_PAYMENT_STORAGE_FOLDER = 'payment_client';
 
+/** Administrative purchase-order / invoice PDF attached when sending admin docs. */
+export const RESCUE_ADMIN_OC_PDF_STORAGE_FOLDER = 'oc_pdf';
+export const RESCUE_ADMIN_OC_PDF_MAX_BYTES = 25 * 1024 * 1024;
+
 export const RESCUE_EVIDENCE_MODAL_COPY = {
   service: {
     title: (folio: string) => `Evidencia del Servicio ${folio}`,
@@ -66,6 +70,14 @@ export const RESCUE_EVIDENCE_MODAL_COPY = {
     uploadSuccess: 'Comprobante subido correctamente',
     uploadSuccessHint: 'Ya puedes aplicar el pago.',
     invalidFile: 'Solo imágenes o PDF dentro del tamaño máximo',
+  },
+  admin_oc_pdf: {
+    dropzoneDescription: 'PDF de hasta 25 MB. Opcional.',
+    uploadSuccess: 'PDF listo para enviar',
+    uploadSuccessHint: 'Se adjuntará a este rescate y a los que selecciones.',
+    invalidFile: 'Solo se permiten archivos PDF de hasta 25 MB',
+    label: 'Subir PDF de OC',
+    changeLabel: 'Cambiar PDF',
   },
   downloadAll: 'Descargar todo',
   downloadingZip: 'Descargando…',

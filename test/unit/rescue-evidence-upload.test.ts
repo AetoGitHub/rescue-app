@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  administrativeOcPdfAcceptAttribute,
+  buildAdministrativeOcPdfStoragePath,
   buildRescueEvidenceZipFilename,
   buildRescueEvidenceZipPayload,
   computeMultiFileUploadProgress,
+  isAdministrativeOcPdfFileAllowed,
 } from '../../app/utils/rescue-evidence-upload';
 
 describe('computeMultiFileUploadProgress', () => {
@@ -42,6 +45,24 @@ describe('buildRescueEvidenceZipPayload', () => {
       complement: 'evidencia-rescate',
       urls: ['https://a.example/1.jpg', 'https://a.example/2.pdf'],
     });
+  });
+});
+
+describe('administrative OC PDF helpers', () => {
+  it('builds the Firebase folder for the source rescue', () => {
+    expect(buildAdministrativeOcPdfStoragePath(88)).toBe(
+      'rescue-2/rescue/88/oc_pdf',
+    );
+  });
+
+  it('accepts only PDF files within the size limit', () => {
+    const pdf = new File(['ok'], 'oc.pdf', { type: 'application/pdf' });
+    const image = new File(['no'], 'oc.png', { type: 'image/png' });
+    expect(isAdministrativeOcPdfFileAllowed(pdf)).toBe(true);
+    expect(isAdministrativeOcPdfFileAllowed(image)).toBe(false);
+    expect(administrativeOcPdfAcceptAttribute()).toBe(
+      '.pdf,application/pdf',
+    );
   });
 });
 

@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui';
 import {
+  RESCUE_EVIDENCE_MODAL_COPY,
+  RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
+} from '~/constants/rescue-evidence-api';
+import {
   parseRescueAdminDocInput,
   rescueAdminDocCopySchema,
   rescueAdminDocToBody,
+  type RescueAdminDocFormOutput,
   type RescueAdminDocFormState,
 } from '~/schemas/rescue-admin-doc';
 
@@ -26,6 +31,14 @@ type SendStep = 'question' | 'select';
 const step = ref<SendStep>('question');
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 const toast = useToast();
+const ocPdfCopy = RESCUE_EVIDENCE_MODAL_COPY.admin_oc_pdf;
+
+const runtimeConfig = useRuntimeConfig();
+const webhookUrl = computed(
+  () =>
+    runtimeConfig.public.firebaseUploadWebhookUrl
+    || RESCUE_FIREBASE_UPLOAD_WEBHOOK_DEFAULT,
+);
 
 const parsedFolios = computed(() => {
   const parsed = parseRescueAdminDocInput({
@@ -39,7 +52,26 @@ const state = reactive<RescueAdminDocFormState>({
   remittance_folio: '',
   invoice_folio: '',
   extra_rescues: [],
+  oc_pdf: '',
 });
+
+const pendingFile = ref<File | null>(null);
+const uploadedForFile = ref<File | null>(null);
+const isUploading = ref(false);
+const uploadProgress = ref<number | null>(null);
+const uploadLabel = ref('');
+const acceptAttribute = administrativeOcPdfAcceptAttribute();
+
+const isBusy = computed(() => isUploading.value || Boolean(props.loading));
+const hasUploadedPdf = computed(() => Boolean(state.oc_pdf.trim()));
+
+const uploadDescription = computed(() => {
+  if (isUploading.value && uploadLabel.value) return uploadLabel.value;
+  if (isUploading.value) return RESCUE_EVIDENCE_MODAL_COPY.uploading;
+  if (hasUploadedPdf.value) return ocPdfCopy.uploadSuccessHint;
+  return ocPdfCopy.dropzoneDescription;
+});
+
 const {
   guardedOpen,
   discardConfirmOpen,
@@ -49,8 +81,21 @@ const {
   resetDirtySnapshot,
 } = useDiscardChangesGuard({
   open,
-  snapshot: () => ({ step: step.value, state }),
+  snapshot: () => ({
+    step: step.value,
+    state,
+    pendingFileName: pendingFile.value?.name ?? '',
+    pendingFileSize: pendingFile.value?.size ?? 0,
+  }),
 });
+
+function resetUploadState() {
+  pendingFile.value = null;
+  uploadedForFile.value = null;
+  state.oc_pdf = '';
+  uploadProgress.value = null;
+  uploadLabel.value = '';
+}
 
 watch(open, (isOpen) => {
   if (isOpen) {
@@ -58,29 +103,134 @@ watch(open, (isOpen) => {
     state.remittance_folio = props.remittanceFolio;
     state.invoice_folio = props.invoiceFolio;
     state.extra_rescues = [];
+    resetUploadState();
     resetDirtySnapshot();
+    return;
   }
-});
 
-function submitWithExtraRescues(extraRescues: number[]) {
-  if (props.loading) return;
-  const parsed = rescueAdminDocCopySchema.safeParse({
-    remittance_folio: props.remittanceFolio,
-    invoice_folio: props.invoiceFolio,
-    extra_rescues: extraRescues,
-  });
-  if (!parsed.success) {
+  if (isUploading.value) {
+    open.value = true;
     toast.add({
-      title: parsed.error.issues[0]?.message ?? 'Revisa los folios',
-      color: 'error',
+      title: RESCUE_EVIDENCE_MODAL_COPY.uploadInProgressCloseBlocked,
+      color: 'warning',
     });
     return;
   }
-  emit('submit', rescueAdminDocToBody(parsed.data));
+
+  resetUploadState();
+});
+
+function fileFromUploadValue(
+  value: File | File[] | null | undefined,
+): File | undefined {
+  if (value == null) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function onPendingFilesChange(value: File | File[] | null | undefined) {
+  const file = fileFromUploadValue(value);
+  if (!file) {
+    if (!isUploading.value) {
+      resetUploadState();
+    }
+    return;
+  }
+
+  if (!isAdministrativeOcPdfFileAllowed(file)) {
+    toast.add({
+      title: ocPdfCopy.invalidFile,
+      color: 'error',
+    });
+    pendingFile.value = null;
+    uploadedForFile.value = null;
+    state.oc_pdf = '';
+    return;
+  }
+
+  pendingFile.value = file;
+  if (uploadedForFile.value !== file) {
+    uploadedForFile.value = null;
+    state.oc_pdf = '';
+  }
+}
+
+const { isDragging: isFullscreenDragging } = useFullscreenFileDrop({
+  model: pendingFile,
+  accept: acceptAttribute,
+  disabled: isBusy,
+  enabled: open,
+  onFiles: (value) => {
+    onPendingFilesChange(value);
+  },
+});
+
+async function uploadPendingIfNeeded(): Promise<boolean> {
+  const file = pendingFile.value;
+  if (!file) {
+    state.oc_pdf = '';
+    return true;
+  }
+
+  if (
+    uploadedForFile.value === file
+    && state.oc_pdf.trim().length > 0
+  ) {
+    return true;
+  }
+
+  if (!isAdministrativeOcPdfFileAllowed(file)) {
+    toast.add({
+      title: ocPdfCopy.invalidFile,
+      color: 'error',
+    });
+    return false;
+  }
+
+  isUploading.value = true;
+  uploadProgress.value = 0;
+  uploadLabel.value = RESCUE_EVIDENCE_MODAL_COPY.uploadingFile(file.name, 1, 1);
+
+  try {
+    const url = await uploadFileToFirebaseGeneral(
+      file,
+      buildAdministrativeOcPdfStoragePath(props.sourceRescueId),
+      webhookUrl.value,
+      {
+        onProgress: (percent) => {
+          uploadProgress.value = percent;
+        },
+      },
+    );
+    state.oc_pdf = url;
+    uploadedForFile.value = file;
+    uploadProgress.value = 100;
+    return true;
+  } catch (error) {
+    toast.add({
+      title: RESCUE_EVIDENCE_MODAL_COPY.uploadError,
+      description: getFetchErrorMessage(error),
+      color: 'error',
+    });
+    uploadedForFile.value = null;
+    state.oc_pdf = '';
+    return false;
+  } finally {
+    isUploading.value = false;
+    uploadProgress.value = null;
+    uploadLabel.value = '';
+  }
+}
+
+async function prepareAndSubmit() {
+  if (isBusy.value) return;
+  const uploaded = await uploadPendingIfNeeded();
+  if (!uploaded) return;
+  await formRef.value?.submit();
 }
 
 function onOnlyThisRescue() {
-  submitWithExtraRescues([]);
+  state.extra_rescues = [];
+  void prepareAndSubmit();
 }
 
 function onSelectOthers() {
@@ -92,14 +242,13 @@ function onBack() {
   state.extra_rescues = [];
 }
 
-function onSubmit(event: FormSubmitEvent<RescueAdminDocFormState>) {
-  if (props.loading) return;
+function onSubmit(event: FormSubmitEvent<RescueAdminDocFormOutput>) {
+  if (isBusy.value) return;
   emit('submit', rescueAdminDocToBody(event.data));
 }
 
 function onApplySelected() {
-  if (props.loading) return;
-  void formRef.value?.submit();
+  void prepareAndSubmit();
 }
 </script>
 
@@ -111,7 +260,13 @@ function onApplySelected() {
     :ui="{ content: 'max-w-lg' }"
   >
     <template #body>
-      <div class="space-y-4">
+      <UForm
+        ref="formRef"
+        :schema="rescueAdminDocCopySchema"
+        :state="state"
+        class="space-y-4"
+        @submit="onSubmit"
+      >
         <div class="rounded-lg border border-default bg-muted/20 px-3 py-2 text-sm">
           <p class="text-xs font-medium uppercase text-muted">
             Folios a enviar
@@ -132,6 +287,53 @@ function onApplySelected() {
           </p>
         </div>
 
+        <UFormField
+          label="PDF de orden de compra"
+          name="oc_pdf"
+          hint="Opcional"
+        >
+          <UFileUpload
+            v-model="pendingFile"
+            variant="area"
+            size="sm"
+            layout="list"
+            :dropzone="true"
+            :preview="true"
+            :accept="acceptAttribute"
+            :disabled="isBusy"
+            :description="uploadDescription"
+            :class="isUploading ? 'pointer-events-none opacity-80' : ''"
+            :icon="
+              hasUploadedPdf && !isUploading
+                ? 'i-lucide-circle-check'
+                : 'i-lucide-upload'
+            "
+            :label="
+              hasUploadedPdf && !isUploading
+                ? ocPdfCopy.changeLabel
+                : ocPdfCopy.label
+            "
+            class="w-full"
+            :ui="{ base: 'min-h-28' }"
+            @update:model-value="onPendingFilesChange"
+          />
+        </UFormField>
+
+        <div
+          v-if="isUploading"
+          class="space-y-2"
+        >
+          <UProgress
+            :model-value="uploadProgress"
+            status
+            size="md"
+            color="primary"
+          />
+          <p class="text-center text-sm text-muted">
+            {{ uploadLabel || RESCUE_EVIDENCE_MODAL_COPY.uploading }}
+          </p>
+        </div>
+
         <template v-if="step === 'question'">
           <p class="text-sm text-highlighted">
             ¿Deseas aplicar los mismos folios a otros rescates?
@@ -139,31 +341,23 @@ function onApplySelected() {
         </template>
 
         <template v-else>
-          <UForm
-            ref="formRef"
-            :schema="rescueAdminDocCopySchema"
-            :state="state"
-            class="space-y-3"
-            @submit="onSubmit"
+          <UFormField
+            label="Otros rescates"
+            name="extra_rescues"
+            hint="Busca por folio y selecciona uno o más rescates"
           >
-            <UFormField
-              label="Otros rescates"
-              name="extra_rescues"
-              hint="Busca por folio y selecciona uno o más rescates"
-            >
-              <AdministrativeRescueDropdownMultiSelect
-                v-model="state.extra_rescues"
-                :exclude-rescue-id="sourceRescueId"
-                :client-id="clientId"
-                :disabled="loading"
-              />
-            </UFormField>
-
-            <UFormField name="remittance_folio" class="hidden" />
-            <UFormField name="invoice_folio" class="hidden" />
-          </UForm>
+            <AdministrativeRescueDropdownMultiSelect
+              v-model="state.extra_rescues"
+              :exclude-rescue-id="sourceRescueId"
+              :client-id="clientId"
+              :disabled="isBusy"
+            />
+          </UFormField>
         </template>
-      </div>
+
+        <UFormField name="remittance_folio" class="hidden" />
+        <UFormField name="invoice_folio" class="hidden" />
+      </UForm>
     </template>
 
     <template #footer>
@@ -173,21 +367,21 @@ function onApplySelected() {
             color="neutral"
             label="Cancelar"
             variant="subtle"
-            :disabled="loading"
+            :disabled="isBusy"
             @click="requestClose"
           />
           <UButton
             color="neutral"
             label="Sí, seleccionar otros"
             variant="outline"
-            :disabled="loading"
+            :disabled="isBusy"
             @click="onSelectOthers"
           />
           <UButton
             color="primary"
             label="No, solo este rescate"
-            :loading="loading"
-            :disabled="loading"
+            :loading="isBusy"
+            :disabled="isBusy"
             @click="onOnlyThisRescue"
           />
         </template>
@@ -197,14 +391,14 @@ function onApplySelected() {
             color="neutral"
             label="Atrás"
             variant="subtle"
-            :disabled="loading"
+            :disabled="isBusy"
             @click="onBack"
           />
           <UButton
             color="primary"
             label="Enviar"
-            :loading="loading"
-            :disabled="loading"
+            :loading="isBusy"
+            :disabled="isBusy"
             @click="onApplySelected"
           />
         </template>
@@ -217,4 +411,6 @@ function onApplySelected() {
     @confirm="confirmDiscard"
     @cancel="cancelDiscard"
   />
+
+  <SharedFullscreenFileDropOverlay :active="isFullscreenDragging" />
 </template>

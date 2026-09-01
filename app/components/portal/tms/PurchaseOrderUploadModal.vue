@@ -8,6 +8,10 @@ import {
   tmsPurchaseOrderUploadSchema,
   type TmsPurchaseOrderUploadState,
 } from '~/schemas/tms-portal';
+import {
+  TMS_PURCHASE_ORDER_MAX_FILE_BYTES,
+  TMS_PURCHASE_ORDER_MAX_FILES,
+} from '~/constants/tms-portal-api';
 
 const props = defineProps<{
   rescues: TmsRescue[];
@@ -29,11 +33,12 @@ const open = ref(false);
 const formRef = useTemplateRef<Form<TmsPurchaseOrderUploadState>>('formRef');
 const state = reactive<TmsPurchaseOrderUploadState>({ files: [] });
 const assignments = ref<TmsPurchaseOrderAssignment[]>([]);
-const batchError = ref<string | null>(null);
-const isUploading = ref(false);
-const processingCount = ref(0);
-const toast = useToast();
-const { uploadPurchaseOrders } = useTmsPurchaseOrderUpload();
+const submittedFiles = ref<File[]>([]);
+const jobStore = useTmsPurchaseOrderJobStore();
+
+const isSubmitting = computed(() => jobStore.submitting);
+const isJobActive = computed(() => jobStore.isActive);
+const batchError = computed(() => jobStore.errorMessage);
 
 const rescueOptions = computed(() => {
   const assignedRescueIds = new Set(
@@ -85,8 +90,10 @@ const resultRows = computed(() =>
 );
 
 const hasRetryableFiles = computed(
-  () => summary.value.failed > 0 && state.files.length > 0,
+  () => summary.value.failed > 0 && state.files.length > 0 && !isJobActive.value,
 );
+
+const uploadLimitLabel = `${TMS_PURCHASE_ORDER_MAX_FILES} archivos · ${TMS_PURCHASE_ORDER_MAX_FILE_BYTES / (1024 * 1024)} MB c/u`;
 
 function assignFile(assignment: TmsPurchaseOrderAssignment, rescueId: number) {
   if (!assignment.file.url) return;
@@ -117,68 +124,73 @@ function reopenAssignment(assignment: TmsPurchaseOrderAssignment) {
   assignment.status = 'unmatched';
 }
 
+function syncAssignmentsFromJob(incoming: typeof jobStore.files) {
+  const result = mergeTmsPurchaseOrderAssignments(
+    assignments.value,
+    incoming,
+    props.rescues,
+  );
+  assignments.value = result.assignments;
+  for (const assignment of result.newlyAssigned) {
+    if (assignment.rescueId == null || !assignment.file.url) continue;
+    const rescue = props.rescues.find((item) => item.id === assignment.rescueId);
+    if (rescue && isTmsRescueReadOnly(rescue)) continue;
+    emit('assign', {
+      rescueId: assignment.rescueId,
+      url: assignment.file.url,
+    });
+  }
+}
+
+watch(
+  () => jobStore.files,
+  (incoming) => {
+    syncAssignmentsFromJob(incoming);
+  },
+  { deep: true, immediate: true },
+);
+
+watch(
+  () => jobStore.status,
+  (status) => {
+    if (status !== 'done') return;
+    state.files = retryableTmsUploadFiles(
+      submittedFiles.value,
+      assignments.value,
+    );
+  },
+);
+
 async function onSubmit(
   event: FormSubmitEvent<TmsPurchaseOrderUploadState>,
 ) {
-  if (isUploading.value) return;
+  if (isSubmitting.value || isJobActive.value) return;
 
   const files = [...event.data.files];
-  isUploading.value = true;
-  processingCount.value = files.length;
-  batchError.value = null;
-
-  // Un reintento solo reemplaza los archivos reenviados; lo ya resuelto se queda.
   const resubmitted = new Set(files.map((file) => file.name));
-  const kept = assignments.value.filter(
-    (assignment) =>
-      assignment.status !== 'failed' && !resubmitted.has(assignment.file.fileName),
-  );
+  if (hasRetryableFiles.value) {
+    assignments.value = assignments.value.filter(
+      (assignment) =>
+        assignment.status !== 'failed'
+        && !resubmitted.has(assignment.file.fileName),
+    );
+  } else {
+    assignments.value = [];
+  }
 
+  submittedFiles.value = files;
   try {
-    const response = await uploadPurchaseOrders(files);
-
-    const processed = assignTmsPurchaseOrders(response.files, props.rescues);
-    assignments.value = [...kept, ...processed];
-    batchError.value = response.batchError ?? null;
-
-    for (const assignment of processed) {
-      if (
-        assignment.status === 'assigned'
-        && assignment.rescueId != null
-        && assignment.file.url
-      ) {
-        const rescue = props.rescues.find(
-          (item) => item.id === assignment.rescueId,
-        );
-        if (rescue && isTmsRescueReadOnly(rescue)) continue;
-        emit('assign', {
-          rescueId: assignment.rescueId,
-          url: assignment.file.url,
-        });
-      }
-    }
-
-    state.files = retryableTmsUploadFiles(files, assignments.value);
-    toast.add({ ...formatTmsUploadFeedback(summary.value), duration: 8000 });
-  } catch (error) {
-    batchError.value = getFetchErrorMessage(error);
-    toast.add({
-      title: 'No se pudieron procesar las órdenes',
-      description: batchError.value,
-      color: 'error',
-      duration: 8000,
-    });
-  } finally {
-    isUploading.value = false;
-    processingCount.value = 0;
+    await jobStore.startUpload(files);
+  } catch {
+    // El store ya notificó el error del POST (400 u otro).
   }
 }
 
 function resetModal() {
-  if (isUploading.value) return;
   state.files = [];
-  assignments.value = [];
-  batchError.value = null;
+  if (!jobStore.hasJob && !assignments.value.length) {
+    submittedFiles.value = [];
+  }
 }
 </script>
 
@@ -186,16 +198,20 @@ function resetModal() {
   <UModal
     v-model:open="open"
     title="Cargar órdenes de compra"
-    description="Sube hasta 20 PDFs. TMS intentará relacionarlos por número de orden de compra."
-    :dismissible="!isUploading"
-    :close="{ disabled: isUploading }"
+    :description="`Sube hasta ${TMS_PURCHASE_ORDER_MAX_FILES} PDFs. TMS los procesa en segundo plano y los relaciona por número de orden.`"
+    :dismissible="!isSubmitting"
+    :close="{ disabled: isSubmitting }"
     scrollable
     :ui="{ content: 'max-w-3xl' }"
     @after:leave="resetModal"
   >
     <UButton
       icon="i-lucide-files"
-      label="Cargar órdenes"
+      :label="
+        isJobActive
+          ? `Carga ${jobStore.progressLabel}`
+          : 'Cargar órdenes'
+      "
     />
 
     <template #body>
@@ -209,7 +225,7 @@ function resetModal() {
         <UFormField
           label="Archivos PDF"
           name="files"
-          description="El servicio extraerá el número de orden y conservará el archivo original. Cada PDF se reporta por separado."
+          :description="`Solo PDF. Máximo ${uploadLimitLabel}. Se envían todos en una sola carga.`"
           required
         >
           <UFileUpload
@@ -220,25 +236,56 @@ function resetModal() {
             layout="list"
             position="inside"
             label="Arrastra tus órdenes de compra"
-            description="PDF · máximo 20 archivos por lote"
+            :description="`PDF · máximo ${uploadLimitLabel}`"
             icon="i-lucide-file-up"
-            :disabled="isUploading"
+            :disabled="isSubmitting || isJobActive"
             class="w-full"
           />
         </UFormField>
       </UForm>
 
-      <p
-        v-if="isUploading"
-        class="mt-4 flex items-center gap-2 text-sm text-muted"
+      <div
+        v-if="jobStore.hasJob || isSubmitting"
+        class="mt-5 space-y-2"
       >
-        <UIcon
-          name="i-lucide-loader-circle"
-          class="size-4 animate-spin"
+        <div class="flex items-baseline justify-between gap-3">
+          <p class="text-xs font-medium tracking-wide text-muted uppercase">
+            Avance del trabajo
+          </p>
+          <p class="font-mono text-sm tabular-nums text-highlighted">
+            {{ jobStore.progressLabel }}
+          </p>
+        </div>
+        <UProgress
+          :model-value="jobStore.completed"
+          :max="jobStore.total || 1"
+          :color="jobStore.expired ? 'error' : 'primary'"
+          :get-value-label="() => jobStore.progressLabel"
         />
-        Procesando {{ processingCount }}
-        {{ processingCount === 1 ? 'archivo' : 'archivos' }}…
-      </p>
+        <p
+          v-if="isSubmitting"
+          class="flex items-center gap-2 text-xs text-muted"
+        >
+          <UIcon
+            name="i-lucide-loader-circle"
+            class="size-3.5 animate-spin"
+          />
+          Enviando archivos…
+        </p>
+        <p
+          v-else-if="isJobActive"
+          class="text-xs text-muted"
+        >
+          El servicio sigue procesando. Puedes cerrar esta ventana; la tabla se
+          irá llenando al reabrirla.
+        </p>
+        <p
+          v-else-if="jobStore.expired"
+          class="text-xs text-error"
+        >
+          El trabajo expiró. Vuelve a subir los archivos.
+        </p>
+      </div>
 
       <UAlert
         v-if="batchError"
@@ -256,7 +303,7 @@ function resetModal() {
       >
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 class="text-sm font-semibold text-highlighted">
-            Resultado del lote ({{ summary.total }})
+            Resultado ({{ summary.total }})
           </h3>
           <div class="flex flex-wrap items-center gap-1.5">
             <UBadge
@@ -294,8 +341,8 @@ function resetModal() {
 
         <ul class="divide-y divide-default rounded-lg border border-default">
           <li
-            v-for="{ assignment, descriptor, index } in resultRows"
-            :key="`${assignment.file.fileName}-${index}`"
+            v-for="{ assignment, descriptor } in resultRows"
+            :key="assignment.file.fileName"
             class="space-y-3 p-3"
           >
             <div class="flex items-start gap-3">
@@ -309,8 +356,8 @@ function resetModal() {
                   {{ assignment.file.fileName }}
                 </p>
                 <p class="text-xs text-muted">
-                  Orden de compra:
-                  {{ assignment.file.orderNumber || 'no identificada' }}
+                  Folio:
+                  {{ assignment.file.orderNumber || 'no identificado' }}
                 </p>
                 <p
                   class="text-xs"
@@ -318,7 +365,11 @@ function resetModal() {
                     descriptor.color === 'error' ? 'text-error' : 'text-toned'
                   "
                 >
-                  {{ descriptor.reason }}
+                  {{
+                    assignment.file.error
+                    || assignment.file.message
+                    || descriptor.reason
+                  }}
                 </p>
               </div>
               <div class="flex shrink-0 items-center gap-1.5">
@@ -404,14 +455,14 @@ function resetModal() {
           color="neutral"
           variant="outline"
           label="Cerrar"
-          :disabled="isUploading"
+          :disabled="isSubmitting"
           @click="close"
         />
         <UButton
           :label="hasRetryableFiles ? 'Reintentar fallidos' : 'Procesar PDFs'"
           :icon="hasRetryableFiles ? 'i-lucide-refresh-cw' : 'i-lucide-scan-text'"
-          :loading="isUploading"
-          :disabled="isUploading || state.files.length === 0"
+          :loading="isSubmitting"
+          :disabled="isSubmitting || isJobActive || state.files.length === 0"
           @click="formRef?.submit()"
         />
       </div>

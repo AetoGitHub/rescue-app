@@ -1,11 +1,10 @@
 import { accessAdministrative } from '#shared/abilities';
+import { TMS_PURCHASE_ORDER_UPLOAD_TIMEOUT_MS } from '~/constants/tms-portal-api';
 import { forwardFetchError } from '../../../../utils/forward-fetch-error';
 import {
-  extractPurchaseOrderPartialResponse,
-  normalizePurchaseOrderUploadResponse,
+  normalizePurchaseOrderJobAccepted,
   parsePurchaseOrderPdfParts,
   purchaseOrderPartsToFormData,
-  rejectedFilesToUploadResults,
   resolvePurchaseOrderUploadUrl,
 } from '../../../../utils/purchase-order-upload';
 
@@ -13,33 +12,21 @@ export default defineEventHandler(async (event) => {
   await requireUserSession(event);
   await authorize(event, accessAdministrative);
 
-  const { accepted, rejected } = parsePurchaseOrderPdfParts(
+  const { accepted } = parsePurchaseOrderPdfParts(
     await readMultipartFormData(event),
   );
   const body = purchaseOrderPartsToFormData(accepted);
-  const sentFileNames = accepted.map((part) => part.filename ?? '');
-  const rejectedResults = rejectedFilesToUploadResults(rejected);
 
   try {
     const response = await $fetch(resolvePurchaseOrderUploadUrl(), {
       method: 'POST',
       body,
+      timeout: TMS_PURCHASE_ORDER_UPLOAD_TIMEOUT_MS,
     });
-    const normalized = normalizePurchaseOrderUploadResponse(response, {
-      sentFileNames,
-    });
-
-    setResponseStatus(event, rejectedResults.length > 0 ? 207 : 201);
-    return { files: [...normalized.files, ...rejectedResults] };
+    const acceptedJob = normalizePurchaseOrderJobAccepted(response);
+    setResponseStatus(event, 202);
+    return acceptedJob;
   } catch (error) {
-    const partial = extractPurchaseOrderPartialResponse(error, { sentFileNames });
-    if (partial) {
-      setResponseStatus(event, 207);
-      return {
-        files: [...partial.files, ...rejectedResults],
-        batchError: partial.batchError,
-      };
-    }
     forwardFetchError(error);
   }
 });

@@ -29,7 +29,7 @@ Copia `.env.example` a `.env` y rellena valores. **No copies secretos a la docum
 | `NUXT_N8N_COORDS_TO_ADDRESS_URL` | Geocoding inverso vía n8n |
 | `NUXT_N8N_LINK_TO_COORDS_URL` | Parseo de links de Maps vía n8n |
 | `NUXT_N8N_RESCUE_CLASSIFIER_URL` | Clasificador de cotización (voz/texto) |
-| `NUXT_QUOTE_PDF_API_URL` | Servicio de PDF de cotización (default documentado en código: `http://localhost:5000`) |
+| `NUXT_QUOTE_PDF_API_URL` | Servicio de PDF (cotización y jobs de órdenes de compra). Default en código: `http://localhost:5000` |
 | `NUXT_PUBLIC_GUEST_RESCUE_USE_MOCK` | Flag público `guestRescueUseMock` (detalle invitado) |
 | `NUXT_PUBLIC_VUEFIRE_API_KEY` | Firebase / VueFire |
 | `NUXT_PUBLIC_VUEFIRE_AUTH_DOMAIN` | Firebase |
@@ -46,7 +46,7 @@ El `runtimeConfig` también declara `session.maxAge` desde `shared/constants/ses
 
 | Script | Qué hace |
 |---|---|
-| `pnpm dev` | Servidor de desarrollo (README del starter: `http://localhost:3000`) |
+| `pnpm dev` | Servidor de desarrollo (README del starter: `http://localhost:3000`). Las rutas `/admin/**` son SPA (`routeRules.ssr: false` en `nuxt.config.ts`); login y páginas de token siguen en SSR. |
 | `pnpm build` | `nuxt build` |
 | `pnpm generate` | `nuxt generate` |
 | `pnpm preview` | Preview del build |
@@ -66,3 +66,5 @@ E2E usa `PLAYWRIGHT_BASE_URL` (default `http://localhost:3000`) y puede arrancar
 ## Despliegue
 
 No hay `vercel.json` ni pipeline de deploy en este repo. El README raíz apunta a la [guía de deployment de Nuxt](https://nuxt.com/docs/getting-started/deployment). Sentry está configurado en `nuxt.config.ts` (`org: aeto-team`, `project: rescues-web`). El túnel de envelopes está en `server/routes/tunnel.post.ts` (`POST /tunnel`).
+
+Tras el deploy, un refresh o URL directa a `/admin/**` muestra el spinner de `app/spa-loading-template.html` hasta hidratar. El cambio de pantalla **dentro** de una sesión ya autenticada no vuelve a pedir HTML al servidor.

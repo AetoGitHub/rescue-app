@@ -109,12 +109,14 @@ function comparableFolio(value: string | null | undefined): string {
 export function assignTmsPurchaseOrders(
   files: TmsPurchaseOrderUploadFile[],
   rescues: TmsRescue[],
+  options?: { reservedRescueIds?: Iterable<number> },
 ): TmsPurchaseOrderAssignment[] {
-  const reservedRescueIds = new Set(
-    rescues
+  const reservedRescueIds = new Set([
+    ...rescues
       .filter((rescue) => Boolean(rescue.oc_pdf?.trim()))
       .map((rescue) => rescue.id),
-  );
+    ...(options?.reservedRescueIds ?? []),
+  ]);
 
   return files.map((file) => {
     if (!file.url) {
@@ -288,6 +290,66 @@ export function formatTmsUploadFeedback(summary: TmsUploadSummary): {
         ? 'warning'
         : 'success',
   };
+}
+
+export function mergeTmsPurchaseOrderAssignments(
+  existing: TmsPurchaseOrderAssignment[],
+  incomingFiles: TmsPurchaseOrderUploadFile[],
+  rescues: TmsRescue[],
+): {
+  assignments: TmsPurchaseOrderAssignment[];
+  newlyAssigned: TmsPurchaseOrderAssignment[];
+} {
+  const byName = new Map(
+    existing.map((assignment) => [assignment.file.fileName, { ...assignment }]),
+  );
+  const newlyAssigned: TmsPurchaseOrderAssignment[] = [];
+  const reservedRescueIds = new Set(
+    [...byName.values()]
+      .filter(
+        (assignment) =>
+          assignment.status === 'assigned' && assignment.rescueId != null,
+      )
+      .map((assignment) => assignment.rescueId!),
+  );
+
+  for (const file of incomingFiles) {
+    const previous = byName.get(file.fileName);
+    if (previous && !(previous.status === 'failed' && file.url)) {
+      byName.set(file.fileName, { ...previous, file });
+      continue;
+    }
+
+    const [created] = assignTmsPurchaseOrders([file], rescues, {
+      reservedRescueIds,
+    });
+    if (!created) continue;
+    byName.set(file.fileName, created);
+    if (created.status === 'assigned' && created.rescueId != null) {
+      reservedRescueIds.add(created.rescueId);
+      newlyAssigned.push(created);
+    }
+  }
+
+  const assignments: TmsPurchaseOrderAssignment[] = [];
+  const seen = new Set<string>();
+
+  for (const assignment of existing) {
+    const next = byName.get(assignment.file.fileName);
+    if (!next || seen.has(assignment.file.fileName)) continue;
+    assignments.push(next);
+    seen.add(assignment.file.fileName);
+  }
+
+  for (const file of incomingFiles) {
+    if (seen.has(file.fileName)) continue;
+    const next = byName.get(file.fileName);
+    if (!next) continue;
+    assignments.push(next);
+    seen.add(file.fileName);
+  }
+
+  return { assignments, newlyAssigned };
 }
 
 /** Archivos que conviene conservar en el input para reintentar la carga. */

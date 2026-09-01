@@ -45,6 +45,8 @@ export type PendingInvoiceMatrixMonths =
 export const PENDING_INVOICE_DEFAULT_MATRIX_MONTHS: PendingInvoiceMatrixMonths = 6;
 
 export type PendingInvoiceColumnId =
+  | 'oc_pdf'
+  | 'factura'
   | 'folio'
   | 'compania_grupo'
   | 'compania'
@@ -57,7 +59,6 @@ export type PendingInvoiceColumnId =
   | 'status'
   | 'descripcion'
   | 'purchase_order'
-  | 'oc_pdf'
   | 'costo_tecnico'
   | 'subtotal'
   | 'iva'
@@ -85,6 +86,8 @@ export interface PendingInvoiceColumnMeta {
 }
 
 export const PENDING_INVOICE_DETAIL_COLUMNS: PendingInvoiceColumnMeta[] = [
+  { id: 'oc_pdf', label: 'PDF OC', kind: 'flag' },
+  { id: 'factura', label: 'Factura', kind: 'text' },
   { id: 'folio', label: 'Folio', kind: 'text', ordering: 'folio' },
   {
     id: 'compania_grupo',
@@ -143,7 +146,6 @@ export const PENDING_INVOICE_DETAIL_COLUMNS: PendingInvoiceColumnMeta[] = [
     kind: 'text',
     ordering: 'purchase_order',
   },
-  { id: 'oc_pdf', label: 'PDF OC', kind: 'flag' },
   {
     id: 'costo_tecnico',
     label: 'Costo técnico',
@@ -183,6 +185,18 @@ export const pendingInvoiceExcelCellClass =
 
 export const PENDING_INVOICE_SEARCH_PLACEHOLDER =
   'Buscar folio, compañía, cliente, unidad, autorizador…';
+
+export const PENDING_INVOICE_ADMIN_DOC_COPY = {
+  ocPdfUpload: 'Subir PDF de OC',
+  ocPdfReplace: 'Reemplazar PDF de OC',
+  ocPdfOpen: 'Abrir PDF de la orden de compra',
+  ocPdfSuccess: 'PDF de OC guardado',
+  ocPdfError: 'No se pudo guardar el PDF de OC',
+  facturaLabel: 'Número de factura',
+  facturaPlaceholder: 'Factura',
+  facturaSuccess: 'Factura guardada',
+  facturaError: 'No se pudo guardar la factura',
+} as const;
 
 export const PENDING_INVOICE_ZIP_TOAST = {
   title: 'Descarga simulada',

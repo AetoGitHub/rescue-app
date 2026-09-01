@@ -10,26 +10,34 @@ const emit = defineEmits<{
   uploaded: [url: string];
 }>();
 
-const { uploadPurchaseOrders } = useTmsPurchaseOrderUpload();
+const { uploadPurchaseOrdersAndWait } = useTmsPurchaseOrderUpload();
 const toast = useToast();
 
 const pendingFile = ref<File | null>(null);
 const isUploading = ref(false);
+const cancelled = ref(false);
+
+onUnmounted(() => {
+  cancelled.value = true;
+});
 
 async function onFileChange(value: File | null | undefined) {
   if (!value || isUploading.value || props.readonly) return;
 
   isUploading.value = true;
   try {
-    const response = await uploadPurchaseOrders([value]);
-    const result = response.files[0];
+    const job = await uploadPurchaseOrdersAndWait([value], {
+      shouldContinue: () => !cancelled.value,
+    });
+    const result =
+      job.files.find((file) => file.fileName === value.name) ?? job.files[0];
 
     if (!result?.url) {
       toast.add({
         title: `No se pudo cargar la OC de ${props.folio}`,
         description:
           result?.error
-          ?? response.batchError
+          ?? result?.message
           ?? 'El servicio no devolvió la URL del archivo.',
         color: 'error',
       });
@@ -38,6 +46,7 @@ async function onFileChange(value: File | null | undefined) {
 
     emit('uploaded', result.url);
   } catch (error) {
+    if (cancelled.value) return;
     toast.add({
       title: `No se pudo cargar la OC de ${props.folio}`,
       description: getFetchErrorMessage(error),

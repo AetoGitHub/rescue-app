@@ -59,6 +59,8 @@ const emit = defineEmits<{
 const UBadge = resolveComponent('UBadge');
 const UIcon = resolveComponent('UIcon');
 const ColumnHeaderFilter = resolveComponent('PendingInvoiceColumnHeaderFilter');
+const OcPdfCell = resolveComponent('PendingInvoiceOcPdfCell');
+const FacturaCell = resolveComponent('PendingInvoiceFacturaCell');
 
 const { applyOrdering } = usePendingInvoiceList();
 
@@ -71,6 +73,8 @@ interface ColumnLayout {
 }
 
 const COLUMN_LAYOUT: Record<PendingInvoiceColumnId, ColumnLayout> = {
+  oc_pdf: { th: 'w-24', td: 'w-24', align: 'center' },
+  factura: { th: 'w-36', td: 'w-36' },
   folio: { th: 'w-32', td: 'w-32' },
   compania_grupo: { th: 'w-44', td: 'max-w-44' },
   compania: { th: 'w-44', td: 'max-w-44' },
@@ -83,7 +87,6 @@ const COLUMN_LAYOUT: Record<PendingInvoiceColumnId, ColumnLayout> = {
   status: { th: 'w-28', td: 'w-28' },
   descripcion: { th: 'w-72', td: 'max-w-72' },
   purchase_order: { th: 'w-32', td: 'max-w-32' },
-  oc_pdf: { th: 'w-20', td: 'w-20', align: 'center' },
   costo_tecnico: { th: 'w-32', td: 'w-32', align: 'end' },
   subtotal: { th: 'w-32', td: 'w-32', align: 'end' },
   iva: { th: 'w-28', td: 'w-28', align: 'end' },
@@ -212,23 +215,10 @@ function cellFor(columnId: PendingInvoiceColumnId) {
         );
       case 'purchase_order':
         return truncatedCell(data.oc || '—');
-      case 'oc_pdf': {
-        if (!data.oc_pdf) {
-          return h('span', { class: 'text-dimmed' }, '—');
-        }
-        return h(
-          'a',
-          {
-            href: data.oc_pdf,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            class: 'inline-flex text-primary hover:text-primary/80',
-            title: 'Abrir PDF de la orden de compra',
-            'aria-label': 'Abrir PDF de la orden de compra',
-          },
-          [h(UIcon, { name: 'i-lucide-file-text', class: 'size-4' })],
-        );
-      }
+      case 'oc_pdf':
+        return h(OcPdfCell, { row: data });
+      case 'factura':
+        return h(FacturaCell, { row: data });
       case 'costo_tecnico':
         return moneyCell(data.costo_tecnico);
       case 'subtotal':

@@ -38,6 +38,9 @@ export interface PendingInvoiceApiRow {
   admin_status?: PendingInvoiceAdminStatus | string | null;
   purchase_order?: string | null;
   oc_pdf?: string | null;
+  invoice_folio?: string | null;
+  invoice_number?: string | null;
+  factura?: string | null;
   /** Legacy aliases still accepted while older payloads exist. */
   oc?: string | null;
   purchase_order_number?: string | null;
@@ -71,6 +74,8 @@ export interface PendingInvoiceRow {
   evidencia_pagos: boolean;
   oc: string | null;
   oc_pdf: string | null;
+  /** Mapped from `invoice_folio` (admin_doc / pending invoice). */
+  factura: string | null;
 }
 
 export interface PendingInvoiceSummary {

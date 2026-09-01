@@ -44,6 +44,22 @@ export interface TmsPurchaseOrderUploadFile {
   error?: string;
 }
 
+export type TmsPurchaseOrderJobStatus = 'pending' | 'processing' | 'done';
+
+export interface TmsPurchaseOrderJobAccepted {
+  jobId: string;
+  total: number;
+}
+
+export interface TmsPurchaseOrderJob {
+  jobId: string;
+  status: TmsPurchaseOrderJobStatus;
+  total: number;
+  completed: number;
+  files: TmsPurchaseOrderUploadFile[];
+}
+
+/** @deprecated El upload es un job asíncrono (`TmsPurchaseOrderJob`). */
 export interface TmsPurchaseOrderUploadResponse {
   files: TmsPurchaseOrderUploadFile[];
   /** Mensaje del servicio cuando el lote falló pero hay resultados por archivo. */

@@ -7,6 +7,7 @@ import {
   isTmsRescueComplete,
   isTmsRescueReadOnly,
   matchesTmsRescueSearch,
+  mergeTmsPurchaseOrderAssignments,
   normalizeTmsRescuePage,
   retryableTmsUploadFiles,
   serializeTmsRescueFilters,
@@ -283,6 +284,30 @@ describe('TMS portal mapping', () => {
       reason: 'Upload failed',
       color: 'error',
     });
+  });
+
+  it('merges later job files into existing assignments by fileName', () => {
+    const first = assignTmsPurchaseOrders(
+      [{ ...upload('100'), fileName: 'a.pdf' }],
+      [rescue(1, '100')],
+    );
+    const { assignments, newlyAssigned } = mergeTmsPurchaseOrderAssignments(
+      first,
+      [
+        { ...upload('100'), fileName: 'a.pdf' },
+        { ...upload('200'), fileName: 'b.pdf' },
+      ],
+      [rescue(1, '100'), rescue(2, '200')],
+    );
+
+    expect(assignments.map((item) => item.file.fileName)).toEqual(['a.pdf', 'b.pdf']);
+    expect(newlyAssigned).toHaveLength(1);
+    expect(newlyAssigned[0]).toMatchObject({
+      file: { fileName: 'b.pdf' },
+      rescueId: 2,
+      status: 'assigned',
+    });
+    expect(assignments[0]?.rescueId).toBe(1);
   });
 
   it('keeps only the failed files selected for a retry', () => {

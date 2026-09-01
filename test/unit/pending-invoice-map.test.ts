@@ -92,6 +92,19 @@ describe('pending-invoice-map', () => {
     expect(row.evidencia_pagos).toBe(true);
     expect(row.oc).toBe('OC-55');
     expect(row.oc_pdf).toBe('https://files.example/oc.pdf');
+    expect(row.factura).toBeNull();
+  });
+
+  it('prefers invoice_folio for the factura column', () => {
+    const row = mapPendingInvoiceApiRow(
+      buildApiRow({
+        invoice_folio: 'F-2026-01',
+        invoice_number: 'legacy-number',
+        factura: 'legacy-factura',
+      }),
+      reference,
+    );
+    expect(row.factura).toBe('F-2026-01');
   });
 
   it('does not invent evidence or OC when the API omits them', () => {
@@ -100,6 +113,7 @@ describe('pending-invoice-map', () => {
     expect(row.evidencia_pagos).toBe(false);
     expect(row.oc).toBeNull();
     expect(row.oc_pdf).toBeNull();
+    expect(row.factura).toBeNull();
   });
 
   it('parses DD/MM/AAAA dates from the pending-invoice report', () => {

@@ -2,9 +2,26 @@
 
 ## Qué es este proyecto
 
-SPA/SSR **Nuxt 4** (`compatibilityDate: 2025-07-15`) con UI **Nuxt UI 4**, estado **Pinia** + queries **Pinia Colada**, formularios **Zod**, mapas **vue3-google-map**, auth **nuxt-auth-utils** + **nuxt-authorization**, Firebase **nuxt-vuefire**, errores **Sentry**.
+**Nuxt 4** (`compatibilityDate: 2025-07-15`) con UI **Nuxt UI 4**, estado **Pinia** + queries **Pinia Colada**, formularios **Zod**, mapas **vue3-google-map**, auth **nuxt-auth-utils** + **nuxt-authorization**, Firebase **nuxt-vuefire**, errores **Sentry**.
 
 El título de la app es `Rescates`; `htmlAttrs.lang` es `es-MX`. Fuente: Barlow (Google Fonts). CSS: `app/assets/css/main.css` + Tailwind 4.
+
+## Modo de renderizado
+
+Híbrido (Nuxt 4.4, `routeRules`):
+
+| Rutas | Modo | Motivo |
+|---|---|---|
+| `/admin/**` | Solo cliente (`ssr: false`) | Herramienta interna autenticada: no hay SEO. Los listados y detalles se piden en el browser (Pinia Colada). El SSR solo añadía TTFB de sesión (`sessionHooks.fetch` / refresh) + hidratación en cada carga completa, sin HTML útil de negocio. |
+| `/login`, `/password-reset`, `/unauthorized`, `/rescue/:id/authorization/:token` | Universal (SSR) | Primera pintura del formulario o enlace de invitado sin esperar el bundle. |
+
+Nitro **sigue** sirviendo `server/api/**` (login, proxy Django, webhooks). `ssr: false` no apaga el BFF.
+
+Cold start de una URL `/admin/**` (refresh, enlace directo): HTML vacío + `app/spa-loading-template.html` hasta que hidrata el cliente. La cookie de sesión se resuelve entonces vía `GET /api/_auth/session` (`nuxt-auth-utils`; `useApiFetch` / `useRequestFetch` en el cliente envían la cookie).
+
+Navegación **dentro** de la app (`UNavigationMenu` → `NuxtLink`): ya era client-side; el layout `default` y `admin.vue` persisten. No se usó `<NuxtPage keepalive>`: tableros con mapas y listeners de Firebase no deben quedarse montados.
+
+No hay `definePageMeta({ ssr: false })` por página: la regla cubre todo `/admin/**` (incluido `/admin/llenar-oc`).
 
 ## Árbol relevante
 
@@ -34,7 +51,7 @@ Alias `#shared` apunta al directorio `shared/` (`nuxt.config.ts`).
 3. Si no hay handler más específico, `server/api/[...].ts` exige sesión **y token no vacío**, autoriza con `abilityForApiPath`, y proxifica a `joinURL(apiUrl, event.path)` con `Authorization: Token <session.token>`, `Accept-Language: es` y `X-Request-Id`. Sin token no se proxifica: 401 `data.code = session_expired`.
 4. Excepción: paths `/api/nexxt-step/` no usan Token de sesión; Django recibe `Authorization: Api-Key` (ver [guest-and-fill-oc.md](./domains/guest-and-fill-oc.md)).
 
-Handlers **propios** (no proxy Django genérico) incluyen login/logout/password-reset, mapas n8n, clasificador de cotización, PDF (`/api/quotes/:id`), Alegra, evidencias/cotización/chat/cards con token de invitado, upload TMS, balance operativo, fill-oc.
+Handlers **propios** (no proxy Django genérico) incluyen login/logout/password-reset, mapas n8n, clasificador de cotización, PDF (`/api/quotes/:id`), Alegra, evidencias/cotización/chat/cards con token de invitado, upload TMS de OC (job: `POST .../purchase-orders/upload` + `GET .../purchase-orders/jobs/:jobId` hacia `NUXT_QUOTE_PDF_API_URL`), balance operativo, fill-oc.
 
 ## Auth y autorización
 
