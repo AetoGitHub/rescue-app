@@ -14,13 +14,27 @@ import {
 
 const open = defineModel<boolean>('open', { required: true });
 
-const props = defineProps<{
-  sourceRescueId: number;
-  clientId: number;
-  remittanceFolio: string;
-  invoiceFolio: string;
-  loading?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    sourceRescueId: number;
+    clientId?: number;
+    remittanceFolio: string;
+    invoiceFolio: string;
+    ocPdf?: string;
+    loading?: boolean;
+    /** When false, only this rescue is sent (Por Facturar). */
+    allowExtraRescues?: boolean;
+    /** When true, remisión and factura are editable inputs. */
+    editableFolios?: boolean;
+  }>(),
+  {
+    clientId: 0,
+    ocPdf: '',
+    loading: false,
+    allowExtraRescues: true,
+    editableFolios: false,
+  },
+);
 
 const emit = defineEmits<{
   submit: [body: ReturnType<typeof rescueAdminDocToBody>];
@@ -31,6 +45,7 @@ type SendStep = 'question' | 'select';
 const step = ref<SendStep>('question');
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 const toast = useToast();
+const { onFormError } = useFormValidationFeedback();
 const ocPdfCopy = RESCUE_EVIDENCE_MODAL_COPY.admin_oc_pdf;
 
 const runtimeConfig = useRuntimeConfig();
@@ -104,6 +119,7 @@ watch(open, (isOpen) => {
     state.invoice_folio = props.invoiceFolio;
     state.extra_rescues = [];
     resetUploadState();
+    state.oc_pdf = props.ocPdf.trim();
     resetDirtySnapshot();
     return;
   }
@@ -167,7 +183,6 @@ const { isDragging: isFullscreenDragging } = useFullscreenFileDrop({
 async function uploadPendingIfNeeded(): Promise<boolean> {
   const file = pendingFile.value;
   if (!file) {
-    state.oc_pdf = '';
     return true;
   }
 
@@ -234,6 +249,7 @@ function onOnlyThisRescue() {
 }
 
 function onSelectOthers() {
+  if (!props.allowExtraRescues) return;
   step.value = 'select';
 }
 
@@ -266,8 +282,12 @@ function onApplySelected() {
         :state="state"
         class="space-y-4"
         @submit="onSubmit"
+        @error="onFormError"
       >
-        <div class="rounded-lg border border-default bg-muted/20 px-3 py-2 text-sm">
+        <div
+          v-if="!editableFolios"
+          class="rounded-lg border border-default bg-muted/20 px-3 py-2 text-sm"
+        >
           <p class="text-xs font-medium uppercase text-muted">
             Folios a enviar
           </p>
@@ -286,6 +306,32 @@ function onApplySelected() {
             {{ parsedFolios.invoice_folio }}
           </p>
         </div>
+
+        <template v-else>
+          <UFormField
+            label="Remisión (OC)"
+            name="remittance_folio"
+          >
+            <UInput
+              v-model="state.remittance_folio"
+              class="w-full"
+              placeholder="Remisión (OC)"
+              :disabled="isBusy"
+            />
+          </UFormField>
+
+          <UFormField
+            label="Factura"
+            name="invoice_folio"
+          >
+            <UInput
+              v-model="state.invoice_folio"
+              class="w-full"
+              placeholder="Factura"
+              :disabled="isBusy"
+            />
+          </UFormField>
+        </template>
 
         <UFormField
           label="PDF de orden de compra"
@@ -334,13 +380,13 @@ function onApplySelected() {
           </p>
         </div>
 
-        <template v-if="step === 'question'">
+        <template v-if="allowExtraRescues && step === 'question'">
           <p class="text-sm text-highlighted">
             ¿Deseas aplicar los mismos folios a otros rescates?
           </p>
         </template>
 
-        <template v-else>
+        <template v-else-if="allowExtraRescues">
           <UFormField
             label="Otros rescates"
             name="extra_rescues"
@@ -355,14 +401,22 @@ function onApplySelected() {
           </UFormField>
         </template>
 
-        <UFormField name="remittance_folio" class="hidden" />
-        <UFormField name="invoice_folio" class="hidden" />
+        <UFormField
+          v-if="!editableFolios"
+          name="remittance_folio"
+          class="hidden"
+        />
+        <UFormField
+          v-if="!editableFolios"
+          name="invoice_folio"
+          class="hidden"
+        />
       </UForm>
     </template>
 
     <template #footer>
       <div class="flex w-full flex-wrap justify-end gap-2">
-        <template v-if="step === 'question'">
+        <template v-if="step === 'question' || !allowExtraRescues">
           <UButton
             color="neutral"
             label="Cancelar"
@@ -371,6 +425,7 @@ function onApplySelected() {
             @click="requestClose"
           />
           <UButton
+            v-if="allowExtraRescues"
             color="neutral"
             label="Sí, seleccionar otros"
             variant="outline"
@@ -379,7 +434,7 @@ function onApplySelected() {
           />
           <UButton
             color="primary"
-            label="No, solo este rescate"
+            :label="allowExtraRescues ? 'No, solo este rescate' : 'Enviar'"
             :loading="isBusy"
             :disabled="isBusy"
             @click="onOnlyThisRescue"

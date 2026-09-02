@@ -78,7 +78,7 @@ Constantes: `app/constants/rescue-api.ts`, `rescue-operative-flow.ts`, `rescue-q
 | `GET /api/rescue/supplier/:id/` | Proveedor del rescate |
 | `POST /api/rescue/approve_link/:id/generate/` | Link de autorización |
 | `GET /api/rescue/dropdown/` | Dropdowns de rescate |
-| `POST /api/rescue/admin_doc/:id/` | Documentos admin (kanban y celdas 1×1 de Por facturar). Kanban: `rescueAdminDocToBody` — `remittance_folio`, `invoice_folio`, `extra_rescues`, `oc_pdf`. Por facturar: `pendingInvoiceAdminDocToBody` — mismos campos, `remittance_folio: null` y `extra_rescues: []` |
+| `POST /api/rescue/admin_doc/:id/` | Documentos admin (kanban y modal de Por facturar). Body: `rescueAdminDocToBody` — `remittance_folio`, `invoice_folio`, `extra_rescues`, `oc_pdf`. En Por facturar `extra_rescues` es `[]`. |
 | `GET /api/rescue/settings/general/` | Settings generales |
 | `GET /api/rescue/client/settings/:id/` | Settings por cliente |
 | `POST /api/quote/classify` | Clasificador n8n (sesión requerida) |

@@ -5,6 +5,7 @@ import {
   RESCUE_EVIDENCE_ZIP_WEBHOOK_DEFAULT,
 } from '~/constants/rescue-evidence-api';
 import { PENDING_INVOICE_DETAIL_COLUMNS } from '~/constants/pending-invoice';
+import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
 import {
   filterPendingInvoiceRows,
   sortPendingInvoiceRows,
@@ -92,6 +93,12 @@ const filtering = computed(
 const commentRow = ref<PendingInvoiceRow | null>(null);
 const isCommentOpen = ref(false);
 
+const sendAdminDocModalOpen = ref(false);
+const pendingAdminDocRow = ref<PendingInvoiceRow | null>(null);
+const adminDocRescueId = computed(() => pendingAdminDocRow.value?.id ?? null);
+const { save: saveAdminDoc, isSaving: isSavingAdminDoc } =
+  useRescueAdminDoc(adminDocRescueId);
+
 function openComments(row: PendingInvoiceRow) {
   commentRow.value = row;
   isCommentOpen.value = true;
@@ -109,6 +116,20 @@ function openDetail(row: PendingInvoiceRow) {
     path: '/admin/administrativo',
     query: { rescue: String(row.id) },
   });
+}
+
+function openAdminDoc(row: PendingInvoiceRow) {
+  pendingAdminDocRow.value = row;
+  sendAdminDocModalOpen.value = true;
+}
+
+async function onSendAdminDocSubmit(body: RescueAdminDocBody) {
+  if (isSavingAdminDoc.value) return;
+  const ok = await saveAdminDoc(body);
+  if (ok) {
+    sendAdminDocModalOpen.value = false;
+    pendingAdminDocRow.value = null;
+  }
 }
 
 function onClearFilters() {
@@ -203,6 +224,7 @@ async function onEvidenceZip(
         @comment="openComments"
         @attention="openInOperations"
         @detail="openDetail"
+        @admin-doc="openAdminDoc"
         @evidence-zip="onEvidenceZip"
       />
 
@@ -217,6 +239,19 @@ async function onEvidenceZip(
     <LazyPendingInvoiceCommentModal
       v-model:open="isCommentOpen"
       :row="commentRow"
+    />
+
+    <LazyAdministrativeSendAdminDocModal
+      v-if="sendAdminDocModalOpen && pendingAdminDocRow"
+      v-model:open="sendAdminDocModalOpen"
+      :source-rescue-id="pendingAdminDocRow.id"
+      :remittance-folio="pendingAdminDocRow.oc ?? ''"
+      :invoice-folio="pendingAdminDocRow.factura ?? ''"
+      :oc-pdf="pendingAdminDocRow.oc_pdf ?? ''"
+      :allow-extra-rescues="false"
+      :editable-folios="true"
+      :loading="isSavingAdminDoc"
+      @submit="onSendAdminDocSubmit"
     />
   </div>
 </template>

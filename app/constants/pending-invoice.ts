@@ -187,15 +187,9 @@ export const PENDING_INVOICE_SEARCH_PLACEHOLDER =
   'Buscar folio, compañía, cliente, unidad, autorizador…';
 
 export const PENDING_INVOICE_ADMIN_DOC_COPY = {
-  ocPdfUpload: 'Subir PDF de OC',
-  ocPdfReplace: 'Reemplazar PDF de OC',
+  upload: 'Subir',
+  uploadReplace: 'Editar documentos',
   ocPdfOpen: 'Abrir PDF de la orden de compra',
-  ocPdfSuccess: 'PDF de OC guardado',
-  ocPdfError: 'No se pudo guardar el PDF de OC',
-  facturaLabel: 'Número de factura',
-  facturaPlaceholder: 'Factura',
-  facturaSuccess: 'Factura guardada',
-  facturaError: 'No se pudo guardar la factura',
 } as const;
 
 export const PENDING_INVOICE_ZIP_TOAST = {
