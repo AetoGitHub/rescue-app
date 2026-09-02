@@ -134,7 +134,7 @@ watch(open, (isOpen) => {
   }
 
   resetUploadState();
-});
+}, { immediate: true });
 
 function fileFromUploadValue(
   value: File | File[] | null | undefined,
