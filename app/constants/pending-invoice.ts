@@ -87,6 +87,12 @@ export interface PendingInvoiceColumnMeta {
 
 export const PENDING_INVOICE_DETAIL_COLUMNS: PendingInvoiceColumnMeta[] = [
   { id: 'oc_pdf', label: 'PDF OC', kind: 'flag' },
+  {
+    id: 'purchase_order',
+    label: 'OC',
+    kind: 'text',
+    ordering: 'purchase_order',
+  },
   { id: 'factura', label: 'Factura', kind: 'text' },
   { id: 'folio', label: 'Folio', kind: 'text', ordering: 'folio' },
   {
@@ -139,12 +145,6 @@ export const PENDING_INVOICE_DETAIL_COLUMNS: PendingInvoiceColumnMeta[] = [
     label: 'Descripción',
     kind: 'text',
     ordering: 'service_description',
-  },
-  {
-    id: 'purchase_order',
-    label: 'OC',
-    kind: 'text',
-    ordering: 'purchase_order',
   },
   {
     id: 'costo_tecnico',
