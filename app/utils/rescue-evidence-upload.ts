@@ -212,12 +212,41 @@ export function rescueEvidenceAcceptAttribute(
     : 'image/*,.pdf,application/pdf';
 }
 
+export type RescueEvidenceKind = 'image' | 'video' | 'audio' | 'pdf' | 'other';
+
+const KIND_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']);
+const KIND_VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov']);
+const KIND_AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'ogg', 'm4a']);
+
+/** SVG is deliberately excluded from `image` and classified as `other` (never rendered inline). */
+export function getRescueEvidenceKind(url: string): RescueEvidenceKind {
+  const ext = fileExtension(rescueEvidenceUrlBasename(url));
+  if (ext === 'pdf') return 'pdf';
+  if (KIND_VIDEO_EXTENSIONS.has(ext)) return 'video';
+  if (KIND_AUDIO_EXTENSIONS.has(ext)) return 'audio';
+  if (KIND_IMAGE_EXTENSIONS.has(ext)) return 'image';
+  return 'other';
+}
+
+export function rescueEvidenceUrlBasename(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    return pathname.split('/').filter(Boolean).at(-1) ?? '';
+  } catch {
+    return url;
+  }
+}
+
+const KIND_ICON: Record<RescueEvidenceKind, string> = {
+  image: 'i-lucide-image',
+  video: 'i-lucide-video',
+  audio: 'i-lucide-music',
+  pdf: 'i-lucide-file-text',
+  other: 'i-lucide-file',
+};
+
 export function getRescueEvidenceFileIcon(url: string): string {
-  const lower = url.toLowerCase();
-  if (lower.endsWith('.pdf')) return 'i-lucide-file-text';
-  if (/\.(mp4|webm|mov)(\?|$)/.test(lower)) return 'i-lucide-video';
-  if (/\.(jpg|jpeg|png|gif|webp)(\?|$)/.test(lower)) return 'i-lucide-image';
-  return 'i-lucide-file';
+  return KIND_ICON[getRescueEvidenceKind(url)];
 }
 
 export function buildRescueEvidenceZipPayload(input: {

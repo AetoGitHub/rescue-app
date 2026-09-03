@@ -29,6 +29,7 @@ const props = withDefaults(
 const evidenceType = computed(() => props.type ?? RESCUE_EVIDENCE_TYPE_SERVICE);
 
 const copy = computed(() => RESCUE_EVIDENCE_MODAL_COPY[evidenceType.value]);
+const previewCopy = RESCUE_EVIDENCE_MODAL_COPY.preview;
 
 const modalTitle = computed(() => copy.value.title(props.folio));
 
@@ -285,13 +286,44 @@ async function onDownloadAll() {
 }
 
 function fileLabel(url: string, index: number) {
-  try {
-    const pathname = new URL(url).pathname;
-    const name = pathname.split('/').filter(Boolean).at(-1);
-    return name || `Archivo ${index + 1}`;
-  } catch {
-    return `Archivo ${index + 1}`;
-  }
+  const name = rescueEvidenceUrlBasename(url);
+  return name || `Archivo ${index + 1}`;
+}
+
+const lightboxOpen = ref(false);
+const lightboxUrl = ref('');
+const lightboxFileName = ref('');
+const lightboxEvidenceId = ref<number | null>(null);
+
+function openLightbox(item: RescueEvidence, index: number) {
+  lightboxUrl.value = item.url;
+  lightboxFileName.value = fileLabel(item.url, index);
+  lightboxEvidenceId.value = item.id;
+  lightboxOpen.value = true;
+}
+
+const { deactivateEvidence, isDeactivating } = useRescueEvidenceDeactivate(rescueIdRef);
+
+const deleteTarget = ref<{ id: number; fileName: string } | null>(null);
+const deleteConfirmOpen = computed<boolean>({
+  get: () => deleteTarget.value != null,
+  set: (value) => {
+    if (!value) deleteTarget.value = null;
+  },
+});
+const deleteConfirmDescription = computed(() =>
+  previewCopy.deleteConfirmDescription(deleteTarget.value?.fileName ?? ''),
+);
+
+function requestDelete(item: RescueEvidence, index: number) {
+  deleteTarget.value = { id: item.id, fileName: fileLabel(item.url, index) };
+}
+
+async function onConfirmDelete() {
+  if (!deleteTarget.value) return;
+  const { id } = deleteTarget.value;
+  deleteTarget.value = null;
+  await deactivateEvidence(id);
 }
 </script>
 
@@ -393,33 +425,62 @@ function fileLabel(url: string, index: number) {
 
       <ul
         v-else
-        class="divide-y divide-default rounded-lg border border-default"
+        class="grid grid-cols-2 gap-3 sm:grid-cols-3"
       >
         <li
           v-for="(item, index) in items"
           :key="item.id"
-          class="flex items-center gap-3 px-3 py-2.5"
+          class="group relative overflow-hidden rounded-lg border border-default"
         >
-          <UIcon
-            :name="getRescueEvidenceFileIcon(item.url)"
-            class="size-5 shrink-0 text-muted"
-          />
-          <a
-            :href="item.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="min-w-0 flex-1 truncate text-sm text-primary hover:underline"
+          <button
+            type="button"
+            class="relative block aspect-square w-full cursor-pointer"
+            :aria-label="fileLabel(item.url, index)"
+            @click="openLightbox(item, index)"
           >
+            <OperationalRescueDetailEvidencePreviewContent
+              :url="item.url"
+              :file-name="fileLabel(item.url, index)"
+              size="thumb"
+            />
+            <div
+              class="pointer-events-none absolute inset-0 flex items-center justify-center gap-1 bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+            >
+              <UIcon
+                name="i-lucide-eye"
+                class="size-4"
+              />
+              <span class="text-xs font-medium">{{ previewCopy.viewDetail }}</span>
+            </div>
+          </button>
+          <div
+            class="absolute right-1 top-1 flex gap-1 opacity-0 shadow transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+          >
+            <UButton
+              v-if="!readonly"
+              color="error"
+              icon="i-lucide-trash-2"
+              variant="solid"
+              size="xs"
+              square
+              :loading="isDeactivating(item.id)"
+              :disabled="isDeactivating(item.id)"
+              aria-label="Eliminar evidencia"
+              @click.stop="requestDelete(item, index)"
+            />
+            <UButton
+              color="neutral"
+              icon="i-lucide-external-link"
+              variant="solid"
+              size="xs"
+              square
+              aria-label="Abrir en pestaña nueva"
+              @click.stop="openEvidenceUrl(item.url)"
+            />
+          </div>
+          <p class="truncate border-t border-default bg-default px-2 py-1 text-xs text-muted">
             {{ fileLabel(item.url, index) }}
-          </a>
-          <UButton
-            color="neutral"
-            icon="i-lucide-external-link"
-            variant="ghost"
-            size="xs"
-            aria-label="Abrir archivo"
-            @click="openEvidenceUrl(item.url)"
-          />
+          </p>
         </li>
       </ul>
     </template>
@@ -463,9 +524,27 @@ function fileLabel(url: string, index: number) {
     @cancel="cancelDiscard"
   />
 
+  <SharedDiscardChangesConfirmModal
+    v-model:open="deleteConfirmOpen"
+    :title="previewCopy.deleteConfirmTitle"
+    :description="deleteConfirmDescription"
+    :cancel-label="previewCopy.deleteCancelLabel"
+    :confirm-label="previewCopy.deleteConfirmLabel"
+    @confirm="onConfirmDelete"
+  />
+
   <SharedFullscreenFileDropOverlay
     :active="isFullscreenDragging"
     label="Suelta los archivos para subirlos"
+  />
+
+  <OperationalRescueDetailEvidenceLightboxModal
+    v-model:open="lightboxOpen"
+    :url="lightboxUrl"
+    :file-name="lightboxFileName"
+    :evidence-id="lightboxEvidenceId"
+    :rescue-id="rescueId"
+    :readonly="readonly"
   />
 </template>
 
