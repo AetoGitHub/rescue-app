@@ -9,6 +9,7 @@ export type CatalogDropdownFetchOptions = {
   signal?: AbortSignal;
   start?: string | null;
   cursor?: string | null;
+  filters?: Record<string, unknown>;
 };
 
 export type CatalogDropdownFetcher = (
@@ -64,6 +65,7 @@ function useCatalogDropdownInfinite(
   fetcher: CatalogDropdownFetcher,
   infiniteMode: CatalogDropdownInfiniteMode,
   requireSearch: boolean,
+  filters?: () => Record<string, unknown> | undefined,
 ): CatalogDropdownInfiniteState {
   const instanceId = useId();
   const { searchTerm, debouncedSearch } = useDebouncedSearch();
@@ -84,7 +86,13 @@ function useCatalogDropdownInfinite(
     loadNextPage,
     error,
   } = useInfiniteQuery<PaginatedResponse<CatalogDropdownRow>, Error, string | null>({
-    key: () => ['catalog-dropdown', instanceId, infiniteMode, debouncedSearch.value],
+    key: () => [
+      'catalog-dropdown',
+      instanceId,
+      infiniteMode,
+      debouncedSearch.value,
+      filters?.() ?? null,
+    ],
     initialPageParam: null,
     enabled: () => searchEnabled.value,
     query: ({ pageParam, signal }) =>
@@ -92,6 +100,7 @@ function useCatalogDropdownInfinite(
         signal,
         start: infiniteMode === 'offset' ? pageParam : undefined,
         cursor: infiniteMode === 'cursor' ? pageParam : undefined,
+        filters: filters?.(),
       }),
     getNextPageParam,
   });
@@ -133,6 +142,7 @@ function useCatalogDropdownInfinite(
 function useCatalogDropdownSingle(
   fetcher: CatalogDropdownFetcher,
   requireSearch: boolean,
+  filters?: () => Record<string, unknown> | undefined,
 ): CatalogDropdownSingleState {
   const instanceId = useId();
   const { searchTerm, debouncedSearch } = useDebouncedSearch();
@@ -142,8 +152,14 @@ function useCatalogDropdownSingle(
   );
 
   const { data, asyncStatus: queryAsyncStatus, error } = useQuery({
-    key: () => ['catalog-dropdown', instanceId, debouncedSearch.value],
-    query: async ({ signal }) => fetcher(debouncedSearch.value, { signal }),
+    key: () => [
+      'catalog-dropdown',
+      instanceId,
+      debouncedSearch.value,
+      filters?.() ?? null,
+    ],
+    query: async ({ signal }) =>
+      fetcher(debouncedSearch.value, { signal, filters: filters?.() }),
     enabled: () => searchEnabled.value,
     refetchOnWindowFocus: false,
     staleTime: 60_000,
@@ -177,11 +193,17 @@ export function useCatalogDropdown(
   options?: {
     infinite?: CatalogDropdownInfiniteMode;
     requireSearch?: boolean;
+    filters?: () => Record<string, unknown> | undefined;
   },
 ): CatalogDropdownState {
   const requireSearch = options?.requireSearch === true;
   if (options?.infinite) {
-    return useCatalogDropdownInfinite(fetcher, options.infinite, requireSearch);
+    return useCatalogDropdownInfinite(
+      fetcher,
+      options.infinite,
+      requireSearch,
+      options.filters,
+    );
   }
-  return useCatalogDropdownSingle(fetcher, requireSearch);
+  return useCatalogDropdownSingle(fetcher, requireSearch, options?.filters);
 }

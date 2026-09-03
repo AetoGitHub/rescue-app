@@ -17,6 +17,8 @@ const props = defineProps<{
   infinite?: CatalogDropdownInfiniteMode;
   /** If true, do not fetch until the user types a search term. */
   requireSearch?: boolean;
+  /** Extra static filters merged into the fetcher's query (e.g. `{ has_contract: true }`). */
+  filters?: Record<string, unknown>;
 }>();
 
 const model = defineModel<CatalogDropdownSelection>({
@@ -30,6 +32,7 @@ const dropdown = useCatalogDropdown(
   {
     ...(props.infinite ? { infinite: props.infinite } : {}),
     requireSearch: props.requireSearch === true,
+    filters: () => props.filters,
   },
 );
 
@@ -118,6 +121,14 @@ onMounted(() => {
       variant="subtle"
       :ui="{ base: 'bg-default' }"
     >
+      <template #item-trailing="{ item }">
+        <UIcon
+          v-if="(item as CatalogDropdownRow).has_contract"
+          name="i-lucide-file-text"
+          class="size-4 text-primary"
+        />
+      </template>
+
       <template v-if="infiniteMode" #content-bottom>
         <div class="flex min-h-8 items-center justify-center px-2 py-1">
           <UIcon

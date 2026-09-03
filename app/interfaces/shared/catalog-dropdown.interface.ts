@@ -1,6 +1,7 @@
 export interface CatalogDropdownRow {
   id: number;
   name: string;
+  has_contract?: boolean | null;
 }
 
 /** Single-select catalog dropdown model (id + display name). */
