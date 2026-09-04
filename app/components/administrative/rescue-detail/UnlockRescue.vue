@@ -89,7 +89,9 @@ function resetForm() {
 
 function openUnlockModal() {
   if (isCurrentlyUnlocked.value) return;
-  minUnlockDatetime.value = getRescueUnlockMinDatetimeLocal();
+  const now = new Date();
+  minUnlockDatetime.value = getRescueUnlockMinDatetimeLocal(now);
+  state.unlocked_until_local = getRescueUnlockDefaultDatetimeLocal(now);
   open.value = true;
 }
 
