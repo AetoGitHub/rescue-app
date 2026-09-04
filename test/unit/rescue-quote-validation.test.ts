@@ -193,6 +193,23 @@ describe('TMS client internal notes', () => {
     expect(filled.success).toBe(true);
   });
 
+  it('rejects TMS internal notes shorter than 5 characters after trimming', () => {
+    const result = rescueStepSummarySchema.safeParse({
+      client: { value: 12, label: 'TMS' },
+      internal_notes: '  ab  ',
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(['internal_notes']);
+  });
+
+  it('trims internal notes before validating TMS length', () => {
+    const result = rescueStepSummarySchema.safeParse({
+      client: { value: 12, label: 'TMS' },
+      internal_notes: '  folio  ',
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('keeps internal notes optional for other clients', () => {
     const result = rescueStepSummarySchema.safeParse({
       client: { value: 1, label: 'Cliente' },
