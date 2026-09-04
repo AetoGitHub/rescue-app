@@ -185,56 +185,58 @@ async function onEvidenceZip(
       @clear-filters="onClearFilters"
     />
 
-    <div
-      v-if="isInitialLoading"
-      class="flex min-h-48 flex-1 items-center justify-center rounded-lg border border-muted bg-default"
-    >
-      <UIcon
-        name="i-lucide-loader-circle"
-        class="size-6 animate-spin text-muted"
-      />
-    </div>
-
-    <div
-      v-else-if="isError && rows.length === 0"
-      class="flex min-h-48 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-muted bg-default p-6 text-center"
-    >
-      <p class="text-sm text-muted">
-        {{ errorMessage || 'No se pudo cargar Por Facturar.' }}
-      </p>
-      <UButton
-        color="neutral"
-        variant="subtle"
-        icon="i-lucide-refresh-cw"
-        label="Reintentar"
-        @click="() => void refresh()"
-      />
-    </div>
-
-    <template v-else>
-      <PendingInvoiceDetailTable
-        :rows="rows"
-        :option-rows="searchedRows"
-        :controller="controller"
-        :downloading-evidence-key="downloadingEvidenceKey"
-        :has-next-page="hasNextPage"
-        :load-next-page="loadNextPage"
-        :async-status="asyncStatus"
-        :filtering="filtering"
-        @comment="openComments"
-        @attention="openInOperations"
-        @detail="openDetail"
-        @admin-doc="openAdminDoc"
-        @evidence-zip="onEvidenceZip"
-      />
-
-      <p
-        v-if="isLoadingMore"
-        class="text-center text-xs text-muted"
+    <PendingInvoiceTableFullscreenSection>
+      <div
+        v-if="isInitialLoading"
+        class="flex min-h-48 flex-1 items-center justify-center rounded-lg border border-muted bg-default"
       >
-        Cargando más eventos…
-      </p>
-    </template>
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-6 animate-spin text-muted"
+        />
+      </div>
+
+      <div
+        v-else-if="isError && rows.length === 0"
+        class="flex min-h-48 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-muted bg-default p-6 text-center"
+      >
+        <p class="text-sm text-muted">
+          {{ errorMessage || 'No se pudo cargar Por Facturar.' }}
+        </p>
+        <UButton
+          color="neutral"
+          variant="subtle"
+          icon="i-lucide-refresh-cw"
+          label="Reintentar"
+          @click="() => void refresh()"
+        />
+      </div>
+
+      <template v-else>
+        <PendingInvoiceDetailTable
+          :rows="rows"
+          :option-rows="searchedRows"
+          :controller="controller"
+          :downloading-evidence-key="downloadingEvidenceKey"
+          :has-next-page="hasNextPage"
+          :load-next-page="loadNextPage"
+          :async-status="asyncStatus"
+          :filtering="filtering"
+          @comment="openComments"
+          @attention="openInOperations"
+          @detail="openDetail"
+          @admin-doc="openAdminDoc"
+          @evidence-zip="onEvidenceZip"
+        />
+
+        <p
+          v-if="isLoadingMore"
+          class="text-center text-xs text-muted"
+        >
+          Cargando más eventos…
+        </p>
+      </template>
+    </PendingInvoiceTableFullscreenSection>
 
     <LazyPendingInvoiceCommentModal
       v-model:open="isCommentOpen"
