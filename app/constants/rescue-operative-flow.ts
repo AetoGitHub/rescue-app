@@ -1,4 +1,8 @@
-import type { RescueAdvancePanelMode } from '~/interfaces/rescue/operative';
+import { RESCUE_BLOCKED_CONTACT_NAME } from '~/constants/rescue-blocked';
+import type {
+  RescueAdvancePanelMode,
+  RescueOperativeActionId,
+} from '~/interfaces/rescue/operative';
 
 /** Phase transitions: POST /api/rescue/change_phase/{rescue_pk}/ */
 export const RESCUE_OPERATIVE_UPDATE_METHOD = 'POST' as const;
@@ -107,3 +111,17 @@ export const RESCUE_ADVANCE_PANEL_TITLES: Record<RescueAdvancePanelMode, string>
 };
 
 export const RESCUE_SERVICE_COMPLETED_PANEL_TITLE = 'Cerrar servicio';
+
+/** Único `internal_code` de `change_phase` que confirma que el rescate sí cerró. */
+export const RESCUE_CLOSE_SUCCESS_INTERNA_CODE = '0001';
+
+/** Acciones de `change_phase` que representan el cierre del rescate. */
+export const RESCUE_CLOSE_ACTIONS = new Set<RescueOperativeActionId>([
+  'complete_service',
+  'confirm_disbursement',
+  'complete_project',
+  'mark_as_closed',
+]);
+
+export const RESCUE_CLOSE_BLOCKED_FALLBACK_MESSAGE =
+  `Este rescate no pudo cerrarse. Contacta a ${RESCUE_BLOCKED_CONTACT_NAME}.`;

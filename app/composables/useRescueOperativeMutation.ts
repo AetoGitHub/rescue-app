@@ -4,7 +4,10 @@ import {
   RESCUE_CHANGE_PHASE_PATH,
   RESCUE_OPERATIVE_UPDATE_METHOD,
 } from '~/constants/rescue-operative-flow';
-import type { RescueChangePhaseBody } from '~/interfaces/rescue/operative';
+import type {
+  RescueChangePhaseBody,
+  RescueChangePhaseResponse,
+} from '~/interfaces/rescue/operative';
 import { mapOperativeUpdateToApi } from '~/utils/rescue-operative-api-map';
 
 export function useRescueOperativeMutation(
@@ -22,10 +25,13 @@ export function useRescueOperativeMutation(
         return Promise.reject(new Error('Sin solicitud seleccionada'));
       }
 
-      return apiFetch(RESCUE_CHANGE_PHASE_PATH(currentId), {
-        method: RESCUE_OPERATIVE_UPDATE_METHOD,
-        body: mapOperativeUpdateToApi(body),
-      });
+      return apiFetch<RescueChangePhaseResponse>(
+        RESCUE_CHANGE_PHASE_PATH(currentId),
+        {
+          method: RESCUE_OPERATIVE_UPDATE_METHOD,
+          body: mapOperativeUpdateToApi(body),
+        },
+      );
     },
     onSuccess: async () => {
       const currentId = id.value;

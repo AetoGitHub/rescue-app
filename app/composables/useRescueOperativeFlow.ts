@@ -1,6 +1,9 @@
 import type { MaybeRefOrGetter } from 'vue';
 import type { RescueDetailTabValue } from '~/constants/operational-rescue-detail';
 import {
+  RESCUE_CLOSE_ACTIONS,
+  RESCUE_CLOSE_BLOCKED_FALLBACK_MESSAGE,
+  RESCUE_CLOSE_SUCCESS_INTERNA_CODE,
   RESCUE_OPERATIVE_TOAST,
   type RescuePaymentMethod,
 } from '~/constants/rescue-operative-flow';
@@ -67,6 +70,8 @@ export function useRescueOperativeFlow(options: {
   const cancelModalOpen = ref(false);
   const revertModalOpen = ref(false);
   const obtainRescueModalOpen = ref(false);
+  const closeBlockedModalOpen = ref(false);
+  const closeBlockedMessage = ref('');
 
   const advanceForm = reactive<RescueAdvanceFormState>({
     advance_amount: '',
@@ -293,12 +298,27 @@ export function useRescueOperativeFlow(options: {
       cancellationReasonId?: number | null;
     },
     afterSuccess?: () => Promise<void>,
-  ) {
+  ): Promise<boolean> {
     const d = detail.value;
-    if (d == null || rescueId.value == null) return;
+    if (d == null || rescueId.value == null) return false;
 
     const body = toOperativeUpdatePayload(action, d, forms);
-    await updateOperative(body);
+    const result = await updateOperative(body);
+
+    if (
+      RESCUE_CLOSE_ACTIONS.has(action)
+      && result?.internal_code != null
+      && result.internal_code !== RESCUE_CLOSE_SUCCESS_INTERNA_CODE
+    ) {
+      closeBlockedMessage.value =
+        result.message?.trim()
+        || result.detail?.trim()
+        || RESCUE_CLOSE_BLOCKED_FALLBACK_MESSAGE;
+      closeBlockedModalOpen.value = true;
+      await options.refresh();
+      return false;
+    }
+
     if (afterSuccess) {
       try {
         await afterSuccess();
@@ -311,6 +331,7 @@ export function useRescueOperativeFlow(options: {
       color: 'success',
     });
     await options.refresh();
+    return true;
   }
 
   function canClaimRescue(): boolean {
@@ -531,8 +552,7 @@ export function useRescueOperativeFlow(options: {
         if (!reviewsSaved) return false;
       }
 
-      await runUpdate(action, { completed });
-      return true;
+      return await runUpdate(action, { completed });
     } finally {
       isClosingWithReviews.value = false;
     }
@@ -648,6 +668,8 @@ export function useRescueOperativeFlow(options: {
     cancelModalOpen,
     revertModalOpen,
     obtainRescueModalOpen,
+    closeBlockedModalOpen,
+    closeBlockedMessage,
     advanceForm,
     completedForm,
     cancellationReason,

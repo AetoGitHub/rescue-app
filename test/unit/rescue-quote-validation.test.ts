@@ -178,6 +178,15 @@ describe('TMS client internal notes', () => {
     expect(isTmsClient({ label: 'ATMS' })).toBe(false);
   });
 
+  it('detects TMS even decorated with the credit-usage badge from the dropdown', () => {
+    // El endpoint /api/catalogue/client/dropdown/ antepone un semáforo y agrega
+    // el % de crédito usado al nombre real, ej. "🔴 TMS (92%)".
+    expect(isTmsClient({ label: '🔴 TMS (92%)' })).toBe(true);
+    expect(isTmsClient({ label: '✅ TMS (0%)' })).toBe(true);
+    expect(isTmsClient({ name: '🔴 TMS (92%)' })).toBe(true);
+    expect(isTmsClient({ label: '✅ ALMEX TRASLADOS (8%)' })).toBe(false);
+  });
+
   it('requires internal notes for TMS on the summary step', () => {
     const empty = rescueStepSummarySchema.safeParse({
       client: { value: 12, label: 'TMS' },

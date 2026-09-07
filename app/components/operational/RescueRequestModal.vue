@@ -17,6 +17,7 @@ import {
   type RescueRequestFormState,
 } from '~/schemas/rescue-create';
 import { isOperatorRole } from '#shared/utils/auth-roles';
+import { RESCUE_BLOCKED_CONTACT_NAME } from '~/constants/rescue-blocked';
 
 const toast = useToast();
 const queryCache = useQueryCache();
@@ -31,6 +32,7 @@ const currentStep = ref(0);
 const stepError = ref<string | null>(null);
 const blockedModalOpen = ref(false);
 const blockedMessage = ref('');
+const blockedFolio = ref('');
 
 const state = reactive<RescueRequestFormState>(emptyRescueRequestState());
 const {
@@ -264,10 +266,11 @@ const { mutateAsync, asyncStatus } = useMutation({
       body: rescueBody,
     });
 
-    if (rescue.interna_code === RESCUE_BLOCKED_INTERNA_CODE) {
+    if (rescue.internal_code === RESCUE_BLOCKED_INTERNA_CODE) {
       const companyLabel =
         payload.form.client.label || `Cliente #${payload.form.client.value}`;
-      blockedMessage.value = `Este rescate fue bloqueado porque el vehículo ${payload.form.vehicle} de la compañía ${companyLabel} ya tuvo más rescates de los permitidos. Contacta al administrador del sitio.`;
+      blockedMessage.value = `Este rescate fue bloqueado porque el vehículo ${payload.form.vehicle} de la compañía ${companyLabel} ya tuvo más rescates de los permitidos. Contacta a ${RESCUE_BLOCKED_CONTACT_NAME}.`;
+      blockedFolio.value = rescue.folio;
       blockedModalOpen.value = true;
       await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });
       await queryCache.invalidateQueries({ key: ['operational-rescue-list'] });
@@ -631,5 +634,6 @@ const wizardModalProps = computed(() => {
   <OperationalRescueBlockedModal
     v-model:open="blockedModalOpen"
     :message="blockedMessage"
+    :folio="blockedFolio"
   />
 </template>

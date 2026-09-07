@@ -47,6 +47,13 @@ export interface RescueRevertCancellationBody {
 /** @deprecated Use RescueChangePhaseBody */
 export type RescueOperativeUpdateBody = RescueChangePhaseBody;
 
+/** POST /api/rescue/change_phase/{rescue_pk}/ response. */
+export interface RescueChangePhaseResponse {
+  internal_code?: string;
+  message?: string;
+  detail?: string;
+}
+
 export interface RescueSupplierRatingRow {
   supplier_id: number;
   supplier_name: string;

@@ -227,13 +227,28 @@ export function getRescueStepQuoteWithSettingsSchema(
   );
 }
 
+/**
+ * El dropdown de clientes decora cada nombre con un semáforo de crédito y el
+ * porcentaje usado, ej. `"🔴 TMS (92%)"`. Lo quitamos antes de comparar contra
+ * TMS_CLIENT_LABEL.
+ */
+function stripClientCreditDecoration(label: string): string {
+  return label
+    .replace(/^[^\p{L}\p{N}]+/u, '')
+    .replace(/\s*\(\d{1,3}%\)\s*$/, '')
+    .trim();
+}
+
 export function isTmsClient(
   client: { label?: string | null; name?: string | null } | null | undefined,
 ): boolean {
   const expected = TMS_CLIENT_LABEL.toLocaleLowerCase('es-MX');
-  return [client?.label, client?.name].some(
-    (value) => value?.trim().toLocaleLowerCase('es-MX') === expected,
-  );
+  return [client?.label, client?.name].some((value) => {
+    if (!value) return false;
+    return (
+      stripClientCreditDecoration(value).toLocaleLowerCase('es-MX') === expected
+    );
+  });
 }
 
 const TMS_INTERNAL_NOTES_MIN_LENGTH = 5;

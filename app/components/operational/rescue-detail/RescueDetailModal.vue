@@ -42,6 +42,8 @@ const {
   cancelModalOpen,
   revertModalOpen,
   obtainRescueModalOpen,
+  closeBlockedModalOpen,
+  closeBlockedMessage,
   cancellationReason,
   reacceptanceReason,
   handleAction: handleOperativeAction,
@@ -398,6 +400,12 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
     v-model:reacceptance-reason="reacceptanceReason"
     :loading="isUpdatingOperative"
     @submit="submitRevertCancellation"
+  />
+
+  <OperationalRescueBlockedModal
+    v-model:open="closeBlockedModalOpen"
+    :message="closeBlockedMessage"
+    :folio="detail?.folio"
   />
 
   <LazyOperationalRescueDetailEvidenceModal
