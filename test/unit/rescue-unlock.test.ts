@@ -4,6 +4,7 @@ import { createRescueUnlockFormSchema } from '~/utils/rescue-unlock-form';
 import {
   coalesceUnlockUntil,
   formatRescueUnlockRemaining,
+  getRescueUnlockDefaultDatetimeLocal,
   getRescueUnlockMinDatetimeLocal,
   getRescueUnlockRemainingMs,
   isRescueUnlockActive,
@@ -24,6 +25,10 @@ describe('datetime local helpers', () => {
 
   it('builds the min datetime-local value from a reference date', () => {
     expect(getRescueUnlockMinDatetimeLocal(now)).toBe('2026-06-04T15:00');
+  });
+
+  it('builds the default datetime-local value as now + 2 hours', () => {
+    expect(getRescueUnlockDefaultDatetimeLocal(now)).toBe('2026-06-04T17:00');
   });
 
   it('pads single digit month, day, hour and minute', () => {

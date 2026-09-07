@@ -53,6 +53,7 @@ const emit = defineEmits<{
   comment: [row: PendingInvoiceRow];
   attention: [row: PendingInvoiceRow];
   detail: [row: PendingInvoiceRow];
+  adminDoc: [row: PendingInvoiceRow];
   evidenceZip: [row: PendingInvoiceRow, column: PendingInvoiceEvidenceColumn];
 }>();
 
@@ -60,7 +61,6 @@ const UBadge = resolveComponent('UBadge');
 const UIcon = resolveComponent('UIcon');
 const ColumnHeaderFilter = resolveComponent('PendingInvoiceColumnHeaderFilter');
 const OcPdfCell = resolveComponent('PendingInvoiceOcPdfCell');
-const FacturaCell = resolveComponent('PendingInvoiceFacturaCell');
 
 const { applyOrdering } = usePendingInvoiceList();
 
@@ -73,7 +73,7 @@ interface ColumnLayout {
 }
 
 const COLUMN_LAYOUT: Record<PendingInvoiceColumnId, ColumnLayout> = {
-  oc_pdf: { th: 'w-24', td: 'w-24', align: 'center' },
+  oc_pdf: { th: 'w-28', td: 'w-28', align: 'center' },
   factura: { th: 'w-36', td: 'w-36' },
   folio: { th: 'w-32', td: 'w-32' },
   compania_grupo: { th: 'w-44', td: 'max-w-44' },
@@ -216,9 +216,12 @@ function cellFor(columnId: PendingInvoiceColumnId) {
       case 'purchase_order':
         return truncatedCell(data.oc || '—');
       case 'oc_pdf':
-        return h(OcPdfCell, { row: data });
+        return h(OcPdfCell, {
+          row: data,
+          onUpload: () => emit('adminDoc', data),
+        });
       case 'factura':
-        return h(FacturaCell, { row: data });
+        return truncatedCell(data.factura || '—');
       case 'costo_tecnico':
         return moneyCell(data.costo_tecnico);
       case 'subtotal':

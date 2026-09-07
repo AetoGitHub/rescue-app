@@ -6,6 +6,9 @@ export const RESCUE_EVIDENCE_LIST_PATH = (rescueId: number) =>
 export const RESCUE_EVIDENCE_CREATE_PATH = (rescueId: number) =>
   `/api/rescue/evidence/${rescueId}/create/`;
 
+export const RESCUE_EVIDENCE_DEACTIVATE_PATH = (evidenceId: number) =>
+  `/api/rescue/evidence/deactivate/${evidenceId}/`;
+
 export const RESCUE_EVIDENCE_TYPE_SERVICE = 'service' as const satisfies RescueEvidenceType;
 export const RESCUE_EVIDENCE_TYPE_PAYMENT_PROVIDER =
   'payment_provider' as const satisfies RescueEvidenceType;
@@ -91,4 +94,20 @@ export const RESCUE_EVIDENCE_MODAL_COPY = {
   upload: 'Subir',
   close: 'Cerrar',
   uploadError: 'No se pudo subir la evidencia',
+  preview: {
+    openInNewTab: 'Abrir en pestaña nueva',
+    viewDetail: 'Ver detalle',
+    close: 'Cerrar',
+    noPreview: 'No se puede previsualizar este archivo',
+    zoomIn: 'Acercar',
+    zoomOut: 'Alejar',
+    delete: 'Eliminar',
+    deleteConfirmTitle: 'Eliminar evidencia',
+    deleteConfirmDescription: (fileName: string) =>
+      `¿Eliminar "${fileName}"? Esta acción no se puede deshacer.`,
+    deleteConfirmLabel: 'Eliminar',
+    deleteCancelLabel: 'Cancelar',
+    deleteSuccess: 'Evidencia eliminada',
+    deleteError: 'No se pudo eliminar la evidencia',
+  },
 } as const;

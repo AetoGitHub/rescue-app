@@ -5,6 +5,7 @@ import {
   RESCUE_EVIDENCE_ZIP_WEBHOOK_DEFAULT,
 } from '~/constants/rescue-evidence-api';
 import { PENDING_INVOICE_DETAIL_COLUMNS } from '~/constants/pending-invoice';
+import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
 import {
   filterPendingInvoiceRows,
   sortPendingInvoiceRows,
@@ -92,6 +93,12 @@ const filtering = computed(
 const commentRow = ref<PendingInvoiceRow | null>(null);
 const isCommentOpen = ref(false);
 
+const sendAdminDocModalOpen = ref(false);
+const pendingAdminDocRow = ref<PendingInvoiceRow | null>(null);
+const adminDocRescueId = computed(() => pendingAdminDocRow.value?.id ?? null);
+const { save: saveAdminDoc, isSaving: isSavingAdminDoc } =
+  useRescueAdminDoc(adminDocRescueId);
+
 function openComments(row: PendingInvoiceRow) {
   commentRow.value = row;
   isCommentOpen.value = true;
@@ -109,6 +116,20 @@ function openDetail(row: PendingInvoiceRow) {
     path: '/admin/administrativo',
     query: { rescue: String(row.id) },
   });
+}
+
+function openAdminDoc(row: PendingInvoiceRow) {
+  pendingAdminDocRow.value = row;
+  sendAdminDocModalOpen.value = true;
+}
+
+async function onSendAdminDocSubmit(body: RescueAdminDocBody) {
+  if (isSavingAdminDoc.value) return;
+  const ok = await saveAdminDoc(body);
+  if (ok) {
+    sendAdminDocModalOpen.value = false;
+    pendingAdminDocRow.value = null;
+  }
 }
 
 function onClearFilters() {
@@ -164,59 +185,75 @@ async function onEvidenceZip(
       @clear-filters="onClearFilters"
     />
 
-    <div
-      v-if="isInitialLoading"
-      class="flex min-h-48 flex-1 items-center justify-center rounded-lg border border-muted bg-default"
-    >
-      <UIcon
-        name="i-lucide-loader-circle"
-        class="size-6 animate-spin text-muted"
-      />
-    </div>
-
-    <div
-      v-else-if="isError && rows.length === 0"
-      class="flex min-h-48 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-muted bg-default p-6 text-center"
-    >
-      <p class="text-sm text-muted">
-        {{ errorMessage || 'No se pudo cargar Por Facturar.' }}
-      </p>
-      <UButton
-        color="neutral"
-        variant="subtle"
-        icon="i-lucide-refresh-cw"
-        label="Reintentar"
-        @click="() => void refresh()"
-      />
-    </div>
-
-    <template v-else>
-      <PendingInvoiceDetailTable
-        :rows="rows"
-        :option-rows="searchedRows"
-        :controller="controller"
-        :downloading-evidence-key="downloadingEvidenceKey"
-        :has-next-page="hasNextPage"
-        :load-next-page="loadNextPage"
-        :async-status="asyncStatus"
-        :filtering="filtering"
-        @comment="openComments"
-        @attention="openInOperations"
-        @detail="openDetail"
-        @evidence-zip="onEvidenceZip"
-      />
-
-      <p
-        v-if="isLoadingMore"
-        class="text-center text-xs text-muted"
+    <PendingInvoiceTableFullscreenSection>
+      <div
+        v-if="isInitialLoading"
+        class="flex min-h-48 flex-1 items-center justify-center rounded-lg border border-muted bg-default"
       >
-        Cargando más eventos…
-      </p>
-    </template>
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-6 animate-spin text-muted"
+        />
+      </div>
+
+      <div
+        v-else-if="isError && rows.length === 0"
+        class="flex min-h-48 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-muted bg-default p-6 text-center"
+      >
+        <p class="text-sm text-muted">
+          {{ errorMessage || 'No se pudo cargar Por Facturar.' }}
+        </p>
+        <UButton
+          color="neutral"
+          variant="subtle"
+          icon="i-lucide-refresh-cw"
+          label="Reintentar"
+          @click="() => void refresh()"
+        />
+      </div>
+
+      <template v-else>
+        <PendingInvoiceDetailTable
+          :rows="rows"
+          :option-rows="searchedRows"
+          :controller="controller"
+          :downloading-evidence-key="downloadingEvidenceKey"
+          :has-next-page="hasNextPage"
+          :load-next-page="loadNextPage"
+          :async-status="asyncStatus"
+          :filtering="filtering"
+          @comment="openComments"
+          @attention="openInOperations"
+          @detail="openDetail"
+          @admin-doc="openAdminDoc"
+          @evidence-zip="onEvidenceZip"
+        />
+
+        <p
+          v-if="isLoadingMore"
+          class="text-center text-xs text-muted"
+        >
+          Cargando más eventos…
+        </p>
+      </template>
+    </PendingInvoiceTableFullscreenSection>
 
     <LazyPendingInvoiceCommentModal
       v-model:open="isCommentOpen"
       :row="commentRow"
+    />
+
+    <LazyAdministrativeSendAdminDocModal
+      v-if="sendAdminDocModalOpen && pendingAdminDocRow"
+      v-model:open="sendAdminDocModalOpen"
+      :source-rescue-id="pendingAdminDocRow.id"
+      :remittance-folio="pendingAdminDocRow.oc ?? ''"
+      :invoice-folio="pendingAdminDocRow.factura ?? ''"
+      :oc-pdf="pendingAdminDocRow.oc_pdf ?? ''"
+      :allow-extra-rescues="false"
+      :editable-folios="true"
+      :loading="isSavingAdminDoc"
+      @submit="onSendAdminDocSubmit"
     />
   </div>
 </template>

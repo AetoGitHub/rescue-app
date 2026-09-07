@@ -174,11 +174,15 @@ watch(readOnlyCompanySettings, (settings) => {
 
 function fetchServiceDropdown(
   name: string,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; filters?: Record<string, unknown> },
 ) {
+  const hasContract = options?.filters?.has_contract;
   return $fetch<PaginatedResponse<CatalogDropdownRow>>(
     '/api/catalogue/service/dropdown/',
-    { query: { name }, signal: options?.signal },
+    {
+      query: { name, ...(hasContract ? { has_contract: true } : {}) },
+      signal: options?.signal,
+    },
   );
 }
 

@@ -55,6 +55,11 @@ const quoteOptional = computed(() =>
 
 const hasQuoteLines = computed(() => quoteLines.value.length > 0);
 
+const onlyServicesWithContract = ref(false);
+const serviceDropdownFilters = computed(() =>
+  onlyServicesWithContract.value ? { has_contract: true } : undefined,
+);
+
 const showCreditBadge = computed(
   () =>
     props.clientCreditSnapshot != null &&
@@ -377,6 +382,11 @@ watch(
     </UTabs>
 
     <div class="space-y-3">
+      <UCheckbox
+        v-model="onlyServicesWithContract"
+        label="Buscar solo servicios con contrato"
+      />
+
       <div
         v-if="hasQuoteLines"
         class="overflow-x-auto rounded-lg border border-default"
@@ -477,6 +487,7 @@ watch(
                       v-model="line.service"
                       placeholder="Buscar servicio"
                       :fetcher="fetchServiceDropdown"
+                      :filters="serviceDropdownFilters"
                     />
                   </UFormField>
                   <p

@@ -166,58 +166,60 @@ const columns = computed<TableColumn<PendingInvoiceSellerRow>[]>(() => [
       Participación por responsable sobre el total pendiente.
     </p>
 
-    <div
-      v-if="isInitialLoading"
-      class="flex flex-1 items-center justify-center rounded-lg border border-muted bg-default py-16"
-    >
-      <UIcon
-        name="i-lucide-loader-circle"
-        class="size-6 animate-spin text-muted"
-      />
-    </div>
-
-    <div
-      v-else-if="isError && rows.length === 0"
-      class="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-muted bg-default py-16"
-    >
-      <p class="text-sm text-muted">
-        {{ errorMessage || 'No se pudo cargar el resumen por responsable.' }}
-      </p>
-      <UButton
-        color="neutral"
-        variant="subtle"
-        icon="i-lucide-refresh-cw"
-        label="Reintentar"
-        @click="() => void refresh()"
-      />
-    </div>
-
-    <div
-      v-else-if="rows.length === 0"
-      class="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-muted bg-default py-16"
-    >
-      <UIcon
-        name="i-lucide-user-x"
-        class="size-6 text-dimmed"
-      />
-      <p class="text-sm text-muted">
-        Sin eventos para el filtro de compañía seleccionado.
-      </p>
-    </div>
-
-    <template v-else>
-      <UTable
-        sticky
-        :columns="columns"
-        :data="rows"
-        :ui="pendingInvoiceExcelTableUi"
-      />
-      <p
-        v-if="isLoadingMore"
-        class="text-center text-xs text-muted"
+    <PendingInvoiceTableFullscreenSection>
+      <div
+        v-if="isInitialLoading"
+        class="flex flex-1 items-center justify-center rounded-lg border border-muted bg-default py-16"
       >
-        Cargando más responsables…
-      </p>
-    </template>
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-6 animate-spin text-muted"
+        />
+      </div>
+
+      <div
+        v-else-if="isError && rows.length === 0"
+        class="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-muted bg-default py-16"
+      >
+        <p class="text-sm text-muted">
+          {{ errorMessage || 'No se pudo cargar el resumen por responsable.' }}
+        </p>
+        <UButton
+          color="neutral"
+          variant="subtle"
+          icon="i-lucide-refresh-cw"
+          label="Reintentar"
+          @click="() => void refresh()"
+        />
+      </div>
+
+      <div
+        v-else-if="rows.length === 0"
+        class="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-muted bg-default py-16"
+      >
+        <UIcon
+          name="i-lucide-user-x"
+          class="size-6 text-dimmed"
+        />
+        <p class="text-sm text-muted">
+          Sin eventos para el filtro de compañía seleccionado.
+        </p>
+      </div>
+
+      <template v-else>
+        <UTable
+          sticky
+          :columns="columns"
+          :data="rows"
+          :ui="pendingInvoiceExcelTableUi"
+        />
+        <p
+          v-if="isLoadingMore"
+          class="text-center text-xs text-muted"
+        >
+          Cargando más responsables…
+        </p>
+      </template>
+    </PendingInvoiceTableFullscreenSection>
   </div>
 </template>

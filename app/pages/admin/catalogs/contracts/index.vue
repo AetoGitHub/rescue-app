@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { refDebounced } from '@vueuse/core';
 import { useMutation, useQueryCache } from '@pinia/colada';
 import type { TableColumn } from '@nuxt/ui';
 import type { ClientContractRow, Contract } from '~/interfaces/catalogs/contract';
@@ -16,6 +17,9 @@ const creatingClientId = ref<number | null>(null);
 const tableRef = useTemplateRef('table');
 const UButton = resolveComponent('UButton');
 
+const search = ref('');
+const debouncedName = refDebounced(search, 300);
+
 const {
   rows: clientRows,
   asyncStatus: clientsAsyncStatus,
@@ -23,8 +27,12 @@ const {
   loadNextPage: loadNextClientsPage,
   isInitialLoading: clientsInitialLoading,
 } = useCatalogInfiniteList<Client>({
-  key: () => ['clients'],
+  key: () => ['clients', debouncedName.value.trim()],
   path: '/api/catalogue/client/list/',
+  query: () => {
+    const name = debouncedName.value.trim();
+    return name ? { name } : undefined;
+  },
 });
 
 const {
@@ -181,6 +189,7 @@ const columns: TableColumn<ClientContractRow>[] = [
   >
     <template #filters>
       <UInput
+        v-model="search"
         leading-icon="i-lucide-search"
         placeholder="Buscar cliente"
         class="flex-1"

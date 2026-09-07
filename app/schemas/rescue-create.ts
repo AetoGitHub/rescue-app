@@ -236,21 +236,36 @@ export function isTmsClient(
   );
 }
 
+const TMS_INTERNAL_NOTES_MIN_LENGTH = 5;
+
 const TMS_INTERNAL_NOTES_REQUIRED =
   'Las notas internas son obligatorias para el cliente TMS';
+
+const TMS_INTERNAL_NOTES_TOO_SHORT = `Las notas internas deben tener al menos ${TMS_INTERNAL_NOTES_MIN_LENGTH} caracteres para el cliente TMS`;
 
 function refineTmsInternalNotes(
   data: { client: { label: string }; internal_notes: string },
   ctx: z.RefinementCtx,
 ) {
   if (!isTmsClient(data.client)) return;
-  if (data.internal_notes.length > 0) return;
 
-  ctx.addIssue({
-    code: 'custom',
-    message: TMS_INTERNAL_NOTES_REQUIRED,
-    path: ['internal_notes'],
-  });
+  const notes = data.internal_notes.trim();
+  if (notes.length === 0) {
+    ctx.addIssue({
+      code: 'custom',
+      message: TMS_INTERNAL_NOTES_REQUIRED,
+      path: ['internal_notes'],
+    });
+    return;
+  }
+
+  if (notes.length < TMS_INTERNAL_NOTES_MIN_LENGTH) {
+    ctx.addIssue({
+      code: 'custom',
+      message: TMS_INTERNAL_NOTES_TOO_SHORT,
+      path: ['internal_notes'],
+    });
+  }
 }
 
 export const rescueStepSummarySchema = z

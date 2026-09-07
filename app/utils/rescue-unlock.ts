@@ -29,6 +29,15 @@ export function getRescueUnlockMinDatetimeLocal(now = new Date()): string {
   return toRescueUnlockDatetimeLocal(now);
 }
 
+const RESCUE_UNLOCK_DEFAULT_OFFSET_HOURS = 2;
+
+/** Default unlock deadline: now + 2 hours, as an `input[type="datetime-local"]` value. */
+export function getRescueUnlockDefaultDatetimeLocal(now = new Date()): string {
+  return toRescueUnlockDatetimeLocal(
+    new Date(now.getTime() + RESCUE_UNLOCK_DEFAULT_OFFSET_HOURS * 60 * 60 * 1000),
+  );
+}
+
 export function isRescueUnlockDatetimeLocalInPast(
   value: string,
   now = new Date(),
