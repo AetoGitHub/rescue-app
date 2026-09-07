@@ -6,15 +6,15 @@ useHead({
 });
 
 const { selectedCompanies } = usePendingChargeList();
-const {
-  summary,
-  isLoading: isSummaryLoading,
-  isError: isSummaryError,
-} = usePendingChargeSummary();
+// const {
+//   summary,
+//   isLoading: isSummaryLoading,
+//   isError: isSummaryError,
+// } = usePendingChargeSummary();
 
-const summaryCountLabel = computed(() =>
-  isSummaryError.value ? '—' : String(summary.value.count),
-);
+// const summaryCountLabel = computed(() =>
+//   isSummaryError.value ? '—' : String(summary.value.count),
+// );
 // const summaryTotalLabel = computed(() =>
 //   isSummaryError.value
 //     ? '—'
@@ -57,7 +57,7 @@ const headerContext = computed(() => {
           </div>
 
           <div class="flex flex-wrap items-end gap-6 sm:justify-end">
-            <div class="flex flex-col gap-0.5">
+            <!-- <div class="flex flex-col gap-0.5">
               <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
                 Rescates
               </p>
@@ -73,7 +73,7 @@ const headerContext = computed(() => {
               >
                 {{ summaryCountLabel }}
               </p>
-            </div>
+            </div> -->
             <!-- <div class="flex flex-col gap-0.5">
               <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
                 Total sin IVA
