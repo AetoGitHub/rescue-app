@@ -18,7 +18,7 @@ const summaryCountLabel = computed(() =>
 const summaryTotalLabel = computed(() =>
   isSummaryError.value
     ? '—'
-    : formatPendingInvoiceMoney(summary.value.sub_total),
+    : formatPendingInvoiceMoney(summary.value.total),
 );
 
 const headerContext = computed(() => {
