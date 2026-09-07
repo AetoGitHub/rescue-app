@@ -1,6 +1,10 @@
 import type { H3Event } from 'h3';
 import { REQUEST_ID_HEADER } from '#shared/constants/session';
 import { reportSessionAuthFailure } from './report-session-auth';
+import {
+  readUpstreamErrorBody,
+  reportUpstreamProxyError,
+} from './report-upstream-error';
 import { attachRequestId } from './request-id';
 import { sessionExpiredError } from './session-expired';
 
@@ -48,17 +52,34 @@ export function proxyDjangoRequest(
 ) {
   return proxyRequest(event, target, {
     headers: djangoProxyHeaders(token, requestId),
-    onResponse(_event, response) {
+    async onResponse(_event, response) {
       const status = response.status;
-      if (status !== 401 && status !== 403) return;
-      reportSessionAuthFailure({
-        reason: 'upstream_auth_failure',
-        path: event.path,
-        requestId,
-        status,
-        hadToken: true,
-        refreshClearedSession: false,
-      });
+
+      if (status === 401 || status === 403) {
+        reportSessionAuthFailure({
+          reason: 'upstream_auth_failure',
+          path: event.path,
+          requestId,
+          status,
+          hadToken: true,
+          refreshClearedSession: false,
+        });
+        return;
+      }
+
+      // `proxyRequest` reenvía la respuesta del backend externo sin lanzar
+      // ninguna excepción, así que un 500 nunca llega al hook de error de
+      // Nitro/Sentry por sí solo: hay que capturarlo explícitamente aquí.
+      if (status >= 500) {
+        reportUpstreamProxyError({
+          target,
+          method: event.method,
+          status,
+          path: event.path,
+          requestId,
+          body: await readUpstreamErrorBody(response),
+        });
+      }
     },
   });
 }
