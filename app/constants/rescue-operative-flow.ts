@@ -1,4 +1,3 @@
-import { RESCUE_BLOCKED_CONTACT_NAME } from '~/constants/rescue-blocked';
 import type {
   RescueAdvancePanelMode,
   RescueOperativeActionId,
@@ -124,4 +123,4 @@ export const RESCUE_CLOSE_ACTIONS = new Set<RescueOperativeActionId>([
 ]);
 
 export const RESCUE_CLOSE_BLOCKED_FALLBACK_MESSAGE =
-  `Este rescate no pudo cerrarse. Contacta a ${RESCUE_BLOCKED_CONTACT_NAME}.`;
+  'Este rescate no pudo cerrarse.';

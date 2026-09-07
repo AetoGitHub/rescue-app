@@ -17,7 +17,6 @@ import {
   type RescueRequestFormState,
 } from '~/schemas/rescue-create';
 import { isOperatorRole } from '#shared/utils/auth-roles';
-import { RESCUE_BLOCKED_CONTACT_NAME } from '~/constants/rescue-blocked';
 
 const toast = useToast();
 const queryCache = useQueryCache();
@@ -269,7 +268,7 @@ const { mutateAsync, asyncStatus } = useMutation({
     if (rescue.internal_code === RESCUE_BLOCKED_INTERNA_CODE) {
       const companyLabel =
         payload.form.client.label || `Cliente #${payload.form.client.value}`;
-      blockedMessage.value = `Este rescate fue bloqueado porque el vehículo ${payload.form.vehicle} de la compañía ${companyLabel} ya tuvo más rescates de los permitidos. Contacta a ${RESCUE_BLOCKED_CONTACT_NAME}.`;
+      blockedMessage.value = `Este rescate fue bloqueado porque el vehículo ${payload.form.vehicle} de la compañía ${companyLabel} ya tuvo más rescates de los permitidos.`;
       blockedFolio.value = rescue.folio;
       blockedModalOpen.value = true;
       await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });

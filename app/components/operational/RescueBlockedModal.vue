@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RESCUE_BLOCKED_CONTACT_NAME } from '~/constants/rescue-blocked';
+
 const open = defineModel<boolean>('open', { required: true });
 
 defineProps<{
@@ -13,20 +15,24 @@ defineProps<{
     fullscreen
     title="Rescate bloqueado"
     :ui="{
-      title: 'text-3xl sm:text-4xl font-bold',
+      title: 'text-4xl sm:text-5xl font-bold',
       body: 'flex flex-1 items-center justify-center',
     }"
   >
     <template #body>
-      <div class="max-w-2xl space-y-6 text-center">
+      <div class="max-w-4xl space-y-8 text-center">
         <p
           v-if="folio"
-          class="text-xl font-semibold text-highlighted sm:text-2xl"
+          class="text-2xl font-semibold text-highlighted sm:text-3xl"
         >
           Folio: {{ folio }}
         </p>
-        <p class="text-xl leading-relaxed text-muted sm:text-2xl">
+        <p class="text-2xl leading-relaxed text-muted sm:text-3xl">
           {{ message }}
+        </p>
+        <p class="text-2xl leading-relaxed text-muted sm:text-3xl">
+          Contacta a
+          <span class="font-bold italic underline">{{ RESCUE_BLOCKED_CONTACT_NAME }}</span>.
         </p>
       </div>
     </template>
