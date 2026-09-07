@@ -46,7 +46,6 @@ export const PENDING_INVOICE_DEFAULT_MATRIX_MONTHS: PendingInvoiceMatrixMonths =
 
 export type PendingInvoiceColumnId =
   | 'oc_pdf'
-  | 'factura'
   | 'folio'
   | 'compania_grupo'
   | 'compania'
@@ -93,7 +92,6 @@ export const PENDING_INVOICE_DETAIL_COLUMNS: PendingInvoiceColumnMeta[] = [
     kind: 'text',
     ordering: 'purchase_order',
   },
-  { id: 'factura', label: 'Factura', kind: 'text' },
   { id: 'folio', label: 'Folio', kind: 'text', ordering: 'folio' },
   {
     id: 'compania_grupo',

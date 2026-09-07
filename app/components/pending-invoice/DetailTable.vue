@@ -28,6 +28,7 @@ const props = defineProps<{
   optionRows: PendingInvoiceRow[];
   controller: ReturnType<typeof usePendingInvoiceColumnFilters>;
   downloadingEvidenceKey?: string | null;
+  processingOcRowId?: number | null;
   hasNextPage?: boolean;
   loadNextPage?: () => unknown;
   asyncStatus?: AsyncStatus;
@@ -74,7 +75,6 @@ interface ColumnLayout {
 
 const COLUMN_LAYOUT: Record<PendingInvoiceColumnId, ColumnLayout> = {
   oc_pdf: { th: 'w-28', td: 'w-28', align: 'center' },
-  factura: { th: 'w-36', td: 'w-36' },
   folio: { th: 'w-32', td: 'w-32' },
   compania_grupo: { th: 'w-44', td: 'max-w-44' },
   compania: { th: 'w-44', td: 'max-w-44' },
@@ -218,10 +218,9 @@ function cellFor(columnId: PendingInvoiceColumnId) {
       case 'oc_pdf':
         return h(OcPdfCell, {
           row: data,
+          isUploading: props.processingOcRowId === data.id,
           onUpload: () => emit('adminDoc', data),
         });
-      case 'factura':
-        return truncatedCell(data.factura || '—');
       case 'costo_tecnico':
         return moneyCell(data.costo_tecnico);
       case 'subtotal':
@@ -268,6 +267,8 @@ function headerFor(meta: PendingInvoiceColumnMeta) {
 const columns = computed<TableColumn<PendingInvoiceRow>[]>(() => {
   // Re-render archive cells while a ZIP download is in flight.
   void props.downloadingEvidenceKey;
+  // Re-render the OC cell while its upload is processing.
+  void props.processingOcRowId;
 
   return [
   {

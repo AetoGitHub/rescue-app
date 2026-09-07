@@ -26,6 +26,8 @@ const props = withDefaults(
     allowExtraRescues?: boolean;
     /** When true, remisión and factura are editable inputs. */
     editableFolios?: boolean;
+    /** When false, the factura field is hidden (Por Facturar doesn't use it). */
+    showInvoiceFolio?: boolean;
   }>(),
   {
     clientId: 0,
@@ -33,6 +35,7 @@ const props = withDefaults(
     loading: false,
     allowExtraRescues: true,
     editableFolios: false,
+    showInvoiceFolio: true,
   },
 );
 
@@ -299,7 +302,7 @@ function onApplySelected() {
             {{ parsedFolios.remittance_folio }}
           </p>
           <p
-            v-if="parsedFolios?.invoice_folio"
+            v-if="parsedFolios?.invoice_folio && showInvoiceFolio"
             class="text-highlighted"
           >
             <span class="text-muted">Factura:</span>
@@ -321,6 +324,7 @@ function onApplySelected() {
           </UFormField>
 
           <UFormField
+            v-if="showInvoiceFolio"
             label="Factura"
             name="invoice_folio"
           >
@@ -331,6 +335,11 @@ function onApplySelected() {
               :disabled="isBusy"
             />
           </UFormField>
+          <UFormField
+            v-else
+            name="invoice_folio"
+            class="hidden"
+          />
         </template>
 
         <UFormField

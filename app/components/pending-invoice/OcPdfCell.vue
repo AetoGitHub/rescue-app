@@ -4,6 +4,7 @@ import { PENDING_INVOICE_ADMIN_DOC_COPY } from '~/constants/pending-invoice';
 
 const props = defineProps<{
   row: PendingInvoiceRow;
+  isUploading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -32,6 +33,8 @@ const hasPdf = computed(() => Boolean(props.row.oc_pdf?.trim()));
       variant="ghost"
       size="xs"
       icon="i-lucide-upload"
+      :loading="isUploading"
+      :disabled="isUploading"
       :label="hasPdf ? undefined : PENDING_INVOICE_ADMIN_DOC_COPY.upload"
       :square="hasPdf"
       :aria-label="hasPdf

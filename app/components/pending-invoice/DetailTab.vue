@@ -45,6 +45,11 @@ const runtimeConfig = useRuntimeConfig();
 const search = ref('');
 const debouncedSearch = refDebounced(search, 250);
 const downloadingEvidenceKey = ref<string | null>(null);
+const processingOcRowId = ref<number | null>(null);
+
+usePendingInvoiceViewRefreshListener(() => {
+  processingOcRowId.value = null;
+});
 
 /** Company filter + free search: also the option source for the column popovers. */
 const searchedRows = computed(() =>
@@ -125,8 +130,10 @@ function openAdminDoc(row: PendingInvoiceRow) {
 
 async function onSendAdminDocSubmit(body: RescueAdminDocBody) {
   if (isSavingAdminDoc.value) return;
+  const rowId = pendingAdminDocRow.value?.id ?? null;
   const ok = await saveAdminDoc(body);
   if (ok) {
+    processingOcRowId.value = rowId;
     sendAdminDocModalOpen.value = false;
     pendingAdminDocRow.value = null;
   }
@@ -218,6 +225,7 @@ async function onEvidenceZip(
           :option-rows="searchedRows"
           :controller="controller"
           :downloading-evidence-key="downloadingEvidenceKey"
+          :processing-oc-row-id="processingOcRowId"
           :has-next-page="hasNextPage"
           :load-next-page="loadNextPage"
           :async-status="asyncStatus"
@@ -252,6 +260,7 @@ async function onEvidenceZip(
       :oc-pdf="pendingAdminDocRow.oc_pdf ?? ''"
       :allow-extra-rescues="false"
       :editable-folios="true"
+      :show-invoice-folio="false"
       :loading="isSavingAdminDoc"
       @submit="onSendAdminDocSubmit"
     />
