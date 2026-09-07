@@ -5,6 +5,7 @@ import type {
 import type { PendingChargeStatus } from '~/interfaces/invoicing/pending-charge';
 
 export type PendingChargeColumnId =
+  | 'folio'
   | 'cliente'
   | 'compania'
   | 'rfc'
@@ -12,8 +13,7 @@ export type PendingChargeColumnId =
   | 'fecha_factura'
   | 'vencimiento'
   | 'dias_vencidos'
-  | 'status'
-  | 'total';
+  | 'status';
 
 export interface PendingChargeColumnMeta {
   id: PendingChargeColumnId;
@@ -24,6 +24,7 @@ export interface PendingChargeColumnMeta {
 }
 
 export const PENDING_CHARGE_DETAIL_COLUMNS: PendingChargeColumnMeta[] = [
+  { id: 'folio', label: 'Folio', kind: 'text', ordering: 'folio' },
   {
     id: 'cliente',
     label: 'Cliente',
@@ -63,7 +64,6 @@ export const PENDING_CHARGE_DETAIL_COLUMNS: PendingChargeColumnMeta[] = [
     kind: 'number',
   },
   { id: 'status', label: 'Status', kind: 'text', ordering: 'status' },
-  { id: 'total', label: 'Total c/IVA', kind: 'money', ordering: 'total' },
 ];
 
 export const PENDING_CHARGE_STATUS_LABELS: Record<PendingChargeStatus, string> = {
@@ -84,4 +84,4 @@ export const PENDING_CHARGE_STATUS_FILTER_OPTIONS: {
 ];
 
 export const PENDING_CHARGE_SEARCH_PLACEHOLDER =
-  'Buscar cliente, compañía, RFC, responsable…';
+  'Buscar folio, cliente, compañía, RFC, responsable…';

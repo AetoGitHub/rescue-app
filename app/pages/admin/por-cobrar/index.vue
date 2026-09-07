@@ -59,7 +59,7 @@ const headerContext = computed(() => {
           <div class="flex flex-wrap items-end gap-6 sm:justify-end">
             <div class="flex flex-col gap-0.5">
               <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
-                Clientes
+                Rescates
               </p>
               <p
                 v-if="isSummaryLoading"

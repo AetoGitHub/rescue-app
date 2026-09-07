@@ -30,6 +30,7 @@ describe('pending charge API ordering whitelist', () => {
   it('matches the backend-valid fields', () => {
     expect([...PENDING_CHARGE_ORDERING_FIELDS]).toEqual([
       'id',
+      'folio',
       'company_name',
       'client_name',
       'rfc',
@@ -37,7 +38,6 @@ describe('pending charge API ordering whitelist', () => {
       'invoice_date',
       'due_date',
       'status',
-      'total',
     ]);
   });
 
@@ -47,6 +47,7 @@ describe('pending charge API ordering whitelist', () => {
       .map(column => [column.id, column.ordering]);
 
     expect(mapped).toEqual([
+      ['folio', 'folio'],
       ['cliente', 'client_name'],
       ['compania', 'company_name'],
       ['rfc', 'rfc'],
@@ -54,7 +55,6 @@ describe('pending charge API ordering whitelist', () => {
       ['fecha_factura', 'invoice_date'],
       ['vencimiento', 'due_date'],
       ['status', 'status'],
-      ['total', 'total'],
     ]);
   });
 
@@ -70,7 +70,7 @@ describe('pending charge API ordering whitelist', () => {
 
 describe('pendingChargeOrderingParam', () => {
   it('prefixes a minus for descending API fields', () => {
-    expect(pendingChargeOrderingParam({ ordering: 'total' }, true)).toBe('-total');
+    expect(pendingChargeOrderingParam({ ordering: 'folio' }, true)).toBe('-folio');
     expect(pendingChargeOrderingParam({ ordering: 'due_date' }, false)).toBe(
       'due_date',
     );
@@ -86,7 +86,7 @@ describe('pendingChargeOrderingParam', () => {
       '',
     );
     expect(pendingChargeOrderingParam({ ordering: 'balance' }, false)).toBe('');
-    expect(pendingChargeOrderingParam({ ordering: 'folio' }, true)).toBe('');
+    expect(pendingChargeOrderingParam({ ordering: 'total' }, true)).toBe('');
   });
 });
 

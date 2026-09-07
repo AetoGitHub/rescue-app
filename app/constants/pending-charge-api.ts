@@ -25,6 +25,7 @@ export type PendingChargeDropdownFilterId =
 /** Backend-valid `?ordering=` fields. `days_overdue` is display-only. */
 export const PENDING_CHARGE_ORDERING_FIELDS = [
   'id',
+  'folio',
   'company_name',
   'client_name',
   'rfc',
@@ -32,7 +33,6 @@ export const PENDING_CHARGE_ORDERING_FIELDS = [
   'invoice_date',
   'due_date',
   'status',
-  'total',
 ] as const;
 
 export type PendingChargeOrderingField =

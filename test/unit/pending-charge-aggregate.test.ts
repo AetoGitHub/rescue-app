@@ -3,12 +3,12 @@ import type { PendingChargeRow } from '../../app/interfaces/invoicing/pending-ch
 import {
   filterPendingChargeRows,
   sortPendingChargeRows,
-  summarizePendingChargeRows,
 } from '../../app/utils/pending-charge-aggregate';
 
 function buildRow(overrides: Partial<PendingChargeRow> = {}): PendingChargeRow {
   return {
     id: 1,
+    folio: 'RES-2026-00001',
     cliente: 'TMS',
     compania: 'Grupo TMS',
     rfc: 'TMS7901019Q7',
@@ -17,7 +17,6 @@ function buildRow(overrides: Partial<PendingChargeRow> = {}): PendingChargeRow {
     vencimiento: '2026-09-10',
     dias_vencidos: 0,
     status: 'bien',
-    total: 100,
     ...overrides,
   };
 }
@@ -27,11 +26,11 @@ describe('pending-charge-aggregate', () => {
     buildRow(),
     buildRow({
       id: 2,
+      folio: 'RES-2026-00002',
       cliente: 'Acme',
       rfc: 'ACM010101AAA',
       status: 'vencida',
       dias_vencidos: 12,
-      total: 50,
     }),
   ];
 
@@ -44,13 +43,6 @@ describe('pending-charge-aggregate', () => {
   it('filters by cobranza status', () => {
     const result = filterPendingChargeRows(rows, { statuses: ['vencida'] });
     expect(result.map(row => row.id)).toEqual([2]);
-  });
-
-  it('summarizes loaded clients and totals', () => {
-    expect(summarizePendingChargeRows(rows)).toEqual({
-      clientes: 2,
-      total: 150,
-    });
   });
 
   it('sorts días vencidos client-side without an API field', () => {

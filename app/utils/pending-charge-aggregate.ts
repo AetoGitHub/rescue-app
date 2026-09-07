@@ -1,7 +1,6 @@
 import type {
   PendingChargeRow,
   PendingChargeStatus,
-  PendingChargeSummary,
 } from '~/interfaces/invoicing/pending-charge';
 import type { PendingChargeColumnId } from '~/constants/pending-charge';
 import { PENDING_CHARGE_STATUS_LABELS } from '~/constants/pending-charge';
@@ -41,11 +40,6 @@ export function pendingChargeCell(
         value: String(row.dias_vencidos),
         label: `${row.dias_vencidos} días`,
       };
-    case 'total':
-      return {
-        value: String(row.total),
-        label: formatPendingInvoiceMoney(row.total),
-      };
     case 'status':
       return {
         value: row.status,
@@ -60,6 +54,7 @@ export function pendingChargeCell(
 }
 
 const SEARCHABLE_KEYS: PendingChargeColumnId[] = [
+  'folio',
   'cliente',
   'compania',
   'rfc',
@@ -111,8 +106,6 @@ function sortValueOf(
   switch (columnId) {
     case 'dias_vencidos':
       return row.dias_vencidos;
-    case 'total':
-      return row.total;
     case 'fecha_factura':
       return parsePendingInvoiceDate(row.fecha_factura)?.getTime() ?? 0;
     case 'vencimiento':
@@ -164,17 +157,5 @@ export function pendingChargeColumnOptions(
     numeric
       ? Number(b.value.replaceAll('-', '')) - Number(a.value.replaceAll('-', ''))
       : a.label.localeCompare(b.label, 'es-MX'),
-  );
-}
-
-export function summarizePendingChargeRows(
-  rows: PendingChargeRow[],
-): PendingChargeSummary {
-  return rows.reduce<PendingChargeSummary>(
-    (accumulator, row) => ({
-      clientes: accumulator.clientes + 1,
-      total: accumulator.total + row.total,
-    }),
-    { clientes: 0, total: 0 },
   );
 }

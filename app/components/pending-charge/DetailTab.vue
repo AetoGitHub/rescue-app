@@ -77,7 +77,7 @@ function onClearFilters() {
   <div class="flex min-h-0 flex-1 flex-col gap-3">
     <PendingChargeDetailToolbar
       v-model:search="search"
-      :client-count="summary.count"
+      :charge-count="summary.count"
       :sub-total="summary.sub_total"
       :is-summary-loading="isSummaryLoading"
       :is-summary-error="isSummaryError"
@@ -126,7 +126,7 @@ function onClearFilters() {
         v-if="isLoadingMore"
         class="text-center text-xs text-muted"
       >
-        Cargando más clientes…
+        Cargando más rescates…
       </p>
     </template>
   </div>

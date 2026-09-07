@@ -12,6 +12,7 @@ export interface PendingChargeFilterSelection {
 /** Raw row from `GET /api/dashboard/pending_charge/`. */
 export interface PendingChargeApiRow {
   id: number;
+  folio: string;
   company_name: string | null;
   client_name: string;
   rfc: string | null;
@@ -20,11 +21,11 @@ export interface PendingChargeApiRow {
   due_date: string | null;
   days_overdue: number | string | null;
   status: PendingChargeApiStatus | string | null;
-  total: string | number;
 }
 
 export interface PendingChargeRow {
   id: number;
+  folio: string;
   cliente: string;
   compania: string;
   rfc: string;
@@ -33,10 +34,4 @@ export interface PendingChargeRow {
   vencimiento: string;
   dias_vencidos: number;
   status: PendingChargeStatus;
-  total: number;
-}
-
-export interface PendingChargeSummary {
-  clientes: number;
-  total: number;
 }

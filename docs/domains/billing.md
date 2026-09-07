@@ -35,7 +35,7 @@ Ability de estas rutas: `accessAdministrative` (admin).
 `/admin/por-cobrar` — `app/pages/admin/por-cobrar/index.vue`. Lista: `GET /api/dashboard/pending_charge/` (`PENDING_CHARGE_LIST_PATH`). Componentes `app/components/pending-charge/`.
 
 - Resumen: `GET /api/dashboard/pending_charge/summary/` (`PENDING_CHARGE_SUMMARY_PATH`, `usePendingChargeSummary`). Mismos filtros `company` / `client` / `status` que la lista.
-- Totales: **`count`** (clientes) y **`sub_total`** como **Total sin IVA**.
+- Totales: **`count`** (folios/rescates pendientes de cobro) y **`sub_total`** como **Total sin IVA**.
 - El load-more de la tabla usa el mismo guard de cursor que Por facturar.
 
 ## Dashboard genérico

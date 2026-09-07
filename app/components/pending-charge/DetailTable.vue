@@ -52,6 +52,7 @@ interface ColumnLayout {
 }
 
 const COLUMN_LAYOUT: Record<PendingChargeColumnId, ColumnLayout> = {
+  folio: { th: 'w-32', td: 'w-32' },
   cliente: { th: 'w-48', td: 'max-w-48' },
   compania: { th: 'w-44', td: 'max-w-44' },
   rfc: { th: 'w-36', td: 'max-w-36' },
@@ -60,7 +61,6 @@ const COLUMN_LAYOUT: Record<PendingChargeColumnId, ColumnLayout> = {
   vencimiento: { th: 'w-28', td: 'w-28' },
   dias_vencidos: { th: 'w-28', td: 'w-28', align: 'end' },
   status: { th: 'w-32', td: 'w-32' },
-  total: { th: 'w-32', td: 'w-32', align: 'end' },
 };
 
 function alignClass(layout: ColumnLayout): string | undefined {
@@ -71,14 +71,6 @@ function alignClass(layout: ColumnLayout): string | undefined {
 
 function truncatedCell(value: string) {
   return h('span', { class: 'block truncate', title: value }, value);
-}
-
-function moneyCell(value: number) {
-  return h(
-    'span',
-    { class: 'block tabular-nums font-semibold text-highlighted' },
-    formatPendingInvoiceMoney(value),
-  );
 }
 
 function cellFor(columnId: PendingChargeColumnId) {
@@ -121,8 +113,6 @@ function cellFor(columnId: PendingChargeColumnId) {
           size: 'sm',
           label: PENDING_CHARGE_STATUS_LABELS[data.status],
         });
-      case 'total':
-        return moneyCell(data.total);
       default:
         return truncatedCell(data[columnId] as string);
     }
@@ -188,7 +178,7 @@ const tableMeta = {
     :columns="columns"
     :data="rows"
     :meta="tableMeta"
-    empty="Ningún cliente coincide con los filtros."
+    empty="Ningún rescate coincide con los filtros."
     :ui="{
       ...pendingInvoiceExcelTableUi,
       th: 'py-2 px-2.5 text-xs',

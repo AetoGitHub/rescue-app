@@ -2,7 +2,7 @@
 import { PENDING_CHARGE_SEARCH_PLACEHOLDER } from '~/constants/pending-charge';
 
 const props = defineProps<{
-  clientCount: number;
+  chargeCount: number;
   subTotal: number;
   activeFilterCount: number;
   isSummaryLoading?: boolean;
@@ -16,8 +16,8 @@ const emit = defineEmits<{
 const search = defineModel<string>('search', { required: true });
 
 const countLabel = computed(() => {
-  const count = props.clientCount;
-  return `${count} cliente${count === 1 ? '' : 's'}`;
+  const count = props.chargeCount;
+  return `${count} rescate${count === 1 ? '' : 's'}`;
 });
 </script>
 

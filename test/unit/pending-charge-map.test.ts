@@ -10,6 +10,7 @@ function buildApiRow(
 ): PendingChargeApiRow {
   return {
     id: 12,
+    folio: 'RES-2026-00012',
     company_name: 'TMS',
     client_name: 'TMS',
     rfc: 'TMS7901019Q7',
@@ -18,7 +19,6 @@ function buildApiRow(
     due_date: '2026-09-10',
     days_overdue: 0,
     status: 'bien',
-    total: '345016.23',
     ...overrides,
   };
 }
@@ -29,6 +29,7 @@ describe('pending-charge-map', () => {
 
     expect(row).toMatchObject({
       id: 12,
+      folio: 'RES-2026-00012',
       cliente: 'TMS',
       compania: 'TMS',
       rfc: 'TMS7901019Q7',
@@ -37,11 +38,10 @@ describe('pending-charge-map', () => {
       vencimiento: '2026-09-10',
       dias_vencidos: 0,
       status: 'bien',
-      total: 345016.23,
     });
   });
 
-  it('rejects rows without a valid client id', () => {
+  it('rejects rows without a valid rescue id', () => {
     expect(() => mapPendingChargeApiRow(buildApiRow({ id: 0 }))).toThrow(
       'no tiene un ID válido',
     );

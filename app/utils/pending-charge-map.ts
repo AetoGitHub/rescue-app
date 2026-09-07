@@ -39,13 +39,14 @@ function resolveId(raw: PendingChargeApiRow): number {
   const id = toNumber(raw.id, Number.NaN);
   if (Number.isFinite(id) && id > 0) return id;
   throw new Error(
-    `El cliente ${toText(raw.client_name) || 'sin nombre'} no tiene un ID válido`,
+    `El rescate ${toText(raw.folio) || 'sin folio'} no tiene un ID válido`,
   );
 }
 
 export function mapPendingChargeApiRow(raw: PendingChargeApiRow): PendingChargeRow {
   return {
     id: resolveId(raw),
+    folio: toText(raw.folio) || '—',
     cliente: toText(raw.client_name) || '—',
     compania: toText(raw.company_name) || '—',
     rfc: toText(raw.rfc) || '—',
@@ -56,7 +57,6 @@ export function mapPendingChargeApiRow(raw: PendingChargeApiRow): PendingChargeR
     status: mapPendingChargeStatus(
       typeof raw.status === 'string' ? raw.status : null,
     ),
-    total: toNumber(raw.total),
   };
 }
 
