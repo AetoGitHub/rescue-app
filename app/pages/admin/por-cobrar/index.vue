@@ -15,11 +15,11 @@ const {
 const summaryCountLabel = computed(() =>
   isSummaryError.value ? '—' : String(summary.value.count),
 );
-const summaryTotalLabel = computed(() =>
-  isSummaryError.value
-    ? '—'
-    : formatPendingInvoiceMoney(summary.value.total),
-);
+// const summaryTotalLabel = computed(() =>
+//   isSummaryError.value
+//     ? '—'
+//     : formatPendingInvoiceMoney(summary.value.total),
+// );
 
 const headerContext = computed(() => {
   const companyCount = selectedCompanies.value.length;
@@ -74,7 +74,7 @@ const headerContext = computed(() => {
                 {{ summaryCountLabel }}
               </p>
             </div>
-            <div class="flex flex-col gap-0.5">
+            <!-- <div class="flex flex-col gap-0.5">
               <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
                 Total sin IVA
               </p>
@@ -90,7 +90,7 @@ const headerContext = computed(() => {
               >
                 {{ summaryTotalLabel }}
               </p>
-            </div>
+            </div> -->
             <PendingChargeCompanyFilter class="shrink-0" />
           </div>
         </div>

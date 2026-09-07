@@ -78,7 +78,7 @@ function onClearFilters() {
     <PendingChargeDetailToolbar
       v-model:search="search"
       :charge-count="summary.count"
-      :sub-total="summary.sub_total"
+      :sub-total="summary.total"
       :is-summary-loading="isSummaryLoading"
       :is-summary-error="isSummaryError"
       :active-filter-count="activeFilterCount"
