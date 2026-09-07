@@ -109,4 +109,5 @@ export interface RescueCreateBody {
 export interface RescueCreateResponse {
   id: number;
   folio: string;
+  interna_code?: string;
 }

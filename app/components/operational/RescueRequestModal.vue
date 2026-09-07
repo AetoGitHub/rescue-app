@@ -24,9 +24,13 @@ const apiFetch = useApiFetch();
 const { assertClientCreditForQuote } = useCreditCheck();
 const { user } = useUserSession();
 
+const RESCUE_BLOCKED_INTERNA_CODE = '0002';
+
 const open = ref(false);
 const currentStep = ref(0);
 const stepError = ref<string | null>(null);
+const blockedModalOpen = ref(false);
+const blockedMessage = ref('');
 
 const state = reactive<RescueRequestFormState>(emptyRescueRequestState());
 const {
@@ -259,6 +263,18 @@ const { mutateAsync, asyncStatus } = useMutation({
       method: 'POST',
       body: rescueBody,
     });
+
+    if (rescue.interna_code === RESCUE_BLOCKED_INTERNA_CODE) {
+      const companyLabel =
+        payload.form.client.label || `Cliente #${payload.form.client.value}`;
+      blockedMessage.value = `Este rescate fue bloqueado porque el vehículo ${payload.form.vehicle} de la compañía ${companyLabel} ya tuvo más rescates de los permitidos. Contacta al administrador del sitio.`;
+      blockedModalOpen.value = true;
+      await queryCache.invalidateQueries({ key: ['operational-rescue-cards'] });
+      await queryCache.invalidateQueries({ key: ['operational-rescue-list'] });
+      await queryCache.invalidateQueries({ key: ['operational-rescue-cards-summary'] });
+      closeWithoutConfirm();
+      return rescue;
+    }
 
     const quoteBody = buildRescueQuoteCreateBody(
       rescue.id,
@@ -610,5 +626,10 @@ const wizardModalProps = computed(() => {
     v-model:open="discardConfirmOpen"
     @confirm="confirmDiscard"
     @cancel="cancelDiscard"
+  />
+
+  <OperationalRescueBlockedModal
+    v-model:open="blockedModalOpen"
+    :message="blockedMessage"
   />
 </template>
