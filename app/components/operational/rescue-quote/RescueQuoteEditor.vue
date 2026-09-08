@@ -592,25 +592,24 @@ watch(
                 </UFormField>
               </td>
               <td class="bg-info/5 px-3 py-2 align-top">
-                <div
-                  v-if="showCalculatedPreview"
-                  class="space-y-1 font-medium tabular-nums text-warning"
-                >
-                  {{ formatQuoteMoney(previewLineRow(line)?.clientPrice ?? 0) }}
-                </div>
-                <div v-else class="space-y-1">
+                <div class="space-y-1">
                   <UFormField
                     :name="`quote_lines.${index}.client_price`"
                     class="min-w-0"
                   >
                     <OperationalRescueQuoteLiveNumberInput
-                      :model-value="line.client_price"
+                      :model-value="
+                        showCalculatedPreview
+                          ? (previewLineRow(line)?.clientPrice ?? 0)
+                          : line.client_price
+                      "
                       :min="0"
+                      :disabled="showCalculatedPreview"
                       @update:model-value="onClientPriceChange(line, $event)"
                     />
                   </UFormField>
                   <p
-                    v-if="isLinePriceCustom(line)"
+                    v-if="!showCalculatedPreview && isLinePriceCustom(line)"
                     class="text-xs text-muted tabular-nums"
                   >
                     Calculado:
@@ -627,25 +626,20 @@ watch(
                 class="w-2 bg-accented p-0"
               />
               <td class="bg-primary/5 px-3 py-2 align-top">
-                <div
-                  v-if="showCalculatedPreview"
-                  class="font-medium tabular-nums text-warning"
-                >
-                  {{
-                    formatQuoteMoney(
-                      previewLineRow(line)?.lineTotalCalculated ?? 0,
-                    )
-                  }}
-                </div>
-                <div v-else class="space-y-1">
+                <div class="space-y-1">
                   <div class="flex items-center gap-1">
                     <UFormField
                       :name="`quote_lines.${index}.applied_price`"
                       class="min-w-0 flex-1"
                     >
                       <OperationalRescueQuoteLiveNumberInput
-                        :model-value="line.applied_price"
+                        :model-value="
+                          showCalculatedPreview
+                            ? (previewLineRow(line)?.lineTotalCalculated ?? 0)
+                            : line.applied_price
+                        "
                         :min="0"
+                        :disabled="showCalculatedPreview"
                         @update:model-value="onAppliedPriceChange(line, $event)"
                       />
                     </UFormField>
@@ -655,13 +649,13 @@ watch(
                       variant="ghost"
                       icon="i-lucide-rotate-ccw"
                       size="xs"
-                      :disabled="!isLinePriceCustom(line)"
+                      :disabled="showCalculatedPreview || !isLinePriceCustom(line)"
                       aria-label="Restablecer precios de la fila"
                       @click="resetLineAppliedPrice(line)"
                     />
                   </div>
                   <p
-                    v-if="isLinePriceCustom(line)"
+                    v-if="!showCalculatedPreview && isLinePriceCustom(line)"
                     class="text-xs text-muted tabular-nums"
                   >
                     Calculado:
@@ -670,23 +664,21 @@ watch(
                 </div>
               </td>
               <td class="bg-primary/5 px-3 py-2 align-top text-right">
-                <span
-                  v-if="showCalculatedPreview"
-                  class="font-semibold tabular-nums text-warning"
-                >
-                  {{ formatQuoteMoney(previewLineRow(line)?.lineTotal ?? 0) }}
+                <span class="font-semibold tabular-nums text-primary">
+                  {{
+                    formatQuoteMoney(
+                      (showCalculatedPreview
+                        ? previewLineRow(line)?.lineTotal
+                        : lineRow(line)?.lineTotal) ?? 0,
+                    )
+                  }}
                 </span>
-                <template v-else>
-                  <span class="font-semibold tabular-nums text-primary">
-                    {{ formatQuoteMoney(lineRow(line)?.lineTotal ?? 0) }}
-                  </span>
-                  <span
-                    v-if="lineRow(line)?.roundingAdd"
-                    class="mt-1 block text-xs text-muted tabular-nums"
-                  >
-                    +{{ formatQuoteMoney(lineRow(line)!.roundingAdd) }} redondeo
-                  </span>
-                </template>
+                <span
+                  v-if="!showCalculatedPreview && lineRow(line)?.roundingAdd"
+                  class="mt-1 block text-xs text-muted tabular-nums"
+                >
+                  +{{ formatQuoteMoney(lineRow(line)!.roundingAdd) }} redondeo
+                </span>
               </td>
               <td class="px-2 py-2 align-top">
                 <UButton
