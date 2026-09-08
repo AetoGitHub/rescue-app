@@ -19,23 +19,9 @@ const props = defineProps<{
   settings: RescueCompanySettings | null;
   ivaRate?: number;
   mode?: QuotePricingDevBreakdownMode;
-  /** Same lines re-priced ignoring any manual override (pure calculated). */
-  calculatedPricing?: QuotePricingSummary | null;
-  /** Superuser/dev-only: shows the "original vs. calculado" toggle. */
-  canPreviewCalculated?: boolean;
 }>();
 
 const devCopy = QUOTE_DEV_BREAKDOWN_COPY;
-
-const previewCalculated = ref(false);
-
-function calculatedRowFor(row: QuoteLinePricing): QuoteLinePricing | null {
-  return (
-    props.calculatedPricing?.lines.find(
-      (entry) => entry.line.id === row.line.id,
-    ) ?? null
-  );
-}
 
 const panelTitle = computed(() =>
   props.mode === 'admin'
@@ -174,26 +160,6 @@ const totalChargedDetail = computed(() => {
       {{ QUOTE_DEV_UNLOCK_COPY.panelHintAdmin }}
     </p>
 
-    <div
-      v-if="canPreviewCalculated && calculatedPricing"
-      class="border-t border-amber-500/20 px-3 py-1.5"
-    >
-      <UButton
-        type="button"
-        size="2xs"
-        color="neutral"
-        variant="subtle"
-        :icon="previewCalculated ? 'i-lucide-history' : 'i-lucide-calculator'"
-        @click="previewCalculated = !previewCalculated"
-      >
-        {{
-          previewCalculated
-            ? 'Ver original (guardado)'
-            : 'Ver cómo quedaría con cálculos'
-        }}
-      </UButton>
-    </div>
-
     <div class="space-y-3 border-t border-amber-500/20 px-3 pb-3 pt-2">
       <section
         v-if="settings"
@@ -324,18 +290,6 @@ const totalChargedDetail = computed(() => {
             >
               Raw: {{ rawBlameExplanation(row) }}
             </li>
-            <li
-              v-if="previewCalculated && calculatedRowFor(row)"
-              class="rounded border border-info/40 bg-info/5 p-1 not-italic"
-            >
-              Vista calculada (multiplicador/comisiones actuales, sin
-              overrides): Venta AETO
-              {{ formatQuoteMoney(calculatedRowFor(row)!.clientPrice) }},
-              precio a aplicar
-              {{ formatQuoteMoney(calculatedRowFor(row)!.lineTotalCalculated) }},
-              total línea
-              {{ formatQuoteMoney(calculatedRowFor(row)!.lineTotal) }}.
-            </li>
             <li v-if="fixedShareExplanation(row)">
               {{ fixedShareExplanation(row) }}
             </li>
@@ -381,18 +335,6 @@ const totalChargedDetail = computed(() => {
           Totales
         </p>
         <ul class="space-y-1 tabular-nums text-muted">
-          <li
-            v-if="previewCalculated && calculatedPricing"
-            class="rounded border border-info/40 bg-info/5 p-1.5"
-          >
-            <span class="font-medium text-default">
-              Vista calculada (total, ignorando overrides)
-            </span>
-            <span class="block mt-0.5">
-              Subtotal: {{ formatQuoteMoney(calculatedPricing.subtotalLines) }}
-              · Total: {{ formatQuoteMoney(calculatedPricing.totalCharged) }}
-            </span>
-          </li>
           <li>
             {{ QUOTE_SUMMARY_LABELS.technicalCost }} = Σ costo línea →
             <strong class="text-default">

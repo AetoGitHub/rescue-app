@@ -137,6 +137,28 @@ const calculatedPreviewPricing = computed(() => {
   });
 });
 
+/** When on, the lines table shows the fully recalculated (no-override)
+ * values instead of the saved/original ones. Preview only, toggled off
+ * automatically if the viewer loses superuser/dev access mid-edit. */
+const showCalculatedPreview = ref(false);
+watch(canPreviewCalculatedPricing, (allowed) => {
+  if (!allowed) showCalculatedPreview.value = false;
+});
+
+function previewLineRow(line: RescueQuoteLine) {
+  return calculatedPreviewPricing.value?.lines.find(
+    (row) => row.line.id === line.id,
+  );
+}
+
+/** Summary totals follow the preview toggle too; credit checks below still
+ * use the real `pricing` so they're never bypassed by the preview. */
+const displayedPricing = computed(() =>
+  showCalculatedPreview.value && calculatedPreviewPricing.value
+    ? calculatedPreviewPricing.value
+    : pricing.value,
+);
+
 watch(
   () =>
     pricing.value.lines.map((row) => ({
@@ -380,11 +402,28 @@ watch(
           label="CREDITO"
         />
       </div>
-      <UBadge color="primary" variant="subtle" size="md">
-        {{
-          serviceType === 'loan' ? 'Multiplicador préstamo' : 'Multiplicador'
-        }}: {{ priceMultiplierLabel }}
-      </UBadge>
+      <div class="flex flex-wrap items-center gap-2">
+        <UBadge color="primary" variant="subtle" size="md">
+          {{
+            serviceType === 'loan' ? 'Multiplicador préstamo' : 'Multiplicador'
+          }}: {{ priceMultiplierLabel }}
+        </UBadge>
+        <UButton
+          v-if="canPreviewCalculatedPricing"
+          type="button"
+          size="xs"
+          :color="showCalculatedPreview ? 'warning' : 'neutral'"
+          :variant="showCalculatedPreview ? 'solid' : 'subtle'"
+          :icon="showCalculatedPreview ? 'i-lucide-history' : 'i-lucide-calculator'"
+          @click="showCalculatedPreview = !showCalculatedPreview"
+        >
+          {{
+            showCalculatedPreview
+              ? 'Viendo: calculado (sin guardar)'
+              : 'Ver cómo quedaría calculado'
+          }}
+        </UButton>
+      </div>
     </div>
 
     <UTabs
@@ -553,7 +592,13 @@ watch(
                 </UFormField>
               </td>
               <td class="bg-info/5 px-3 py-2 align-top">
-                <div class="space-y-1">
+                <div
+                  v-if="showCalculatedPreview"
+                  class="space-y-1 font-medium tabular-nums text-warning"
+                >
+                  {{ formatQuoteMoney(previewLineRow(line)?.clientPrice ?? 0) }}
+                </div>
+                <div v-else class="space-y-1">
                   <UFormField
                     :name="`quote_lines.${index}.client_price`"
                     class="min-w-0"
@@ -582,7 +627,17 @@ watch(
                 class="w-2 bg-accented p-0"
               />
               <td class="bg-primary/5 px-3 py-2 align-top">
-                <div class="space-y-1">
+                <div
+                  v-if="showCalculatedPreview"
+                  class="font-medium tabular-nums text-warning"
+                >
+                  {{
+                    formatQuoteMoney(
+                      previewLineRow(line)?.lineTotalCalculated ?? 0,
+                    )
+                  }}
+                </div>
+                <div v-else class="space-y-1">
                   <div class="flex items-center gap-1">
                     <UFormField
                       :name="`quote_lines.${index}.applied_price`"
@@ -615,15 +670,23 @@ watch(
                 </div>
               </td>
               <td class="bg-primary/5 px-3 py-2 align-top text-right">
-                <span class="font-semibold tabular-nums text-primary">
-                  {{ formatQuoteMoney(lineRow(line)?.lineTotal ?? 0) }}
-                </span>
                 <span
-                  v-if="lineRow(line)?.roundingAdd"
-                  class="mt-1 block text-xs text-muted tabular-nums"
+                  v-if="showCalculatedPreview"
+                  class="font-semibold tabular-nums text-warning"
                 >
-                  +{{ formatQuoteMoney(lineRow(line)!.roundingAdd) }} redondeo
+                  {{ formatQuoteMoney(previewLineRow(line)?.lineTotal ?? 0) }}
                 </span>
+                <template v-else>
+                  <span class="font-semibold tabular-nums text-primary">
+                    {{ formatQuoteMoney(lineRow(line)?.lineTotal ?? 0) }}
+                  </span>
+                  <span
+                    v-if="lineRow(line)?.roundingAdd"
+                    class="mt-1 block text-xs text-muted tabular-nums"
+                  >
+                    +{{ formatQuoteMoney(lineRow(line)!.roundingAdd) }} redondeo
+                  </span>
+                </template>
               </td>
               <td class="px-2 py-2 align-top">
                 <UButton
@@ -665,25 +728,34 @@ watch(
         v-if="hasQuoteLines"
         class="ml-auto w-full max-w-xs space-y-3 text-sm"
       >
+        <p
+          v-if="showCalculatedPreview"
+          class="text-xs font-medium text-warning"
+        >
+          Vista calculada, no guardada.
+        </p>
         <div class="space-y-2">
           <div class="flex justify-between gap-4">
             <span class="text-muted">{{ QUOTE_SUMMARY_LABELS.subtotal }}</span>
             <span class="tabular-nums">
-              {{ formatQuoteMoney(pricing.subtotalLines) }}
+              {{ formatQuoteMoney(displayedPricing.subtotalLines) }}
             </span>
           </div>
           <div class="flex justify-between gap-4">
             <span class="text-muted">IVA ({{ ivaPercentLabel }})</span>
             <span class="tabular-nums">
-              +{{ formatQuoteMoney(pricing.ivaAmount) }}
+              +{{ formatQuoteMoney(displayedPricing.ivaAmount) }}
             </span>
           </div>
           <div
             class="flex justify-between gap-4 border-t border-default pt-2"
           >
             <span class="font-semibold">TOTAL</span>
-            <span class="text-lg font-bold tabular-nums text-primary">
-              {{ formatQuoteMoney(pricing.totalCharged) }}
+            <span
+              class="text-lg font-bold tabular-nums"
+              :class="showCalculatedPreview ? 'text-warning' : 'text-primary'"
+            >
+              {{ formatQuoteMoney(displayedPricing.totalCharged) }}
             </span>
           </div>
         </div>
@@ -699,7 +771,7 @@ watch(
           <div class="flex justify-between gap-4 text-muted">
             <span>{{ QUOTE_SUMMARY_LABELS.technicalCost }}</span>
             <span class="tabular-nums">
-              {{ formatQuoteMoney(pricing.costSubtotal) }}
+              {{ formatQuoteMoney(displayedPricing.costSubtotal) }}
             </span>
           </div>
           <div class="flex justify-between gap-4">
@@ -707,7 +779,7 @@ watch(
               {{ QUOTE_SUMMARY_LABELS.utility }}
             </span>
             <span class="font-semibold tabular-nums text-highlighted">
-              {{ formatQuoteMoney(pricing.profit) }}
+              {{ formatQuoteMoney(displayedPricing.profit) }}
             </span>
           </div>
         </div>
@@ -734,8 +806,6 @@ watch(
         :pricing="pricing"
         :settings="settings"
         :mode="quotePricingDevBreakdownMode ?? 'dev'"
-        :calculated-pricing="calculatedPreviewPricing"
-        :can-preview-calculated="canPreviewCalculatedPricing"
       />
     </div>
   </div>
