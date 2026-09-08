@@ -115,6 +115,28 @@ const pricing = computed(() =>
   }),
 );
 
+/** Superuser/dev-only: lets the dev breakdown panel preview "how it would
+ * look if fully recalculated" without touching the saved/original values. */
+const canPreviewCalculatedPricing = computed(
+  () => isDev || Boolean(sessionUser.value?.is_superuser),
+);
+
+const calculatedPreviewPricing = computed(() => {
+  if (!canPreviewCalculatedPricing.value) return null;
+  const strippedLines = quoteLines.value.map((line) => ({
+    ...line,
+    applied_price: 0,
+    client_price: 0,
+    priceOverrideSource: 'none' as const,
+    blame_client_price: null,
+    blame_applied_price: null,
+  }));
+  return computeQuotePricing(strippedLines, settings.value, {
+    clientSellerId: props.clientSellerId,
+    serviceType: props.serviceType,
+  });
+});
+
 watch(
   () =>
     pricing.value.lines.map((row) => ({
@@ -124,6 +146,12 @@ watch(
       qty: row.line.quantity,
     })),
   (rows) => {
+    // While company settings are still loading, computeQuotePricing falls back
+    // to a 1x multiplier. Skip syncing so we don't capture that placeholder
+    // as the "previous calculated" baseline and later clobber loaded/custom
+    // prices once the real multiplier arrives (see rescue-quote-tab bug).
+    if (pending.value) return;
+
     const prevMap = previousCalculatedByLineId.value;
     const nextMap = new Map<string, number>();
 
@@ -706,6 +734,8 @@ watch(
         :pricing="pricing"
         :settings="settings"
         :mode="quotePricingDevBreakdownMode ?? 'dev'"
+        :calculated-pricing="calculatedPreviewPricing"
+        :can-preview-calculated="canPreviewCalculatedPricing"
       />
     </div>
   </div>

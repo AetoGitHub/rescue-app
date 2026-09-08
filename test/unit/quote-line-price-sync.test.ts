@@ -113,6 +113,46 @@ describe('quote line price sync', () => {
     expect(row.priceOverrideSource).toBe('none');
   });
 
+  it('preserves a loaded price once real settings replace the placeholder 1x multiplier', () => {
+    // Line loaded from a saved loan quote: real_cost 200, applied_price 200,
+    // client_price 200, no blame recorded. The editor must not run this
+    // sync while company settings are still pending (default 1x multiplier
+    // would coincidentally match these values and get captured as the
+    // "previous calculated" baseline) — so the first real sync call happens
+    // once settings resolve, with `previousCalculatedApplied` still undefined.
+    const row = line({
+      quantity: 1,
+      unit_cost: 200,
+      applied_price: 200,
+      client_price: 200,
+    });
+
+    syncQuoteLinePricesFromCalculated(row, 220, 220, undefined);
+
+    expect(row.applied_price).toBe(200);
+    expect(row.client_price).toBe(200);
+    expect(row.priceOverrideSource).toBe('applied_price');
+  });
+
+  it('regression: capturing the pending-settings placeholder as baseline overwrites the loaded price', () => {
+    const row = line({
+      quantity: 1,
+      unit_cost: 200,
+      applied_price: 200,
+      client_price: 200,
+    });
+
+    // Placeholder sync while settings are still null/pending (1x multiplier
+    // matches the loaded values by coincidence) — this is what the editor's
+    // watcher must now skip.
+    syncQuoteLinePricesFromCalculated(row, 200, 200, undefined);
+    // Real settings arrive (1.1x loan multiplier).
+    syncQuoteLinePricesFromCalculated(row, 220, 220, 200);
+
+    expect(row.applied_price).toBe(220);
+    expect(row.client_price).toBe(220);
+  });
+
   it('keeps applied total and back-fills AETO when quantity changes after applied override', () => {
     const row = line({ quantity: 3, unit_cost: 360 });
     applyAppliedPriceOverride(row, 2000, 1080, user);
