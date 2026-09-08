@@ -68,6 +68,24 @@ function fixedShareExplanation(row: QuoteLinePricing): string | null {
   return `${devCopy.fixedShareLinePrefix} (${formatQuoteMoney(pool)} total; esta partida ${pct}% del subtotal tras multiplicador) → ${formatQuoteMoney(row.fixedShare)} ${devCopy.fixedShareLineSuffix}`;
 }
 
+function blameFieldSummary(
+  field: { original: string; user_id: number; username: string },
+): string {
+  const who = field.username.trim() || `usuario #${field.user_id}`;
+  return `${who} (original: ${formatQuoteMoney(Number(field.original))})`;
+}
+
+function rawBlameExplanation(row: QuoteLinePricing): string {
+  const { blame_client_price, blame_applied_price } = row.line;
+  if (blame_applied_price) {
+    return `Precio a aplicar modificado manualmente por ${blameFieldSummary(blame_applied_price)}.`;
+  }
+  if (blame_client_price) {
+    return `Venta AETO modificada manualmente por ${blameFieldSummary(blame_client_price)}.`;
+  }
+  return 'Sin cambios manuales: valores calculados.';
+}
+
 function sellerFixedShareExplanation(row: QuoteLinePricing): string | null {
   if (
     row.isContractLine
@@ -261,6 +279,16 @@ const totalChargedDetail = computed(() => {
               Venta AETO unitario
               {{ row.isClientPriceCustom ? '(custom)' : '(initializer)' }}:
               {{ formatQuoteMoney(row.clientPrice) }}
+            </li>
+            <li
+              class="italic"
+              :class="
+                row.line.blame_client_price || row.line.blame_applied_price
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : ''
+              "
+            >
+              Raw: {{ rawBlameExplanation(row) }}
             </li>
             <li v-if="fixedShareExplanation(row)">
               {{ fixedShareExplanation(row) }}
