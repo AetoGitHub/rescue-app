@@ -24,8 +24,14 @@ const serviceType = computed(
   () => props.detail.service_type as RescueServiceType,
 );
 
+const { user: sessionUser } = useUserSession();
+
 const editable = computed(() =>
-  canEditRescueQuoteWithUnlock(props.detail, props.unlockSessionUntil),
+  canEditRescueQuoteWithUnlock(
+    props.detail,
+    props.unlockSessionUntil,
+    sessionUser.value?.is_superuser,
+  ),
 );
 
 const unlockCountdownUntil = computed(

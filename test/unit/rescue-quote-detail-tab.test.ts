@@ -99,4 +99,12 @@ describe('rescue quote detail tab helpers', () => {
     });
     expect(canEditRescueQuoteWithUnlock(detail, null)).toBe(true);
   });
+
+  it('canEditRescueQuoteWithUnlock always allows superusers, even in terminal status without a session', () => {
+    const detail = minimalDetail({
+      operative_status: 'closed',
+      sub_total: '1500.00',
+    });
+    expect(canEditRescueQuoteWithUnlock(detail, null, true)).toBe(true);
+  });
 });

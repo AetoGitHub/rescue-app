@@ -15,11 +15,13 @@ export function canEditRescueQuote(detail: RescueCardDetail): boolean {
   );
 }
 
-/** Allows quote edit in terminal statuses when an unlock edit session is active. */
+/** Allows quote edit in terminal statuses when an unlock edit session is active, or always for superusers. */
 export function canEditRescueQuoteWithUnlock(
   detail: RescueCardDetail,
   unlockSessionUntil: string | null | undefined,
+  isSuperuser?: boolean,
 ): boolean {
+  if (isSuperuser) return true;
   if (canEditRescueQuote(detail)) return true;
   return Boolean(unlockSessionUntil?.trim());
 }
