@@ -525,13 +525,7 @@ watch(
                 </UFormField>
               </td>
               <td class="bg-info/5 px-3 py-2 align-top">
-                <span
-                  v-if="serviceType === 'loan'"
-                  class="font-medium tabular-nums"
-                >
-                  {{ formatQuoteMoney(lineRow(line)?.clientPrice ?? 0) }}
-                </span>
-                <div v-else class="space-y-1">
+                <div class="space-y-1">
                   <UFormField
                     :name="`quote_lines.${index}.client_price`"
                     class="min-w-0"
@@ -560,13 +554,7 @@ watch(
                 class="w-2 bg-accented p-0"
               />
               <td class="bg-primary/5 px-3 py-2 align-top">
-                <span
-                  v-if="serviceType === 'loan'"
-                  class="font-medium tabular-nums"
-                >
-                  {{ formatQuoteMoney(lineRow(line)?.lineTotalCalculated ?? 0) }}
-                </span>
-                <div v-else class="space-y-1">
+                <div class="space-y-1">
                   <div class="flex items-center gap-1">
                     <UFormField
                       :name="`quote_lines.${index}.applied_price`"

@@ -569,13 +569,14 @@ describe('computeQuotePricing', () => {
       true,
     );
     expect(loanPricing.lines.every((row) => row.roundingAdd === 0)).toBe(true);
-    expect(loanPricing.lines[0]!.appliedPrice).toBe(2002);
-    expect(loanPricing.lines[0]!.isAppliedPriceCustom).toBe(false);
-    expect(loanPricing.lines[0]!.clientPrice).toBe(2002);
+    // Loan quotes still allow manual overrides, they just never round to $10.
+    expect(loanPricing.lines[0]!.appliedPrice).toBe(9999);
+    expect(loanPricing.lines[0]!.isAppliedPriceCustom).toBe(true);
+    expect(loanPricing.lines[0]!.clientPrice).toBe(9999);
     expect(loanPricing.lines[0]!.clientPriceInitializer).toBe(2002);
     expect(loanPricing.sellerCommission).toBe(0);
     expect(loanPricing.roundingAddTotal).toBe(0);
-    expect(loanPricing.subtotalLines).toBe(3002);
+    expect(loanPricing.subtotalLines).toBe(10999);
   });
 
   it('initializes venta AETO as unit_cost × multiplier (not including commissions)', () => {

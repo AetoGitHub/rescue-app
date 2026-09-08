@@ -257,9 +257,10 @@ describe('buildRescueQuoteCreateBody', () => {
       },
     );
 
+    // Manual applied_price override (9999) is respected, but never rounded to $10.
     expect(body!.technical_cost).toBe('1001.00');
-    expect(body!.sub_total).toBe('2002.00');
-    expect(body!.total).toBe('2002.00');
+    expect(body!.sub_total).toBe('9999.00');
+    expect(body!.total).toBe('9999.00');
     expect(body!.seller_commission_type).toBe('PERCENTAGE');
     expect(body!.seller_commission_value).toBe('0.00');
     expect(body!.seller_commission_fixed).toBe('0.00');
@@ -268,11 +269,11 @@ describe('buildRescueQuoteCreateBody', () => {
     expect(body!.services[0]).toMatchObject({
       real_cost: '1001.00',
       pre_total: '2002.00',
-      applied_price: '2002.00',
+      applied_price: '9999.00',
       percenaje_apply: '0.00',
       amount_applied: '0.00',
       amount_rounded: '0.00',
-      total: '2002.00',
+      total: '9999.00',
     });
   });
 });

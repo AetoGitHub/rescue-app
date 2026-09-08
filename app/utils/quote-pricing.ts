@@ -451,12 +451,10 @@ export function computeQuotePricing(
     const lineTotalCalculated = roundQuoteMoney(
       afterMultiplier + fixedShare + sellerFixedShare,
     );
-    const { appliedPrice, isAppliedPriceCustom } = isLoanQuote
-      ? {
-          appliedPrice: lineTotalCalculated,
-          isAppliedPriceCustom: false,
-        }
-      : resolveLineAppliedPrice(draft.line, lineTotalCalculated);
+    const { appliedPrice, isAppliedPriceCustom } = resolveLineAppliedPrice(
+      draft.line,
+      lineTotalCalculated,
+    );
     const { lineTotal, roundingAdd } = applyLineRounding(
       appliedPrice,
       roundToTen,
@@ -466,17 +464,12 @@ export function computeQuotePricing(
       priceMultiplier,
       false,
     );
-    const { clientPrice, isClientPriceCustom } = isLoanQuote
-      ? {
-          clientPrice: clientPriceInitializer,
-          isClientPriceCustom: false,
-        }
-      : resolveLineClientPrice(
-          draft.line,
-          clientPriceInitializer,
-          appliedPrice,
-          isAppliedPriceCustom,
-        );
+    const { clientPrice, isClientPriceCustom } = resolveLineClientPrice(
+      draft.line,
+      clientPriceInitializer,
+      appliedPrice,
+      isAppliedPriceCustom,
+    );
 
     return {
       line: draft.line,
