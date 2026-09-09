@@ -95,7 +95,7 @@ export function isContractLine(
 export function applyContractToLine(
   line: RescueQuoteLine,
   contractItem: RescueContractItem,
-  options?: { overwritePrices?: boolean },
+  options?: { overwritePrices?: boolean; applyPrices?: boolean },
 ): void {
   // Idempotent: a new `service` object retriggers quote-line watchers and
   // remounts CatalogDropdownSelect (USelectMenu overlay) which freezes the
@@ -113,6 +113,10 @@ export function applyContractToLine(
   } else if (!line.service.label.trim() && contractItem.service_name) {
     line.service.label = contractItem.service_name;
   }
+
+  // Some service types (e.g. préstamo) only tag the line as convenio and
+  // leave price entry fully manual.
+  if (options?.applyPrices === false) return;
 
   // Keep hydrated / edited technical cost. Convenio is only the default
   // when the operator just picked the service (or the line is still empty).

@@ -299,7 +299,12 @@ function syncLineContract(
 
   const item = findContractItemForService(settings.value, line.service.value);
   if (item) {
-    applyContractToLine(line, item, { overwritePrices });
+    // Préstamo: se marca como convenio (badge/contract_item_id) pero el
+    // precio se captura manualmente, no se hereda del convenio.
+    applyContractToLine(line, item, {
+      overwritePrices: props.serviceType === 'loan' ? false : overwritePrices,
+      applyPrices: props.serviceType !== 'loan',
+    });
     return;
   }
 
