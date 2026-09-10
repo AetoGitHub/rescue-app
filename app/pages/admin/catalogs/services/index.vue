@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { refDebounced } from '@vueuse/core';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Service } from '~/interfaces/catalogs/service';
 import { adminListTableClass } from '~/constants/admin-list-layout';
@@ -10,6 +11,8 @@ useHead({
 const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
 const categoriesOpen = ref(false);
 const tableRef = useTemplateRef('table');
+const search = ref('');
+const debouncedName = refDebounced(search, 300);
 
 function onRowSelect(_e: Event, row: TableRow<Service>) {
   const id = row.original.id;
@@ -25,8 +28,12 @@ const {
   loadNextPage,
   isInitialLoading,
 } = useCatalogInfiniteList<Service>({
-  key: () => ['services'],
+  key: () => ['services', debouncedName.value.trim()],
   path: '/api/catalogue/service/list/',
+  query: () => {
+    const name = debouncedName.value.trim();
+    return name ? { name } : undefined;
+  },
 });
 
 usePaginatedTableInfiniteScroll({
@@ -75,6 +82,7 @@ const columns: TableColumn<Service>[] = [
 
     <template #filters>
       <UInput
+        v-model="search"
         leading-icon="i-lucide-search"
         placeholder="Buscar servicio"
         class="flex-1"
