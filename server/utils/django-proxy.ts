@@ -51,6 +51,17 @@ export function proxyDjangoRequest(
   requestId: string,
 ) {
   const start = performance.now();
+
+  // El header Server-Timing ya no se puede tocar una vez que empieza el
+  // streaming del body (ver onResponse), así que el tiempo *total* —
+  // incluyendo ese streaming — se registra aquí y se ve en la terminal del
+  // servidor, no en el Network tab.
+  event.node.res.on('finish', () => {
+    console.log(
+      `[django-proxy] ${event.method} ${event.path} total=${(performance.now() - start).toFixed(1)}ms`,
+    );
+  });
+
   return proxyRequest(event, target, {
     headers: djangoProxyHeaders(token, requestId),
     async onResponse(_event, response) {
