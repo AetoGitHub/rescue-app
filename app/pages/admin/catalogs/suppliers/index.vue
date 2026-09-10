@@ -13,12 +13,14 @@ import {
   adminLinkTabsFlexClass,
   adminLinkTabsFlexUi,
 } from '~/constants/tabs-layout';
+import { SUPPLIER_EXPORT_PATH } from '~/constants/rescue-api';
 
 useHead({
   title: 'Proveedores',
 });
 
 const UBadge = resolveComponent('UBadge');
+const toast = useToast();
 
 type SupplierViewMode = 'list' | 'map';
 
@@ -58,6 +60,29 @@ const {
 
 function toggleTrustedOnly() {
   trustedOnly.value = !trustedOnly.value;
+}
+
+const isDownloadingExcel = ref(false);
+
+async function handleDownloadExcel() {
+  isDownloadingExcel.value = true;
+  try {
+    const response = await $fetch.raw<Blob>(SUPPLIER_EXPORT_PATH, {
+      responseType: 'blob',
+    });
+    const filename =
+      filenameFromContentDisposition(response.headers.get('content-disposition'))
+      || 'proveedores.xlsx';
+    downloadBlob(response._data as Blob, filename);
+  } catch (error) {
+    toast.add({
+      title: 'No se pudo descargar el Excel',
+      description: getFetchErrorMessage(error),
+      color: 'error',
+    });
+  } finally {
+    isDownloadingExcel.value = false;
+  }
 }
 
 function onRowSelect(_e: Event, row: TableRow<Supplier>) {
@@ -202,6 +227,15 @@ const columns: TableColumn<Supplier>[] = [
     description="Gestiona los proveedores de servicios"
   >
     <template #actions>
+      <UButton
+        color="neutral"
+        variant="subtle"
+        icon="i-lucide-download"
+        label="Descargar Excel"
+        :loading="isDownloadingExcel"
+        :disabled="isDownloadingExcel"
+        @click="handleDownloadExcel"
+      />
       <CatalogSupplierCreateSlideover ref="slideoverRef" />
     </template>
 

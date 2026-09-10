@@ -23,3 +23,6 @@ export const SUPPLIER_RESCUE_SEARCH_RADIUS_KM = 50;
 
 export const SUPPLIER_REVIEW_CREATE_PATH = (supplierId: number) =>
   `/api/supplier/${supplierId}/review/create/`;
+
+/** Excel export of the supplier catalog. */
+export const SUPPLIER_EXPORT_PATH = '/api/supplier/export/';
