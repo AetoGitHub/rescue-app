@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { AdministrativeBillingStatus } from '~/constants/administrative-kanban';
+import {
+  ADMINISTRATIVE_KANBAN_COLUMNS,
+  type AdministrativeBillingStatus,
+} from '~/constants/administrative-kanban';
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import { parseRescueAdminDocInput } from '~/schemas/rescue-admin-doc';
 
@@ -50,6 +53,18 @@ const supplierBadgeColor = computed(() =>
 const vehicleLabel = computed(() =>
   getRescueCardVehicleLabel(props.card.vehicle),
 );
+
+/** La columna del kanban (`columnStatus`) manda sobre `card.billing_status`. */
+const statusDateLabel = computed(() => {
+  const date = formatRescueTimelineDate(
+    getTimelineStatusDate(props.card.timeline, props.columnStatus),
+  );
+  if (!date) return null;
+  const title = ADMINISTRATIVE_KANBAN_COLUMNS.find(
+    (column) => column.status === props.columnStatus,
+  )?.title;
+  return title ? `${title}: ${date}` : date;
+});
 
 /** La columna del kanban es la fuente de verdad del estatus administrativo. */
 const docCard = computed((): AdministrativeRescueCard => ({
@@ -174,6 +189,13 @@ function onSendDocs() {
         </UBadge>
       </div>
     </div>
+
+    <p
+      v-if="statusDateLabel"
+      class="text-xs text-muted"
+    >
+      {{ statusDateLabel }}
+    </p>
 
     <div class="space-y-0.5">
       <p class="text-sm font-semibold text-highlighted leading-snug">

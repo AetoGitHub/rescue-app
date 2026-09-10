@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RescueCard } from '~/interfaces/rescue';
+import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
 
 const props = defineProps<{
   card: RescueCard;
@@ -77,6 +78,17 @@ const vehicleLabel = computed(() =>
   getRescueCardVehicleLabel(props.card.vehicle),
 );
 
+const statusDateLabel = computed(() => {
+  const date = formatRescueTimelineDate(
+    getTimelineStatusDate(props.card.timeline, props.card.operative_status),
+  );
+  if (!date) return null;
+  const title = OPERATIONAL_KANBAN_COLUMNS.find(
+    (column) => column.status === props.card.operative_status,
+  )?.title;
+  return title ? `${title}: ${date}` : date;
+});
+
 function onCardClick() {
   emit('select', props.card.id);
 }
@@ -110,6 +122,13 @@ function openQuickChat() {
         {{ serviceTypeBadge.label }}
       </UBadge>
     </div>
+
+    <p
+      v-if="statusDateLabel"
+      class="text-xs text-muted"
+    >
+      {{ statusDateLabel }}
+    </p>
 
     <div class="space-y-0.5">
       <p class="text-sm font-semibold text-highlighted leading-snug">

@@ -2,6 +2,7 @@ import type { AdministrativeBillingStatus } from '~/constants/administrative-kan
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import type { ClientBillingType } from '~/constants/rescue-administrative-flow';
 import type { RescueServiceType } from '~/interfaces/rescue';
+import type { RescueTimeline } from '~/utils/rescue-timeline';
 
 export type RescueAdministrativeActionId =
   | 'issue_remittance'
@@ -48,6 +49,8 @@ export interface AdministrativeRescueCard {
   remittance_folio: string | null;
   invoice_folio: string | null;
   blocked: boolean;
+  /** Date reached per status; see `getTimelineStatusDate`. */
+  timeline?: RescueTimeline | null;
 }
 
 export interface AdministrativeRescueDetail extends AdministrativeRescueCard {

@@ -17,6 +17,7 @@ import type {
   RescueInvoiceFormState,
   RescueRemittanceFormState,
 } from '~/interfaces/rescue/administrative';
+import { readRescueTimeline } from '~/utils/rescue-timeline';
 
 const VALID_BILLING_STATUSES = new Set(
   ADMINISTRATIVE_KANBAN_COLUMNS.map((column) => column.status),
@@ -163,6 +164,7 @@ export function mapAdministrativeCardFromApi(
       readString(raw, 'invoice_folio')
       ?? readString(raw, 'invoice_number'),
     blocked: Boolean(raw.blocked),
+    timeline: readRescueTimeline(raw.timeline),
   };
 }
 

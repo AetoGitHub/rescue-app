@@ -1,4 +1,5 @@
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
+import type { RescueTimeline } from '~/utils/rescue-timeline';
 
 export interface RescueCardBase {
   id: number;
@@ -28,6 +29,8 @@ export interface RescueCardBase {
   phase_started_at: string;
   last_comment_at?: string | null;
   unlocked_until: string | null;
+  /** Date reached per status; see `getTimelineStatusDate`. */
+  timeline?: RescueTimeline | null;
 }
 
 export interface RescueCardWaitingAdvance extends RescueCardBase {
