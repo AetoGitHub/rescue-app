@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue';
+import { refDebounced } from '@vueuse/core';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Supplier, SupplierServiceType } from '~/interfaces/catalogs/supplier';
 import type { MapViewport } from '~/utils/map-viewport';
@@ -33,6 +34,7 @@ const tableRef = useTemplateRef('table');
 
 const viewMode = ref<SupplierViewMode>('list');
 const search = ref('');
+const debouncedSearch = refDebounced(search, 300);
 const trustedOnly = ref(false);
 const serviceTypeFilter = ref<SupplierServiceType | 'all'>('all');
 const mapViewLayoutKey = ref(0);
@@ -80,8 +82,12 @@ const {
   loadNextPage,
   isInitialLoading,
 } = useCatalogInfiniteList<Record<string, unknown>>({
-  key: () => ['suppliers'],
+  key: () => ['suppliers', debouncedSearch.value.trim()],
   path: '/api/supplier/list/',
+  query: () => {
+    const name = debouncedSearch.value.trim();
+    return name ? { name } : undefined;
+  },
 });
 
 const rows = computed(() => rawRows.value.map(mapSupplierListRow));
@@ -103,7 +109,6 @@ const serviceTypeFilterItems = [
 ];
 
 const filteredRows = computed(() => {
-  const q = search.value.trim().toLowerCase();
   return rows.value.filter((row) => {
     if (trustedOnly.value && !row.is_trusted) return false;
     if (
@@ -112,16 +117,7 @@ const filteredRows = computed(() => {
     ) {
       return false;
     }
-    if (!q) return true;
-    const typeLabels = row.service_type
-      .map((t) => serviceTypeLabel[t] ?? t)
-      .join(' ')
-      .toLowerCase();
-    return (
-      row.name.toLowerCase().includes(q) ||
-      row.phone.toLowerCase().includes(q) ||
-      typeLabels.includes(q)
-    );
+    return true;
   });
 });
 
