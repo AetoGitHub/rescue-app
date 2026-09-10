@@ -19,10 +19,15 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const start = performance.now();
   const { token, requestId } = await requireProxySession(event);
   const apiUrl = useRuntimeConfig().apiUrl;
 
   await authorize(event, abilityForApiPath(event.path));
+
+  // Cuánto tarda nuestro propio pre-procesamiento (sesión + permisos) antes
+  // de siquiera llamar a Django, para diferenciarlo de la latencia upstream.
+  appendResponseHeader(event, 'Server-Timing', `app;dur=${(performance.now() - start).toFixed(1)}`);
 
   const target = joinURL(apiUrl, event.path);
 

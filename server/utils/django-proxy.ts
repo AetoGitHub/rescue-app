@@ -50,9 +50,14 @@ export function proxyDjangoRequest(
   token: string,
   requestId: string,
 ) {
+  const start = performance.now();
   return proxyRequest(event, target, {
     headers: djangoProxyHeaders(token, requestId),
     async onResponse(_event, response) {
+      // Tiempo que Django tardó en responder (red + su propio procesamiento),
+      // aislado del pre-procesamiento de Nitro (ver Server-Timing "app").
+      appendResponseHeader(event, 'Server-Timing', `django;dur=${(performance.now() - start).toFixed(1)}`);
+
       const status = response.status;
 
       if (status === 401 || status === 403) {
