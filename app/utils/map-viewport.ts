@@ -12,6 +12,16 @@ export interface MapViewport {
   bounds: MapBounds;
 }
 
+/** Whether `outer` fully covers `inner` (no antimeridian wraparound). */
+export function boundsContain(outer: MapBounds, inner: MapBounds): boolean {
+  return (
+    outer.north >= inner.north
+    && outer.south <= inner.south
+    && outer.east >= inner.east
+    && outer.west <= inner.west
+  );
+}
+
 export function getMapViewport(
   map: google.maps.Map | null | undefined,
 ): MapViewport | null {

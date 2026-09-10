@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  boundsContain,
   boundsFromCenter,
   DEFAULT_SUPPLIER_SEARCH_BOUNDS,
   mapViewportToQuery,
@@ -26,6 +27,24 @@ describe('DEFAULT_SUPPLIER_SEARCH_BOUNDS', () => {
   it('centers around CDMX default map center', () => {
     expect(DEFAULT_SUPPLIER_SEARCH_BOUNDS.north).toBeGreaterThan(19.432608);
     expect(DEFAULT_SUPPLIER_SEARCH_BOUNDS.south).toBeLessThan(19.432608);
+  });
+});
+
+describe('boundsContain', () => {
+  const outer = { north: 19.9, south: 19.0, east: -98.9, west: -99.4 };
+
+  it('is true when zooming in (inner is a subset)', () => {
+    const inner = { north: 19.5, south: 19.3, east: -99.0, west: -99.2 };
+    expect(boundsContain(outer, inner)).toBe(true);
+  });
+
+  it('is false when zooming out (inner extends beyond outer)', () => {
+    const inner = { north: 20.0, south: 19.0, east: -98.9, west: -99.4 };
+    expect(boundsContain(outer, inner)).toBe(false);
+  });
+
+  it('is true for identical bounds', () => {
+    expect(boundsContain(outer, outer)).toBe(true);
   });
 });
 

@@ -6,6 +6,7 @@ import type {
 } from '~/interfaces/catalogs/supplier';
 import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
 import { SUPPLIER_MAP_PATH } from '~/constants/rescue-api';
+import { boundsContain, type MapBounds } from '~/utils/map-viewport';
 
 export function useSupplierMapList(options: {
   fetchViewport: Ref<SupplierMapListQuery | null>;
@@ -38,6 +39,30 @@ export function useSupplierMapList(options: {
     });
   }
 
+  /**
+   * Bounds already covered by a previous successful fetch, for the same
+   * filters. Zooming in (or panning back within it) shrinks the viewport
+   * to a subset we already have in `cacheStore` — skip re-fetching it.
+   */
+  const fetchedCoverage = ref<{ bounds: MapBounds; fingerprint: string } | null>(null);
+
+  const fetchFingerprint = computed(() =>
+    JSON.stringify([
+      debouncedSearch.value,
+      options.trustedOnly.value,
+      options.serviceTypeFilter.value,
+    ]),
+  );
+
+  const isBoundsCovered = computed(() => {
+    const viewport = options.fetchViewport.value;
+    const coverage = fetchedCoverage.value;
+    if (!viewport || !coverage || coverage.fingerprint !== fetchFingerprint.value) {
+      return false;
+    }
+    return boundsContain(coverage.bounds, viewport);
+  });
+
   const { asyncStatus, error } = useQuery({
     key: () => [
       'suppliers-map',
@@ -61,10 +86,14 @@ export function useSupplierMapList(options: {
       );
       const rows = (response?.results ?? []).map(mapSupplierListRow);
       cacheStore.mergeSuppliers(rows);
+      const viewport = options.fetchViewport.value;
+      if (viewport) {
+        fetchedCoverage.value = { bounds: viewport, fingerprint: fetchFingerprint.value };
+      }
       return response;
     },
     enabled: () =>
-      options.enabled.value && options.fetchViewport.value != null,
+      options.enabled.value && options.fetchViewport.value != null && !isBoundsCovered.value,
     refetchOnWindowFocus: false,
     staleTime: 30_000,
   });

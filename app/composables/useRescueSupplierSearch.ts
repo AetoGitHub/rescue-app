@@ -11,7 +11,7 @@ import {
   SUPPLIER_RESCUE_SEARCH_RADIUS_KM,
 } from '~/constants/rescue-api';
 import { parseRescueCoord } from '~/schemas/rescue-create';
-import type { MapBounds } from '~/utils/map-viewport';
+import { boundsContain, type MapBounds } from '~/utils/map-viewport';
 
 function boundsFromQuery(viewport: SupplierMapListQuery): MapBounds {
   return {
@@ -81,6 +81,30 @@ export function useRescueSupplierSearch(options: {
     });
   }
 
+  /**
+   * Bounds already covered by a previous successful fetch, for the same
+   * filters. Zooming in (or panning back within it) shrinks `fetchBounds`
+   * to a subset we already have in `cacheStore` — skip re-fetching it.
+   */
+  const fetchedCoverage = ref<{ bounds: MapBounds; fingerprint: string } | null>(null);
+
+  const fetchFingerprint = computed(() =>
+    JSON.stringify([
+      sort.value,
+      debouncedSearch.value,
+      trustedOnly.value,
+      options.serviceTypeFilter.value,
+      unitCoords.value.lat,
+      unitCoords.value.lng,
+    ]),
+  );
+
+  const isBoundsCovered = computed(() => {
+    const coverage = fetchedCoverage.value;
+    if (!coverage || coverage.fingerprint !== fetchFingerprint.value) return false;
+    return boundsContain(coverage.bounds, fetchBounds.value);
+  });
+
   const { asyncStatus, error, refresh } = useQuery({
     key: () => [
       'rescue-suppliers-map',
@@ -107,9 +131,13 @@ export function useRescueSupplierSearch(options: {
       );
       const rows = (response?.results ?? []).map(mapSupplierListRow);
       cacheStore.mergeSuppliers(rows);
+      fetchedCoverage.value = {
+        bounds: fetchBounds.value,
+        fingerprint: fetchFingerprint.value,
+      };
       return response;
     },
-    enabled: () => canFetch.value,
+    enabled: () => canFetch.value && !isBoundsCovered.value,
     refetchOnWindowFocus: false,
     staleTime: 30_000,
   });
