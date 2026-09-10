@@ -299,6 +299,7 @@ export function administrativeDetailToCardDetail(
     supplier_score: detail.supplier_score,
     latitude: detail.latitude,
     longitude: detail.longitude,
+    timeline: detail.timeline,
   };
 }
 

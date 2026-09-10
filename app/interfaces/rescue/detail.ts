@@ -1,4 +1,5 @@
 import type { OperationalRescueStatus } from '~/constants/operational-kanban';
+import type { RescueTimeline } from '~/utils/rescue-timeline';
 
 export interface RescueCardDetail {
   id: number;
@@ -52,4 +53,6 @@ export interface RescueCardDetail {
     id: number;
     name: string;
   }[];
+  /** Date reached per status; see `getTimelineStatusDate`. */
+  timeline?: RescueTimeline | null;
 }

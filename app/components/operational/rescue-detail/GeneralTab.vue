@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RescueCardDetail, RescueChatMessage } from '~/interfaces/rescue';
+import { OPERATIONAL_KANBAN_COLUMNS } from '~/constants/operational-kanban';
 
 const props = withDefaults(
   defineProps<{
@@ -63,6 +64,17 @@ const showSupplierActions = computed(
 );
 
 const isLoan = computed(() => props.detail.service_type === 'loan');
+
+const statusDateLabel = computed(() => {
+  const date = formatRescueTimelineDate(
+    getTimelineStatusDate(props.detail.timeline, props.detail.operative_status),
+  );
+  if (!date) return null;
+  const title = OPERATIONAL_KANBAN_COLUMNS.find(
+    (column) => column.status === props.detail.operative_status,
+  )?.title;
+  return title ? `${title}: ${date}` : date;
+});
 
 const advanceSummary = computed(() => ({
   advance_requested: props.detail.advance_requested,
@@ -188,6 +200,12 @@ watch(
             <p class="font-medium uppercase text-muted">Fecha de servicio</p>
             <p class="text-highlighted">
               {{ formatDetailServiceDate(detail.created_at) }}
+            </p>
+          </div>
+          <div v-if="statusDateLabel">
+            <p class="font-medium uppercase text-muted">Estatus</p>
+            <p class="text-highlighted">
+              {{ statusDateLabel }}
             </p>
           </div>
           <div>
