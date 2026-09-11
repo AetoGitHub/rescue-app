@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { useMutation, useQueryCache } from '@pinia/colada';
+import { useMutation, useQuery, useQueryCache } from '@pinia/colada';
 import type { FormSubmitEvent } from '@nuxt/ui';
 import type { z } from 'zod';
+import type { AlegraContactDisplay } from '~/interfaces/alegra/contact.interface';
 import type {
   CompanyCreateBody,
   CompanyUpdateBody,
@@ -252,6 +253,26 @@ function fetchAlegraContactsDropdown(
     signal: options?.signal,
   });
 }
+
+const {
+  data: alegraContactDetail,
+  asyncStatus: alegraDetailStatus,
+  error: alegraDetailError,
+} = useQuery({
+  key: () => ['alegra-contact-detail', linkedAlegraId.value],
+  query: ({ signal }) =>
+    apiFetch<AlegraContactDisplay>(`/api/alegra/contacts/${linkedAlegraId.value}`, {
+      signal,
+    }),
+  enabled: () => isEdit.value && linkedAlegraId.value != null,
+  refetchOnWindowFocus: false,
+});
+
+const alegraDetailErrorMessage = computed(() =>
+  alegraDetailError.value != null
+    ? getFetchErrorMessage(alegraDetailError.value)
+    : '',
+);
 
 const queryCache = useQueryCache();
 
@@ -529,12 +550,26 @@ async function requestSubmit() {
           <template v-else>
             <div class="space-y-2">
               <span class="block text-sm font-medium text-default">Contacto Alegra</span>
-              <p class="text-sm text-muted">
-                {{
-                  linkedAlegraId != null
-                    ? 'Ya tiene un contacto de Alegra vinculado.'
-                    : 'Sin contacto Alegra.'
-                }}
+              <p v-if="linkedAlegraId == null" class="text-sm text-muted">
+                Sin contacto Alegra.
+              </p>
+              <div
+                v-else-if="alegraDetailStatus === 'loading'"
+                class="flex items-center gap-2 text-sm text-muted"
+              >
+                <UIcon name="i-lucide-loader-circle" class="size-4 animate-spin" />
+                Cargando contacto de Alegra...
+              </div>
+              <p
+                v-else-if="alegraDetailErrorMessage"
+                class="rounded-lg border border-error/30 bg-error/5 px-3 py-2 text-sm text-error"
+                role="alert"
+              >
+                {{ alegraDetailErrorMessage }}
+              </p>
+              <p v-else-if="alegraContactDetail" class="text-sm">
+                Contacto vinculado:
+                <span class="font-medium break-all">{{ alegraContactDetail.name }}</span>
               </p>
               <UCheckbox
                 v-if="linkedAlegraId != null"

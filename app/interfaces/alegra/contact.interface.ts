@@ -11,3 +11,8 @@ export interface AlegraContactsListPage {
   next: string | null;
   previous: string | null;
 }
+
+export interface AlegraContactDisplay {
+  id: number;
+  name: string;
+}

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAlegraAuthorizationHeader,
   buildAlegraContactsListQuery,
+  formatAlegraContactDisplay,
   formatAlegraItemDisplay,
   mapAlegraContactToDropdownRow,
   mapAlegraItemToDropdownRow,
@@ -166,5 +167,19 @@ describe('alegra-api helpers', () => {
 
   it('mapAlegraContactToDropdownRow ignores contacts without id', () => {
     expect(mapAlegraContactToDropdownRow({ name: 'Sin id' })).toBeNull();
+  });
+
+  it('formatAlegraContactDisplay exposes id and resolved name', () => {
+    expect(
+      formatAlegraContactDisplay({ id: 10, name: 'TRANSPORTES MONROY' }),
+    ).toEqual({ id: 10, name: 'TRANSPORTES MONROY' });
+    expect(formatAlegraContactDisplay({ id: 13 })).toEqual({
+      id: 13,
+      name: 'Contacto #13',
+    });
+  });
+
+  it('formatAlegraContactDisplay returns null without id', () => {
+    expect(formatAlegraContactDisplay({ name: 'Sin id' })).toBeNull();
   });
 });

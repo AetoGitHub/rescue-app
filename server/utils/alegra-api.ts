@@ -1,5 +1,6 @@
 import type {
   AlegraContact,
+  AlegraContactDisplay,
   AlegraContactsListPage,
 } from '~/interfaces/alegra/contact.interface';
 import type {
@@ -294,4 +295,12 @@ export function mapAlegraContactsToDropdownResults(
   return contacts
     .map(mapAlegraContactToDropdownRow)
     .filter((row): row is CatalogDropdownRow => row != null);
+}
+
+export function formatAlegraContactDisplay(
+  contact: AlegraContact,
+): AlegraContactDisplay | null {
+  const row = mapAlegraContactToDropdownRow(contact);
+  if (row == null) return null;
+  return { id: row.id, name: row.name };
 }
