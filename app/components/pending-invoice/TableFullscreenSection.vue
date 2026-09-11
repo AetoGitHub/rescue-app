@@ -13,16 +13,11 @@ const { isFullscreen, toggle } = useFullscreen(sectionRef);
       isFullscreen ? 'bg-elevated p-4 dark:bg-default sm:p-6' : '',
     ]"
   >
-    <div class="flex justify-end">
-      <UButton
-        color="neutral"
-        variant="subtle"
-        size="xs"
-        :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
-        :label="isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'"
-        @click="toggle"
-      />
-    </div>
+    <slot
+      name="toolbar"
+      :is-fullscreen="isFullscreen"
+      :toggle="toggle"
+    />
 
     <div class="flex min-h-0 flex-1 flex-col">
       <slot />

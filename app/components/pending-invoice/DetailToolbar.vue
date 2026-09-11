@@ -7,6 +7,8 @@ const props = defineProps<{
   activeFilterCount: number;
   isSummaryLoading?: boolean;
   isSummaryError?: boolean;
+  isFullscreen?: boolean;
+  toggleFullscreen?: () => void;
 }>();
 
 const emit = defineEmits<{
@@ -100,6 +102,15 @@ const countLabel = computed(() => {
         @click="onDownloadZip"
       />
       -->
+      <UButton
+        v-if="toggleFullscreen"
+        color="neutral"
+        variant="subtle"
+        size="xs"
+        :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
+        :label="isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'"
+        @click="toggleFullscreen"
+      />
     </div>
   </div>
 </template>

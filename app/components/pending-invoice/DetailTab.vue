@@ -182,17 +182,21 @@ async function onEvidenceZip(
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col gap-3">
-    <PendingInvoiceDetailToolbar
-      v-model:search="search"
-      :event-count="summary.count"
-      :sub-total="summary.sub_total"
-      :is-summary-loading="isSummaryLoading"
-      :is-summary-error="isSummaryError"
-      :active-filter-count="activeFilterCount"
-      @clear-filters="onClearFilters"
-    />
-
     <PendingInvoiceTableFullscreenSection>
+      <template #toolbar="{ isFullscreen, toggle }">
+        <PendingInvoiceDetailToolbar
+          v-model:search="search"
+          :event-count="summary.count"
+          :sub-total="summary.sub_total"
+          :is-summary-loading="isSummaryLoading"
+          :is-summary-error="isSummaryError"
+          :active-filter-count="activeFilterCount"
+          :is-fullscreen="isFullscreen"
+          :toggle-fullscreen="toggle"
+          @clear-filters="onClearFilters"
+        />
+      </template>
+
       <div
         v-if="isInitialLoading"
         class="flex min-h-48 flex-1 items-center justify-center rounded-lg border border-muted bg-default"

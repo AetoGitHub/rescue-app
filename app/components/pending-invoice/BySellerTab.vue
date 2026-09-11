@@ -162,11 +162,23 @@ const columns = computed<TableColumn<PendingInvoiceSellerRow>[]>(() => [
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col gap-3">
-    <p class="text-sm text-muted">
-      Participación por responsable sobre el total pendiente.
-    </p>
-
     <PendingInvoiceTableFullscreenSection>
+      <template #toolbar="{ isFullscreen, toggle }">
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-sm text-muted">
+            Participación por responsable sobre el total pendiente.
+          </p>
+          <UButton
+            color="neutral"
+            variant="subtle"
+            size="xs"
+            :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
+            :label="isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'"
+            @click="toggle"
+          />
+        </div>
+      </template>
+
       <div
         v-if="isInitialLoading"
         class="flex flex-1 items-center justify-center rounded-lg border border-muted bg-default py-16"

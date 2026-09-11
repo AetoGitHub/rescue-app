@@ -34,27 +34,39 @@ const cellClass = pendingInvoiceExcelCellClass;
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col gap-3">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-muted">Ventana:</span>
-        <USelect
-          v-model="months"
-          :items="[...PENDING_INVOICE_MATRIX_WINDOW_OPTIONS]"
-          value-key="value"
-          label-key="label"
-          class="min-w-44"
-          variant="subtle"
-          :ui="{ base: 'bg-default' }"
-        />
-      </div>
-      <p class="text-sm text-muted">
-        {{ matrix.rows.length }} clientes ·
-        {{ matrix.totals.eventos }} eventos ·
-        {{ formatPendingInvoiceMoney(matrix.totals.total) }} c/IVA
-      </p>
-    </div>
-
     <PendingInvoiceTableFullscreenSection>
+      <template #toolbar="{ isFullscreen, toggle }">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-muted">Ventana:</span>
+            <USelect
+              v-model="months"
+              :items="[...PENDING_INVOICE_MATRIX_WINDOW_OPTIONS]"
+              value-key="value"
+              label-key="label"
+              class="min-w-44"
+              variant="subtle"
+              :ui="{ base: 'bg-default' }"
+            />
+          </div>
+          <div class="flex items-center gap-3">
+            <p class="text-sm text-muted">
+              {{ matrix.rows.length }} clientes ·
+              {{ matrix.totals.eventos }} eventos ·
+              {{ formatPendingInvoiceMoney(matrix.totals.total) }} c/IVA
+            </p>
+            <UButton
+              color="neutral"
+              variant="subtle"
+              size="xs"
+              :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
+              :label="isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'"
+              @click="toggle"
+            />
+          </div>
+        </div>
+      </template>
+
       <div
         v-if="isInitialLoading"
         class="flex min-h-48 flex-1 items-center justify-center rounded-lg border border-muted bg-default"

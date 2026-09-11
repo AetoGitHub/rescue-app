@@ -13,20 +13,6 @@ useHead({
 
 const { activeTab, selectedCompanies, startDate, endDate } =
   usePendingInvoiceList();
-const {
-  summary,
-  isLoading: isSummaryLoading,
-  isError: isSummaryError,
-} = usePendingInvoiceSummary();
-
-const summaryCountLabel = computed(() =>
-  isSummaryError.value ? '—' : String(summary.value.count),
-);
-const summaryTotalLabel = computed(() =>
-  isSummaryError.value
-    ? '—'
-    : formatPendingInvoiceMoney(summary.value.sub_total),
-);
 
 function formatHeaderFilterDate(parts: CalendarDateParts) {
   const day = String(parts.day).padStart(2, '0');
@@ -76,44 +62,6 @@ const headerContext = computed(() => {
           </div>
 
           <div class="flex flex-wrap items-end gap-6 sm:justify-end">
-            <div class="flex flex-col gap-0.5">
-              <p
-                class="text-[11px] font-medium uppercase tracking-wider text-muted"
-              >
-                Eventos
-              </p>
-              <p
-                v-if="isSummaryLoading"
-                class="text-lg font-semibold tabular-nums text-muted"
-              >
-                …
-              </p>
-              <p
-                v-else
-                class="text-lg font-semibold tabular-nums text-highlighted"
-              >
-                {{ summaryCountLabel }}
-              </p>
-            </div>
-            <div class="flex flex-col gap-0.5">
-              <p
-                class="text-[11px] font-medium uppercase tracking-wider text-muted"
-              >
-                Total sin IVA
-              </p>
-              <p
-                v-if="isSummaryLoading"
-                class="text-lg font-semibold tabular-nums text-muted"
-              >
-                …
-              </p>
-              <p
-                v-else
-                class="text-lg font-semibold tabular-nums text-highlighted"
-              >
-                {{ summaryTotalLabel }}
-              </p>
-            </div>
             <PendingInvoiceDateRangeFilter class="shrink-0" />
             <PendingInvoiceCompanyFilter class="shrink-0" />
           </div>
