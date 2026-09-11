@@ -151,6 +151,9 @@ export function matrixCellAgeClass(
 
 /** Matrix headers read `Mes Año` so a 12+ month window stays unambiguous. */
 export function formatMatrixMonthLabel(monthKey: string): string {
+  const overflowMonths = monthKey.match(/^mas_de_(\d+)_meses$/);
+  if (overflowMonths) return `Más de ${overflowMonths[1]} meses`;
+
   const [yearPart, monthPart] = monthKey.split('-');
   const year = Number(yearPart);
   const month = Number(monthPart);
@@ -163,8 +166,17 @@ export function formatMatrixMonthLabel(monthKey: string): string {
   return `${label.charAt(0).toUpperCase()}${label.slice(1)} ${year}`;
 }
 
+const MONTH_KEY_PATTERN = /^\d{4}-\d{2}$/;
+
+/**
+ * Month keys are `YYYY-MM` and sort chronologically. The backend also sends
+ * an overflow bucket (e.g. `mas_de_12_meses`) for everything older than the
+ * window — that's the oldest data, so it goes first, not last.
+ */
 export function sortMatrixMonthKeys(keys: string[]): string[] {
-  return [...keys].sort((a, b) => a.localeCompare(b));
+  const overflow = keys.filter(key => !MONTH_KEY_PATTERN.test(key)).sort();
+  const months = keys.filter(key => MONTH_KEY_PATTERN.test(key)).sort();
+  return [...overflow, ...months];
 }
 
 export function formatOptionalPendingCell(value: string | null | undefined): string {
