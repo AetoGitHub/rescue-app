@@ -369,6 +369,13 @@ function formatApiMoney(value: string | number | null | undefined): string {
         message="Preparando editor de cotización…"
       />
 
+      <p
+        v-else-if="!editable && !quoteDetail"
+        class="py-8 text-center text-sm text-muted"
+      >
+        Sin cotización registrada
+      </p>
+
       <div
         v-if="linesHydrated && editable"
         class="flex justify-end border-t border-default pt-4"
