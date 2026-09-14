@@ -102,6 +102,7 @@ describe('abilityForAdminPath', () => {
     expect(abilityForAdminPath('/admin/por-facturar')).toBe(accessAdministrative);
     expect(abilityForAdminPath('/admin/por-cobrar')).toBe(accessAdministrative);
     expect(abilityForAdminPath('/admin/portales/tms')).toBe(accessAdministrative);
+    expect(abilityForAdminPath('/admin/reportes')).toBe(accessAdministrative);
     expect(abilityForAdminPath('/admin/catalogs/clients')).toBe(accessCatalogs);
     expect(abilityForAdminPath('/admin/users')).toBe(accessUsers);
     expect(abilityForAdminPath('/admin/pagar')).toBe(accessPayments);
@@ -118,6 +119,9 @@ describe('abilityForApiPath', () => {
       accessAdministrative,
     );
     expect(abilityForApiPath('/api/nexxt-step/fill_oc/')).toBe(
+      accessAdministrative,
+    );
+    expect(abilityForApiPath('/api/dashboard/report/rescues/excel/')).toBe(
       accessAdministrative,
     );
     expect(abilityForApiPath('/api/catalogue/client/list/')).toBe(accessCatalogs);

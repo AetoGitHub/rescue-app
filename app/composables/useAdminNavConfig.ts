@@ -54,6 +54,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         icon: 'i-lucide-file-check-2',
         ability: accessPaymentReceipts,
       },
+      {
+        label: 'Reportes',
+        to: '/admin/reportes',
+        icon: 'i-lucide-bar-chart-3',
+        ability: accessAdministrative,
+      },
     ],
   },
   {
