@@ -14,4 +14,5 @@ export interface AdministrativeBoardFilters {
   manager: CatalogDropdownSelection;
   seller: CatalogDropdownSelection;
   client: CatalogDropdownSelection;
+  vehicles: string[];
 }

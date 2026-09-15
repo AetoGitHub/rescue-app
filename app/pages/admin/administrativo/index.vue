@@ -118,6 +118,7 @@ const selectedBillingStatus = ref<AdministrativeBillingStatus | null>(null);
 const manager = ref(emptyCatalogDropdownSelection());
 const seller = ref(emptyCatalogDropdownSelection());
 const client = ref(emptyCatalogDropdownSelection());
+const vehicles = ref<string[]>([]);
 
 const boardFilters = computed<AdministrativeBoardFilters>(() => ({
   folio: debouncedFolio.value,
@@ -130,6 +131,7 @@ const boardFilters = computed<AdministrativeBoardFilters>(() => ({
   manager: manager.value,
   seller: seller.value,
   client: client.value,
+  vehicles: vehicles.value,
 }));
 
 const administrativeServiceTypeOptions = RESCUE_SERVICE_TYPE_OPTIONS.filter(
@@ -264,6 +266,7 @@ function clearFilters() {
   manager.value = emptyCatalogDropdownSelection();
   seller.value = emptyCatalogDropdownSelection();
   client.value = emptyCatalogDropdownSelection();
+  vehicles.value = [];
 }
 
 async function refreshBoard() {
@@ -439,6 +442,17 @@ const {
                   class="w-full"
                   placeholder="Todos"
                   :fetcher="fetchAdministrativeClientDropdown"
+                />
+              </UFormField>
+
+              <UFormField
+                label="Vehículo"
+                :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
+              >
+                <SharedVehicleFilterInput
+                  v-model="vehicles"
+                  :client-id="client.value"
+                  :company-id="company.value"
                 />
               </UFormField>
             </template>
@@ -716,6 +730,18 @@ const {
                     class="w-full"
                     placeholder="Todos"
                     :fetcher="fetchAdministrativeClientDropdown"
+                  />
+                </UFormField>
+
+                <UFormField
+                  label="Vehículo"
+                  class="sm:col-span-2 lg:col-span-2"
+                  :ui="{ label: 'text-xs font-semibold uppercase tracking-wide text-muted' }"
+                >
+                  <SharedVehicleFilterInput
+                    v-model="vehicles"
+                    :client-id="client.value"
+                    :company-id="company.value"
                   />
                 </UFormField>
               </div>

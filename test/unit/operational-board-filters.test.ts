@@ -16,6 +16,7 @@ describe('emptyOperationalBoardFilters', () => {
       company: { value: null, label: '' },
       manager: { value: null, label: '' },
       client: { value: null, label: '' },
+      vehicles: [],
       pendingAdvance: false,
       slaAlert: false,
       commentAlert: false,
@@ -91,6 +92,15 @@ describe('buildOperationalListQuery', () => {
     expect(query).not.toHaveProperty('sla_alert');
     expect(query).not.toHaveProperty('comment_alert');
   });
+
+  it('sends vehicles as a comma-joined list', () => {
+    const query = buildOperationalListQuery({
+      ...emptyOperationalBoardFilters(),
+      vehicles: ['M150', 'M200'],
+    });
+
+    expect(query.vehicle).toBe('M150,M200');
+  });
 });
 
 describe('operationalBoardFiltersKey', () => {
@@ -103,8 +113,8 @@ describe('operationalBoardFiltersKey', () => {
     });
 
     expect(baseKey).not.toEqual(withPending);
-    expect(baseKey[5]).toBe('0');
-    expect(withPending[5]).toBe('1');
+    expect(baseKey[6]).toBe('0');
+    expect(withPending[6]).toBe('1');
   });
 
   it('includes client id in the key', () => {

@@ -9,6 +9,7 @@ export interface OperationalBoardFilters {
   company: CatalogDropdownSelection;
   manager: CatalogDropdownSelection;
   client: CatalogDropdownSelection;
+  vehicles: string[];
   pendingAdvance: boolean;
   slaAlert: boolean;
   commentAlert: boolean;

@@ -110,6 +110,15 @@ describe('buildAdministrativeListQuery', () => {
       client: '9',
     });
   });
+
+  it('sends vehicles as a comma-joined list', () => {
+    const query = buildAdministrativeListQuery({
+      ...emptyAdministrativeBoardFilters(),
+      vehicles: ['M150', 'M200'],
+    });
+
+    expect(query.vehicle).toBe('M150,M200');
+  });
 });
 
 describe('filterAdministrativeCardsLocally', () => {

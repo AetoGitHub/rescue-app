@@ -26,6 +26,10 @@ export const RESCUE_ADMINISTRATIVE_CARDS_PATH =
 export const RESCUE_ADMINISTRATIVE_LIST_PATH =
   '/api/rescue/administrative/list/';
 
+/** Vehicle autocomplete (optional `vehicle`, `client`, `client__company`). */
+export const RESCUE_ADMINISTRATIVE_VEHICLE_FILTER_PATH =
+  '/api/rescue/administrative/vehicle_filter/';
+
 export const RESCUE_ADMINISTRATIVE_DETAIL_PATH = (rescueId: number) =>
   `/api/rescue/administrative/cards/${rescueId}/`;
 

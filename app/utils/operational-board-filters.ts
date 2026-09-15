@@ -11,6 +11,7 @@ export function emptyOperationalBoardFilters(): OperationalBoardFilters {
     company: emptyCatalogDropdownSelection(),
     manager: emptyCatalogDropdownSelection(),
     client: emptyCatalogDropdownSelection(),
+    vehicles: [],
     pendingAdvance: false,
     slaAlert: false,
     commentAlert: false,
@@ -44,6 +45,10 @@ export function buildOperationalCardsQuery(
     query.client = String(filters.client.value);
   }
 
+  if (filters.vehicles.length > 0) {
+    query.vehicle = filters.vehicles.join(',');
+  }
+
   if (filters.pendingAdvance) {
     query.pending_advance = 'true';
   }
@@ -61,7 +66,7 @@ export function buildOperationalCardsQuery(
 
 /**
  * Query for GET /api/rescue/list/
- * Optional: `status`, `folio`, `service_type`, `company`, `manager`, `client`.
+ * Optional: `status`, `folio`, `service_type`, `company`, `manager`, `client`, `vehicle`.
  */
 export function buildOperationalListQuery(
   filters: OperationalBoardFilters,
@@ -93,6 +98,10 @@ export function buildOperationalListQuery(
     query.client = String(filters.client.value);
   }
 
+  if (filters.vehicles.length > 0) {
+    query.vehicle = filters.vehicles.join(',');
+  }
+
   return query;
 }
 
@@ -101,6 +110,7 @@ export function operationalListApiFiltersKey(
   filters: OperationalBoardFilters,
 ): string[] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
+  const vehicles = [...filters.vehicles].sort().join(',');
 
   return [
     filters.operativeStatus ?? '',
@@ -109,6 +119,7 @@ export function operationalListApiFiltersKey(
     filters.company.value != null ? String(filters.company.value) : '',
     filters.manager.value != null ? String(filters.manager.value) : '',
     filters.client.value != null ? String(filters.client.value) : '',
+    vehicles,
   ];
 }
 
@@ -116,6 +127,7 @@ export function operationalBoardFiltersKey(
   filters: OperationalBoardFilters,
 ): string[] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
+  const vehicles = [...filters.vehicles].sort().join(',');
 
   return [
     filters.folio.trim(),
@@ -123,6 +135,7 @@ export function operationalBoardFiltersKey(
     filters.company.value != null ? String(filters.company.value) : '',
     filters.manager.value != null ? String(filters.manager.value) : '',
     filters.client.value != null ? String(filters.client.value) : '',
+    vehicles,
     filters.pendingAdvance ? '1' : '0',
     filters.slaAlert ? '1' : '0',
     filters.commentAlert ? '1' : '0',

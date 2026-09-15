@@ -21,6 +21,7 @@ export function emptyAdministrativeBoardFilters(): AdministrativeBoardFilters {
     manager: emptyCatalogDropdownSelection(),
     seller: emptyCatalogDropdownSelection(),
     client: emptyCatalogDropdownSelection(),
+    vehicles: [],
   };
 }
 
@@ -76,12 +77,16 @@ export function buildAdministrativeCardsQuery(
     query.client = String(filters.client.value);
   }
 
+  if (filters.vehicles.length > 0) {
+    query.vehicle = filters.vehicles.join(',');
+  }
+
   return query;
 }
 
 /**
  * Query for GET /api/rescue/administrative/list/
- * Optional: `status`, `folio`, `service_type`, `company`, `client`.
+ * Optional: `status`, `folio`, `service_type`, `company`, `client`, `vehicle`.
  */
 export function buildAdministrativeListQuery(
   filters: AdministrativeBoardFilters,
@@ -112,6 +117,10 @@ export function buildAdministrativeListQuery(
     query.client = String(filters.client.value);
   }
 
+  if (filters.vehicles.length > 0) {
+    query.vehicle = filters.vehicles.join(',');
+  }
+
   return query;
 }
 
@@ -121,6 +130,7 @@ export function administrativeListApiFiltersKey(
 ): string[] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
   const billing = filters.billingStatus ?? '';
+  const vehicles = [...filters.vehicles].sort().join(',');
 
   return [
     billing,
@@ -128,6 +138,7 @@ export function administrativeListApiFiltersKey(
     serviceTypes,
     filters.company.value != null ? String(filters.company.value) : '',
     filters.client.value != null ? String(filters.client.value) : '',
+    vehicles,
   ];
 }
 
@@ -138,6 +149,7 @@ export function administrativeCardsApiFiltersKey(
 ): string[] {
   const serviceTypes = [...filters.serviceTypes].sort().join(',');
   const billing = filters.billingStatus ?? '';
+  const vehicles = [...filters.vehicles].sort().join(',');
 
   return [
     columnStatus ?? '',
@@ -146,6 +158,7 @@ export function administrativeCardsApiFiltersKey(
     serviceTypes,
     filters.company.value != null ? String(filters.company.value) : '',
     filters.client.value != null ? String(filters.client.value) : '',
+    vehicles,
   ];
 }
 

@@ -108,6 +108,7 @@ const selectedOperativeStatus = ref<OperationalRescueStatus | null>(null);
 const company = ref(emptyCatalogDropdownSelection());
 const manager = ref(emptyCatalogDropdownSelection());
 const client = ref(emptyCatalogDropdownSelection());
+const vehicles = ref<string[]>([]);
 const pendingAdvance = ref(false);
 const slaAlert = ref(false);
 const commentAlert = ref(false);
@@ -119,6 +120,7 @@ const boardFilters = computed<OperationalBoardFilters>(() => ({
   company: company.value,
   manager: manager.value,
   client: client.value,
+  vehicles: vehicles.value,
   pendingAdvance: pendingAdvance.value,
   slaAlert: slaAlert.value,
   commentAlert: commentAlert.value,
@@ -153,6 +155,7 @@ function clearBoardFilters() {
   company.value = emptyCatalogDropdownSelection();
   manager.value = emptyCatalogDropdownSelection();
   client.value = emptyCatalogDropdownSelection();
+  vehicles.value = [];
   pendingAdvance.value = false;
   slaAlert.value = false;
   commentAlert.value = false;
@@ -359,6 +362,13 @@ const {
                 :fetcher="fetchOperationalClientDropdown"
               />
 
+              <SharedVehicleFilterInput
+                v-model="vehicles"
+                :client-id="client.value"
+                :company-id="company.value"
+                placeholder="Vehículo: todos"
+              />
+
               <CatalogDropdownSelect
                 v-model="manager"
                 class="w-full"
@@ -542,6 +552,13 @@ const {
                         class="w-full"
                         placeholder="Cliente: todos"
                         :fetcher="fetchOperationalClientDropdown"
+                      />
+
+                      <SharedVehicleFilterInput
+                        v-model="vehicles"
+                        :client-id="client.value"
+                        :company-id="company.value"
+                        placeholder="Vehículo: todos"
                       />
 
                       <CatalogDropdownSelect
