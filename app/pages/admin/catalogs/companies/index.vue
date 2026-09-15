@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { refDebounced } from '@vueuse/core';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Company } from '~/interfaces/catalogs/company';
 import { adminListTableClass } from '~/constants/admin-list-layout';
@@ -9,6 +10,8 @@ useHead({
 
 const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
 const tableRef = useTemplateRef('table');
+const search = ref('');
+const debouncedSearch = refDebounced(search, 300);
 
 function onRowSelect(_e: Event, row: TableRow<Company>) {
   const id = row.original.id;
@@ -24,8 +27,12 @@ const {
   loadNextPage,
   isInitialLoading,
 } = useCatalogInfiniteList<Company>({
-  key: () => ['companies'],
+  key: () => ['companies', debouncedSearch.value.trim()],
   path: '/api/catalogue/company/list/',
+  query: () => {
+    const name = debouncedSearch.value.trim();
+    return name ? { name } : undefined;
+  },
 });
 
 usePaginatedTableInfiniteScroll({
@@ -63,6 +70,7 @@ const columns: TableColumn<Company>[] = [
 
     <template #filters>
       <UInput
+        v-model="search"
         leading-icon="i-lucide-search"
         placeholder="Buscar compañía"
         class="flex-1"

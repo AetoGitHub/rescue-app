@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue';
+import { refDebounced } from '@vueuse/core';
 import type { TableColumn, TableRow } from '@nuxt/ui';
 import type { Client } from '~/interfaces/catalogs/client';
 import { adminListTableClass } from '~/constants/admin-list-layout';
@@ -19,6 +20,8 @@ useHead({
 const slideoverRef = ref<{ openEdit: (id: number) => void | Promise<void> } | null>(null);
 const tableRef = useTemplateRef('table');
 const typeFilter = ref<ClientListTypeFilter>('all');
+const search = ref('');
+const debouncedSearch = refDebounced(search, 300);
 
 const UBadge = resolveComponent('UBadge');
 const UIcon = resolveComponent('UIcon');
@@ -43,8 +46,12 @@ const {
   loadNextPage,
   isInitialLoading,
 } = useCatalogInfiniteList<Client>({
-  key: () => ['clients'],
+  key: () => ['clients', debouncedSearch.value.trim()],
   path: '/api/catalogue/client/list/',
+  query: () => {
+    const name = debouncedSearch.value.trim();
+    return name ? { name } : undefined;
+  },
 });
 
 usePaginatedTableInfiniteScroll({
@@ -182,6 +189,7 @@ const columns: TableColumn<Client>[] = [
 
     <template #filters>
       <UInput
+        v-model="search"
         leading-icon="i-lucide-search"
         placeholder="Buscar cliente"
         class="flex-1"
