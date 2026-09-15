@@ -30,6 +30,15 @@ const columnCount = computed(() => monthKeys.value.length * 2 + 3);
 
 const headerCellClass = pendingInvoiceExcelHeaderCellClass;
 const cellClass = pendingInvoiceExcelCellClass;
+
+const expandedCompanyIds = ref(new Set<number>());
+function toggleCompany(companyId: number | null) {
+  if (companyId == null) return;
+  const next = new Set(expandedCompanyIds.value);
+  if (next.has(companyId)) next.delete(companyId);
+  else next.add(companyId);
+  expandedCompanyIds.value = next;
+}
 </script>
 
 <template>
@@ -51,7 +60,7 @@ const cellClass = pendingInvoiceExcelCellClass;
           </div>
           <div class="flex items-center gap-3">
             <p class="text-sm text-muted">
-              {{ matrix.rows.length }} clientes ·
+              {{ matrix.rows.length }} compañías ·
               {{ matrix.totals.eventos }} eventos ·
               {{ formatPendingInvoiceMoney(matrix.totals.total) }} c/IVA
             </p>
@@ -105,7 +114,7 @@ const cellClass = pendingInvoiceExcelCellClass;
                 class="sticky left-0 z-30 min-w-48"
                 :class="headerCellClass"
               >
-                Cliente
+                Compañía
               </th>
               <th
                 rowspan="2"
@@ -153,51 +162,69 @@ const cellClass = pendingInvoiceExcelCellClass;
           </thead>
 
           <tbody>
-            <tr
+            <template
               v-for="row in matrix.rows"
               :key="row.row_key"
-              class="border-t border-default hover:bg-elevated/50"
             >
-              <td
-                class="sticky left-0 z-10 bg-default px-2.5 py-2 font-medium text-highlighted"
-                :class="cellClass"
-              >
-                {{ row.cliente }}
-              </td>
-              <td
-                class="px-2.5 py-2 text-muted"
-                :class="cellClass"
-              >
-                {{ row.responsable }}
-              </td>
-
-              <template
-                v-for="monthKey in monthKeys"
-                :key="`${row.row_key}-${monthKey}`"
+              <tr
+                class="cursor-pointer border-t border-default hover:bg-elevated/50"
+                @click="toggleCompany(row.company_id)"
               >
                 <td
-                  class="px-2.5 py-2 text-right tabular-nums whitespace-nowrap"
-                  :class="[matrixCellAgeClass(monthKey), cellClass]"
+                  class="sticky left-0 z-10 bg-default px-2.5 py-2 font-medium text-highlighted"
+                  :class="cellClass"
                 >
-                  <span :class="row.meses[monthKey] ? undefined : 'text-dimmed'">
-                    {{ formatPendingInvoiceMoneyCompact(row.meses[monthKey]?.monto ?? 0) }}
+                  <span class="flex items-center gap-1.5">
+                    <UIcon
+                      name="i-lucide-chevron-right"
+                      class="size-4 shrink-0 transition-transform"
+                      :class="{ 'rotate-90': row.company_id != null && expandedCompanyIds.has(row.company_id) }"
+                    />
+                    {{ row.compania }}
                   </span>
                 </td>
                 <td
-                  class="px-2.5 py-2 text-right text-xs tabular-nums whitespace-nowrap text-muted"
-                  :class="[matrixCellAgeClass(monthKey), cellClass]"
+                  class="px-2.5 py-2 text-muted"
+                  :class="cellClass"
                 >
-                  {{ row.meses[monthKey]?.eventos ?? '—' }}
+                  —
                 </td>
-              </template>
 
-              <td
-                class="px-2.5 py-2 text-right font-semibold tabular-nums whitespace-nowrap text-highlighted"
-                :class="cellClass"
-              >
-                {{ formatPendingInvoiceMoney(row.total) }}
-              </td>
-            </tr>
+                <template
+                  v-for="monthKey in monthKeys"
+                  :key="`${row.row_key}-${monthKey}`"
+                >
+                  <td
+                    class="px-2.5 py-2 text-right tabular-nums whitespace-nowrap"
+                    :class="[matrixCellAgeClass(monthKey), cellClass]"
+                  >
+                    <span :class="row.meses[monthKey] ? undefined : 'text-dimmed'">
+                      {{ formatPendingInvoiceMoneyCompact(row.meses[monthKey]?.monto ?? 0) }}
+                    </span>
+                  </td>
+                  <td
+                    class="px-2.5 py-2 text-right text-xs tabular-nums whitespace-nowrap text-muted"
+                    :class="[matrixCellAgeClass(monthKey), cellClass]"
+                  >
+                    {{ row.meses[monthKey]?.eventos ?? '—' }}
+                  </td>
+                </template>
+
+                <td
+                  class="px-2.5 py-2 text-right font-semibold tabular-nums whitespace-nowrap text-highlighted"
+                  :class="cellClass"
+                >
+                  {{ formatPendingInvoiceMoney(row.total) }}
+                </td>
+              </tr>
+
+              <PendingInvoiceCompanyMatrixClientRows
+                v-if="row.company_id != null && expandedCompanyIds.has(row.company_id)"
+                :company-id="row.company_id"
+                :months="months"
+                :month-keys="monthKeys"
+              />
+            </template>
 
             <tr v-if="matrix.rows.length === 0">
               <td

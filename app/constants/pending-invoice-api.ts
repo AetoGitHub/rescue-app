@@ -9,6 +9,11 @@ export const PENDING_INVOICE_BY_RESPONSIBLE_PATH =
 export const PENDING_INVOICE_COMPANY_MATRIX_PATH =
   '/api/dashboard/company_matrix/';
 
+/** Client drill-down for one company row of the matrix. */
+export const PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_PATH = (
+  companyId: number,
+) => `/api/dashboard/company_matrix/${companyId}/clients/`;
+
 /** Backend default when `admin_status` is omitted; sent explicitly for clarity. */
 export const PENDING_INVOICE_DEFAULT_ADMIN_STATUS =
   'unattended,in_remittance' as const;
@@ -23,6 +28,9 @@ export const PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY =
 
 export const PENDING_INVOICE_COMPANY_MATRIX_QUERY_KEY =
   'pending-invoice-company-matrix' as const;
+
+export const PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_QUERY_KEY =
+  'pending-invoice-company-matrix-clients' as const;
 
 export const PENDING_INVOICE_COMPANIES_DROPDOWN_PATH =
   '/api/dashboard/pending_invoice/companies/dropdown/' as const;

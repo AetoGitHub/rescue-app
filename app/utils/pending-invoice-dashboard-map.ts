@@ -4,10 +4,12 @@ import type {
   PendingInvoiceByResponsibleApiRow,
   PendingInvoiceCompanyMatrixApiCell,
   PendingInvoiceCompanyMatrixApiRow,
+  PendingInvoiceCompanyMatrixClientApiRow,
   PendingInvoiceCompanySelection,
   PendingInvoiceDaysPromColor,
   PendingInvoiceMatrix,
   PendingInvoiceMatrixCell,
+  PendingInvoiceMatrixClientRow,
   PendingInvoiceMatrixRow,
   PendingInvoiceSellerRow,
 } from '~/interfaces/invoicing/pending-invoice';
@@ -122,6 +124,30 @@ function mapMatrixMonths(
 function mapMatrixRow(
   raw: PendingInvoiceCompanyMatrixApiRow,
 ): PendingInvoiceMatrixRow {
+  const compania = toText(raw.company_name) || '—';
+  const companyId = toNullableNumber(raw.company_id);
+  const meses = mapMatrixMonths(raw.meses);
+  const eventosFromCells = Object.values(meses).reduce(
+    (sum, cell) => sum + cell.eventos,
+    0,
+  );
+
+  return {
+    row_key:
+      companyId != null && companyId > 0
+        ? `company:${companyId}`
+        : `name:${compania}`,
+    company_id: companyId,
+    compania,
+    meses,
+    total: toNumber(raw.total),
+    eventos: eventosFromCells,
+  };
+}
+
+function mapMatrixClientRow(
+  raw: PendingInvoiceCompanyMatrixClientApiRow,
+): PendingInvoiceMatrixClientRow {
   const cliente = toText(raw.client_name) || '—';
   const clientId = toNullableNumber(raw.client_id);
   const meses = mapMatrixMonths(raw.meses);
@@ -143,6 +169,16 @@ function mapMatrixRow(
     total: toNumber(raw.total),
     eventos: eventosFromCells,
   };
+}
+
+/**
+ * Maps the client drill-down array from `company_matrix/<pk>/clients/`
+ * into rows, sorted by total desc like the company matrix.
+ */
+export function mapPendingInvoiceCompanyMatrixClients(
+  rows: PendingInvoiceCompanyMatrixClientApiRow[],
+): PendingInvoiceMatrixClientRow[] {
+  return [...rows.map(mapMatrixClientRow)].sort((a, b) => b.total - a.total);
 }
 
 function emptyCell(): PendingInvoiceMatrixCell {

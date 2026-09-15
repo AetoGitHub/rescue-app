@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type {
   PendingInvoiceByResponsibleApiRow,
   PendingInvoiceCompanyMatrixApiRow,
+  PendingInvoiceCompanyMatrixClientApiRow,
 } from '../../app/interfaces/invoicing/pending-invoice';
 import {
   mapPendingInvoiceByResponsibleRow,
   mapPendingInvoiceCompanyMatrix,
+  mapPendingInvoiceCompanyMatrixClients,
   mapPendingInvoiceDaysPromColor,
   pendingInvoiceCompanyQuery,
   pendingInvoiceCompanyQueryIds,
@@ -138,9 +140,8 @@ describe('mapPendingInvoiceByResponsibleRow', () => {
 describe('mapPendingInvoiceCompanyMatrix', () => {
   const rows: PendingInvoiceCompanyMatrixApiRow[] = [
     {
-      client_id: 12,
-      client_name: 'TMS',
-      responsible_name: null,
+      company_id: 5,
+      company_name: 'TMS',
       meses: {
         '2026-07': { total: 0, eventos: 0 },
         '2026-08': { total: 195117.84, eventos: 89 },
@@ -148,9 +149,8 @@ describe('mapPendingInvoiceCompanyMatrix', () => {
       total: 195117.84,
     },
     {
-      client_id: 2,
-      client_name: 'CLIENTE CON CREDITO',
-      responsible_name: 'JOSE ANGEL COLIN',
+      company_id: 12,
+      company_name: 'ALMEX',
       meses: {
         '2026-07': { total: 10, eventos: 1 },
         '2026-08': { total: 13.2, eventos: 2 },
@@ -162,43 +162,75 @@ describe('mapPendingInvoiceCompanyMatrix', () => {
   it('builds month keys and sorts rows by total', () => {
     const matrix = mapPendingInvoiceCompanyMatrix(rows, 6, new Date(2026, 7, 1));
     expect(matrix.month_keys).toEqual(['2026-07', '2026-08']);
-    expect(matrix.rows.map(row => row.cliente)).toEqual([
-      'TMS',
-      'CLIENTE CON CREDITO',
-    ]);
+    expect(matrix.rows.map(row => row.compania)).toEqual(['TMS', 'ALMEX']);
     expect(matrix.totals.total).toBeCloseTo(195141.04);
     expect(matrix.totals.eventos).toBe(92);
   });
 
-  it('maps client_name and null responsible as dash', () => {
+  it('maps company_name and company_id', () => {
     const matrix = mapPendingInvoiceCompanyMatrix([rows[0]!], 6);
     expect(matrix.rows[0]).toMatchObject({
-      row_key: 'client:12',
-      client_id: 12,
-      cliente: 'TMS',
-      responsable: '—',
+      row_key: 'company:5',
+      company_id: 5,
+      compania: 'TMS',
       meses: {
         '2026-08': { monto: 195117.84, eventos: 89 },
       },
     });
   });
 
+  it('falls back to a local month window when meses is empty', () => {
+    const matrix = mapPendingInvoiceCompanyMatrix(
+      [{ company_id: 1, company_name: 'Vacío', meses: {}, total: 0 }],
+      3,
+      new Date(2026, 0, 15),
+    );
+    expect(matrix.month_keys).toEqual(['2025-11', '2025-12', '2026-01']);
+  });
+});
+
+describe('mapPendingInvoiceCompanyMatrixClients', () => {
+  const clients: PendingInvoiceCompanyMatrixClientApiRow[] = [
+    {
+      client_id: 12,
+      client_name: 'TMS',
+      responsible_name: null,
+      meses: {
+        '2026-08': { total: 195117.84, eventos: 89 },
+      },
+      total: 195117.84,
+    },
+    {
+      client_id: 2,
+      client_name: 'CLIENTE CON CREDITO',
+      responsible_name: 'JOSE ANGEL COLIN',
+      meses: {
+        '2026-08': { total: 13.2, eventos: 2 },
+      },
+      total: 23.2,
+    },
+  ];
+
+  it('sorts by total desc and maps null responsible as dash', () => {
+    const rows = mapPendingInvoiceCompanyMatrixClients(clients);
+    expect(rows.map(row => row.cliente)).toEqual([
+      'TMS',
+      'CLIENTE CON CREDITO',
+    ]);
+    expect(rows[0]).toMatchObject({
+      row_key: 'client:12',
+      client_id: 12,
+      responsable: '—',
+    });
+  });
+
   it('maps responsible_name when present', () => {
-    const matrix = mapPendingInvoiceCompanyMatrix([rows[1]!], 6);
-    expect(matrix.rows[0]).toMatchObject({
+    const rows = mapPendingInvoiceCompanyMatrixClients([clients[1]!]);
+    expect(rows[0]).toMatchObject({
       row_key: 'client:2',
       client_id: 2,
       cliente: 'CLIENTE CON CREDITO',
       responsable: 'JOSE ANGEL COLIN',
     });
-  });
-
-  it('falls back to a local month window when meses is empty', () => {
-    const matrix = mapPendingInvoiceCompanyMatrix(
-      [{ client_id: 1, client_name: 'Vacío', meses: {}, total: 0 }],
-      3,
-      new Date(2026, 0, 15),
-    );
-    expect(matrix.month_keys).toEqual(['2025-11', '2025-12', '2026-01']);
   });
 });

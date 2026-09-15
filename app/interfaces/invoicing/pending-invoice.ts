@@ -128,6 +128,14 @@ export interface PendingInvoiceCompanyMatrixApiCell {
 
 /** Raw row from `GET /api/dashboard/company_matrix/`. */
 export interface PendingInvoiceCompanyMatrixApiRow {
+  company_id: number;
+  company_name: string;
+  meses: Record<string, PendingInvoiceCompanyMatrixApiCell>;
+  total?: string | number | null;
+}
+
+/** Raw client row from `GET /api/dashboard/company_matrix/<pk>/clients/`. */
+export interface PendingInvoiceCompanyMatrixClientApiRow {
   client_id: number;
   client_name: string;
   responsible_name?: string | null;
@@ -135,7 +143,24 @@ export interface PendingInvoiceCompanyMatrixApiRow {
   total?: string | number | null;
 }
 
+/** Raw response from `GET /api/dashboard/company_matrix/<pk>/clients/`. */
+export interface PendingInvoiceCompanyMatrixClientsApiResponse {
+  company_id: number;
+  company_name: string;
+  clients: PendingInvoiceCompanyMatrixClientApiRow[];
+}
+
 export interface PendingInvoiceMatrixRow {
+  row_key: string;
+  company_id: number | null;
+  compania: string;
+  meses: Record<string, PendingInvoiceMatrixCell>;
+  total: number;
+  eventos: number;
+}
+
+/** Client drill-down row under a company row, from `company_matrix/<pk>/clients/`. */
+export interface PendingInvoiceMatrixClientRow {
   row_key: string;
   client_id: number | null;
   cliente: string;
