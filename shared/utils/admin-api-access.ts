@@ -30,6 +30,10 @@ export function abilityForApiPath(path: string): AdminAbility {
   if (path.startsWith('/api/invoicing/')) return accessAdministrative;
   if (path.startsWith('/api/dashboard/')) return accessAdministrative;
   if (path.startsWith('/api/nexxt-step/')) return accessAdministrative;
+  /** Vehicle autocomplete is also used from the operational board's filters. */
+  if (path.startsWith('/api/rescue/administrative/vehicle_filter/')) {
+    return accessOperational;
+  }
   if (path.startsWith('/api/rescue/administrative/')) return accessAdministrative;
   if (path.startsWith('/api/payment/balance/')) return accessMyBalance;
   if (path.startsWith('/api/payment/receipt')) return accessPaymentReceipts;
