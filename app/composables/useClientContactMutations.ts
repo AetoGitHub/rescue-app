@@ -97,12 +97,12 @@ export function useClientContactMutations(options: {
 
   async function createContact(
     body: ClientContactCreateBody,
-  ): Promise<boolean> {
-    if (isSaving.value) return false;
+  ): Promise<number | null> {
+    if (isSaving.value) return null;
     saveLocked.value = true;
     try {
-      await createContactAsync(body);
-      return true;
+      const res = await createContactAsync(body);
+      return (res as { id: number } | undefined)?.id ?? null;
     } finally {
       saveLocked.value = false;
     }

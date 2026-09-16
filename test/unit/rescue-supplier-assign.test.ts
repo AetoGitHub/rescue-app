@@ -24,6 +24,8 @@ function minimalDetail(
     operator_name: null,
     supplier_id: null,
     supplier_name: null,
+    authorizer_id: null,
+    authorizer_name: null,
     multiple_managers: false,
     sub_total: null,
     admin_status: 'invalid',

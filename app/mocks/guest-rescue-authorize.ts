@@ -24,6 +24,8 @@ export function buildGuestMockRescueDetail(rescueId: number): RescueCardDetail {
     operator_name: 'María López',
     supplier_id: 8,
     supplier_name: 'Grúas Express',
+    authorizer_id: null,
+    authorizer_name: null,
     multiple_managers: false,
     sub_total: '9000.00',
     admin_status: 'working',

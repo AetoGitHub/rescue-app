@@ -41,6 +41,9 @@ import {
 import {
   hasRescueSupplierAssigned,
 } from '~/utils/rescue-supplier-assign';
+import {
+  hasRescueAuthorizerAssigned,
+} from '~/utils/rescue-authorizer-assign';
 import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 import { isOperatorRole } from '#shared/utils/auth-roles';
 
@@ -94,11 +97,13 @@ export function useRescueOperativeFlow(options: {
   } | null>(null);
 
   const supplierSectionHighlight = ref(false);
+  const authorizerSectionHighlight = ref(false);
   const evidenceUploadHighlight = ref(false);
   const highlightedEvidenceAction = ref<RescueOperativeActionId | null>(null);
 
   const HIGHLIGHT_TIMEOUT_MS = 8_000;
   let supplierHighlightTimer: ReturnType<typeof setTimeout> | null = null;
+  let authorizerHighlightTimer: ReturnType<typeof setTimeout> | null = null;
   let evidenceHighlightTimer: ReturnType<typeof setTimeout> | null = null;
 
   function activateSupplierHighlight() {
@@ -106,6 +111,14 @@ export function useRescueOperativeFlow(options: {
     if (supplierHighlightTimer) clearTimeout(supplierHighlightTimer);
     supplierHighlightTimer = setTimeout(() => {
       supplierSectionHighlight.value = false;
+    }, HIGHLIGHT_TIMEOUT_MS);
+  }
+
+  function activateAuthorizerHighlight() {
+    authorizerSectionHighlight.value = true;
+    if (authorizerHighlightTimer) clearTimeout(authorizerHighlightTimer);
+    authorizerHighlightTimer = setTimeout(() => {
+      authorizerSectionHighlight.value = false;
     }, HIGHLIGHT_TIMEOUT_MS);
   }
 
@@ -120,11 +133,14 @@ export function useRescueOperativeFlow(options: {
 
   function clearCloseHighlights() {
     supplierSectionHighlight.value = false;
+    authorizerSectionHighlight.value = false;
     evidenceUploadHighlight.value = false;
     highlightedEvidenceAction.value = null;
     if (supplierHighlightTimer) clearTimeout(supplierHighlightTimer);
+    if (authorizerHighlightTimer) clearTimeout(authorizerHighlightTimer);
     if (evidenceHighlightTimer) clearTimeout(evidenceHighlightTimer);
     supplierHighlightTimer = null;
+    authorizerHighlightTimer = null;
     evidenceHighlightTimer = null;
   }
 
@@ -166,6 +182,19 @@ export function useRescueOperativeFlow(options: {
         if (supplierHighlightTimer) {
           clearTimeout(supplierHighlightTimer);
           supplierHighlightTimer = null;
+        }
+      }
+    },
+  );
+
+  watch(
+    () => detail.value?.authorizer_id,
+    (authorizerId) => {
+      if (authorizerId != null) {
+        authorizerSectionHighlight.value = false;
+        if (authorizerHighlightTimer) {
+          clearTimeout(authorizerHighlightTimer);
+          authorizerHighlightTimer = null;
         }
       }
     },
@@ -269,6 +298,19 @@ export function useRescueOperativeFlow(options: {
       color: 'error',
     });
     activateSupplierHighlight();
+    options.setActiveTab('general');
+    return false;
+  }
+
+  function ensureAuthorizerBeforeCloseOrRedirect(): boolean {
+    const d = detail.value;
+    if (d == null || hasRescueAuthorizerAssigned(d)) return true;
+
+    toast.add({
+      title: RESCUE_OPERATIVE_TOAST.authorizerRequiredBeforeClose,
+      color: 'error',
+    });
+    activateAuthorizerHighlight();
     options.setActiveTab('general');
     return false;
   }
@@ -431,6 +473,7 @@ export function useRescueOperativeFlow(options: {
     ) {
       if (!ensureCloseEvidencesOrRedirect(actionId)) return;
       if (!ensureSupplierBeforeCloseOrRedirect()) return;
+      if (!ensureAuthorizerBeforeCloseOrRedirect()) return;
       openCompletedPanel();
       return;
     }
@@ -438,6 +481,7 @@ export function useRescueOperativeFlow(options: {
     if (actionId === MARK_AS_CLOSED_ACTION) {
       if (!ensureCloseEvidencesOrRedirect(MARK_AS_CLOSED_ACTION)) return;
       if (!ensureSupplierBeforeCloseOrRedirect()) return;
+      if (!ensureAuthorizerBeforeCloseOrRedirect()) return;
       await runUpdate(MARK_AS_CLOSED_ACTION);
       return;
     }
@@ -583,6 +627,7 @@ export function useRescueOperativeFlow(options: {
 
     if (!ensureCloseEvidencesOrRedirect(action)) return;
     if (!ensureSupplierBeforeCloseOrRedirect()) return;
+    if (!ensureAuthorizerBeforeCloseOrRedirect()) return;
 
     try {
       const closed = await submitCloseWithReviews(action, {
@@ -660,6 +705,7 @@ export function useRescueOperativeFlow(options: {
     detailForActions,
     evidences,
     supplierSectionHighlight,
+    authorizerSectionHighlight,
     evidenceUploadHighlight,
     clearCloseHighlights,
     advancePanelOpen,

@@ -11,6 +11,7 @@ const props = withDefaults(
     hideSupplierSection?: boolean;
     editable?: boolean;
     supplierHighlight?: boolean;
+    authorizerHighlight?: boolean;
     guestAuthorId?: number | null;
     guestToken?: string;
     externalChatMessages?: RescueChatMessage[] | null;
@@ -24,6 +25,7 @@ const props = withDefaults(
     hideSupplierSection: false,
     editable: true,
     supplierHighlight: false,
+    authorizerHighlight: false,
     guestAuthorId: undefined,
     guestToken: undefined,
     externalChatMessages: undefined,
@@ -34,6 +36,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'assign-supplier': [];
+  'assign-authorizer': [];
   'edit-service': [];
   'edit-location': [];
 }>();
@@ -61,6 +64,14 @@ const hasSupplier = computed(() =>
 
 const showSupplierActions = computed(
   () => props.editable && canAssignRescueSupplier(props.detail),
+);
+
+const hasAuthorizer = computed(() =>
+  hasRescueAuthorizerAssigned(props.detail),
+);
+
+const showAuthorizerActions = computed(
+  () => props.editable && canAssignRescueAuthorizer(props.detail),
 );
 
 const isLoan = computed(() => props.detail.service_type === 'loan');
@@ -91,6 +102,7 @@ const showLoanDisbursement = computed(
 );
 
 const supplierSectionRef = ref<HTMLElement | null>(null);
+const authorizerSectionRef = ref<HTMLElement | null>(null);
 
 function scrollSupplierSectionIntoView() {
   nextTick(() => {
@@ -98,10 +110,23 @@ function scrollSupplierSectionIntoView() {
   });
 }
 
+function scrollAuthorizerSectionIntoView() {
+  nextTick(() => {
+    authorizerSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 watch(
   () => props.supplierHighlight,
   (active) => {
     if (active) scrollSupplierSectionIntoView();
+  },
+);
+
+watch(
+  () => props.authorizerHighlight,
+  (active) => {
+    if (active) scrollAuthorizerSectionIntoView();
   },
 );
 </script>
@@ -332,6 +357,45 @@ watch(
         <div class="flex items-center justify-between text-xs text-muted">
           <span>Código de Proveedor</span>
           <UBadge color="neutral" variant="subtle" size="sm"> Próximo </UBadge>
+        </div>
+      </section>
+
+      <section
+        ref="authorizerSectionRef"
+        class="space-y-3 rounded-lg border border-default bg-default p-4 transition-shadow"
+        :class="authorizerHighlight ? 'ring-2 ring-error' : ''"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
+            Autorizador
+          </h3>
+          <UBadge
+            v-if="authorizerHighlight"
+            color="error"
+            label="Requerido para continuar"
+            size="sm"
+          />
+        </div>
+        <div
+          class="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
+          :class="hasAuthorizer ? 'border-default bg-muted/20' : 'border-warning/30 bg-warning/5 '"
+        >
+          <span :class="hasAuthorizer ? 'text-highlighted' : 'text-warning'">
+            {{
+              hasAuthorizer
+                ? (detail.authorizer_name?.trim() || `Autorizador #${detail.authorizer_id}`)
+                : 'Sin autorizador asignado'
+            }}
+          </span>
+          <UButton
+            v-if="showAuthorizerActions"
+            color="neutral"
+            :label="hasAuthorizer ? 'Cambiar' : 'Asignar'"
+            size="xs"
+            trailing-icon="i-lucide-chevron-right"
+            variant="link"
+            @click="emit('assign-authorizer')"
+          />
         </div>
       </section>
 
