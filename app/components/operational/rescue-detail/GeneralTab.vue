@@ -12,7 +12,6 @@ const props = withDefaults(
     editable?: boolean;
     supplierHighlight?: boolean;
     authorizerHighlight?: boolean;
-    unlockSessionUntil?: string | null;
     guestAuthorId?: number | null;
     guestToken?: string;
     externalChatMessages?: RescueChatMessage[] | null;
@@ -27,7 +26,6 @@ const props = withDefaults(
     editable: true,
     supplierHighlight: false,
     authorizerHighlight: false,
-    unlockSessionUntil: null,
     guestAuthorId: undefined,
     guestToken: undefined,
     externalChatMessages: undefined,
@@ -35,8 +33,6 @@ const props = withDefaults(
     isSendingChat: false,
   },
 );
-
-const { user: sessionUser } = useUserSession();
 
 const emit = defineEmits<{
   'assign-supplier': [];
@@ -66,21 +62,14 @@ const hasSupplier = computed(() =>
   hasRescueSupplierAssigned(props.detail),
 );
 
-const showSupplierActions = computed(
-  () => props.editable && canAssignRescueSupplier(props.detail),
-);
+/** Proveedor y autorizador se pueden (re)asignar en cualquier fase del rescate. */
+const showSupplierActions = computed(() => props.editable);
 
 const hasAuthorizer = computed(() =>
   hasRescueAuthorizerAssigned(props.detail),
 );
 
-const showAuthorizerActions = computed(
-  () => props.editable && canAssignRescueAuthorizerWithUnlock(
-    props.detail,
-    props.unlockSessionUntil,
-    sessionUser.value?.is_superuser,
-  ),
-);
+const showAuthorizerActions = computed(() => props.editable);
 
 const isLoan = computed(() => props.detail.service_type === 'loan');
 

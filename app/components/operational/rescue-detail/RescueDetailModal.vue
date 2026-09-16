@@ -317,7 +317,6 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
               :detail="detail"
               :supplier-highlight="supplierSectionHighlight"
               :authorizer-highlight="authorizerSectionHighlight"
-              :unlock-session-until="capturedUntil"
               @assign-supplier="assignSupplierModalOpen = true"
               @assign-authorizer="assignAuthorizerModalOpen = true"
               @edit-service="editServiceModalOpen = true"

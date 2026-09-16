@@ -1,4 +1,3 @@
-import type { OperationalRescueStatus } from '~/constants/operational-kanban';
 import { RESCUE_OPERATIVE_TOAST } from '~/constants/rescue-operative-flow';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type {
@@ -6,20 +5,8 @@ import type {
 } from '~/interfaces/rescue/operative';
 import { isCloseEvidenceGuardedAction } from '~/utils/rescue-evidence-requirements';
 
-const TERMINAL_SUPPLIER_ASSIGN_STATUSES = new Set<OperationalRescueStatus>([
-  'closed',
-  'closed_unpaid',
-  'canceled',
-]);
-
 export function hasRescueSupplierAssigned(detail: RescueCardDetail): boolean {
   return detail.supplier_id != null;
-}
-
-export function canAssignRescueSupplier(detail: RescueCardDetail): boolean {
-  return !TERMINAL_SUPPLIER_ASSIGN_STATUSES.has(
-    detail.operative_status as OperationalRescueStatus,
-  );
 }
 
 export function getCloseSupplierDisabledReason(

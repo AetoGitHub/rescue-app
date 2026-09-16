@@ -3,7 +3,6 @@ import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import { RESCUE_OPERATIVE_TOAST } from '~/constants/rescue-operative-flow';
 import {
   applyCloseSupplierGuard,
-  canAssignRescueSupplier,
   hasRescueSupplierAssigned,
 } from '~/utils/rescue-supplier-assign';
 import { rescueSupplierAssignToBody } from '~/schemas/rescue-supplier-assign';
@@ -62,22 +61,6 @@ describe('rescue supplier assign helpers', () => {
         }),
       ),
     ).toBe(false);
-  });
-
-  it('canAssignRescueSupplier allows active statuses', () => {
-    expect(
-      canAssignRescueSupplier(
-        minimalDetail({ operative_status: 'in_progress' }),
-      ),
-    ).toBe(true);
-  });
-
-  it('canAssignRescueSupplier blocks terminal statuses', () => {
-    for (const status of ['closed', 'closed_unpaid', 'canceled'] as const) {
-      expect(
-        canAssignRescueSupplier(minimalDetail({ operative_status: status })),
-      ).toBe(false);
-    }
   });
 
   it('applyCloseSupplierGuard disables close actions without supplier', () => {
