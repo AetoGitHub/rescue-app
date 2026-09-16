@@ -22,6 +22,33 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 /**
+ * Fuerza guardar un `Blob` en dispositivos donde `downloadBlob` no basta.
+ *
+ * iOS Safari ignora el atributo `download` en tipos que sabe previsualizar
+ * (PDF, imágenes): abre el blob en vez de guardarlo, sin aviso. Cuando el
+ * dispositivo soporta compartir archivos (`navigator.canShare`), se usa la
+ * hoja nativa de compartir — trae "Guardar en Archivos" — y solo se cae a
+ * `downloadBlob` si no está disponible o el usuario cancela.
+ */
+export async function shareOrDownloadBlob(
+  blob: Blob,
+  filename: string,
+): Promise<void> {
+  const file = new File([blob], filename, { type: blob.type });
+
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
+    }
+  }
+
+  downloadBlob(blob, filename);
+}
+
+/**
  * Extrae el nombre de archivo de un header `Content-Disposition`, soportando
  * tanto `filename="..."` como el formato codificado `filename*=UTF-8''...`.
  */

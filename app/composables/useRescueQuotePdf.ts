@@ -34,10 +34,21 @@ export function useRescueQuotePdf(rescueId: MaybeRefOrGetter<number | null>) {
     if (isViewingPdf.value) return;
     isViewingPdf.value = true;
 
+    /**
+     * Safari/iOS solo honra `window.open` si ocurre de forma síncrona dentro
+     * del gesto de usuario. Abrimos la pestaña en blanco antes del `await` y
+     * navegamos a la URL real una vez resuelto el fetch.
+     */
+    const previewTab = window.open('', '_blank');
+
     try {
       const { url } = await fetchQuotePdfUrl(regenerate);
-      window.open(url, '_blank', 'noopener,noreferrer');
+
+      if (previewTab) {
+        previewTab.location.href = url;
+      }
     } catch (error) {
+      previewTab?.close();
       toast.add({
         title: 'No se pudo generar la cotización',
         description: getFetchErrorMessage(error),
@@ -60,7 +71,7 @@ export function useRescueQuotePdf(rescueId: MaybeRefOrGetter<number | null>) {
         responseType: 'blob',
       });
 
-      downloadBlob(blob, `cotizacion_rescue_${id}.pdf`);
+      await shareOrDownloadBlob(blob, `cotizacion_rescue_${id}.pdf`);
     } catch (error) {
       toast.add({
         title: 'No se pudo descargar la cotización',
