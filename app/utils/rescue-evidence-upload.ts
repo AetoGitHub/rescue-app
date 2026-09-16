@@ -9,6 +9,7 @@ import {
   RESCUE_EVIDENCE_TYPE_SERVICE,
   rescueEvidenceZipComplement,
 } from '~/constants/rescue-evidence-api';
+import { downloadBlob } from '~/utils/download-blob';
 import type {
   RescueEvidenceType,
   RescueEvidenceZipDownloadBody,
@@ -276,15 +277,6 @@ export function buildRescueEvidenceZipFilename(
   return `${safeFolio}-${safeComplement}.zip`;
 }
 
-function triggerBlobDownload(blob: Blob, filename: string): void {
-  const objectUrl = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = objectUrl;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(objectUrl);
-}
-
 /** POST to n8n zip webhook and trigger a browser ZIP download. */
 export async function requestRescueEvidenceZipDownload(
   body: RescueEvidenceZipDownloadBody,
@@ -304,7 +296,7 @@ export async function requestRescueEvidenceZipDownload(
     throw new Error('Respuesta ZIP vacía');
   }
 
-  triggerBlobDownload(blob, buildRescueEvidenceZipFilename(body));
+  downloadBlob(blob, buildRescueEvidenceZipFilename(body));
 }
 
 /** @deprecated Prefer requestRescueEvidenceZipDownload with the zip payload. */
