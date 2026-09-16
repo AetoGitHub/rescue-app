@@ -16,3 +16,14 @@ export function canAssignRescueAuthorizer(detail: RescueCardDetail): boolean {
     detail.operative_status as OperationalRescueStatus,
   );
 }
+
+/** Allows authorizer assignment in terminal statuses when an unlock edit session is active, or always for superusers. */
+export function canAssignRescueAuthorizerWithUnlock(
+  detail: RescueCardDetail,
+  unlockSessionUntil: string | null | undefined,
+  isSuperuser?: boolean,
+): boolean {
+  if (isSuperuser) return true;
+  if (canAssignRescueAuthorizer(detail)) return true;
+  return Boolean(unlockSessionUntil?.trim());
+}
