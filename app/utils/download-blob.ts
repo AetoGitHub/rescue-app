@@ -21,11 +21,16 @@ export function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
 }
 
-/** iPhone/iPad (iPadOS 13+ se identifica como "Mac" pero con soporte táctil). */
+/**
+ * iPhone/iPod, y iPad solo si no está en modo "Sitio de escritorio".
+ *
+ * No se usa `maxTouchPoints` para distinguir iPad-modo-escritorio de una Mac
+ * real: el trackpad de MacBook también reporta `maxTouchPoints > 0` en
+ * Safari (soporte de gestos), lo que daba falso positivo en Mac de escritorio.
+ */
 function isIosDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
-  return /iP(hone|ad|od)/.test(navigator.userAgent)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return /iPhone|iPod|iPad/.test(navigator.userAgent);
 }
 
 /**
