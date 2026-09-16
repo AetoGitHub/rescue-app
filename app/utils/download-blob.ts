@@ -4,9 +4,17 @@
  * Safari exige que el ancla esté en el DOM para honrar el atributo `download`
  * y revoca el object URL de forma asíncrona, por lo que revocar de inmediato
  * provoca `WebKitBlobResource error 1`. Por eso se difiere el `revokeObjectURL`.
+ *
+ * Safari tampoco honra `download` en blobs con un tipo MIME que sabe
+ * previsualizar (PDF, imágenes): en vez de guardar, abre un panel Quick Look
+ * con solo opciones para compartir (AirDrop/Mail/...), sin forma de guardar
+ * en disco. Se fuerza `application/octet-stream` para que lo trate como
+ * binario desconocido y descargue en vez de previsualizar.
  */
 export function downloadBlob(blob: Blob, filename: string): void {
-  const objectUrl = URL.createObjectURL(blob);
+  const objectUrl = URL.createObjectURL(
+    new Blob([blob], { type: 'application/octet-stream' }),
+  );
   const anchor = document.createElement('a');
 
   anchor.href = objectUrl;
