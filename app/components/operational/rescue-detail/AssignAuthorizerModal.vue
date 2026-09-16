@@ -264,7 +264,7 @@ const { modalProps } = useResponsiveModal();
             <UFormField label="Puesto" name="position" required>
               <UInput v-model="createFormState.position" class="w-full" />
             </UFormField>
-            <UFormField label="Email" name="email" required>
+            <UFormField label="Email" name="email">
               <UInput v-model="createFormState.email" type="email" class="w-full" />
             </UFormField>
             <UFormField label="Teléfono" name="phone" required>

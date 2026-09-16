@@ -39,7 +39,7 @@ export const rescueAuthorizerContactCreateSchema = z.object({
   email: z
     .string()
     .transform((s) => s.trim())
-    .pipe(z.email({ error: 'Introduce un correo válido' })),
+    .pipe(z.union([z.literal(''), z.email({ error: 'Introduce un correo válido' })])),
   phone: z
     .string()
     .transform((s) => normalizeMexicoPhone(s))

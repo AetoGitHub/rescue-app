@@ -74,13 +74,41 @@ describe('getFetchErrorMessage', () => {
     ).toBe(SESSION_EXPIRED_MESSAGE);
   });
 
-  it('keeps a specific 403 body from the API', () => {
+  it('tags a 403 body from Django with 01', () => {
     expect(
       getFetchErrorMessage({
         statusCode: 403,
         data: { detail: 'No tienes permiso para esta acción.' },
       }),
-    ).toBe('No tienes permiso para esta acción.');
+    ).toBe('01: No tienes permiso para esta acción.');
+  });
+
+  it('tags a generic 403 detail from Django with 01 instead of the session message', () => {
+    expect(
+      getFetchErrorMessage({
+        statusCode: 403,
+        data: { detail: 'You do not have permission to perform this action.' },
+      }),
+    ).toBe('01: You do not have permission to perform this action.');
+  });
+
+  it('falls back to a tagged permission message on a bodyless 403', () => {
+    expect(
+      getFetchErrorMessage({
+        statusCode: 403,
+        message: '[PUT] "/api/rescue/authorizer/1/": 403 Forbidden',
+        statusMessage: 'Forbidden',
+      }),
+    ).toBe('01: No tienes permiso para completar esta acción.');
+  });
+
+  it('tags our own ability rejection with 02', () => {
+    expect(
+      getFetchErrorMessage({
+        statusCode: 403,
+        data: { code: 'own_permission', message: 'No tienes permiso para esta acción.' },
+      }),
+    ).toBe('02: No tienes permiso para esta acción.');
   });
 
   it('maps generic HTTP reason phrases to the fallback', () => {

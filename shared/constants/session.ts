@@ -8,6 +8,9 @@ export const SESSION_EXPIRED_CODE = 'session_expired';
 
 export const SESSION_EXPIRED_MESSAGE = 'Tu sesión expiró o no es válida';
 
+/** Un 403 decidido por nuestra propia ability (`abilityForApiPath`), antes de llegar a Django. */
+export const OWN_PERMISSION_CODE = 'own_permission';
+
 export const REQUEST_ID_HEADER = 'x-request-id';
 
 export function isAuthRefreshDue(

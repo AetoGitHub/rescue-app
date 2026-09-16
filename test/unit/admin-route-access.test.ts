@@ -125,6 +125,9 @@ describe('abilityForApiPath', () => {
       accessAdministrative,
     );
     expect(abilityForApiPath('/api/catalogue/client/list/')).toBe(accessCatalogs);
+    expect(abilityForApiPath('/api/catalogue/client/contact/create/')).toBe(
+      accessOperational,
+    );
     expect(abilityForApiPath('/api/credit/company/5/')).toBe(accessCatalogs);
     expect(abilityForApiPath('/api/credit/company/create/')).toBe(accessCatalogs);
     expect(abilityForApiPath('/api/credit/company/update/5/')).toBe(accessCatalogs);

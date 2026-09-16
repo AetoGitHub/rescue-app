@@ -5,6 +5,7 @@ import {
   proxyDjangoRequest,
   requireProxySession,
 } from '../utils/django-proxy';
+import { ownPermissionError } from '../utils/own-permission-error';
 
 export default defineEventHandler(async (event) => {
   /**
@@ -23,7 +24,11 @@ export default defineEventHandler(async (event) => {
   const { token, requestId } = await requireProxySession(event);
   const apiUrl = useRuntimeConfig().apiUrl;
 
-  await authorize(event, abilityForApiPath(event.path));
+  try {
+    await authorize(event, abilityForApiPath(event.path));
+  } catch {
+    throw ownPermissionError();
+  }
 
   // Cuánto tarda nuestro propio pre-procesamiento (sesión + permisos) antes
   // de siquiera llamar a Django, para diferenciarlo de la latencia upstream.

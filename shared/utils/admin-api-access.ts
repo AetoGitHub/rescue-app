@@ -22,6 +22,10 @@ export function abilityForApiPath(path: string): AdminAbility {
   if (path.startsWith('/api/catalogue/') && isCatalogueDetailPath(path)) {
     return accessOperational;
   }
+  /** Alta de autorizador desde el modal operativo de asignar autorizador. */
+  if (path.startsWith('/api/catalogue/client/contact/create/')) {
+    return accessOperational;
+  }
   if (path.startsWith('/api/catalogue/')) return accessCatalogs;
   if (path.startsWith('/api/alegra/')) return accessCatalogs;
   if (path.startsWith('/api/credit/company/')) return accessCatalogs;

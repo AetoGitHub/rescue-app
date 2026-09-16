@@ -1,4 +1,5 @@
 import {
+  OWN_PERMISSION_CODE,
   SESSION_EXPIRED_CODE,
   SESSION_EXPIRED_MESSAGE,
 } from '#shared/constants/session';
@@ -109,6 +110,23 @@ function isSessionExpiredPayload(data: Record<string, unknown> | null): boolean 
   return data?.code === SESSION_EXPIRED_CODE;
 }
 
+function isOwnPermissionPayload(data: Record<string, unknown> | null): boolean {
+  return data?.code === OWN_PERMISSION_CODE;
+}
+
+/**
+ * 403 = "prohibido", nunca "sesión inválida". El prefijo dice de dónde vino
+ * el rechazo: `02` es nuestra propia ability (`authorize()` en el catch-all,
+ * antes de tocar Django, ver `ownPermissionError`); `01` es lo que devolvió
+ * Django. Si Django mandó texto (aunque sea el detail genérico de DRF) se
+ * muestra tal cual en vez de un mensaje inventado.
+ */
+function formatForbiddenMessage(data: Record<string, unknown> | null): string {
+  const origin = isOwnPermissionPayload(data) ? '02' : '01';
+  const raw = data ? readErrorDataAsString(data) : null;
+  return `${origin}: ${raw ?? 'No tienes permiso para completar esta acción.'}`;
+}
+
 export function getPasswordResetErrorMessage(error: unknown): string {
   const fromDetail = getApiDetailMessage(error);
   if (fromDetail) return fromDetail;
@@ -203,10 +221,15 @@ export function getFetchErrorMessage(error: unknown): string {
   }
 
   const code = getFetchStatusCode(error);
+
+  if (code === 403) {
+    return formatForbiddenMessage(data);
+  }
+
   const fromApi = usableApiMessage(data);
   if (fromApi) return fromApi;
 
-  if (code === 401 || code === 403) {
+  if (code === 401) {
     return SESSION_EXPIRED_MESSAGE;
   }
 

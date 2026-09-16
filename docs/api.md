@@ -21,6 +21,7 @@ Fuente: `shared/utils/admin-api-access.ts`.
 |---|---|
 | path contiene `/dropdown` | `accessDropdown` (cualquier usuario autenticado) |
 | `/api/catalogue/.../detail/` | `accessOperational` |
+| `/api/catalogue/client/contact/create/` | `accessOperational` (alta de autorizador desde el modal operativo) |
 | resto `/api/catalogue/` | `accessCatalogs` |
 | `/api/alegra/` | `accessCatalogs` |
 | `/api/credit/company/` | `accessCatalogs` |
