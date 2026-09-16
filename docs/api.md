@@ -57,7 +57,7 @@ Ver [conventions.md](./conventions.md). El `next` del Django es una URL absoluta
 
 ## Rescate operacional
 
-Constantes: `app/constants/rescue-api.ts`, `rescue-operative-flow.ts`, `rescue-quote-api.ts`, `rescue-evidence-api.ts`, `rescue-chat-api.ts`, `rescue-supplier-api.ts`, `rescue-approve-link-api.ts`, `rescue-admin-doc-api.ts`, `rescue-cards-summary.ts`.
+Constantes: `app/constants/rescue-api.ts`, `rescue-operative-flow.ts`, `rescue-quote-api.ts`, `rescue-evidence-api.ts`, `rescue-chat-api.ts`, `rescue-supplier-api.ts`, `rescue-authorizer-api.ts`, `rescue-approve-link-api.ts`, `rescue-admin-doc-api.ts`, `rescue-cards-summary.ts`.
 
 | Path (patrón) | Uso en UI |
 |---|---|
@@ -76,6 +76,7 @@ Constantes: `app/constants/rescue-api.ts`, `rescue-operative-flow.ts`, `rescue-q
 | `GET /api/rescue/evidence/:id/` y `.../create/` | Evidencias |
 | `GET/POST /api/chat/:id/messages/` y `.../create/` | Chat operativo |
 | `GET /api/rescue/supplier/:id/` | Proveedor del rescate |
+| `PUT /api/rescue/authorizer/:id/` | Autorizador del rescate. Obligatorio antes de `closed`/`closed_unpaid` (`change_phase` responde 400 si falta) |
 | `POST /api/rescue/approve_link/:id/generate/` | Link de autorización |
 | `GET /api/rescue/dropdown/` | Dropdowns de rescate |
 | `POST /api/rescue/admin_doc/:id/` | Documentos admin (kanban y modal de Por facturar). Body: `rescueAdminDocToBody` — `remittance_folio`, `invoice_folio`, `extra_rescues`, `oc_pdf`. En Por facturar `extra_rescues` es `[]`. |

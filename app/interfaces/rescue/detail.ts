@@ -15,6 +15,8 @@ export interface RescueCardDetail {
   operator_name: string | null;
   supplier_id: number | null;
   supplier_name: string | null;
+  authorizer_id: number | null;
+  authorizer_name: string | null;
   multiple_managers: boolean;
   sub_total: string | null;
   admin_status: string;

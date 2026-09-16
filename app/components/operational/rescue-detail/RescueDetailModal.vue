@@ -17,6 +17,7 @@ const previousTab = ref<RescueDetailTabValue>('general');
 const evidenceModalOpen = ref(false);
 const evidenceModalType = ref<RescueEvidenceType>(RESCUE_EVIDENCE_TYPE_SERVICE);
 const assignSupplierModalOpen = ref(false);
+const assignAuthorizerModalOpen = ref(false);
 const editServiceModalOpen = ref(false);
 const editLocationModalOpen = ref(false);
 /** Blocks UTabs from re-opening the evidence modal after close (tab sync). */
@@ -55,6 +56,7 @@ const {
   isUpdating,
   detailForActions,
   supplierSectionHighlight,
+  authorizerSectionHighlight,
   evidenceUploadHighlight,
   clearCloseHighlights,
 } = useRescueOperativeFlow({
@@ -314,7 +316,9 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
             <OperationalRescueDetailGeneralTab
               :detail="detail"
               :supplier-highlight="supplierSectionHighlight"
+              :authorizer-highlight="authorizerSectionHighlight"
               @assign-supplier="assignSupplierModalOpen = true"
+              @assign-authorizer="assignAuthorizerModalOpen = true"
               @edit-service="editServiceModalOpen = true"
               @edit-location="editLocationModalOpen = true"
             >
@@ -425,6 +429,16 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
     :longitude="detail.longitude"
     :current-supplier-id="detail.supplier_id"
     :current-supplier-name="detail.supplier_name"
+    @saved="refresh()"
+  />
+
+  <LazyOperationalRescueDetailAssignAuthorizerModal
+    v-if="detail && rescueId != null && assignAuthorizerModalOpen"
+    v-model:open="assignAuthorizerModalOpen"
+    :rescue-id="rescueId"
+    :client-id="detail.client_id"
+    :current-authorizer-id="detail.authorizer_id"
+    :current-authorizer-name="detail.authorizer_name"
     @saved="refresh()"
   />
 

@@ -17,7 +17,7 @@ Página: `/admin/operational` → `app/pages/admin/operational/index.vue`. Abili
 
 Alta: `OperationalRescueRequestModal` (pasos Basics, Location, Quote, Supplier, Summary). POST `/api/rescue/`; cotización opcional según `isQuoteOptionalForServiceType`.
 
-Schemas: `app/schemas/rescue-create.ts` (pasos), más `rescue-service-update.ts`, `rescue-location-update.ts`, `rescue-supplier-assign.ts`.
+Schemas: `app/schemas/rescue-create.ts` (pasos), más `rescue-service-update.ts`, `rescue-location-update.ts`, `rescue-supplier-assign.ts`, `rescue-authorizer-assign.ts`.
 
 ## Detalle operacional
 
@@ -31,6 +31,7 @@ Componentes bajo `app/components/operational/rescue-detail/` (tags `OperationalR
 - Cotización: `RescueQuoteEditor`, `useRescueQuoteSave`, `useRescueQuoteDetail`, `useRescueQuotePdf`. El gate de crédito antes de crear cotización clasifica 401/sesión vs crédito insuficiente vs error de validación.
 - Clasificador IA: `POST /api/quote/classify` (`useQuoteClassifierApply`) → n8n.
 - Proveedor: búsqueda `useRescueSupplierSearch`, assign `useRescueSupplierAssign`, mapa en el wizard.
+- Autorizador: `PUT /api/rescue/authorizer/:id/` vía `useRescueAuthorizerAssign` (`AssignAuthorizerModal`). No se manda al crear el rescate; se exige antes de cerrar (`closed`/`closed_unpaid`) — gate en `useRescueOperativeFlow.ensureAuthorizerBeforeCloseOrRedirect`, igual que el de proveedor pero sin excepción por `service_type`. Dropdown de contactos: `GET /api/catalogue/client/:id/contacts/authorizers/dropdown/`; si viene vacío, alta rápida vía `POST /api/catalogue/client/contact/create/` con `is_authorizer: true`.
 - Evidencias: `useRescueEvidenceList` / `useRescueEvidenceCreate`.
 - Chat: `useRescueChatMessages` / `useRescueChatSendMessage` / `useRescueOperativeSystemChat`.
 - Unlock de edición: `useRescueUnlockMutation`, countdown `useRescueUnlockCountdown`.

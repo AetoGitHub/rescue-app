@@ -283,6 +283,8 @@ export function administrativeDetailToCardDetail(
     operator_name: detail.operator_name,
     supplier_id: detail.supplier_id,
     supplier_name: detail.supplier_name,
+    authorizer_id: null,
+    authorizer_name: null,
     multiple_managers: detail.multiple_managers,
     sub_total: detail.sub_total,
     admin_status: 'working',
