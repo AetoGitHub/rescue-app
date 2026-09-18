@@ -7,6 +7,11 @@ import {
 } from '~/utils/payment-list-query';
 import { DASHBOARD_REPORT_RESCUES_EXCEL_PATH } from '~/constants/dashboard-report-api';
 
+const props = defineProps<{
+  /** Filtros extra (ej. los del panel Administrativo) que se mandan junto a las fechas. */
+  extraQuery?: Record<string, string>;
+}>();
+
 const open = defineModel<boolean>('open', { required: true });
 
 const toast = useToast();
@@ -36,6 +41,7 @@ async function handleDownload() {
     const response = await $fetch.raw<Blob>(DASHBOARD_REPORT_RESCUES_EXCEL_PATH, {
       responseType: 'blob',
       query: {
+        ...props.extraQuery,
         start_date: calendarDateToApiDate(startDate.value),
         end_date: calendarDateToApiDate(endDate.value),
       },

@@ -16,7 +16,6 @@ import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrativ
 import type { RescueServiceType } from '~/interfaces/rescue';
 import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
 import { useQueryCache } from '@pinia/colada';
-import { DASHBOARD_REPORT_RESCUES_EXCEL_PATH } from '~/constants/dashboard-report-api';
 
 useHead({
   title: 'Administrativo',
@@ -26,9 +25,7 @@ useAdministrativeViewRefreshListener();
 
 const { viewMode, setViewMode } = useRescueBoardViewMode();
 const queryCache = useQueryCache();
-const toast = useToast();
 const refreshingBoard = ref(false);
-const isExportingCsv = ref(false);
 const filtersExpanded = ref(false);
 const detailModalMounted = ref(false);
 const pendingDetailOpen = ref<{
@@ -281,29 +278,10 @@ async function refreshBoard() {
   }
 }
 
-async function exportCsv() {
-  if (isExportingCsv.value) return;
-
-  isExportingCsv.value = true;
-  try {
-    const response = await $fetch.raw<Blob>(DASHBOARD_REPORT_RESCUES_EXCEL_PATH, {
-      responseType: 'blob',
-      query: buildAdministrativeListQuery(boardFilters.value),
-    });
-    const filename =
-      filenameFromContentDisposition(response.headers.get('content-disposition'))
-      || 'rescates-administrativos.csv';
-    downloadBlob(response._data as Blob, filename);
-  } catch (error) {
-    toast.add({
-      title: 'No se pudo exportar el reporte',
-      description: getFetchErrorMessage(error),
-      color: 'error',
-    });
-  } finally {
-    isExportingCsv.value = false;
-  }
-}
+const csvExportModalOpen = ref(false);
+const csvExportQuery = computed(() =>
+  buildAdministrativeListQuery(boardFilters.value),
+);
 
 const {
   fetchAdministrativeCompanyDropdown,
@@ -533,9 +511,7 @@ const {
                 icon="i-lucide-download"
                 variant="subtle"
                 aria-label="Exportar CSV"
-                :loading="isExportingCsv"
-                :disabled="isExportingCsv"
-                @click="() => void exportCsv()"
+                @click="csvExportModalOpen = true"
               />
             </template>
 
@@ -625,9 +601,7 @@ const {
                     icon="i-lucide-download"
                     label="Exportar CSV"
                     variant="subtle"
-                    :loading="isExportingCsv"
-                    :disabled="isExportingCsv"
-                    @click="() => void exportCsv()"
+                    @click="csvExportModalOpen = true"
                   />
                 </div>
               </div>
@@ -780,6 +754,11 @@ const {
           :invoice-folio="pendingAdminDoc.invoice_folio"
           :loading="isSavingAdminDoc"
           @submit="onSendAdminDocSubmit"
+        />
+
+        <ReportesRescuesExcelReportModal
+          v-model:open="csvExportModalOpen"
+          :extra-query="csvExportQuery"
         />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
