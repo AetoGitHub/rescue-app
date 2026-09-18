@@ -121,6 +121,8 @@ function emptyState(): ClientFormState {
 }
 
 const state = reactive(emptyState());
+/** Solo aplica al crear: admin asignado como responsable (by_user + is_responsible). */
+const responsibleAdmin = ref(emptyCatalogDropdownSelection());
 const creditState = reactive(emptyCreditState());
 const creditSummary = reactive(emptyCreditSummary());
 const commissionValueModel = useCommissionValueModel(
@@ -226,6 +228,7 @@ const {
   snapshot: () => ({
     state,
     creditState,
+    responsibleAdmin: responsibleAdmin.value,
     clientCsfUrl: clientCsfUrl.value,
     linkedAlegraId: linkedAlegraId.value,
     replaceAlegra: replaceAlegra.value,
@@ -236,6 +239,7 @@ function resetForm() {
   Object.assign(state, emptyState());
   Object.assign(creditState, emptyCreditState());
   Object.assign(creditSummary, emptyCreditSummary());
+  responsibleAdmin.value = emptyCatalogDropdownSelection();
   editingCreditId.value = null;
   clientDetailRaw.value = null;
   clientDetailLoaded.value = false;
@@ -411,6 +415,13 @@ function fetchSellerDropdown(
   }));
 }
 
+function fetchResponsibleAdminDropdown(
+  name: string,
+  options?: { signal?: AbortSignal },
+) {
+  return fetchUserDropdownByRole('admin', name, options);
+}
+
 function fetchAlegraContactsDropdown(
   name: string,
   options?: { signal?: AbortSignal; start?: string | null },
@@ -556,13 +567,18 @@ function buildSubmitBody(
     seller: seller.value ?? null,
     is_active: data.is_active ?? true,
   };
-  if (needsAlegraSelection.value) {
+  const withAlegra = needsAlegraSelection.value
+    ? { ...base, alegra_id: alegra_id.value! }
+    : base;
+
+  if (!isEdit.value && responsibleAdmin.value.value != null) {
     return {
-      ...base,
-      alegra_id: alegra_id.value!,
+      ...withAlegra,
+      by_user: responsibleAdmin.value.value,
+      is_responsible: true,
     };
   }
-  return base;
+  return withAlegra;
 }
 
 function isCreatingCredit(): boolean {
@@ -1092,6 +1108,17 @@ async function requestSubmit() {
               v-model="state.seller"
               placeholder="Buscar vendedor"
               :fetcher="fetchSellerDropdown"
+            />
+          </UFormField>
+          <UFormField
+            label="Responsable interno (opcional)"
+            name="responsible_admin"
+            help="Si eliges un admin, queda como contacto responsable del cliente al crearlo."
+          >
+            <CatalogDropdownSelect
+              v-model="responsibleAdmin"
+              placeholder="Buscar admin del equipo"
+              :fetcher="fetchResponsibleAdminDropdown"
             />
           </UFormField>
           <div class="space-y-2">

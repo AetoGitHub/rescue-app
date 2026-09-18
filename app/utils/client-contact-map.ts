@@ -1,6 +1,5 @@
 import type {
   ClientContact,
-  ClientContactCreateBody,
   ClientContactFormState,
   ClientContactUpdateBody,
 } from '~/interfaces/catalogs/client';
@@ -53,7 +52,7 @@ export function mapClientContactDetail(
 export function clientContactFormToCreateBody(
   clientId: number,
   input: ClientContactFormState,
-): ClientContactCreateBody {
+) {
   return {
     client: clientId,
     name: input.name,

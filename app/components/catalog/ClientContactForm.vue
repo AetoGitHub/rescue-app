@@ -3,10 +3,13 @@ import type { FormSubmitEvent } from '@nuxt/ui';
 import type { infer as ZodInfer } from 'zod';
 import { CLIENT_CONTACT_DETAIL_PATH } from '~/constants/client-api';
 import {
+  clientContactByUserSchema,
   clientContactFormSchema,
   clientContactFormToCreateBody,
+  clientContactFormToCreateByUserBody,
   clientContactFormToUpdateBody,
 } from '~/schemas/catalog-create';
+import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
 
 const props = defineProps<{
   clientId: number;
@@ -33,9 +36,16 @@ const canToggleResponsible = computed(
   () => !(props.hasResponsible && !editingIsResponsible.value),
 );
 
+/** New contact only: "contacto externo" (fields below) vs "admin del equipo" (by_user). */
+const contactKind = ref<'external' | 'admin'>('external');
+
+type ContactFormState = ZodInfer<typeof clientContactFormSchema> & {
+  by_user: ReturnType<typeof emptyCatalogDropdownSelection>;
+};
+
 function emptyState(
   defaults?: Partial<ZodInfer<typeof clientContactFormSchema>>,
-): ZodInfer<typeof clientContactFormSchema> {
+): ContactFormState {
   return {
     name: '',
     position: '',
@@ -49,15 +59,31 @@ function emptyState(
     is_billing_contact: false,
     is_responsible: defaults?.is_responsible ?? false,
     is_active: true,
+    by_user: emptyCatalogDropdownSelection(),
   };
 }
 
 const state = reactive(emptyState());
 
+/** by_user only applies to a brand-new contact (see FRONTEND_CLIENT_CONTACT_RESPONSIBLE.md). */
+const activeContactSchema = computed(() =>
+  !isEdit.value && contactKind.value === 'admin'
+    ? clientContactByUserSchema
+    : clientContactFormSchema,
+);
+
+function fetchResponsibleAdminDropdown(
+  name: string,
+  options?: { signal?: AbortSignal },
+) {
+  return fetchUserDropdownByRole('admin', name, options);
+}
+
 function resetForm() {
   Object.assign(state, emptyState());
   editingId.value = null;
   editingIsResponsible.value = false;
+  contactKind.value = 'external';
 }
 
 function prepareCreate() {
@@ -72,6 +98,7 @@ function prepareCreate() {
 async function openEdit(id: number) {
   editingId.value = id;
   editingIsResponsible.value = false;
+  contactKind.value = 'external';
   Object.assign(state, emptyState());
   detailPending.value = true;
   try {
@@ -102,19 +129,38 @@ const { createContactAsync, updateContactAsync, isSaving } = useClientContactMut
 
 const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 
-async function onSubmit(payload: FormSubmitEvent<ZodInfer<typeof clientContactFormSchema>>) {
+async function onSubmit(
+  payload: FormSubmitEvent<
+    ZodInfer<typeof clientContactFormSchema> | ZodInfer<typeof clientContactByUserSchema>
+  >,
+) {
   if (isSaving.value) return;
   const id = editingId.value;
   try {
-    const saved
-      = id != null
-        ? await updateContactAsync({
-            contactId: id,
-            body: clientContactFormToUpdateBody(props.clientId, payload.data),
-          })
-        : await createContactAsync(
-            clientContactFormToCreateBody(props.clientId, payload.data),
-          );
+    let saved: number | boolean | null;
+    if (id == null && contactKind.value === 'admin') {
+      saved = await createContactAsync(
+        clientContactFormToCreateByUserBody(
+          props.clientId,
+          payload.data as ZodInfer<typeof clientContactByUserSchema>,
+        ),
+      );
+    } else if (id != null) {
+      saved = await updateContactAsync({
+        contactId: id,
+        body: clientContactFormToUpdateBody(
+          props.clientId,
+          payload.data as ZodInfer<typeof clientContactFormSchema>,
+        ),
+      });
+    } else {
+      saved = await createContactAsync(
+        clientContactFormToCreateBody(
+          props.clientId,
+          payload.data as ZodInfer<typeof clientContactFormSchema>,
+        ),
+      );
+    }
     if (!saved) return;
     resetForm();
     emit('saved');
@@ -149,13 +195,46 @@ async function requestSubmit() {
     <UForm
       v-show="!detailPending || !isEdit"
       ref="formRef"
-      :schema="clientContactFormSchema"
+      :schema="activeContactSchema"
       :state="state"
       class="space-y-5"
       @submit="onSubmit"
       @error="onFormError"
     >
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div v-if="!isEdit" class="flex flex-wrap gap-2">
+        <UButton
+          label="Contacto externo"
+          :color="contactKind === 'external' ? 'primary' : 'neutral'"
+          :variant="contactKind === 'external' ? 'solid' : 'subtle'"
+          @click="contactKind = 'external'"
+        />
+        <UButton
+          label="Admin del equipo"
+          :color="contactKind === 'admin' ? 'primary' : 'neutral'"
+          :variant="contactKind === 'admin' ? 'solid' : 'subtle'"
+          :disabled="!canToggleResponsible"
+          @click="contactKind = 'admin'"
+        />
+      </div>
+      <p v-if="!isEdit && !canToggleResponsible" class="text-xs text-muted">
+        Este cliente ya tiene un contacto responsable.
+      </p>
+
+      <UFormField
+        v-if="!isEdit && contactKind === 'admin'"
+        label="Admin responsable"
+        name="by_user"
+        required
+        help="Se llena con los datos del admin: nombre, email, teléfono y puesto 'PERSONAL DE RESCATES'."
+      >
+        <CatalogDropdownSelect
+          v-model="state.by_user"
+          placeholder="Buscar admin del equipo"
+          :fetcher="fetchResponsibleAdminDropdown"
+        />
+      </UFormField>
+
+      <div v-if="isEdit || contactKind === 'external'" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <UFormField label="Nombre" name="name" required>
           <template #label>
             <span class="text-xs font-medium uppercase tracking-wide text-muted">
@@ -268,7 +347,7 @@ async function requestSubmit() {
           />
         </UFormField>
 
-        <UFormField name="is_responsible">
+        <UFormField v-if="isEdit || contactKind === 'external'" name="is_responsible">
           <UCheckbox
             v-model="state.is_responsible"
             :disabled="!canToggleResponsible"
@@ -281,6 +360,9 @@ async function requestSubmit() {
             Este cliente ya tiene un contacto responsable.
           </p>
         </UFormField>
+        <p v-else class="text-xs text-muted">
+          Se asignará como responsable automáticamente.
+        </p>
       </div>
 
       <div class="flex justify-end gap-2 border-t border-default pt-4">

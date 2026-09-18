@@ -36,6 +36,9 @@ export interface ClientCreateBody {
   notes: string;
   is_active?: boolean;
   alegra_id: number;
+  /** Solo en creación: admin asignado como responsable (junto con is_responsible). */
+  by_user?: number;
+  is_responsible?: boolean;
 }
 
 export type ClientUpdateBody = Omit<ClientCreateBody, 'alegra_id'> & {
@@ -77,16 +80,18 @@ export interface ClientContactFormState {
 
 export interface ClientContactCreateBody {
   client: number;
-  name: string;
-  position: string;
-  email: string;
-  phone: string;
-  whatsapp: string;
-  is_authorizer: boolean;
-  receives_quotes: boolean;
-  receives_oc_reminders: boolean;
-  receives_account_status: boolean;
-  is_billing_contact: boolean;
+  /** Admin (role=admin) asignado como responsable; ignora name/position/email/phone/whatsapp. */
+  by_user?: number;
+  name?: string;
+  position?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  is_authorizer?: boolean;
+  receives_quotes?: boolean;
+  receives_oc_reminders?: boolean;
+  receives_account_status?: boolean;
+  is_billing_contact?: boolean;
   is_responsible: boolean;
 }
 
