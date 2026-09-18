@@ -209,7 +209,7 @@ async function requestSubmit() {
           @click="contactKind = 'external'"
         />
         <UButton
-          label="Admin del equipo"
+          label="Responsable"
           :color="contactKind === 'admin' ? 'primary' : 'neutral'"
           :variant="contactKind === 'admin' ? 'solid' : 'subtle'"
           :disabled="!canToggleResponsible"
@@ -300,7 +300,10 @@ async function requestSubmit() {
         </UFormField>
       </div>
 
-      <div class="space-y-3 border-t border-default pt-4">
+      <div
+        v-if="isEdit || contactKind === 'external'"
+        class="space-y-3 border-t border-default pt-4"
+      >
         <p class="text-xs font-medium uppercase tracking-wide text-muted">
           Notificaciones
         </p>
@@ -347,7 +350,7 @@ async function requestSubmit() {
           />
         </UFormField>
 
-        <UFormField v-if="isEdit || contactKind === 'external'" name="is_responsible">
+        <UFormField name="is_responsible">
           <UCheckbox
             v-model="state.is_responsible"
             :disabled="!canToggleResponsible"
@@ -360,10 +363,10 @@ async function requestSubmit() {
             Este cliente ya tiene un contacto responsable.
           </p>
         </UFormField>
-        <p v-else class="text-xs text-muted">
-          Se asignará como responsable automáticamente.
-        </p>
       </div>
+      <p v-else class="text-xs text-muted">
+        Se asignará como responsable automáticamente.
+      </p>
 
       <div class="flex justify-end gap-2 border-t border-default pt-4">
         <UButton

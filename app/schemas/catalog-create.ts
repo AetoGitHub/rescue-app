@@ -178,11 +178,6 @@ export function clientContactFormToCreateBody(
 /** Responsable "interno": un admin (by_user) en vez de un contacto externo. */
 export const clientContactByUserSchema = z.object({
   by_user: requiredCatalogSelection('Selecciona un admin responsable'),
-  is_authorizer: z.boolean(),
-  receives_quotes: z.boolean(),
-  receives_oc_reminders: z.boolean(),
-  receives_account_status: z.boolean(),
-  is_billing_contact: z.boolean(),
 });
 
 export function clientContactFormToCreateByUserBody(
@@ -193,11 +188,11 @@ export function clientContactFormToCreateByUserBody(
     client: clientId,
     by_user: input.by_user.value!,
     is_responsible: true,
-    is_authorizer: input.is_authorizer,
-    receives_quotes: input.receives_quotes,
-    receives_oc_reminders: input.receives_oc_reminders,
-    receives_account_status: input.receives_account_status,
-    is_billing_contact: input.is_billing_contact,
+    is_authorizer: false,
+    receives_quotes: false,
+    receives_oc_reminders: false,
+    receives_account_status: false,
+    is_billing_contact: false,
   };
 }
 
