@@ -72,6 +72,7 @@ const headerContext = computed(() => {
           :items="[...PENDING_INVOICE_TAB_ITEMS]"
           :class="adminLinkTabsFlexClass"
           :ui="adminLinkTabsFlexUi"
+          :unmount-on-hide="false"
           variant="link"
         >
           <template #detail>
