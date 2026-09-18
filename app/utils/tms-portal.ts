@@ -12,6 +12,7 @@ function normalizeTmsRescue(rescue: TmsRescue): TmsRescue {
     ...rescue,
     ready: rescue.ready === true,
     correct_upload: rescue.correct_upload === true,
+    manual_upload: rescue.manual_upload === true,
   };
 }
 
@@ -83,6 +84,38 @@ export function serializeTmsRescueFilters(
     `oc_pdf:${filters?.oc_pdf ?? 'all'}`,
     `correct_upload:${filters?.correct_upload ?? 'all'}`,
   ];
+}
+
+/** GET .../rescues/paginated/: siempre correct_upload=true & manual_upload=true, + folio opcional. */
+export function buildTmsCompletedRescueQuery(
+  folio: string,
+): Record<string, string> {
+  const query: Record<string, string> = {
+    correct_upload: 'true',
+    manual_upload: 'true',
+  };
+  const trimmed = folio.trim();
+  if (trimmed) query.folio = trimmed;
+  return query;
+}
+
+export interface TmsUploadOriginDescriptor {
+  label: string;
+  icon: string;
+  color: 'success' | 'neutral';
+}
+
+/** Cómo se subió la OC: automatización (correct_upload) o a mano (manual_upload). */
+export function describeTmsUploadOrigin(
+  rescue: Pick<TmsRescue, 'correct_upload' | 'manual_upload'>,
+): TmsUploadOriginDescriptor {
+  if (rescue.correct_upload) {
+    return { label: 'Automatización', icon: 'i-lucide-bot', color: 'success' };
+  }
+  if (rescue.manual_upload) {
+    return { label: 'Manual', icon: 'i-lucide-user', color: 'neutral' };
+  }
+  return { label: 'Sin definir', icon: 'i-lucide-help-circle', color: 'neutral' };
 }
 
 export function normalizeTmsRescuePage(

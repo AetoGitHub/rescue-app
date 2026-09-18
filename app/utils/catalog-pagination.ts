@@ -22,6 +22,27 @@ export function extractCursorFromPaginatedNext(
   }
 }
 
+/**
+ * DRF `PageNumberPagination`: `next` is a full URL with `?page=N`, e.g.
+ * `http://localhost:8010/api/invoicing/.../rescues/paginated/?page=2`.
+ */
+export function extractPageFromPaginatedNext(
+  next: string | null | undefined,
+): string | null {
+  const value = next?.trim();
+  if (!value) return null;
+
+  try {
+    const url = value.includes('://')
+      ? new URL(value)
+      : new URL(value, 'http://localhost');
+    const page = url.searchParams.get('page')?.trim();
+    return page || null;
+  } catch {
+    return null;
+  }
+}
+
 export type PaginatedQueryValue = string | string[];
 
 export function buildPaginatedQuery(
@@ -41,6 +62,26 @@ export function getNextCursorPageParam(
   lastPage: PaginatedResponse<unknown>,
 ): string | null {
   return extractCursorFromPaginatedNext(lastPage.next);
+}
+
+/** DRF `PageNumberPagination`, ej. `TMSRescuesPortalListApiView` (page/page_size). */
+export function buildPageNumberQuery(
+  baseQuery: Record<string, PaginatedQueryValue> | undefined,
+  page: string | null | undefined,
+): Record<string, PaginatedQueryValue> | undefined {
+  const normalizedPage = page?.trim();
+  if (!normalizedPage) return baseQuery;
+
+  return {
+    ...baseQuery,
+    page: normalizedPage,
+  };
+}
+
+export function getNextPageNumberPageParam(
+  lastPage: PaginatedResponse<unknown>,
+): string | null {
+  return extractPageFromPaginatedNext(lastPage.next);
 }
 
 /** Alegra y APIs con offset en `next` (ej. `"30"`), no URL con cursor. */

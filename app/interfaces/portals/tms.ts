@@ -12,6 +12,8 @@ export interface TmsRescue {
   ready: boolean;
   /** Si es true, el portal no permite editar la fila. */
   correct_upload: boolean;
+  /** true = alguien subió la OC a mano (vs. correct_upload = automatización). */
+  manual_upload: boolean;
 }
 
 /** `null`/`undefined` = sin filtrar; el param solo se envía cuando es booleano. */

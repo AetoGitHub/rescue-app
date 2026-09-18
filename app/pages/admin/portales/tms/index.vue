@@ -61,6 +61,8 @@ const {
 
 const { updateRescue, triggerPortal, isTriggering } = useTmsRescueMutations();
 
+useTmsPortalUploadConfirmedListener(() => void refresh());
+
 usePaginatedTableInfiniteScroll({
   tableRef,
   hasNextPage,
@@ -331,6 +333,13 @@ async function assignPurchaseOrder(payload: { rescueId: number; url: string }) {
     description="Edita el PDF de la orden de compra y las notas internas en la tabla; se guardan al salir del campo. Las filas en verde ya tienen toda la documentación."
   >
     <template #actions>
+      <UButton
+        color="success"
+        variant="subtle"
+        icon="i-lucide-check-check"
+        label="Completadas"
+        to="/admin/portales/tms/completadas"
+      />
       <UButton
         color="neutral"
         variant="subtle"

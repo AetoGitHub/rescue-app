@@ -37,6 +37,7 @@ function rescue(
     oc_pdf: null,
     ready: false,
     correct_upload: false,
+    manual_upload: false,
   };
 }
 
