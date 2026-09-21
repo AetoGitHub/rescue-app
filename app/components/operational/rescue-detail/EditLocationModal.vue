@@ -53,14 +53,18 @@ const {
 
 const { saveLocation, isUpdating } = useRescueLocationUpdate(() => props.rescueId);
 
-watch(open, (isOpen) => {
-  if (!isOpen) return;
-  state.location_latitude = props.latitude?.trim() || null;
-  state.location_longitude = props.longitude?.trim() || null;
-  state.location_description = props.locationDescription?.trim() ?? '';
-  mapLayoutKey.value += 1;
-  resetDirtySnapshot();
-});
+watch(
+  open,
+  (isOpen) => {
+    if (!isOpen) return;
+    state.location_latitude = props.latitude?.trim() || null;
+    state.location_longitude = props.longitude?.trim() || null;
+    state.location_description = props.locationDescription?.trim() ?? '';
+    mapLayoutKey.value += 1;
+    resetDirtySnapshot();
+  },
+  { immediate: true },
+);
 
 async function resolveLocationDescription(coords: { lat: number; lng: number }) {
   const requestId = ++geocodingRequestId;

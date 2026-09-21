@@ -38,13 +38,17 @@ const {
 
 const { saveService, isUpdating } = useRescueServiceUpdate(() => props.rescueId);
 
-watch(open, (isOpen) => {
-  if (!isOpen) return;
-  state.vehicle = props.vehicle?.trim() ?? '';
-  state.service_description = props.serviceDescription?.trim() ?? '';
-  state.internal_notes = props.internalNotes?.trim() ?? '';
-  resetDirtySnapshot();
-});
+watch(
+  open,
+  (isOpen) => {
+    if (!isOpen) return;
+    state.vehicle = props.vehicle?.trim() ?? '';
+    state.service_description = props.serviceDescription?.trim() ?? '';
+    state.internal_notes = props.internalNotes?.trim() ?? '';
+    resetDirtySnapshot();
+  },
+  { immediate: true },
+);
 
 async function onSubmit(
   event: FormSubmitEvent<z.infer<typeof rescueServiceUpdateSchema>>,
