@@ -554,13 +554,6 @@ const {
                         :fetcher="fetchOperationalClientDropdown"
                       />
 
-                      <SharedVehicleFilterInput
-                        v-model="vehicles"
-                        :client-id="client.value"
-                        :company-id="company.value"
-                        placeholder="Vehículo: todos"
-                      />
-
                       <CatalogDropdownSelect
                         v-model="manager"
                         class="w-full"
@@ -570,6 +563,14 @@ const {
                     </div>
                   </template>
                 </USlideover>
+
+                <SharedVehicleFilterInput
+                  v-model="vehicles"
+                  class="w-full sm:w-48"
+                  :client-id="client.value"
+                  :company-id="company.value"
+                  placeholder="Vehículo: todos"
+                />
 
                 <UDropdownMenu
                   v-if="viewMode === 'kanban'"
