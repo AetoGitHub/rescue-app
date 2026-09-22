@@ -16,9 +16,20 @@ Ability de estas rutas: `accessAdministrative` (admin).
 - Resumen por columna: `GET /api/rescue/administrative/cards/summary/` (`RESCUE_ADMINISTRATIVE_CARDS_SUMMARY_PATH`). El badge de la columna y el total de «N resultados» del kanban usan el **`count` del backend**, no el número de tarjetas ya cargadas. El mapper acepta `sub_total` (canónico) o `subtotal` (alias).
 - Enviar remisión / factura desde la tarjeta del kanban abre `AdministrativeSendAdminDocModal` (`app/components/administrative/SendAdminDocModal.vue`). Pregunta si los folios van solo a este rescate o a otros (`extra_rescues`). En Por facturar el mismo modal se abre con `allowExtraRescues: false` (sin selector múltiple) y `editableFolios: true`. El PDF de OC es opcional (`UFileUpload`, schema `oc_pdf` en `app/schemas/rescue-admin-doc.ts`): al enviar se sube a Firebase (`uploadFileToFirebaseGeneral`, carpeta `rescue-2/rescue/:id/oc_pdf`) y el body de `POST /api/rescue/admin_doc/:id/` incluye `oc_pdf` (URL o `null`) junto a `remittance_folio`, `invoice_folio` y `extra_rescues`. Composable: `useRescueAdminDoc`.
 
+- **Exportar CSV** no arma el archivo en el cliente. Abre `ReportesRescuesExcelReportModal` (el mismo modal de Reportes) para elegir `start_date` / `end_date` y le pasa por el prop `extraQuery` los filtros activos del panel (`buildAdministrativeListQuery`). Descarga el Excel de `GET /api/dashboard/report/rescues/excel/`.
+
+## Reportes
+
+`/admin/reportes` — `app/pages/admin/reportes/index.vue`, en el sidebar bajo Administración. Ability: administrative.
+
+- Tarjeta «Reportes de rescates (Excel)» → `ReportesRescuesExcelReportModal` (`app/components/reportes/`).
+- API: `GET /api/dashboard/report/rescues/excel/` (`DASHBOARD_REPORT_RESCUES_EXCEL_PATH`). Query `start_date` y `end_date` (`YYYY-MM-DD`), ambos obligatorios en backend.
+
 ## Por facturar
 
 `/admin/por-facturar` — `app/pages/admin/por-facturar/index.vue`. Lista: `GET /api/dashboard/pending_invoice/` (`PENDING_INVOICE_LIST_PATH`). Agregados: `by_responsible`, `company_matrix`. Componentes `app/components/pending-invoice/`.
+
+- Pestañas Detalle / Por responsable / Matriz: `UTabs` con `unmount-on-hide="false"`, para que volver a Detalle no reconstruya la tabla ni pierda filtros.
 
 - Resumen: `GET /api/dashboard/pending_invoice/summary/` (`PENDING_INVOICE_SUMMARY_PATH`, `usePendingInvoiceSummary`). Mismos filtros de dropdown y de fechas que la lista (sin `cursor` ni `ordering`).
 - Rango de fechas en cabecera (`PendingInvoiceDateRangeFilter`): query params `start_date` y `end_date`. Por defecto: **primer día del mes actual → hoy** (zona local). El usuario puede cambiarlos; al API se envía ISO-8601 **con el offset de la zona horaria local** (`getLocalTimeZone()`): inicio del día (`T00:00:00±HH:mm`) y fin del día (`T23:59:59±HH:mm`). Ejemplo: `2026-09-01T00:00:00-06:00`. No se manda `YYYY-MM-DD` ni UTC `Z`. Los mismos params van a los **tres listados** (`pending_invoice/`, `by_responsible/`, `company_matrix/`) y al summary.

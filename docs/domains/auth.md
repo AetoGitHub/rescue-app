@@ -64,7 +64,7 @@ Fuente: `shared/utils/admin-route-access.ts`. Middleware `authorization.ts`: si 
 | `/admin/users` | users |
 | `/admin/pagar/recibo` | payment receipts |
 | `/admin/pagar` | payments |
-| `/admin/por-facturar`, `/admin/por-cobrar`, `/admin/portales`, `/admin/administrativo`, `/admin/dashboard` | administrative |
+| `/admin/por-facturar`, `/admin/por-cobrar`, `/admin/portales`, `/admin/administrativo`, `/admin/reportes`, `/admin/dashboard` | administrative |
 | `/admin/my-balance` | my balance |
 | `/admin/operational` | operational |
 | default | `accessAdminApp` |

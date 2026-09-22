@@ -65,6 +65,6 @@ E2E usa `PLAYWRIGHT_BASE_URL` (default `http://localhost:3000`) y puede arrancar
 
 ## Despliegue
 
-No hay `vercel.json` ni pipeline de deploy en este repo. El README raíz apunta a la [guía de deployment de Nuxt](https://nuxt.com/docs/getting-started/deployment). Sentry está configurado en `nuxt.config.ts` (`org: aeto-team`, `project: rescues-web`). El túnel de envelopes está en `server/routes/tunnel.post.ts` (`POST /tunnel`).
+No hay `vercel.json`, Dockerfile ni pipeline de deploy en este repo. `pnpm build` genera `.output/` con el preset Nitro `node-server`; se arranca con `node .output/server/index.mjs`. Ver [HANDOFF.md](./HANDOFF.md#4-despliegue). Sentry está configurado en `nuxt.config.ts` (`org: aeto-team`, `project: rescue-app`). El túnel de envelopes está en `server/routes/tunnel.post.ts` (`POST /tunnel`).
 
 Tras el deploy, un refresh o URL directa a `/admin/**` muestra el spinner de `app/spa-loading-template.html` hasta hidratar. El cambio de pantalla **dentro** de una sesión ya autenticada no vuelve a pedir HTML al servidor.

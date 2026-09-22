@@ -1,77 +1,24 @@
 # AETO Rescue (rescue-app)
 
-Frontend Nuxt de operación de rescates. La documentación del proyecto está en **[docs/README.md](./docs/README.md)** (español).
+Frontend Nuxt 4 (+ Nitro como BFF) de operación de rescates de AETO. El backend Django vive en otro repositorio.
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) for framework details.
+- **Nuevo en el proyecto:** lee [docs/HANDOFF.md](./docs/HANDOFF.md).
+- **Documentación completa (español):** [docs/README.md](./docs/README.md).
 
-## Setup
+## Arranque rápido
 
-Make sure to install dependencies:
+Requisitos: Node 22 y pnpm.
 
 ```bash
-# npm
-npm install
-
-# pnpm
 pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+cp .env.example .env   # rellena valores; ver docs/getting-started.md
+pnpm dev               # http://localhost:3000
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+| Comando | Qué hace |
+|---|---|
+| `pnpm test` | Vitest (unit + nuxt); lo mismo corre en CI |
+| `pnpm lint` | ESLint sin warnings |
+| `pnpm typecheck` | `nuxt typecheck` |
+| `pnpm build` | Build de producción (`.output/`, preset `node-server`) |
+| `node .output/server/index.mjs` | Arranca el build |

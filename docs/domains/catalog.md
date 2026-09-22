@@ -26,6 +26,15 @@ Slideovers: `CatalogClientCreateSlideover`, `CompanyCreateSlideover`, `ServiceCr
 
 Listas: `useCatalogInfiniteList` + `usePaginatedTableInfiniteScroll`.
 
+## Contactos y responsable interno (`by_user`)
+
+Contrato de backend: `by_user` (id de un usuario admin) + `is_responsible`.
+
+- **Crear cliente** (`CatalogClientCreateSlideover`): selector opcional «Responsable interno» (dropdown de admins). Manda `by_user` + `is_responsible` en el mismo `POST /api/catalogue/client/create/`, sin una segunda llamada a `contact/create/`.
+- **Crear contacto** (`ClientContactForm`, solo alta): selector «Contacto externo» / «Responsable». Con «Responsable» se ocultan nombre, email y teléfono (los llena el backend) y la sección de Notificaciones. `clientContactFormToCreateByUserBody` (`app/schemas/catalog-create.ts`) manda esos flags de notificación en `false`.
+- Dropdown de admins: `fetchUserDropdownByRole('admin', …)` en `app/utils/user-dropdown.ts` → `GET /api/auth/user/dropdown/?role=admin&name=`.
+- La tarjeta `ClientContactCard` muestra la etiqueta «Responsable» si `is_responsible`.
+
 ## Crédito
 
 Constantes `app/constants/client-credit-api.ts`. Composables: `useClientCredit`, `useCompanyCredit`, `useCreditCheck`, `useCreditUnlockList`, `useClientCreditInvoices`. Schema unlocks: `app/schemas/credit-unlock.ts`.

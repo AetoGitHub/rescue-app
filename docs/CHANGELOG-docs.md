@@ -2,6 +2,13 @@
 
 Registro de cambios al conjunto `docs/` (no al producto).
 
+## 2026-09-22
+
+- Se añade `HANDOFF.md` para la entrega del proyecto: mapa de sistemas, primer día, deploy (`node-server`), accesos, riesgos (token de Alegra versionado en `.env.example`) y deuda técnica.
+- Se documentan los cambios del 2026-09-16 al 2026-09-21 que faltaban: página Reportes y Exportar CSV → Excel del backend; Portal TMS Completadas y refresco por RTDB; responsable interno `by_user`; páginas públicas `/rescue/:id/evidencias` y `/rescue/:id/reporte-cotizacion`; asignar proveedor/autorizador en cualquier fase; descargas de PDF en Safari/iOS; filtro de vehículo en el toolbar; pestañas de Por facturar sin desmontar.
+- Corrección: el proyecto de Sentry es `rescue-app` (decía `rescues-web`).
+- README raíz: se reemplaza el texto del starter de Nuxt.
+
 ## 2026-09-01
 
 - Portal TMS: la carga de OC pasa a job asíncrono. Nitro reenvía `POST /api/portals/tms/purchase-orders/upload` y `GET /api/portals/tms/purchase-orders/jobs/:jobId` al servicio de PDFs (`NUXT_QUOTE_PDF_API_URL`). El cliente hace poll 1.5 s, pinta por `fileName` y notifica al terminar.

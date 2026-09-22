@@ -4,10 +4,13 @@ Frontend **Nuxt 4** de AETO Rescue: operación de rescates, facturación adminis
 
 Idioma de esta documentación: **español**. Identificadores de código y APIs: **inglés**, como en el repo.
 
+> **¿Eres nuevo en el proyecto?** Empieza por [HANDOFF.md](./HANDOFF.md): sistemas externos, accesos, deploy, riesgos y deuda conocida.
+
 ## Mapa
 
 | Documento | Contenido |
 |---|---|
+| [HANDOFF.md](./HANDOFF.md) | Entrega del proyecto: primer día, accesos, deploy, riesgos, deuda |
 | [getting-started.md](./getting-started.md) | Instalar, `.env`, scripts, tests, CI |
 | [architecture.md](./architecture.md) | Capas Nuxt, sesión, autorización, Firebase, Sentry |
 | [conventions.md](./conventions.md) | UForm+Zod, cursor pagination, auto-imports, tags de componentes |
@@ -24,11 +27,11 @@ Idioma de esta documentación: **español**. Identificadores de código y APIs: 
 | [domains/rescue.md](./domains/rescue.md) | Tablero operacional, alta, cotización, evidencias, chat |
 | [domains/catalog.md](./domains/catalog.md) | Clientes, compañías, contratos, servicios, crédito |
 | [domains/suppliers-maps.md](./domains/suppliers-maps.md) | Proveedores, mapa, geocoding n8n |
-| [domains/billing.md](./domains/billing.md) | Administrativo, por facturar, por cobrar |
+| [domains/billing.md](./domains/billing.md) | Administrativo, reportes, por facturar, por cobrar |
 | [domains/payments.md](./domains/payments.md) | Pagar, comprobantes, mi saldo |
 | [domains/users-config.md](./domains/users-config.md) | Usuarios, SLA, comisiones |
-| [domains/portals.md](./domains/portals.md) | Portal TMS |
-| [domains/guest-and-fill-oc.md](./domains/guest-and-fill-oc.md) | Autorización por token, llenar OC |
+| [domains/portals.md](./domains/portals.md) | Portal TMS (carga de OC, completadas) |
+| [domains/guest-and-fill-oc.md](./domains/guest-and-fill-oc.md) | Autorización por token, evidencias/reporte públicos, llenar OC |
 
 ## Convención continua
 

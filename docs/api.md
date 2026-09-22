@@ -89,7 +89,8 @@ Invitado (token en URL; handlers Nitro dedicados):
 
 - `GET /api/rescue/cards/:id/:token/`
 - `GET /api/rescue/quote/detail/:id/:token/`
-- `GET /api/rescue/evidence/:id/:token/`
+- `GET /api/rescue/evidence/:id/:token/` (también la usa `/rescue/:id/evidencias?api-key=`)
+- `GET /api/quotes/report/:id/:apikey` (Nitro → servicio de PDFs; página `/rescue/:id/reporte-cotizacion?api-key=`)
 - `GET /api/chat/:id/messages/:token/`
 - `POST /api/chat/:id/messages/create/:token/`
 - `POST /api/rescue/approve_link/:id/:token/`
@@ -135,7 +136,8 @@ Invitado (token en URL; handlers Nitro dedicados):
 | `/api/credit/unlock/create/` , `/:id/`, `/:id/cancel/`, `/company/:companyId/` | Extensiones |
 | `/api/credit/client/:id/invoices/` | Facturas pendientes crédito |
 | `/api/alegra/contacts` y `/api/alegra/items` | Proxy Alegra (offset pagination) |
-| Dropdowns | `/api/catalogue/client\|company\|service/dropdown/`, `/api/auth/user/dropdown/` |
+| Dropdowns | `/api/catalogue/client\|company\|service/dropdown/`, `/api/auth/user/dropdown/` (`?role=admin&name=` para el responsable interno) |
+| `POST /api/catalogue/client/create/` y contact create | Aceptan `by_user` + `is_responsible` (responsable interno; ver [catalog.md](./domains/catalog.md)) |
 
 ## Pagos y dashboard cobranza
 
@@ -152,6 +154,7 @@ Invitado (token en URL; handlers Nitro dedicados):
 - `/api/dashboard/by_responsible/`, `/api/dashboard/company_matrix/` (mismos `start_date` / `end_date` que Por facturar)
 - `/api/dashboard/pending_charge/`, `/api/dashboard/pending_charge/summary/`
 - `/api/dashboard/pending_charge/` dropdowns (`companies`, `clients`)
+- `GET /api/dashboard/report/rescues/excel/` (`DASHBOARD_REPORT_RESCUES_EXCEL_PATH`): Excel de rescates. `start_date` / `end_date` (`YYYY-MM-DD`) obligatorios; desde Administrativo se agregan los filtros del panel.
 
 ## Configuración y usuarios
 
@@ -166,6 +169,7 @@ Invitado (token en URL; handlers Nitro dedicados):
 
 - `/api/invoicing/client_portal/tms/rescues/`
 - `/api/invoicing/client_portal/tms/trigger/`
+- `GET /api/invoicing/client_portal/tms/rescues/paginated/` (cursor; filtros `correct_upload`, `manual_upload`, `folio`): vista Completadas
 - `POST /api/portals/tms/purchase-orders/upload` (Nitro → `{NUXT_QUOTE_PDF_API_URL}/purchase-orders/upload`, 202 `{ jobId, total }`)
 - `GET /api/portals/tms/purchase-orders/jobs/:jobId` (Nitro → `{NUXT_QUOTE_PDF_API_URL}/purchase-orders/jobs/:jobId`)
 - `/api/nexxt-step/fill_oc/` (Api-Key; también aliases `fill-oc` en `server/api/nexxt-step/`)

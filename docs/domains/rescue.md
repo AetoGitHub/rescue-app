@@ -8,7 +8,7 @@ Página: `/admin/operational` → `app/pages/admin/operational/index.vue`. Abili
 - Status: `requested`, `active_without_quote`, `pending_authorization`, `waiting_advance_payment`, `approved`, `in_progress`, `closed_unpaid`, `closed`, `warranty_pending`, `canceled`.
 - Datos: `useOperationalRescueCards`, `useOperationalRescueList`, `useOperationalRescueCardsSummary`.
 - Vista kanban vs lista: `useRescueBoardViewMode`.
-- Filtros/dropdowns: `useOperationalBoardDropdownFetchers` (compañía, cliente, usuarios).
+- Filtros/dropdowns: `useOperationalBoardDropdownFetchers` (compañía, cliente, usuarios). En desktop el filtro de **vehículo** va directo en el toolbar; compañía, cliente y gestor siguen en el slideover «Más filtros».
 - Detalle en modal: `useRescueDetailRouteQuery` (query de ruta para abrir por id).
 
 ## Tipos de servicio
@@ -32,7 +32,9 @@ Componentes bajo `app/components/operational/rescue-detail/` (tags `OperationalR
 - Clasificador IA: `POST /api/quote/classify` (`useQuoteClassifierApply`) → n8n.
 - Proveedor: búsqueda `useRescueSupplierSearch`, assign `useRescueSupplierAssign`, mapa en el wizard.
 - Autorizador: `PUT /api/rescue/authorizer/:id/` vía `useRescueAuthorizerAssign` (`AssignAuthorizerModal`). No se manda al crear el rescate; se exige antes de cerrar (`closed`/`closed_unpaid`) — gate en `useRescueOperativeFlow.ensureAuthorizerBeforeCloseOrRedirect`, igual que el de proveedor pero sin excepción por `service_type`. Dropdown de contactos: `GET /api/catalogue/client/:id/contacts/authorizers/dropdown/`; si viene vacío, alta rápida vía `POST /api/catalogue/client/contact/create/` con `is_authorizer: true`.
-- Evidencias: `useRescueEvidenceList` / `useRescueEvidenceCreate`.
+- **Asignar proveedor y autorizador está permitido en cualquier fase**, incluso `closed`, `closed_unpaid` y `canceled` (decisión de producto, 2026-09-16). No hay helpers de gating por status en `GeneralTab`.
+- Editar descripción/unidad (`EditServiceModal`) y ubicación (`EditLocationModal`): el `watch` de `open` usa `immediate: true` porque los modales montan con `v-if` ya abiertos; sin eso el formulario salía vacío en la primera apertura.
+- Evidencias: `useRescueEvidenceList` / `useRescueEvidenceCreate`. El zip de evidencias se descarga con `downloadBlob` (evita `WebKitBlobResource error 1` en Safari).
 - Chat: `useRescueChatMessages` / `useRescueChatSendMessage` / `useRescueOperativeSystemChat`.
 - Unlock de edición: `useRescueUnlockMutation`, countdown `useRescueUnlockCountdown`.
 - Link de autorización: `useRescueApproveLinkGenerate` → página invitado (ver [guest-and-fill-oc.md](./guest-and-fill-oc.md)).
@@ -62,6 +64,14 @@ Al elegir un servicio con convenio, `applyContractToLine` reemplazaba `line.serv
 2. En `CatalogDropdownSelect`, un `:key` ligado al id **remontaba** `USelectMenu` mientras el menú cerraba, y el overlay portalizado de Reka/Nuxt UI quedaba encima de la página (`pointer-events`) — nada era clicable.
 
 Mitigación: no sustituir `service` si el id ya coincide; no remontar el select al cambiar la selección; sincronizar precios solo cuando el snapshot cambia (`deep: true`); al hidratar el detalle, parchear `contract_item_id` en sitio (ids estables `String(service.id)`) en lugar de recrear el array de filas.
+
+## Descargas de PDF y Safari
+
+`app/utils/download-blob.ts`:
+
+- `downloadBlob(blob, filename)`: anchor + `download`. Envuelve el blob como `application/octet-stream` porque Safari macOS ignora `download` en blobs PDF y abre Quick Look.
+- `shareOrDownloadBlob`: **solo en iOS** (detección por userAgent `iPhone|iPod|iPad`; no por `maxTouchPoints`, que da falso positivo en trackpads de Mac) intenta `navigator.share({ files })` (Guardar en Archivos) y cae a `downloadBlob` si falla o el usuario cancela. En desktop Chrome/Edge no se usa share para no abrir el diálogo del SO.
+- «Ver PDF» de la cotización (`useRescueQuotePdf`) abre la pestaña en blanco **antes** del `await` y luego la redirige; si no, Safari bloquea el popup fuera del gesto de usuario.
 
 ## Settings
 
