@@ -278,10 +278,17 @@ async function refreshBoard() {
   }
 }
 
-const csvExportModalOpen = ref(false);
-const csvExportQuery = computed(() =>
-  buildAdministrativeListQuery(boardFilters.value),
-);
+const { launchReport } = useReportLauncher();
+
+function exportToExcel() {
+  void launchReport({
+    report: 'rescues_excel',
+    company: company.value,
+    client: client.value,
+    statusType: 'admin',
+    statusValues: 'all',
+  });
+}
 
 const {
   fetchAdministrativeCompanyDropdown,
@@ -510,8 +517,8 @@ const {
                 color="neutral"
                 icon="i-lucide-download"
                 variant="subtle"
-                aria-label="Exportar CSV"
-                @click="csvExportModalOpen = true"
+                aria-label="Exportar a Excel"
+                @click="exportToExcel"
               />
             </template>
 
@@ -599,9 +606,9 @@ const {
                   <UButton
                     color="neutral"
                     icon="i-lucide-download"
-                    label="Exportar CSV"
+                    label="Exportar a Excel"
                     variant="subtle"
-                    @click="csvExportModalOpen = true"
+                    @click="exportToExcel"
                   />
                 </div>
               </div>
@@ -754,11 +761,6 @@ const {
           :invoice-folio="pendingAdminDoc.invoice_folio"
           :loading="isSavingAdminDoc"
           @submit="onSendAdminDocSubmit"
-        />
-
-        <ReportesRescuesExcelReportModal
-          v-model:open="csvExportModalOpen"
-          :extra-query="csvExportQuery"
         />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden">

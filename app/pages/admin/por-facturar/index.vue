@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PENDING_INVOICE_TAB_ITEMS } from '~/constants/pending-invoice';
+import { PENDING_INVOICE_DEFAULT_ADMIN_STATUS } from '~/constants/pending-invoice-api';
 import type { CalendarDateParts } from '~/utils/payment-list-query';
 import {
   adminLinkTabsFlexClass,
@@ -13,6 +14,30 @@ useHead({
 
 const { activeTab, selectedCompanies, startDate, endDate } =
   usePendingInvoiceList();
+
+// Mismo reporte Excel de rescates que /admin/reportes, pero descargado
+// directo (sin modal): esta pantalla ya trae su propio filtro de fecha y
+// compañía, no hace falta pedirlos otra vez. admin_status queda fijo en
+// "Sin atender" + "En remisión" -- el mismo alcance que ya muestra esta vista.
+const { downloadRescuesExcelReport, isDownloading } = useRescuesExcelReportDownload();
+
+async function downloadExcel() {
+  if (startDate.value == null || endDate.value == null) return;
+
+  const query: Record<string, string | undefined> = {
+    admin_status: PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
+    start_date: calendarDateToApiDate(startDate.value),
+    end_date: calendarDateToApiDate(endDate.value),
+  };
+
+  // El reporte Excel solo soporta filtrar por una compañía a la vez; con 0 o
+  // varias seleccionadas, se manda sin filtro de compañía (todas).
+  if (selectedCompanies.value.length === 1) {
+    query.company = String(selectedCompanies.value[0]!.id);
+  }
+
+  await downloadRescuesExcelReport(query);
+}
 
 function formatHeaderFilterDate(parts: CalendarDateParts) {
   const day = String(parts.day).padStart(2, '0');
@@ -64,6 +89,16 @@ const headerContext = computed(() => {
           <div class="flex flex-wrap items-end gap-6 sm:justify-end">
             <PendingInvoiceDateRangeFilter class="shrink-0" />
             <PendingInvoiceCompanyFilter class="shrink-0" />
+            <UButton
+              color="neutral"
+              icon="i-lucide-download"
+              label="Descargar Excel"
+              variant="subtle"
+              class="shrink-0"
+              :loading="isDownloading"
+              :disabled="isDownloading"
+              @click="() => void downloadExcel()"
+            />
           </div>
         </div>
 

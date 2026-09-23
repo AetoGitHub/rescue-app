@@ -3,7 +3,18 @@ useHead({
   title: 'Reportes',
 });
 
-const rescuesExcelModalOpen = ref(false);
+// Si se llega desde useReportLauncher (ej. el botón "Exportar a Excel" del
+// panel Administrativo), abre el modal correspondiente ya con sus filtros
+// precargados. Se lee una sola vez y se limpia para no reabrirse en visitas
+// futuras a esta misma página.
+const pendingLaunch = useReportLaunch();
+const initialLaunch = pendingLaunch.value?.report === 'rescues_excel' ? pendingLaunch.value : null;
+
+onMounted(() => {
+  pendingLaunch.value = null;
+});
+
+const rescuesExcelModalOpen = ref(initialLaunch != null);
 </script>
 
 <template>
@@ -23,6 +34,13 @@ const rescuesExcelModalOpen = ref(false);
       />
     </div>
 
-    <ReportesRescuesExcelReportModal v-model:open="rescuesExcelModalOpen" />
+    <ReportesRescuesExcelReportModal
+      v-model:open="rescuesExcelModalOpen"
+      show-filters
+      :initial-company="initialLaunch?.company"
+      :initial-client="initialLaunch?.client"
+      :initial-status-type="initialLaunch?.statusType"
+      :initial-status-values="initialLaunch?.statusValues"
+    />
   </AdminListPageShell>
 </template>
