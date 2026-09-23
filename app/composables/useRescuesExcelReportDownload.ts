@@ -7,36 +7,10 @@ import { DASHBOARD_REPORT_RESCUES_EXCEL_PATH } from '~/constants/dashboard-repor
  * de /admin/reportes, o un botón de descarga directa como en /admin/por-facturar).
  */
 export function useRescuesExcelReportDownload() {
-  const toast = useToast();
-  const isDownloading = ref(false);
+  const { download, isDownloading } = useExcelReportDownload(
+    DASHBOARD_REPORT_RESCUES_EXCEL_PATH,
+    'reporte_rescates.xlsx',
+  );
 
-  async function downloadRescuesExcelReport(
-    query: Record<string, string | undefined>,
-  ): Promise<boolean> {
-    if (isDownloading.value) return false;
-
-    isDownloading.value = true;
-    try {
-      const response = await $fetch.raw<Blob>(DASHBOARD_REPORT_RESCUES_EXCEL_PATH, {
-        responseType: 'blob',
-        query,
-      });
-      const filename =
-        filenameFromContentDisposition(response.headers.get('content-disposition'))
-        || 'reporte_rescates.xlsx';
-      downloadBlob(response._data as Blob, filename);
-      return true;
-    } catch (error) {
-      toast.add({
-        title: 'No se pudo descargar el Excel',
-        description: getFetchErrorMessage(error),
-        color: 'error',
-      });
-      return false;
-    } finally {
-      isDownloading.value = false;
-    }
-  }
-
-  return { downloadRescuesExcelReport, isDownloading };
+  return { downloadRescuesExcelReport: download, isDownloading };
 }

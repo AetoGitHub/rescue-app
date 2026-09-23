@@ -35,8 +35,11 @@ const props = defineProps<{
    * (ej. desde `useReportLauncher` al lanzarlo desde otra pantalla). Solo se
    * aplican una vez, al crear el componente.
    */
+  initialFolio?: string;
+  initialServiceTypes?: RescueServiceType[];
   initialCompany?: CatalogDropdownSelection;
   initialClient?: CatalogDropdownSelection;
+  initialVehicles?: string[];
   initialStatusType?: ReportStatusFilterType;
   /** 'all' precarga todos los valores disponibles para `initialStatusType`. */
   initialStatusValues?: string[] | 'all';
@@ -65,11 +68,11 @@ const isRangeInvalid = computed(() => {
 // Filtro por status — obligatorio cuando `showFilters` está activo. Se elige
 // un solo tipo (Administrativo u Operativo, nunca ambos) y uno o más valores
 // de ese tipo, limitados a los status visibles en las cards administrativas.
-// El reporte Excel aun no lo soporta en el backend (pendiente que se agregue
-// ahi el manejo de admin_status/operative_status); se manda de todos modos
-// con esos mismos nombres de campo del modelo Rescue, como una lista
-// separada por comas sin espacios ("valor1,valor2"), para que quede listo en
-// cuanto el backend lo implemente.
+// Se manda como admin_status/operative_status (mismos nombres de campo del
+// modelo Rescue), coma-separado sin espacios ("valor1,valor2"). El backend ya
+// lo soporta: cuando llega alguno de los dos, start_date/end_date deja de
+// filtrar por created_at y pasa a filtrar por la fecha en que el rescate
+// entró a ese status (RescueStatusLog.entered_at).
 const adminStatusOptions = ADMINISTRATIVE_KANBAN_VISIBLE_COLUMNS.map((column) => ({
   label: column.title,
   value: column.status as string,
@@ -99,9 +102,13 @@ const statusValueOptions = computed(() =>
   statusFilterType.value != null ? statusOptionsForType(statusFilterType.value) : [],
 );
 
-watch(statusFilterType, () => {
+// Se asigna via esta funcion (no un watch sobre statusFilterType) para que
+// resetModalState() pueda restaurar tipo + valores de forma sincrona y
+// predecible al cerrar el modal, sin que un watcher los pise despues.
+function setStatusFilterType(type: ReportStatusFilterType) {
+  statusFilterType.value = type;
   statusFilterValues.value = [];
-});
+}
 
 // Mensajes dinamicos de que falta para poder descargar -- se recalculan en
 // cada cambio, para que el usuario vea de inmediato por que el boton sigue
@@ -135,11 +142,11 @@ const canDownload = computed(() => missingFieldsMessages.value.length === 0);
 // Filtros opcionales del modal — mismos campos que ya soporta el reporte
 // Excel en el backend (admin_card_filters): folio, service_type, company,
 // client, vehicle. Solo se muestran/aplican cuando `showFilters` está activo.
-const folioSearch = ref('');
-const selectedServiceTypes = ref<RescueServiceType[]>([]);
+const folioSearch = ref(props.initialFolio ?? '');
+const selectedServiceTypes = ref<RescueServiceType[]>(props.initialServiceTypes ?? []);
 const company = ref(props.initialCompany ?? emptyCatalogDropdownSelection());
 const client = ref(props.initialClient ?? emptyCatalogDropdownSelection());
-const vehicles = ref<string[]>([]);
+const vehicles = ref<string[]>(props.initialVehicles ?? []);
 
 const administrativeServiceTypeOptions = RESCUE_SERVICE_TYPE_OPTIONS.filter(
   (option) =>
@@ -224,11 +231,25 @@ function handleCancel() {
   open.value = false;
 }
 
+// Al cerrar, el modal vuelve a su estado de montaje inicial (los props
+// initial*) en vez de a un blanco fijo -- asi no se pisa una precarga
+// deliberada (ej. useReportLauncher) si el usuario cierra y reabre la misma
+// tarjeta sin renavegar. Sin contexto de lanzamiento, initial* ya es
+// undefined, asi que el reset equivale a blanco de todos modos.
+function resetModalState() {
+  startDate.value = null;
+  endDate.value = null;
+  folioSearch.value = props.initialFolio ?? '';
+  selectedServiceTypes.value = props.initialServiceTypes ?? [];
+  company.value = props.initialCompany ?? emptyCatalogDropdownSelection();
+  client.value = props.initialClient ?? emptyCatalogDropdownSelection();
+  vehicles.value = props.initialVehicles ?? [];
+  statusFilterType.value = props.initialStatusType ?? null;
+  statusFilterValues.value = initialStatusFilterValues();
+}
+
 watch(open, (isOpen) => {
-  if (!isOpen) {
-    startDate.value = null;
-    endDate.value = null;
-  }
+  if (!isOpen) resetModalState();
 });
 </script>
 
@@ -256,14 +277,14 @@ watch(open, (isOpen) => {
                   :color="statusFilterType === 'admin' ? 'primary' : 'neutral'"
                   :variant="statusFilterType === 'admin' ? 'solid' : 'subtle'"
                   :disabled="isDownloading"
-                  @click="statusFilterType = 'admin'"
+                  @click="setStatusFilterType('admin')"
                 />
                 <UButton
                   label="Operativo"
                   :color="statusFilterType === 'operative' ? 'primary' : 'neutral'"
                   :variant="statusFilterType === 'operative' ? 'solid' : 'subtle'"
                   :disabled="isDownloading"
-                  @click="statusFilterType = 'operative'"
+                  @click="setStatusFilterType('operative')"
                 />
               </UFieldGroup>
             </UFormField>

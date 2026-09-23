@@ -15,6 +15,7 @@ import { emptyCatalogDropdownSelection } from '~/interfaces/shared/catalog-dropd
 import type { AdministrativeRescueCard } from '~/interfaces/rescue/administrative';
 import type { RescueServiceType } from '~/interfaces/rescue';
 import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
+import type { RescuesExcelReportLaunch } from '~/composables/useReportLaunch';
 import { useQueryCache } from '@pinia/colada';
 
 useHead({
@@ -280,13 +281,32 @@ async function refreshBoard() {
 
 const { launchReport } = useReportLauncher();
 
+// El reporte Excel solo admite un eje de status a la vez (admin xor
+// operativo). Si el board ya tiene un status especifico filtrado, se respeta
+// ese en vez del default "todos" -- prioridad: billingStatus (admin) primero,
+// luego operativeStatus; si ninguno esta activo, cae al default pedido de
+// admin + todos los status. Si ambos estuvieran activos a la vez, admin gana
+// y el operativo se ignora para el export (el board sigue filtrando por
+// ambos con normalidad, solo el export tiene esta limitacion).
+function resolveExportStatus(): Pick<RescuesExcelReportLaunch, 'statusType' | 'statusValues'> {
+  if (selectedBillingStatus.value != null) {
+    return { statusType: 'admin', statusValues: [selectedBillingStatus.value] };
+  }
+  if (selectedOperativeStatus.value != null) {
+    return { statusType: 'operative', statusValues: [selectedOperativeStatus.value] };
+  }
+  return { statusType: 'admin', statusValues: 'all' };
+}
+
 function exportToExcel() {
   void launchReport({
     report: 'rescues_excel',
+    folio: folioSearch.value,
+    serviceTypes: selectedServiceTypes.value,
     company: company.value,
     client: client.value,
-    statusType: 'admin',
-    statusValues: 'all',
+    vehicles: vehicles.value,
+    ...resolveExportStatus(),
   });
 }
 

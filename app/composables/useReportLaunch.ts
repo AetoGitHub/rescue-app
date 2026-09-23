@@ -1,11 +1,15 @@
 import type { CatalogDropdownSelection } from '~/interfaces/shared/catalog-dropdown.interface';
+import type { RescueServiceType } from '~/interfaces/rescue';
 
 export type ReportStatusFilterType = 'admin' | 'operative';
 
 export interface RescuesExcelReportLaunch {
   report: 'rescues_excel';
+  folio?: string;
+  serviceTypes?: RescueServiceType[];
   company?: CatalogDropdownSelection;
   client?: CatalogDropdownSelection;
+  vehicles?: string[];
   statusType?: ReportStatusFilterType;
   /** 'all' selecciona todos los status disponibles para ese tipo. */
   statusValues?: string[] | 'all';

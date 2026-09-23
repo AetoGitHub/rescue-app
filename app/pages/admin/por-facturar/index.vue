@@ -21,6 +21,14 @@ const { activeTab, selectedCompanies, startDate, endDate } =
 // "Sin atender" + "En remisión" -- el mismo alcance que ya muestra esta vista.
 const { downloadRescuesExcelReport, isDownloading } = useRescuesExcelReportDownload();
 
+const missingDateMessages = computed(() => {
+  const messages: string[] = [];
+  if (startDate.value == null) messages.push('Falta la fecha "Desde"');
+  if (endDate.value == null) messages.push('Falta la fecha "Hasta"');
+  return messages;
+});
+const canDownloadExcel = computed(() => missingDateMessages.value.length === 0);
+
 async function downloadExcel() {
   if (startDate.value == null || endDate.value == null) return;
 
@@ -89,16 +97,21 @@ const headerContext = computed(() => {
           <div class="flex flex-wrap items-end gap-6 sm:justify-end">
             <PendingInvoiceDateRangeFilter class="shrink-0" />
             <PendingInvoiceCompanyFilter class="shrink-0" />
-            <UButton
-              color="neutral"
-              icon="i-lucide-download"
-              label="Descargar Excel"
-              variant="subtle"
-              class="shrink-0"
-              :loading="isDownloading"
-              :disabled="isDownloading"
-              @click="() => void downloadExcel()"
-            />
+            <UTooltip
+              :disabled="canDownloadExcel"
+              :text="missingDateMessages.join(' y ')"
+            >
+              <UButton
+                color="neutral"
+                icon="i-lucide-download"
+                label="Descargar Excel"
+                variant="subtle"
+                class="shrink-0"
+                :loading="isDownloading"
+                :disabled="isDownloading || !canDownloadExcel"
+                @click="() => void downloadExcel()"
+              />
+            </UTooltip>
           </div>
         </div>
 

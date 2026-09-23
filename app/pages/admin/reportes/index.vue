@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { DASHBOARD_REPORT_SERVICES_EXCEL_PATH } from '~/constants/dashboard-report-api';
+
 useHead({
   title: 'Reportes',
 });
@@ -15,6 +17,7 @@ onMounted(() => {
 });
 
 const rescuesExcelModalOpen = ref(initialLaunch != null);
+const servicesExcelModalOpen = ref(false);
 </script>
 
 <template>
@@ -32,15 +35,34 @@ const rescuesExcelModalOpen = ref(initialLaunch != null);
         class="cursor-pointer text-left transition-colors hover:ring-primary"
         @click="rescuesExcelModalOpen = true"
       />
+
+      <UPageCard
+        icon="i-lucide-file-spreadsheet"
+        title="Servicios vendidos (Excel)"
+        description="Descarga un Excel de servicios vendidos por rango de fechas"
+        variant="subtle"
+        class="cursor-pointer text-left transition-colors hover:ring-primary"
+        @click="servicesExcelModalOpen = true"
+      />
     </div>
 
     <ReportesRescuesExcelReportModal
       v-model:open="rescuesExcelModalOpen"
       show-filters
+      :initial-folio="initialLaunch?.folio"
+      :initial-service-types="initialLaunch?.serviceTypes"
       :initial-company="initialLaunch?.company"
       :initial-client="initialLaunch?.client"
+      :initial-vehicles="initialLaunch?.vehicles"
       :initial-status-type="initialLaunch?.statusType"
       :initial-status-values="initialLaunch?.statusValues"
+    />
+
+    <ReportesDateRangeExcelReportModal
+      v-model:open="servicesExcelModalOpen"
+      title="Reporte de servicios vendidos (Excel)"
+      :path="DASHBOARD_REPORT_SERVICES_EXCEL_PATH"
+      default-filename="servicios_vendidos.xlsx"
     />
   </AdminListPageShell>
 </template>
