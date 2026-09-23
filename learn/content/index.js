@@ -1,0 +1,17 @@
+window.LEARN_MODULE_ORDER = [
+  'intro',
+  'primeros-pasos',
+  'js-moderno',
+  'typescript',
+  'vue3-composition',
+  'nuxt4-routing',
+  'composables-autoimports',
+  'pinia-colada',
+  'zod-forms',
+  'nuxt-ui-tailwind',
+  'bff-proxy-django',
+  'auth-sesiones-permisos',
+  'avanzado-testing-firebase-sentry',
+  'cookbook-modales-formularios',
+  'trabajar-con-ia',
+];

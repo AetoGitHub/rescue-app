@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aprende rescue-app — Guía interactiva</title>
+  <meta name="description" content="Guía interactiva para aprender el stack de rescue-app (Nuxt 4, Vue 3, TypeScript) desde JS moderno hasta el patrón BFF con Django." />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <button type="button" id="sidebar-toggle" class="icon-btn" aria-label="Abrir menú de módulos">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
+    <a href="#/intro" class="app-title">
+      <span class="app-title-emoji" aria-hidden="true">🚑</span>
+      <span>Aprende <strong>rescue-app</strong></span>
+    </a>
+
+    <div class="header-progress">
+      <div class="progress-bar-track"><div id="global-progress-bar" class="progress-bar-fill"></div></div>
+      <span id="global-progress-label" class="progress-label">0/0 módulos — 0%</span>
+    </div>
+
+    <button type="button" id="theme-toggle" class="icon-btn" aria-label="Cambiar tema claro/oscuro">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </header>
+
+  <div class="app-body">
+    <aside id="sidebar" class="sidebar">
+      <nav id="sidebar-nav" class="sidebar-nav" aria-label="Módulos de la guía"></nav>
+    </aside>
+
+    <main id="lesson-content" class="lesson-content"></main>
+  </div>
+
+  <!-- Vue 3 real, vía CDN, pinneado a la misma versión mayor que usa el repo (^3.5.33). -->
+  <script src="https://unpkg.com/vue@3.5.33/dist/vue.global.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/vue@3.5.33/dist/vue.global.js'"></script>
+
+  <!-- Motor de la guía: scripts clásicos (sin type="module") para que funcione bajo file://. -->
+  <script src="js/store.js"></script>
+  <script src="js/content-helpers.js"></script>
+  <script src="js/highlight.js"></script>
+  <script src="js/mini-zod.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/playground.js"></script>
+  <script src="js/type-exercise.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/router.js"></script>
+
+  <!-- Contenido: cada módulo se auto-registra en window.LearnContent. -->
+  <script src="content/00-intro.js"></script>
+  <script src="content/01-js-moderno.js"></script>
+  <script src="content/02-typescript.js"></script>
+  <script src="content/03-vue3-composition.js"></script>
+  <script src="content/04-nuxt4-routing.js"></script>
+  <script src="content/05-composables-autoimports.js"></script>
+  <script src="content/06-pinia-colada.js"></script>
+  <script src="content/07-zod-forms.js"></script>
+  <script src="content/08-nuxt-ui-tailwind.js"></script>
+  <script src="content/09-bff-proxy-django.js"></script>
+  <script src="content/10-auth-sesiones-permisos.js"></script>
+  <script src="content/11-avanzado-testing-firebase-sentry.js"></script>
+  <script src="content/12-primeros-pasos.js"></script>
+  <script src="content/13-cookbook-modales-formularios.js"></script>
+  <script src="content/14-trabajar-con-ia.js"></script>
+  <script src="content/index.js"></script>
+
+  <script src="app.js"></script>
+</body>
+</html>
