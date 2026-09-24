@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useInfiniteQuery, useQuery } from '@pinia/colada';
-import { watchDebounced } from '@vueuse/core';
+import { useInfiniteScroll, watchDebounced } from '@vueuse/core';
 import {
   emptyCatalogDropdownSelection,
   type CatalogDropdownRow,
@@ -108,13 +108,7 @@ watch(clients, (rows) => {
   for (const row of rows) namesById.value.set(row.id, row.name);
 });
 
-const selectedSet = computed(() => new Set(selected.value));
-
-function toggleClient(id: number, checked: boolean | 'indeterminate') {
-  if (checked === true) {
-    if (!selectedSet.value.has(id)) selected.value = [...selected.value, id];
-    return;
-  }
+function removeClient(id: number) {
   selected.value = selected.value.filter((value) => value !== id);
 }
 
@@ -164,33 +158,81 @@ async function removeAll() {
   }
 }
 
-const listRef = useTemplateRef<HTMLElement>('listRef');
+const clientSelect = useTemplateRef('clientSelect');
 
-useScrollContainerInfiniteLoad({
-  containerRef: listRef,
-  hasNextPage: hasMore,
-  loadNextPage,
-  asyncStatus: clientsStatus,
+onMounted(() => {
+  useInfiniteScroll(
+    () => clientSelect.value?.viewportRef,
+    () => {
+      void loadNextPage();
+    },
+    {
+      canLoadMore: () => hasMore.value && clientsStatus.value !== 'loading',
+    },
+  );
 });
 </script>
 
 <template>
   <div class="space-y-3">
-    <div class="grid gap-2 sm:grid-cols-2">
-      <CatalogDropdownSelect
-        v-model="company"
-        placeholder="Todas las compañías"
-        :fetcher="fetchCompanyDropdown"
-        :disabled="disabled"
-      />
-      <UInput
-        v-model="searchTerm"
-        icon="i-lucide-search"
-        placeholder="Buscar cliente"
-        class="w-full"
-        :disabled="disabled"
-      />
-    </div>
+    <CatalogDropdownSelect
+      v-model="company"
+      placeholder="Todas las compañías"
+      :fetcher="fetchCompanyDropdown"
+      :disabled="disabled"
+    />
+
+    <USelectMenu
+      ref="clientSelect"
+      v-model="selected"
+      v-model:search-term="searchTerm"
+      multiple
+      ignore-filter
+      value-key="id"
+      label-key="name"
+      :items="clients"
+      :loading="loadingClients"
+      :disabled="disabled"
+      :reset-search-term-on-blur="false"
+      :reset-search-term-on-select="false"
+      :search-input="{ placeholder: 'Buscar cliente…', icon: 'i-lucide-search' }"
+      placeholder="Buscar y seleccionar clientes"
+      class="w-full"
+      variant="subtle"
+      :ui="{ base: 'bg-default' }"
+    >
+      <template #default>
+        <span v-if="selected.length === 0" class="truncate text-dimmed">
+          Buscar y seleccionar clientes
+        </span>
+        <span v-else class="truncate">
+          {{ selected.length }}
+          {{ selected.length === 1 ? 'cliente seleccionado' : 'clientes seleccionados' }}
+        </span>
+      </template>
+
+      <template #empty>
+        <span v-if="clientsError" class="text-error">
+          {{ getFetchErrorMessage(clientsError) }}
+        </span>
+        <span v-else>Sin clientes para este filtro.</span>
+      </template>
+
+      <template #content-bottom>
+        <div
+          v-if="loadingMore || hasMore"
+          class="flex min-h-8 items-center justify-center px-2 py-1"
+        >
+          <UIcon
+            v-if="loadingMore"
+            name="i-lucide-loader-circle"
+            class="size-4 animate-spin text-muted"
+            aria-hidden="true"
+          />
+          <span v-else class="text-xs text-muted">Desplázate para cargar más</span>
+        </div>
+      </template>
+    </USelectMenu>
 
     <div class="flex flex-wrap items-center gap-2">
       <UButton
@@ -217,55 +259,24 @@ useScrollContainerInfiniteLoad({
         :disabled="disabled || bulkPending || selected.length === 0"
         @click="removeAll"
       />
-    </div>
-
-    <div
-      ref="listRef"
-      class="max-h-64 overflow-y-auto rounded-md border border-default"
-    >
-      <div v-if="loadingClients" class="flex justify-center py-6">
-        <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" />
-      </div>
-      <p
-        v-else-if="clientsError"
-        class="px-3 py-4 text-sm text-error"
-        role="alert"
+      <UBadge
+        v-if="searchTerm.trim()"
+        color="neutral"
+        variant="outline"
+        class="gap-1"
       >
-        {{ getFetchErrorMessage(clientsError) }}
-      </p>
-      <p v-else-if="clients.length === 0" class="px-3 py-4 text-sm text-muted">
-        Sin clientes para este filtro.
-      </p>
-      <ul v-else class="divide-y divide-default">
-        <li v-for="client in clients" :key="client.id" class="px-3 py-2">
-          <UCheckbox
-            :model-value="selectedSet.has(client.id)"
-            :label="client.name"
-            :disabled="disabled"
-            @update:model-value="(v) => toggleClient(client.id, v)"
-          />
-        </li>
-      </ul>
-      <div
-        v-if="loadingMore || hasMore"
-        class="flex min-h-8 items-center justify-center px-2 py-1"
-      >
-        <UIcon
-          v-if="loadingMore"
-          name="i-lucide-loader-circle"
-          class="size-4 animate-spin text-muted"
-          aria-hidden="true"
-        />
+        <span class="max-w-40 truncate">Búsqueda: {{ searchTerm.trim() }}</span>
         <UButton
-          v-else
           type="button"
           size="xs"
-          variant="link"
           color="neutral"
-          label="Ver más"
-          @click="loadNextPage()"
+          variant="link"
+          icon="i-lucide-x"
+          class="-me-1 p-0"
+          aria-label="Limpiar búsqueda"
+          @click="searchTerm = ''"
         />
-      </div>
+      </UBadge>
     </div>
 
     <div class="space-y-2">
@@ -293,7 +304,7 @@ useScrollContainerInfiniteLoad({
             class="-me-1 p-0"
             :aria-label="`Quitar ${clientLabel(id)}`"
             :disabled="disabled"
-            @click="toggleClient(id, false)"
+            @click="removeClient(id)"
           />
         </UBadge>
       </div>
