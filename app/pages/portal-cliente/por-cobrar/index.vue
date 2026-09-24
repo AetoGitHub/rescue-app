@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { adminListPageTitleClass } from '~/constants/admin-list-layout';
 
-usePendingReportScope().value = 'admin';
+usePendingReportScope().value = 'client';
 
 useHead({
   title: 'Por cobrar',
@@ -93,6 +93,7 @@ const headerContext = computed(() => {
                 {{ summaryTotalLabel }}
               </p>
             </div> -->
+            <ClientPortalClientFilter class="shrink-0" />
             <PendingChargeCompanyFilter class="shrink-0" />
           </div>
         </div>

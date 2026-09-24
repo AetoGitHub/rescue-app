@@ -1,3 +1,4 @@
+import { accessAdminApp } from '#shared/abilities';
 import type { MapsCoordsToAddressResponse } from '~/interfaces/maps/geocoding';
 import { forwardFetchError } from '../../utils/forward-fetch-error';
 import {
@@ -7,6 +8,7 @@ import {
 
 export default defineEventHandler(async (event) => {
   await requireUserSession(event);
+  await authorize(event, accessAdminApp);
 
   const body = await readBody(event);
   const coords = parseGeocodingLatLng(body?.lat, body?.lng);

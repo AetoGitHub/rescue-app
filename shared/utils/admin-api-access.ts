@@ -2,6 +2,7 @@ import {
   accessAdminApp,
   accessAdministrative,
   accessCatalogs,
+  accessClientApi,
   accessConfig,
   accessDropdown,
   accessMyBalance,
@@ -11,6 +12,7 @@ import {
   accessUsers,
   type AdminAbility,
 } from '../abilities';
+import { isClientApiAllowed } from './client-access';
 
 /** Read-only catalogue details used by operational/admin rescue flows. */
 function isCatalogueDetailPath(path: string): boolean {
@@ -18,6 +20,8 @@ function isCatalogueDetailPath(path: string): boolean {
 }
 
 export function abilityForApiPath(path: string): AdminAbility {
+  /** Lista explícita del portal de cliente; lo demás le queda denegado. */
+  if (isClientApiAllowed(path)) return accessClientApi;
   if (path.includes('/dropdown')) return accessDropdown;
   if (path.startsWith('/api/catalogue/') && isCatalogueDetailPath(path)) {
     return accessOperational;

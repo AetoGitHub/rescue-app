@@ -1,6 +1,7 @@
 import { defineQuery, useInfiniteQuery } from '@pinia/colada';
 import type { PendingChargeColumnMeta } from '~/constants/pending-charge';
 import {
+  PENDING_CHARGE_CLIENT_LIST_PATH,
   PENDING_CHARGE_LIST_PATH,
   PENDING_CHARGE_LIST_QUERY_KEY,
   type PendingChargeDropdownFilterId,
@@ -24,6 +25,17 @@ import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
  */
 export const usePendingChargeList = defineQuery(() => {
   const apiFetch = useApiFetch();
+  const reportScope = usePendingReportScope();
+  const { clientsQuery: portalClientsQuery } = useClientPortalClientFilter();
+  /** `?clients=` del filtro del portal; en admin no aplica. */
+  const clientsQuery = computed(() =>
+    reportScope.value === 'client' ? portalClientsQuery.value : undefined,
+  );
+  const listPath = computed(() =>
+    reportScope.value === 'client'
+      ? PENDING_CHARGE_CLIENT_LIST_PATH
+      : PENDING_CHARGE_LIST_PATH,
+  );
   const selectedCompanies = useState<PendingChargeFilterSelection[]>(
     'pending-charge-companies',
     () => [],
@@ -65,6 +77,7 @@ export const usePendingChargeList = defineQuery(() => {
     if (companyQuery.value != null) query.company = companyQuery.value;
     if (clientQuery.value != null) query.client = clientQuery.value;
     if (statusQuery.value != null) query.status = statusQuery.value;
+    if (clientsQuery.value != null) query.clients = clientsQuery.value;
     return query;
   });
 
@@ -83,15 +96,17 @@ export const usePendingChargeList = defineQuery(() => {
   >({
     key: () => [
       PENDING_CHARGE_LIST_QUERY_KEY,
+      reportScope.value,
       companyQuery.value ?? '',
       clientQuery.value ?? '',
       statusQuery.value ?? '',
       ordering.value,
+      clientsQuery.value ?? '',
     ],
     initialPageParam: null,
     query: ({ pageParam }) =>
       apiFetch<PaginatedResponse<PendingChargeApiRow>>(
-        PENDING_CHARGE_LIST_PATH,
+        listPath.value,
         {
           query: buildPaginatedQuery(baseQuery.value, pageParam),
         },

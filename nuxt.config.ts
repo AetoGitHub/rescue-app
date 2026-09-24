@@ -39,6 +39,7 @@ export default defineNuxtConfig({
   // Login, password-reset, and guest token pages stay universal-rendered.
   routeRules: {
     '/admin/**': { ssr: false },
+    '/portal-cliente/**': { ssr: false },
   },
 
   spaLoadingTemplate: true,

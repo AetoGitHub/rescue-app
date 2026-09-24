@@ -8,7 +8,7 @@ import {
 } from '~/constants/tabs-layout';
 import { adminListPageTitleClass } from '~/constants/admin-list-layout';
 
-usePendingReportScope().value = 'admin';
+usePendingReportScope().value = 'client';
 
 useHead({
   title: 'Por Facturar',
@@ -97,6 +97,7 @@ const headerContext = computed(() => {
           </div>
 
           <div class="flex flex-wrap items-end gap-6 sm:justify-end">
+            <ClientPortalClientFilter class="shrink-0" />
             <PendingInvoiceDateRangeFilter class="shrink-0" />
             <PendingInvoiceCompanyFilter class="shrink-0" />
             <UTooltip

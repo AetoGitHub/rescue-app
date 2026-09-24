@@ -1,13 +1,15 @@
 import { defineQuery, useInfiniteQuery } from '@pinia/colada';
-import type { PendingInvoiceColumnMeta } from '~/constants/pending-invoice';
+import type { PendingInvoiceColumnMeta, PendingInvoiceTabValue } from '~/constants/pending-invoice';
 import {
   PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
+  PENDING_INVOICE_CLIENT_FORBIDDEN_ORDERING_FIELDS,
+  PENDING_INVOICE_CLIENT_LIST_PATH,
   PENDING_INVOICE_DEFAULT_ORDERING,
   PENDING_INVOICE_LIST_PATH,
+  type PendingInvoiceOrderingField,
   PENDING_INVOICE_LIST_QUERY_KEY,
   type PendingInvoiceDropdownFilterId,
 } from '~/constants/pending-invoice-api';
-import type { PendingInvoiceTabValue } from '~/constants/pending-invoice';
 import type {
   PendingInvoiceApiRow,
   PendingInvoiceFilterSelection,
@@ -34,6 +36,12 @@ import type { CalendarDateParts } from '~/utils/payment-list-query';
  */
 export const usePendingInvoiceList = defineQuery(() => {
   const apiFetch = useApiFetch();
+  const reportScope = usePendingReportScope();
+  const { clientsQuery: portalClientsQuery } = useClientPortalClientFilter();
+  /** `?clients=` del filtro del portal; en admin no aplica. */
+  const clientsQuery = computed(() =>
+    reportScope.value === 'client' ? portalClientsQuery.value : undefined,
+  );
   const selectedCompanies = useState<PendingInvoiceFilterSelection[]>(
     'pending-invoice-companies',
     () => [],
@@ -104,10 +112,25 @@ export const usePendingInvoiceList = defineQuery(() => {
     authorizer: selectedAuthorizers,
   };
 
+  const listPath = computed(() =>
+    reportScope.value === 'client'
+      ? PENDING_INVOICE_CLIENT_LIST_PATH
+      : PENDING_INVOICE_LIST_PATH,
+  );
+
+  /** El API de cliente rechaza `technical_cost`; se cae al orden por defecto. */
+  const effectiveOrdering = computed(() => {
+    if (reportScope.value !== 'client') return ordering.value;
+    const field = ordering.value.replace(/^-/, '') as PendingInvoiceOrderingField;
+    return PENDING_INVOICE_CLIENT_FORBIDDEN_ORDERING_FIELDS.includes(field)
+      ? PENDING_INVOICE_DEFAULT_ORDERING
+      : ordering.value;
+  });
+
   const baseQuery = computed(() => {
     const query: Record<string, PaginatedQueryValue> = {
       admin_status: PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
-      ordering: ordering.value,
+      ordering: effectiveOrdering.value,
     };
     if (companyQuery.value != null) query.company = companyQuery.value;
     if (clientQuery.value != null) query.client = clientQuery.value;
@@ -116,6 +139,7 @@ export const usePendingInvoiceList = defineQuery(() => {
     if (authorizerQuery.value != null) query.authorizer = authorizerQuery.value;
     if (startDateQuery.value != null) query.start_date = startDateQuery.value;
     if (endDateQuery.value != null) query.end_date = endDateQuery.value;
+    if (clientsQuery.value != null) query.clients = clientsQuery.value;
     return query;
   });
 
@@ -134,6 +158,7 @@ export const usePendingInvoiceList = defineQuery(() => {
   >({
     key: () => [
       PENDING_INVOICE_LIST_QUERY_KEY,
+      reportScope.value,
       companyQuery.value ?? '',
       clientQuery.value ?? '',
       operatorQuery.value ?? '',
@@ -141,12 +166,13 @@ export const usePendingInvoiceList = defineQuery(() => {
       authorizerQuery.value ?? '',
       startDateQuery.value ?? '',
       endDateQuery.value ?? '',
-      ordering.value,
+      effectiveOrdering.value,
+      clientsQuery.value ?? '',
     ],
     initialPageParam: null,
     query: ({ pageParam }) =>
       apiFetch<PaginatedResponse<PendingInvoiceApiRow>>(
-        PENDING_INVOICE_LIST_PATH,
+        listPath.value,
         {
           query: buildPaginatedQuery(baseQuery.value, pageParam),
         },
@@ -264,6 +290,7 @@ export const usePendingInvoiceList = defineQuery(() => {
     authorizerQuery,
     startDateQuery,
     endDateQuery,
+    clientsQuery,
     ordering,
     activeTab,
     scopedRows,

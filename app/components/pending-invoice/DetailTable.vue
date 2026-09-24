@@ -4,7 +4,7 @@ import type { AsyncStatus } from '@pinia/colada';
 import type { TableColumn } from '@nuxt/ui';
 import type { PendingInvoiceRow } from '~/interfaces/invoicing/pending-invoice';
 import {
-  PENDING_INVOICE_DETAIL_COLUMNS,
+  pendingInvoiceDetailColumns,
   pendingInvoiceExcelTableUi,
 } from '~/constants/pending-invoice';
 import type {
@@ -264,6 +264,8 @@ function headerFor(meta: PendingInvoiceColumnMeta) {
     });
 }
 
+const reportScope = usePendingReportScope();
+
 const columns = computed<TableColumn<PendingInvoiceRow>[]>(() => {
   // Re-render archive cells while a ZIP download is in flight.
   void props.downloadingEvidenceKey;
@@ -330,7 +332,7 @@ const columns = computed<TableColumn<PendingInvoiceRow>[]>(() => {
         [h(UIcon, { name: 'i-lucide-message-square', class: 'size-4' })],
       ),
   },
-  ...PENDING_INVOICE_DETAIL_COLUMNS.map(meta => {
+  ...pendingInvoiceDetailColumns(reportScope.value).map(meta => {
     const layout = COLUMN_LAYOUT[meta.id];
     const align = alignClass(layout);
 

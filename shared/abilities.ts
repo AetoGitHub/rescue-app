@@ -1,6 +1,6 @@
 import { defineAbility } from 'nuxt-authorization/utils';
 import type { AuthUser } from './types/user';
-import { isAdminRole, isStaffRole } from './utils/auth-roles';
+import { isAdminRole, isClientRole, isStaffRole } from './utils/auth-roles';
 
 function withAdminBypass(check: (user: AuthUser) => boolean) {
   return (user: AuthUser) => isAdminRole(user.role) || check(user);
@@ -42,8 +42,26 @@ export const accessPaymentReceipts = defineAbility(
   withAdminBypass((user: AuthUser) => isStaffRole(user.role)),
 );
 
-/** Any authenticated role may consume dropdown lookup endpoints. */
-export const accessDropdown = defineAbility((user: AuthUser) => Boolean(user));
+/**
+ * Dropdowns de catálogos para el staff. El cliente no los consume salvo los
+ * que estén en su lista explícita (`shared/utils/client-access.ts`).
+ */
+export const accessDropdown = defineAbility(
+  withAdminBypass((user: AuthUser) => isStaffRole(user.role)),
+);
+
+/** Páginas del portal de cliente (`/portal-cliente/*`). */
+export const accessClientPortal = defineAbility(
+  withAdminBypass((user: AuthUser) => isClientRole(user.role)),
+);
+
+/**
+ * Endpoints de la lista explícita del cliente. Son rutas administrativas, así
+ * que fuera del cliente solo el admin conserva el acceso que ya tenía.
+ */
+export const accessClientApi = defineAbility(
+  withAdminBypass((user: AuthUser) => isClientRole(user.role)),
+);
 
 export type AdminAbility =
   | typeof accessAdminApp
@@ -55,4 +73,6 @@ export type AdminAbility =
   | typeof accessConfig
   | typeof accessPayments
   | typeof accessPaymentReceipts
-  | typeof accessDropdown;
+  | typeof accessDropdown
+  | typeof accessClientPortal
+  | typeof accessClientApi;

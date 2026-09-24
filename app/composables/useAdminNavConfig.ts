@@ -3,6 +3,7 @@ import type { AdminAbility } from '#shared/abilities';
 import {
   accessAdministrative,
   accessCatalogs,
+  accessClientPortal,
   accessConfig,
   accessMyBalance,
   accessOperational,
@@ -145,6 +146,27 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         to: '/admin/configuracion/comisiones',
         icon: 'i-lucide-percent',
         ability: accessConfig,
+      },
+    ],
+  },
+];
+
+/** Sidebar del portal de cliente: solo lo que tiene permitido ver. */
+export const CLIENT_NAV_SECTIONS: AdminNavSection[] = [
+  {
+    label: 'Cobranza',
+    items: [
+      {
+        label: 'Por Facturar',
+        to: '/portal-cliente/por-facturar',
+        icon: 'i-lucide-file-clock',
+        ability: accessClientPortal,
+      },
+      {
+        label: 'Por cobrar',
+        to: '/portal-cliente/por-cobrar',
+        icon: 'i-lucide-hand-coins',
+        ability: accessClientPortal,
       },
     ],
   },

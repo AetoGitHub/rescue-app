@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   accessAdministrative,
   accessCatalogs,
+  accessClientApi,
   accessConfig,
   accessDropdown,
   accessMyBalance,
@@ -17,7 +18,7 @@ import {
   isAdminRole,
   isOperatorRole,
   isStaffRole,
-  isUnauthorizedRole,
+  isClientRole,
   normalizeAuthRole,
   normalizeAuthSessionUser,
 } from '../../shared/utils/auth-roles';
@@ -50,7 +51,7 @@ describe('auth-roles', () => {
     expect(isOperatorRole('admin')).toBe(false);
     expect(isStaffRole('operator')).toBe(true);
     expect(isStaffRole('seller')).toBe(true);
-    expect(isUnauthorizedRole('client')).toBe(true);
+    expect(isClientRole('client')).toBe(true);
     expect(isStaffRole('client')).toBe(false);
   });
 
@@ -90,7 +91,9 @@ describe('auth-roles', () => {
   it('returns role-based home paths', () => {
     expect(defaultHomeForRole('admin')).toBe('/admin/operational');
     expect(defaultHomeForRole('operator')).toBe('/admin/operational');
-    expect(defaultHomeForRole('client')).toBe('/unauthorized');
+    expect(defaultHomeForRole('client')).toBe('/portal-cliente/por-facturar');
+    expect(defaultHomeForRole('seller')).toBe('/admin/operational');
+    expect(defaultHomeForRole('unknown')).toBe('/unauthorized');
   });
 });
 
@@ -122,7 +125,7 @@ describe('abilityForApiPath', () => {
       accessAdministrative,
     );
     expect(abilityForApiPath('/api/dashboard/report/rescues/excel/')).toBe(
-      accessAdministrative,
+      accessClientApi,
     );
     expect(abilityForApiPath('/api/catalogue/client/list/')).toBe(accessCatalogs);
     expect(abilityForApiPath('/api/catalogue/client/contact/create/')).toBe(
@@ -170,6 +173,6 @@ describe('abilities', () => {
     expect(await canAccess(accessDropdown, 'admin')).toBe(true);
     expect(await canAccess(accessDropdown, 'operator')).toBe(true);
     expect(await canAccess(accessDropdown, 'seller')).toBe(true);
-    expect(await canAccess(accessDropdown, 'client')).toBe(true);
+    expect(await canAccess(accessDropdown, 'client')).toBe(false);
   });
 });

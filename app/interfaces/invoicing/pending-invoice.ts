@@ -34,7 +34,8 @@ export interface PendingInvoiceApiRow {
   sub_total: string | number;
   iva: string | number;
   total: string | number;
-  technical_cost: string | number;
+  /** Solo en `/api/dashboard/`; el API del portal de cliente no lo envía. */
+  technical_cost?: string | number;
   admin_status?: PendingInvoiceAdminStatus | string | null;
   purchase_order?: string | null;
   oc_pdf?: string | null;

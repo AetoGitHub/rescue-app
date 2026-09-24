@@ -1,6 +1,7 @@
 import { useQuery } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
 import {
+  PENDING_INVOICE_CLIENT_COMPANY_MATRIX_CLIENTS_PATH,
   PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_PATH,
   PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_QUERY_KEY,
 } from '~/constants/pending-invoice-api';
@@ -17,24 +18,31 @@ export function usePendingInvoiceCompanyMatrixClients(
   months: MaybeRefOrGetter<number>,
 ) {
   const apiFetch = useApiFetch();
-  const { startDateQuery, endDateQuery } = usePendingInvoiceList();
+  const { startDateQuery, endDateQuery, clientsQuery } = usePendingInvoiceList();
+  const reportScope = usePendingReportScope();
   const id = computed(() => toValue(companyId));
 
   const { data, asyncStatus, error, refresh } = useQuery({
     key: () => [
       PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_QUERY_KEY,
+      reportScope.value,
       String(id.value ?? ''),
       String(toValue(months)),
       startDateQuery.value ?? '',
       endDateQuery.value ?? '',
+      clientsQuery.value ?? '',
     ],
     enabled: () => id.value != null,
     query: ({ signal }) => {
       const query: Record<string, string> = { months: String(toValue(months)) };
       if (startDateQuery.value != null) query.start_date = startDateQuery.value;
       if (endDateQuery.value != null) query.end_date = endDateQuery.value;
+      if (clientsQuery.value != null) query.clients = clientsQuery.value;
+      const matrixClientsPath = reportScope.value === 'client'
+        ? PENDING_INVOICE_CLIENT_COMPANY_MATRIX_CLIENTS_PATH
+        : PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_PATH;
       return apiFetch<PendingInvoiceCompanyMatrixClientsApiResponse>(
-        PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_PATH(id.value as number),
+        matrixClientsPath(id.value as number),
         { query, signal },
       );
     },

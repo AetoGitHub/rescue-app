@@ -1,3 +1,4 @@
+import { accessAdminApp } from '#shared/abilities';
 import { joinURL, withQuery } from 'ufo';
 import { REQUEST_ID_HEADER } from '#shared/constants/session';
 import { requireProxySession } from '../../utils/django-proxy';
@@ -31,6 +32,7 @@ function quotePdfErrorMessage(body: unknown): string {
 
 export default defineEventHandler(async (event) => {
   const { token, requestId } = await requireProxySession(event);
+  await authorize(event, accessAdminApp);
 
   const rescueId = parseQuotePdfRescueId(getRouterParam(event, 'id'));
   if (rescueId == null) {

@@ -157,6 +157,20 @@ export const PENDING_INVOICE_DETAIL_COLUMNS: PendingInvoiceColumnMeta[] = [
   { id: 'evidencia_pagos', label: 'Evid. pagos', kind: 'flag' },
 ];
 
+/** Columnas que el API del portal de cliente no devuelve. */
+const PENDING_INVOICE_CLIENT_HIDDEN_COLUMNS: readonly PendingInvoiceColumnId[] = [
+  'costo_tecnico',
+];
+
+export function pendingInvoiceDetailColumns(
+  scope: 'admin' | 'client',
+): PendingInvoiceColumnMeta[] {
+  if (scope === 'admin') return PENDING_INVOICE_DETAIL_COLUMNS;
+  return PENDING_INVOICE_DETAIL_COLUMNS.filter(
+    column => !PENDING_INVOICE_CLIENT_HIDDEN_COLUMNS.includes(column.id),
+  );
+}
+
 /**
  * Spreadsheet look shared by the summary tables: teal header band plus visible
  * gridlines between cells.

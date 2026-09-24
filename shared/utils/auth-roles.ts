@@ -1,4 +1,5 @@
 import type { AuthUserRole, AuthUser  } from '../types/user';
+import { CLIENT_HOME } from './client-access';
 
 
 const AUTH_ROLE_ALIASES: Record<string, AuthUserRole> = {
@@ -35,13 +36,14 @@ export function isStaffRole(role: string | null | undefined): boolean {
     || normalized === 'seller';
 }
 
-export function isUnauthorizedRole(role: string | null | undefined): boolean {
+export function isClientRole(role: string | null | undefined): boolean {
   return normalizeAuthRole(role) === 'client';
 }
 
 export function defaultHomeForRole(role: string | null | undefined): string {
-  if (isUnauthorizedRole(role)) return '/unauthorized';
-  return '/admin/operational';
+  if (isClientRole(role)) return CLIENT_HOME;
+  if (isStaffRole(role)) return '/admin/operational';
+  return '/unauthorized';
 }
 
 export function parseAuthUserRole(role: string | null | undefined): AuthUserRole | null {

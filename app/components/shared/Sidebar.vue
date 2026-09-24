@@ -1,5 +1,15 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
+import type { AdminNavSection } from '~/composables/useAdminNavConfig';
+
+const props = withDefaults(
+  defineProps<{
+    sections?: AdminNavSection[];
+  }>(),
+  {
+    sections: () => ADMIN_NAV_SECTIONS,
+  },
+);
 
 const items = ref<NavigationMenuItem[][]>([]);
 
@@ -8,7 +18,7 @@ const { user, clear: clearUserSession } = useUserSession();
 async function rebuildNavItems() {
   const sections: NavigationMenuItem[][] = [];
 
-  for (const section of ADMIN_NAV_SECTIONS) {
+  for (const section of props.sections) {
     const visibleLinks: NavigationMenuItem[] = [];
 
     for (const item of section.items) {

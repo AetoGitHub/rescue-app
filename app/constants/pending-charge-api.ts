@@ -1,5 +1,8 @@
 export const PENDING_CHARGE_LIST_PATH = '/api/dashboard/pending_charge/';
 
+/** Equivalente del portal de cliente (misma respuesta). */
+export const PENDING_CHARGE_CLIENT_LIST_PATH = '/api/client/pending_charge/';
+
 export const PENDING_CHARGE_SUMMARY_PATH =
   '/api/dashboard/pending_charge/summary/';
 

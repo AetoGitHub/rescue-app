@@ -1,3 +1,4 @@
+import { accessAdminApp } from '#shared/abilities';
 import type { MapsLinkToCoordsResponse } from '~/interfaces/maps/geocoding';
 import { forwardFetchError } from '../../utils/forward-fetch-error';
 import {
@@ -7,6 +8,7 @@ import {
 
 export default defineEventHandler(async (event) => {
   await requireUserSession(event);
+  await authorize(event, accessAdminApp);
 
   const body = await readBody(event);
   const mapsUrl = parseMapsUrlBody(body?.maps_url);

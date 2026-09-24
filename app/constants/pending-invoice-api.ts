@@ -14,6 +14,19 @@ export const PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_PATH = (
   companyId: number,
 ) => `/api/dashboard/company_matrix/${companyId}/clients/`;
 
+/** Equivalentes del portal de cliente: misma respuesta, sin `technical_cost`. */
+export const PENDING_INVOICE_CLIENT_LIST_PATH = '/api/client/pending_invoice/';
+
+export const PENDING_INVOICE_CLIENT_BY_RESPONSIBLE_PATH =
+  '/api/client/by_responsible/';
+
+export const PENDING_INVOICE_CLIENT_COMPANY_MATRIX_PATH =
+  '/api/client/company_matrix/';
+
+export const PENDING_INVOICE_CLIENT_COMPANY_MATRIX_CLIENTS_PATH = (
+  companyId: number,
+) => `/api/client/company_matrix/${companyId}/clients/`;
+
 /** Backend default when `admin_status` is omitted; sent explicitly for clarity. */
 export const PENDING_INVOICE_DEFAULT_ADMIN_STATUS =
   'unattended,in_remittance' as const;
@@ -82,5 +95,10 @@ export const PENDING_INVOICE_ORDERING_FIELDS = [
 
 export type PendingInvoiceOrderingField =
   (typeof PENDING_INVOICE_ORDERING_FIELDS)[number];
+
+/** `/api/client/pending_invoice/` rechaza ordenar por estos campos. */
+export const PENDING_INVOICE_CLIENT_FORBIDDEN_ORDERING_FIELDS: readonly PendingInvoiceOrderingField[] = [
+  'technical_cost',
+];
 
 export const PENDING_INVOICE_DEFAULT_ORDERING = 'date' as const;

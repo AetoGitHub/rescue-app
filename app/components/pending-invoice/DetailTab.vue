@@ -4,7 +4,7 @@ import type { PendingInvoiceRow } from '~/interfaces/invoicing/pending-invoice';
 import {
   RESCUE_EVIDENCE_ZIP_WEBHOOK_DEFAULT,
 } from '~/constants/rescue-evidence-api';
-import { PENDING_INVOICE_DETAIL_COLUMNS } from '~/constants/pending-invoice';
+import { pendingInvoiceDetailColumns } from '~/constants/pending-invoice';
 import type { RescueAdminDocBody } from '~/schemas/rescue-admin-doc';
 import {
   filterPendingInvoiceRows,
@@ -38,6 +38,7 @@ const {
   isError: isSummaryError,
 } = usePendingInvoiceSummary();
 const controller = usePendingInvoiceColumnFilters();
+const reportScope = usePendingReportScope();
 const apiFetch = useApiFetch();
 const toast = useToast();
 const runtimeConfig = useRuntimeConfig();
@@ -66,7 +67,9 @@ const filteredRows = computed(() =>
 
 const rows = computed(() => {
   const columnId = controller.sortColumn.value;
-  const meta = PENDING_INVOICE_DETAIL_COLUMNS.find(column => column.id === columnId);
+  const meta = pendingInvoiceDetailColumns(reportScope.value).find(
+    column => column.id === columnId,
+  );
   if (meta?.ordering) return filteredRows.value;
   return sortPendingInvoiceRows(
     filteredRows.value,
