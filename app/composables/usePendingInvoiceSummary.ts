@@ -1,5 +1,6 @@
 import { useQuery } from '@pinia/colada';
 import {
+  PENDING_INVOICE_CLIENT_SUMMARY_PATH,
   PENDING_INVOICE_DEFAULT_ADMIN_STATUS,
   PENDING_INVOICE_SUMMARY_PATH,
   PENDING_INVOICE_SUMMARY_QUERY_KEY,
@@ -12,6 +13,8 @@ import type { PaginatedQueryValue } from '~/utils/catalog-pagination';
  * `GET /api/dashboard/pending_invoice/summary/`.
  *
  * Reuses the same dropdown and date filters as `usePendingInvoiceList`.
+ * En el portal de cliente usa `/api/client/pending_invoice/summary/` y manda
+ * el mismo `?clients=` que el listado.
  */
 export function usePendingInvoiceSummary() {
   const apiFetch = useApiFetch();
@@ -23,7 +26,15 @@ export function usePendingInvoiceSummary() {
     authorizerQuery,
     startDateQuery,
     endDateQuery,
+    clientsQuery,
   } = usePendingInvoiceList();
+  const reportScope = usePendingReportScope();
+
+  const summaryPath = computed(() =>
+    reportScope.value === 'client'
+      ? PENDING_INVOICE_CLIENT_SUMMARY_PATH
+      : PENDING_INVOICE_SUMMARY_PATH,
+  );
 
   const baseQuery = computed(() => {
     const query: Record<string, PaginatedQueryValue> = {
@@ -36,12 +47,14 @@ export function usePendingInvoiceSummary() {
     if (authorizerQuery.value != null) query.authorizer = authorizerQuery.value;
     if (startDateQuery.value != null) query.start_date = startDateQuery.value;
     if (endDateQuery.value != null) query.end_date = endDateQuery.value;
+    if (clientsQuery.value != null) query.clients = clientsQuery.value;
     return query;
   });
 
   const { data, asyncStatus, error, refresh } = useQuery({
     key: () => [
       PENDING_INVOICE_SUMMARY_QUERY_KEY,
+      reportScope.value,
       companyQuery.value ?? '',
       clientQuery.value ?? '',
       operatorQuery.value ?? '',
@@ -49,9 +62,10 @@ export function usePendingInvoiceSummary() {
       authorizerQuery.value ?? '',
       startDateQuery.value ?? '',
       endDateQuery.value ?? '',
+      clientsQuery.value ?? '',
     ],
     query: ({ signal }) =>
-      apiFetch<unknown>(PENDING_INVOICE_SUMMARY_PATH, {
+      apiFetch<unknown>(summaryPath.value, {
         query: baseQuery.value,
         signal,
       }),

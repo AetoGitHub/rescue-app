@@ -192,6 +192,7 @@ export const usePendingChargeList = defineQuery(() => {
     companyQuery,
     clientQuery,
     statusQuery,
+    clientsQuery,
     ordering,
     isInitialLoading,
     isLoadingMore,

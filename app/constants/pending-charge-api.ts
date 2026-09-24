@@ -3,6 +3,10 @@ export const PENDING_CHARGE_LIST_PATH = '/api/dashboard/pending_charge/';
 /** Equivalente del portal de cliente (misma respuesta). */
 export const PENDING_CHARGE_CLIENT_LIST_PATH = '/api/client/pending_charge/';
 
+/** Totales del portal de cliente: mismos filtros que su listado (`total`, `count`). */
+export const PENDING_CHARGE_CLIENT_SUMMARY_PATH =
+  '/api/client/pending_charge/summary/';
+
 export const PENDING_CHARGE_SUMMARY_PATH =
   '/api/dashboard/pending_charge/summary/';
 

@@ -20,6 +20,10 @@ export const PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_PATH = (
  */
 export const PENDING_INVOICE_CLIENT_LIST_PATH = '/api/client/pending_invoice/';
 
+/** Totales del portal de cliente: mismos filtros que su listado, sin `net_profit`. */
+export const PENDING_INVOICE_CLIENT_SUMMARY_PATH =
+  '/api/client/pending_invoice/summary/';
+
 /** Backend default when `admin_status` is omitted; sent explicitly for clarity. */
 export const PENDING_INVOICE_DEFAULT_ADMIN_STATUS =
   'unattended,in_remittance' as const;
