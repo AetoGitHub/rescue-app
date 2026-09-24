@@ -36,15 +36,17 @@ const hasPendingChanges = computed(
 );
 const hasAppliedFilter = computed(() => appliedClientIds.value.length > 0);
 
-const triggerLabel = computed(() => {
-  const count = draftIds.value.length;
-  if (count === 0) return 'Selecciona clientes';
-  if (count === 1) {
-    const option = options.value.find(item => item.id === draftIds.value[0]);
-    return option?.name ?? '1 cliente';
-  }
-  return `${count} clientes`;
-});
+const triggerLabel = computed(() =>
+  draftIds.value.length === 0 ? 'Selecciona clientes' : 'Agregar o quitar',
+);
+
+function clientLabel(id: number): string {
+  return options.value.find(item => item.id === id)?.name ?? `Cliente ${id}`;
+}
+
+function removeClient(id: number) {
+  draftIds.value = draftIds.value.filter(item => item !== id);
+}
 
 function onApply() {
   apply(draftIds.value);
@@ -101,6 +103,31 @@ function onClear() {
         label="Borrar filtro"
         @click="onClear"
       />
+    </div>
+
+    <div
+      v-if="draftIds.length > 0"
+      class="flex max-h-24 max-w-xl flex-wrap gap-1.5 overflow-y-auto"
+    >
+      <UBadge
+        v-for="id in draftIds"
+        :key="id"
+        color="neutral"
+        variant="subtle"
+        class="gap-1"
+      >
+        <span class="max-w-56 truncate">{{ clientLabel(id) }}</span>
+        <UButton
+          type="button"
+          size="xs"
+          color="neutral"
+          variant="link"
+          icon="i-lucide-x"
+          class="-me-1 p-0"
+          :aria-label="`Quitar ${clientLabel(id)}`"
+          @click="removeClient(id)"
+        />
+      </UBadge>
     </div>
 
     <p
