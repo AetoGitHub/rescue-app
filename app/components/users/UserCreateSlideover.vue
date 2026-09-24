@@ -256,7 +256,7 @@ async function generateAndCopyPassword() {
         ref="formRef"
         :schema="formSchema"
         :state="state"
-        :class="['space-y-6', adminListSlideoverScrollClass]"
+        :class="['space-y-6', adminListSlideoverScrollClass, 'pe-3!']"
         @submit="onSubmit"
         @error="onFormError"
       >
@@ -371,7 +371,7 @@ async function generateAndCopyPassword() {
             </div>
             <UButton
               type="button"
-              color="neutral"
+              color="primary"
               variant="outline"
               icon="i-lucide-key-round"
               label="Cambiar"
@@ -402,7 +402,7 @@ async function generateAndCopyPassword() {
           </UFormField>
         </section>
 
-        <section class="border-t border-default pt-6">
+        <section v-if="!isClientRole" class="border-t border-default pt-6">
           <UFormField
             label="Comisión"
             name="commission"
