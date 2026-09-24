@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import { refDebounced } from '@vueuse/core';
-import { PENDING_CHARGE_DETAIL_COLUMNS } from '~/constants/pending-charge';
-
 const {
-  rows: scopedRows,
   isInitialLoading,
   isLoadingMore,
   isError,
@@ -12,65 +8,17 @@ const {
   hasNextPage,
   loadNextPage,
   refresh,
-  selectedClients,
-  selectedStatuses,
-  clearDetailFilters,
-} = usePendingChargeList();
-const {
   summary,
-  isLoading: isSummaryLoading,
-  isError: isSummaryError,
-} = usePendingChargeSummary();
-const controller = usePendingChargeColumnFilters();
-
-const search = ref('');
-const debouncedSearch = refDebounced(search, 250);
-
-const searchedRows = computed(() =>
-  filterPendingChargeRows(scopedRows.value, {
-    search: debouncedSearch.value,
-  }),
-);
-
-const filteredRows = computed(() =>
-  filterPendingChargeRows(searchedRows.value, {
-    columnFilters: controller.columnFilters.value,
-    statuses: selectedStatuses.value,
-  }),
-);
-
-const rows = computed(() => {
-  const columnId = controller.sortColumn.value;
-  const meta = PENDING_CHARGE_DETAIL_COLUMNS.find(column => column.id === columnId);
-  if (meta?.ordering) return filteredRows.value;
-  return sortPendingChargeRows(
-    filteredRows.value,
-    columnId,
-    controller.sortDescending.value,
-  );
-});
-
-const dropdownFilterCount = computed(
-  () =>
-    [selectedClients.value, selectedStatuses.value].filter(
-      selection => selection.length > 0,
-    ).length,
-);
-
-const activeFilterCount = computed(
-  () => controller.activeFilterCount.value + dropdownFilterCount.value,
-);
-
-const filtering = computed(
-  () =>
-    debouncedSearch.value.trim().length > 0
-    || activeFilterCount.value > 0,
-);
-
-function onClearFilters() {
-  controller.clearAll();
-  clearDetailFilters();
-}
+  isSummaryLoading,
+  isSummaryError,
+  controller,
+  search,
+  searchedRows,
+  rows,
+  activeFilterCount,
+  filtering,
+  onClearFilters,
+} = usePendingChargeDetailView();
 </script>
 
 <template>

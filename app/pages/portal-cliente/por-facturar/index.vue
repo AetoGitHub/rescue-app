@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PENDING_INVOICE_DEFAULT_ADMIN_STATUS } from '~/constants/pending-invoice-api';
 import type { CalendarDateParts } from '~/utils/payment-list-query';
-import { adminListPageTitleClass } from '~/constants/admin-list-layout';
+import type { ClientPortalStat } from '~/components/client-portal/SummaryStats.vue';
 
 usePendingReportScope().value = 'client';
 
@@ -56,6 +56,43 @@ const rangeLabel = computed(() => {
   const to = endDate.value != null ? formatRangeDate(endDate.value) : '…';
   return `${from} – ${to}`;
 });
+
+const stats = computed<ClientPortalStat[]>(() => {
+  const { count, sub_total: subTotal, total } = summary.value;
+  const iva = Math.max(total - subTotal, 0);
+  const countLabel = count.toLocaleString('es-MX');
+
+  return [
+    {
+      key: 'count',
+      label: 'Eventos',
+      value: countLabel,
+      icon: 'i-lucide-truck',
+    },
+    {
+      key: 'subtotal',
+      label: 'Subtotal',
+      hint: 'sin IVA',
+      value: formatPendingInvoiceMoney(subTotal),
+      compactValue: formatPendingInvoiceMoneyCompact(subTotal),
+      icon: 'i-lucide-receipt-text',
+    },
+    {
+      key: 'iva',
+      label: 'IVA',
+      value: formatPendingInvoiceMoney(iva),
+      compactValue: formatPendingInvoiceMoneyCompact(iva),
+      icon: 'i-lucide-percent',
+    },
+    {
+      key: 'total',
+      label: 'Total por facturar',
+      value: formatPendingInvoiceMoney(total),
+      icon: 'i-lucide-wallet',
+      accent: true,
+    },
+  ];
+});
 </script>
 
 <template>
@@ -70,55 +107,56 @@ const rangeLabel = computed(() => {
 
     <template #body>
       <div class="flex flex-col gap-4 p-4 sm:gap-5 sm:p-6 lg:min-h-0 lg:flex-1">
-        <header class="flex items-start justify-between gap-3">
-          <div class="flex min-w-0 flex-col gap-1">
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-primary">
-              Módulo Cobranza
-            </p>
-            <h1 :class="adminListPageTitleClass">Por Facturar</h1>
-            <div class="flex flex-col gap-0.5 text-sm text-muted sm:flex-row sm:items-center sm:gap-1.5">
-              <span class="inline-flex items-center gap-1.5 text-default">
-                <UIcon
-                  name="i-lucide-calendar-range"
-                  class="size-4 shrink-0 text-muted"
-                />
-                {{ rangeLabel }}
-              </span>
-              <span class="hidden text-dimmed sm:inline">·</span>
-              <span>En remisión y sin atender</span>
-            </div>
-          </div>
+        <ClientPortalReportHeader title="Por Facturar">
+          <template #meta>
+            <span class="inline-flex items-center gap-1.5 text-default">
+              <UIcon
+                name="i-lucide-calendar-range"
+                class="size-4 shrink-0 text-muted"
+              />
+              {{ rangeLabel }}
+            </span>
+            <span class="hidden text-dimmed sm:inline">·</span>
+            <span>En remisión y sin atender</span>
+          </template>
 
-          <UTooltip
-            :disabled="canDownloadExcel"
-            :text="missingDateMessages.join(' y ')"
+          <!-- Sin summary no hay totales confiables: mejor no mostrar ceros. -->
+          <template
+            v-if="!isSummaryError"
+            #stats
           >
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-file-spreadsheet"
-              class="shrink-0 bg-default"
-              :loading="isDownloading"
-              :disabled="isDownloading || !canDownloadExcel"
-              aria-label="Descargar Excel"
-              @click="() => void downloadExcel()"
-            >
-              <span class="hidden sm:inline">Descargar Excel</span>
-            </UButton>
-          </UTooltip>
-        </header>
-
-        <!-- Sin summary no hay totales confiables: mejor no mostrar ceros. -->
-        <ClientPortalPendingInvoiceStats
-          v-if="!isSummaryError"
-          :summary="summary"
-          :is-loading="isSummaryLoading"
-        />
+            <ClientPortalSummaryStats
+              :stats="stats"
+              :is-loading="isSummaryLoading"
+            />
+          </template>
+        </ClientPortalReportHeader>
 
         <ClientPortalPendingInvoiceDetail>
           <template #filters>
             <ClientPortalClientFilter class="min-w-0" />
             <PendingInvoiceDateRangeFilter />
+          </template>
+
+          <template #actions>
+            <UTooltip
+              :disabled="canDownloadExcel"
+              :text="missingDateMessages.join(' y ')"
+            >
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-file-spreadsheet"
+                class="bg-default"
+                :loading="isDownloading"
+                :disabled="isDownloading || !canDownloadExcel"
+                aria-label="Descargar Excel"
+                @click="() => void downloadExcel()"
+              >
+                <span class="hidden sm:inline">Excel</span>
+              </UButton>
+            </UTooltip>
           </template>
         </ClientPortalPendingInvoiceDetail>
       </div>

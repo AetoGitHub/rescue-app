@@ -240,11 +240,14 @@ function cellFor(columnId: PendingInvoiceColumnId) {
   };
 }
 
+/**
+ * Los dropdowns de columna viven en `/api/dashboard/...` (403 para cliente),
+ * así que aquí se filtra con los valores de las filas cargadas.
+ */
 function headerFor(meta: PendingInvoiceColumnMeta) {
   const layout = COLUMN_LAYOUT[meta.id];
   const filterable =
-    meta.dropdown != null
-    || (meta.kind !== 'money' && meta.id !== 'oc_pdf' && meta.id !== 'purchase_order');
+    meta.kind !== 'money' && meta.id !== 'oc_pdf' && meta.id !== 'purchase_order';
 
   return () =>
     h(ColumnHeaderFilter, {
@@ -253,7 +256,6 @@ function headerFor(meta: PendingInvoiceColumnMeta) {
       tone: 'plain',
       align: layout?.align === 'end' ? 'end' : 'start',
       filterable,
-      dropdown: meta.dropdown,
       options: pendingInvoiceColumnOptions(props.optionRows, meta.id),
       selected: props.controller.selectionFor(meta.id),
       sortActive: props.controller.sortColumn.value === meta.id,

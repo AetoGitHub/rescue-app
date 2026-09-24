@@ -26,12 +26,15 @@ const props = withDefaults(
     align?: 'start' | 'end';
     dropdown?: PendingChargeDropdownFilterId;
     statusFilter?: boolean;
+    /** `sheet`: banda verde tipo Excel; `plain`: encabezado neutro. */
+    tone?: 'sheet' | 'plain';
   }>(),
   {
     filterable: true,
     align: 'start',
     dropdown: undefined,
     statusFilter: false,
+    tone: 'sheet',
   },
 );
 
@@ -122,8 +125,12 @@ watch(open, isOpen => {
   >
     <button
       type="button"
-      class="group flex w-full items-center gap-1.5 text-left text-sheet-header-foreground transition-opacity hover:opacity-80"
-      :class="align === 'end' ? 'justify-end' : undefined"
+      class="group flex w-full items-center gap-1.5 text-left transition-opacity hover:opacity-80"
+      :class="[
+        align === 'end' ? 'justify-end' : undefined,
+        tone === 'sheet' ? 'text-sheet-header-foreground' : 'text-muted hover:text-highlighted',
+        tone === 'plain' && (sortActive || isFiltered) ? 'text-highlighted' : undefined,
+      ]"
     >
       <span class="truncate">{{ label }}</span>
       <span
@@ -146,7 +153,8 @@ watch(open, isOpen => {
           />
           <span
             v-if="isFiltered"
-            class="absolute -end-1 -top-0.5 size-1.5 rounded-full bg-primary ring-1 ring-sheet-header"
+            class="absolute -end-1 -top-0.5 size-1.5 rounded-full bg-primary ring-1"
+            :class="tone === 'sheet' ? 'ring-sheet-header' : 'ring-default'"
           />
         </span>
       </span>
