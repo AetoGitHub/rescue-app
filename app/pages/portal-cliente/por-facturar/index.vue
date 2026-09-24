@@ -37,25 +37,31 @@ async function downloadExcel() {
   await downloadRescuesExcelReport(query);
 }
 
-function formatHeaderFilterDate(parts: CalendarDateParts) {
-  const day = String(parts.day).padStart(2, '0');
-  const month = String(parts.month).padStart(2, '0');
-  return `${day}/${month}/${parts.year}`;
+const {
+  summary,
+  isLoading: isSummaryLoading,
+  isError: isSummaryError,
+} = usePendingInvoiceSummary();
+
+function formatRangeDate(parts: CalendarDateParts) {
+  return new Date(parts.year, parts.month - 1, parts.day).toLocaleDateString(
+    'es-MX',
+    { day: 'numeric', month: 'short', year: 'numeric' },
+  );
 }
 
-const headerContext = computed(() => {
-  const dateLabel =
-    startDate.value != null || endDate.value != null
-      ? ` · ${startDate.value != null ? formatHeaderFilterDate(startDate.value) : '…'} – ${endDate.value != null ? formatHeaderFilterDate(endDate.value) : '…'}`
-      : '';
-  return `${formatPendingInvoiceHeaderDate()} · Remisión + Sin atender${dateLabel}`;
+const rangeLabel = computed(() => {
+  if (startDate.value == null && endDate.value == null) return 'Todas las fechas';
+  const from = startDate.value != null ? formatRangeDate(startDate.value) : '…';
+  const to = endDate.value != null ? formatRangeDate(endDate.value) : '…';
+  return `${from} – ${to}`;
 });
 </script>
 
 <template>
   <UDashboardPanel
     :ui="{
-      body: 'flex flex-col min-h-0 flex-1 overflow-hidden bg-elevated dark:bg-default',
+      body: 'flex flex-col min-h-0 flex-1 overflow-y-auto bg-elevated lg:overflow-hidden dark:bg-default',
     }"
   >
     <template #header>
@@ -63,44 +69,58 @@ const headerContext = computed(() => {
     </template>
 
     <template #body>
-      <div class="flex min-h-0 flex-1 flex-col gap-5 p-4 sm:p-6">
-        <div
-          class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
-        >
-          <div class="flex flex-col gap-1">
-            <p
-              class="text-xs font-semibold uppercase tracking-wider text-muted"
-            >
+      <div class="flex flex-col gap-4 p-4 sm:gap-5 sm:p-6 lg:min-h-0 lg:flex-1">
+        <header class="flex items-start justify-between gap-3">
+          <div class="flex min-w-0 flex-col gap-1">
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-primary">
               Módulo Cobranza
             </p>
             <h1 :class="adminListPageTitleClass">Por Facturar</h1>
-            <p class="text-sm text-muted">
-              {{ headerContext }}
-            </p>
+            <div class="flex flex-col gap-0.5 text-sm text-muted sm:flex-row sm:items-center sm:gap-1.5">
+              <span class="inline-flex items-center gap-1.5 text-default">
+                <UIcon
+                  name="i-lucide-calendar-range"
+                  class="size-4 shrink-0 text-muted"
+                />
+                {{ rangeLabel }}
+              </span>
+              <span class="hidden text-dimmed sm:inline">·</span>
+              <span>En remisión y sin atender</span>
+            </div>
           </div>
 
-          <div class="flex flex-wrap items-end gap-6 sm:justify-end">
-            <ClientPortalClientFilter class="shrink-0" />
-            <PendingInvoiceDateRangeFilter class="shrink-0" />
-            <UTooltip
-              :disabled="canDownloadExcel"
-              :text="missingDateMessages.join(' y ')"
+          <UTooltip
+            :disabled="canDownloadExcel"
+            :text="missingDateMessages.join(' y ')"
+          >
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-file-spreadsheet"
+              class="shrink-0 bg-default"
+              :loading="isDownloading"
+              :disabled="isDownloading || !canDownloadExcel"
+              aria-label="Descargar Excel"
+              @click="() => void downloadExcel()"
             >
-              <UButton
-                color="neutral"
-                icon="i-lucide-download"
-                label="Descargar Excel"
-                variant="subtle"
-                class="shrink-0"
-                :loading="isDownloading"
-                :disabled="isDownloading || !canDownloadExcel"
-                @click="() => void downloadExcel()"
-              />
-            </UTooltip>
-          </div>
-        </div>
+              <span class="hidden sm:inline">Descargar Excel</span>
+            </UButton>
+          </UTooltip>
+        </header>
 
-        <PendingInvoiceDetailTab />
+        <!-- Sin summary no hay totales confiables: mejor no mostrar ceros. -->
+        <ClientPortalPendingInvoiceStats
+          v-if="!isSummaryError"
+          :summary="summary"
+          :is-loading="isSummaryLoading"
+        />
+
+        <ClientPortalPendingInvoiceDetail>
+          <template #filters>
+            <ClientPortalClientFilter class="min-w-0" />
+            <PendingInvoiceDateRangeFilter />
+          </template>
+        </ClientPortalPendingInvoiceDetail>
       </div>
     </template>
   </UDashboardPanel>

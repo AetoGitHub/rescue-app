@@ -24,7 +24,7 @@ watch(endDate, to => {
 
 <template>
   <div class="flex flex-wrap items-end gap-3">
-    <div class="flex min-w-44 flex-col gap-0.5">
+    <div class="flex min-w-0 flex-1 flex-col gap-0.5 sm:min-w-44 sm:flex-none">
       <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
         Desde
       </p>
@@ -34,7 +34,7 @@ watch(endDate, to => {
       />
     </div>
 
-    <div class="flex min-w-44 flex-col gap-0.5">
+    <div class="flex min-w-0 flex-1 flex-col gap-0.5 sm:min-w-44 sm:flex-none">
       <p class="text-[11px] font-medium uppercase tracking-wider text-muted">
         Hasta
       </p>

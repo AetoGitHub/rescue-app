@@ -36,9 +36,11 @@ const hasPendingChanges = computed(
 );
 const hasAppliedFilter = computed(() => appliedClientIds.value.length > 0);
 
-const triggerLabel = computed(() =>
-  draftIds.value.length === 0 ? 'Selecciona clientes' : 'Agregar o quitar',
-);
+const triggerLabel = computed(() => {
+  const count = draftIds.value.length;
+  if (count === 0) return 'Todos los clientes';
+  return `${count} cliente${count === 1 ? '' : 's'} seleccionado${count === 1 ? '' : 's'}`;
+});
 
 function clientLabel(id: number): string {
   return options.value.find(item => item.id === id)?.name ?? `Cliente ${id}`;
@@ -77,10 +79,13 @@ function onClear() {
         :disabled="isError"
         :search-input="{ placeholder: 'Buscar cliente o compañía…' }"
         icon="i-lucide-users"
-        class="w-64"
-        :ui="{ content: 'min-w-72' }"
+        class="w-full sm:w-64"
+        :ui="{ base: 'bg-default', content: 'min-w-72' }"
       >
-        <span class="truncate">{{ triggerLabel }}</span>
+        <span
+          class="truncate"
+          :class="draftIds.length === 0 ? 'text-muted' : 'text-highlighted'"
+        >{{ triggerLabel }}</span>
 
         <template #empty>
           <span class="text-sm text-muted">Sin clientes</span>
@@ -89,8 +94,9 @@ function onClear() {
 
       <UButton
         color="primary"
-        icon="i-lucide-filter"
-        label="Filtrar por cliente"
+        :variant="hasPendingChanges ? 'solid' : 'soft'"
+        icon="i-lucide-check"
+        label="Aplicar"
         :disabled="!hasPendingChanges"
         @click="onApply"
       />
@@ -100,21 +106,21 @@ function onClear() {
         color="neutral"
         variant="ghost"
         icon="i-lucide-x"
-        label="Borrar filtro"
+        label="Limpiar"
         @click="onClear"
       />
     </div>
 
     <div
       v-if="draftIds.length > 0"
-      class="flex max-h-24 max-w-xl flex-wrap gap-1.5 overflow-y-auto"
+      class="flex max-h-24 max-w-full flex-wrap gap-1.5 overflow-y-auto sm:max-w-xl"
     >
       <UBadge
         v-for="id in draftIds"
         :key="id"
-        color="neutral"
+        :color="appliedClientIds.includes(id) ? 'primary' : 'neutral'"
         variant="subtle"
-        class="gap-1"
+        class="gap-1 rounded-full ps-2.5"
       >
         <span class="max-w-56 truncate">{{ clientLabel(id) }}</span>
         <UButton
