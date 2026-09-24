@@ -76,7 +76,10 @@ export function usePendingInvoiceSummary() {
       ? mapDashboardBillingSummary(data.value)
       : EMPTY_DASHBOARD_BILLING_SUMMARY,
   );
-  const isLoading = computed(() => asyncStatus.value === 'loading');
+  // Solo la primera carga: en un refetch se conservan los totales anteriores.
+  const isLoading = computed(
+    () => asyncStatus.value === 'loading' && data.value == null,
+  );
   const isError = computed(() => error.value != null);
 
   return {

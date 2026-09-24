@@ -96,70 +96,74 @@ const stats = computed<ClientPortalStat[]>(() => {
 </script>
 
 <template>
-  <UDashboardPanel
-    :ui="{
-      body: 'flex flex-col min-h-0 flex-1 overflow-y-auto bg-elevated lg:overflow-hidden dark:bg-default',
-    }"
-  >
-    <template #header>
-      <SharedNavbar title="Por Facturar" />
-    </template>
+  <div class="flex min-h-0 min-w-0 flex-1">
+    <!-- Raíz única: UDashboardPanel es un fragmento y la transición del
+         portal necesita un elemento para animar. -->
+    <UDashboardPanel
+      :ui="{
+        body: 'flex flex-col min-h-0 flex-1 overflow-y-auto bg-elevated lg:overflow-hidden dark:bg-default',
+      }"
+    >
+      <template #header>
+        <SharedNavbar title="Por Facturar" />
+      </template>
 
-    <template #body>
-      <div class="flex flex-col gap-4 p-4 sm:gap-5 sm:p-6 lg:min-h-0 lg:flex-1">
-        <ClientPortalReportHeader title="Por Facturar">
-          <template #meta>
-            <span class="inline-flex items-center gap-1.5 text-default">
-              <UIcon
-                name="i-lucide-calendar-range"
-                class="size-4 shrink-0 text-muted"
-              />
-              {{ rangeLabel }}
-            </span>
-            <span class="hidden text-dimmed sm:inline">·</span>
-            <span>En remisión y sin atender</span>
-          </template>
+      <template #body>
+        <div class="flex flex-col gap-4 p-4 sm:gap-5 sm:p-6 lg:min-h-0 lg:flex-1">
+          <ClientPortalReportHeader title="Por Facturar">
+            <template #meta>
+              <span class="inline-flex items-center gap-1.5 text-default">
+                <UIcon
+                  name="i-lucide-calendar-range"
+                  class="size-4 shrink-0 text-muted"
+                />
+                {{ rangeLabel }}
+              </span>
+              <span class="hidden text-dimmed sm:inline">·</span>
+              <span>En remisión y sin atender</span>
+            </template>
 
-          <!-- Sin summary no hay totales confiables: mejor no mostrar ceros. -->
-          <template
-            v-if="!isSummaryError"
-            #stats
-          >
-            <ClientPortalSummaryStats
-              :stats="stats"
-              :is-loading="isSummaryLoading"
-            />
-          </template>
-        </ClientPortalReportHeader>
-
-        <ClientPortalPendingInvoiceDetail>
-          <template #filters>
-            <ClientPortalClientFilter class="min-w-0" />
-            <PendingInvoiceDateRangeFilter />
-          </template>
-
-          <template #actions>
-            <UTooltip
-              :disabled="canDownloadExcel"
-              :text="missingDateMessages.join(' y ')"
+            <!-- Sin summary no hay totales confiables: mejor no mostrar ceros. -->
+            <template
+              v-if="!isSummaryError"
+              #stats
             >
-              <UButton
-                color="neutral"
-                variant="outline"
-                size="sm"
-                icon="i-lucide-file-spreadsheet"
-                class="bg-default"
-                :loading="isDownloading"
-                :disabled="isDownloading || !canDownloadExcel"
-                aria-label="Descargar Excel"
-                @click="() => void downloadExcel()"
+              <ClientPortalSummaryStats
+                :stats="stats"
+                :is-loading="isSummaryLoading"
+              />
+            </template>
+          </ClientPortalReportHeader>
+
+          <ClientPortalPendingInvoiceDetail>
+            <template #filters>
+              <ClientPortalClientFilter class="min-w-0" />
+              <PendingInvoiceDateRangeFilter />
+            </template>
+
+            <template #actions>
+              <UTooltip
+                :disabled="canDownloadExcel"
+                :text="missingDateMessages.join(' y ')"
               >
-                <span class="hidden sm:inline">Excel</span>
-              </UButton>
-            </UTooltip>
-          </template>
-        </ClientPortalPendingInvoiceDetail>
-      </div>
-    </template>
-  </UDashboardPanel>
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  icon="i-lucide-file-spreadsheet"
+                  class="bg-default"
+                  :loading="isDownloading"
+                  :disabled="isDownloading || !canDownloadExcel"
+                  aria-label="Descargar Excel"
+                  @click="() => void downloadExcel()"
+                >
+                  <span class="hidden sm:inline">Excel</span>
+                </UButton>
+              </UTooltip>
+            </template>
+          </ClientPortalPendingInvoiceDetail>
+        </div>
+      </template>
+    </UDashboardPanel>
+  </div>
 </template>
