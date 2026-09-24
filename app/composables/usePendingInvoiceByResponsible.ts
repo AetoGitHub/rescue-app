@@ -1,7 +1,6 @@
 import { useInfiniteQuery } from '@pinia/colada';
 import {
   PENDING_INVOICE_BY_RESPONSIBLE_PATH,
-  PENDING_INVOICE_CLIENT_BY_RESPONSIBLE_PATH,
   PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY,
 } from '~/constants/pending-invoice-api';
 import type { PendingInvoiceByResponsibleApiRow } from '~/interfaces/invoicing/pending-invoice';
@@ -17,7 +16,6 @@ export function usePendingInvoiceByResponsible() {
   const apiFetch = useApiFetch();
   const { companyQuery, startDateQuery, endDateQuery, clientsQuery } =
     usePendingInvoiceList();
-  const reportScope = usePendingReportScope();
 
   const baseQuery = computed(() => {
     const query: Record<string, PaginatedQueryValue> = {};
@@ -42,7 +40,6 @@ export function usePendingInvoiceByResponsible() {
   >({
     key: () => [
       PENDING_INVOICE_BY_RESPONSIBLE_QUERY_KEY,
-      reportScope.value,
       serializeCompanyQuery(companyQuery.value),
       startDateQuery.value ?? '',
       endDateQuery.value ?? '',
@@ -51,9 +48,7 @@ export function usePendingInvoiceByResponsible() {
     initialPageParam: null,
     query: ({ pageParam }) =>
       apiFetch<PaginatedResponse<PendingInvoiceByResponsibleApiRow>>(
-        reportScope.value === 'client'
-          ? PENDING_INVOICE_CLIENT_BY_RESPONSIBLE_PATH
-          : PENDING_INVOICE_BY_RESPONSIBLE_PATH,
+        PENDING_INVOICE_BY_RESPONSIBLE_PATH,
         {
           query: buildPaginatedQuery(baseQuery.value, pageParam),
         },

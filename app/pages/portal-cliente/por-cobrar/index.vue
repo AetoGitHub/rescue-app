@@ -7,7 +7,6 @@ useHead({
   title: 'Por cobrar',
 });
 
-const { selectedCompanies } = usePendingChargeList();
 // const {
 //   summary,
 //   isLoading: isSummaryLoading,
@@ -23,14 +22,9 @@ const { selectedCompanies } = usePendingChargeList();
 //     : formatPendingInvoiceMoney(summary.value.total),
 // );
 
-const headerContext = computed(() => {
-  const companyCount = selectedCompanies.value.length;
-  const companyLabel =
-    companyCount > 0
-      ? ` · ${companyCount} compañía${companyCount === 1 ? '' : 's'}`
-      : '';
-  return `${formatPendingInvoiceHeaderDate()} · Facturado sin pagar${companyLabel}`;
-});
+const headerContext = computed(
+  () => `${formatPendingInvoiceHeaderDate()} · Facturado sin pagar`,
+);
 </script>
 
 <template>
@@ -94,7 +88,6 @@ const headerContext = computed(() => {
               </p>
             </div> -->
             <ClientPortalClientFilter class="shrink-0" />
-            <PendingChargeCompanyFilter class="shrink-0" />
           </div>
         </div>
 

@@ -14,18 +14,11 @@ export const PENDING_INVOICE_COMPANY_MATRIX_CLIENTS_PATH = (
   companyId: number,
 ) => `/api/dashboard/company_matrix/${companyId}/clients/`;
 
-/** Equivalentes del portal de cliente: misma respuesta, sin `technical_cost`. */
+/**
+ * Portal de cliente: solo expone el detalle (misma respuesta, sin
+ * `technical_cost`). Por Responsable y la Matriz son exclusivos de admin.
+ */
 export const PENDING_INVOICE_CLIENT_LIST_PATH = '/api/client/pending_invoice/';
-
-export const PENDING_INVOICE_CLIENT_BY_RESPONSIBLE_PATH =
-  '/api/client/by_responsible/';
-
-export const PENDING_INVOICE_CLIENT_COMPANY_MATRIX_PATH =
-  '/api/client/company_matrix/';
-
-export const PENDING_INVOICE_CLIENT_COMPANY_MATRIX_CLIENTS_PATH = (
-  companyId: number,
-) => `/api/client/company_matrix/${companyId}/clients/`;
 
 /** Backend default when `admin_status` is omitted; sent explicitly for clarity. */
 export const PENDING_INVOICE_DEFAULT_ADMIN_STATUS =

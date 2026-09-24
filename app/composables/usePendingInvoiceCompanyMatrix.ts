@@ -1,7 +1,6 @@
 import { useQuery } from '@pinia/colada';
 import type { MaybeRefOrGetter } from 'vue';
 import {
-  PENDING_INVOICE_CLIENT_COMPANY_MATRIX_PATH,
   PENDING_INVOICE_COMPANY_MATRIX_PATH,
   PENDING_INVOICE_COMPANY_MATRIX_QUERY_KEY,
 } from '~/constants/pending-invoice-api';
@@ -18,7 +17,6 @@ export function usePendingInvoiceCompanyMatrix(
   const apiFetch = useApiFetch();
   const { companyQuery, startDateQuery, endDateQuery, clientsQuery } =
     usePendingInvoiceList();
-  const reportScope = usePendingReportScope();
   const monthsValue = computed(() => toValue(months));
 
   const {
@@ -29,7 +27,6 @@ export function usePendingInvoiceCompanyMatrix(
   } = useQuery({
     key: () => [
       PENDING_INVOICE_COMPANY_MATRIX_QUERY_KEY,
-      reportScope.value,
       String(monthsValue.value),
       serializeCompanyQuery(companyQuery.value),
       startDateQuery.value ?? '',
@@ -45,9 +42,7 @@ export function usePendingInvoiceCompanyMatrix(
       if (endDateQuery.value != null) query.end_date = endDateQuery.value;
       if (clientsQuery.value != null) query.clients = clientsQuery.value;
       return apiFetch<PendingInvoiceCompanyMatrixApiRow[]>(
-        reportScope.value === 'client'
-          ? PENDING_INVOICE_CLIENT_COMPANY_MATRIX_PATH
-          : PENDING_INVOICE_COMPANY_MATRIX_PATH,
+        PENDING_INVOICE_COMPANY_MATRIX_PATH,
         { query },
       );
     },

@@ -1,11 +1,6 @@
 <script setup lang="ts">
-import { PENDING_INVOICE_TAB_ITEMS } from '~/constants/pending-invoice';
 import { PENDING_INVOICE_DEFAULT_ADMIN_STATUS } from '~/constants/pending-invoice-api';
 import type { CalendarDateParts } from '~/utils/payment-list-query';
-import {
-  adminLinkTabsFlexClass,
-  adminLinkTabsFlexUi,
-} from '~/constants/tabs-layout';
 import { adminListPageTitleClass } from '~/constants/admin-list-layout';
 
 usePendingReportScope().value = 'client';
@@ -14,12 +9,11 @@ useHead({
   title: 'Por Facturar',
 });
 
-const { activeTab, selectedCompanies, startDate, endDate } =
-  usePendingInvoiceList();
+const { startDate, endDate } = usePendingInvoiceList();
 
 // Mismo reporte Excel de rescates que /admin/reportes, pero descargado
-// directo (sin modal): esta pantalla ya trae su propio filtro de fecha y
-// compañía, no hace falta pedirlos otra vez. admin_status queda fijo en
+// directo (sin modal): esta pantalla ya trae su propio filtro de fecha, no
+// hace falta pedirlo otra vez. admin_status queda fijo en
 // "Sin atender" + "En remisión" -- el mismo alcance que ya muestra esta vista.
 const { downloadRescuesExcelReport, isDownloading } = useRescuesExcelReportDownload();
 
@@ -40,12 +34,6 @@ async function downloadExcel() {
     end_date: calendarDateToApiDate(endDate.value),
   };
 
-  // El reporte Excel solo soporta filtrar por una compañía a la vez; con 0 o
-  // varias seleccionadas, se manda sin filtro de compañía (todas).
-  if (selectedCompanies.value.length === 1) {
-    query.company = String(selectedCompanies.value[0]!.id);
-  }
-
   await downloadRescuesExcelReport(query);
 }
 
@@ -56,16 +44,11 @@ function formatHeaderFilterDate(parts: CalendarDateParts) {
 }
 
 const headerContext = computed(() => {
-  const companyCount = selectedCompanies.value.length;
-  const companyLabel =
-    companyCount > 0
-      ? ` · ${companyCount} compañía${companyCount === 1 ? '' : 's'}`
-      : '';
   const dateLabel =
     startDate.value != null || endDate.value != null
       ? ` · ${startDate.value != null ? formatHeaderFilterDate(startDate.value) : '…'} – ${endDate.value != null ? formatHeaderFilterDate(endDate.value) : '…'}`
       : '';
-  return `${formatPendingInvoiceHeaderDate()} · Remisión + Sin atender${dateLabel}${companyLabel}`;
+  return `${formatPendingInvoiceHeaderDate()} · Remisión + Sin atender${dateLabel}`;
 });
 </script>
 
@@ -99,7 +82,6 @@ const headerContext = computed(() => {
           <div class="flex flex-wrap items-end gap-6 sm:justify-end">
             <ClientPortalClientFilter class="shrink-0" />
             <PendingInvoiceDateRangeFilter class="shrink-0" />
-            <PendingInvoiceCompanyFilter class="shrink-0" />
             <UTooltip
               :disabled="canDownloadExcel"
               :text="missingDateMessages.join(' y ')"
@@ -118,24 +100,7 @@ const headerContext = computed(() => {
           </div>
         </div>
 
-        <UTabs
-          v-model="activeTab"
-          :items="[...PENDING_INVOICE_TAB_ITEMS]"
-          :class="adminLinkTabsFlexClass"
-          :ui="adminLinkTabsFlexUi"
-          :unmount-on-hide="false"
-          variant="link"
-        >
-          <template #detail>
-            <PendingInvoiceDetailTab />
-          </template>
-          <template #seller>
-            <PendingInvoiceBySellerTab />
-          </template>
-          <template #matrix>
-            <PendingInvoiceCompanyMatrixTab />
-          </template>
-        </UTabs>
+        <PendingInvoiceDetailTab />
       </div>
     </template>
   </UDashboardPanel>
