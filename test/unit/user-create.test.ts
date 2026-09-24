@@ -15,6 +15,7 @@ const baseCreate = {
   commission: '70.00',
   password: 'password1',
   is_active: true,
+  allowed_clients: [] as number[],
 };
 
 describe('userCreateToCreateBody', () => {
@@ -43,6 +44,7 @@ describe('userUpdateToUpdateBody', () => {
       phone: '8112345678',
       commission: '70.00',
       is_active: true,
+      allowed_clients: [],
     });
     expect(body.commission).toBe('0.7');
   });

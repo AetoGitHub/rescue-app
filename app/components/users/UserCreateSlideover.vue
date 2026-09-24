@@ -23,6 +23,7 @@ import {
   adminListSlideoverContentClass,
   adminListSlideoverScrollClass,
 } from '~/constants/admin-list-layout';
+import { parseAllowedClients } from '~/utils/allowed-clients';
 
 const toast = useToast();
 
@@ -47,14 +48,28 @@ function emptyState(): UserFormState {
     commission: '0.00',
     password: '',
     is_active: true,
+    allowed_clients: [],
   };
 }
 
 const state = reactive(emptyState());
+/** Nombres de los clientes ya asignados (detalle) para los chips del selector. */
+const knownAllowedClients = ref<{ id: number; name: string }[]>([]);
+const isClientRole = computed(() => state.role === 'client');
+
+watch(
+  () => state.role,
+  (role) => {
+    if (role !== 'client' && state.allowed_clients.length > 0) {
+      state.allowed_clients = [];
+    }
+  },
+);
 const commissionModel = usePercentStringNumberModel(toRef(state, 'commission'));
 
 function resetForm() {
   Object.assign(state, emptyState());
+  knownAllowedClients.value = [];
 }
 
 function prepareCreate() {
@@ -70,6 +85,7 @@ async function loadDetail(id: number) {
       `/api/auth/user/detail/${id}/`,
     );
     Object.assign(state, emptyState(), mapUserDetail(raw));
+    knownAllowedClients.value = parseAllowedClients(raw.allowed_clients);
   } catch (e) {
     console.error(e);
     toast.add({
@@ -348,6 +364,18 @@ async function requestPasswordResetSubmit() {
             value-key="value"
             class="w-full"
             variant="subtle"
+          />
+        </UFormField>
+        <UFormField
+          v-if="isClientRole"
+          label="Clientes asignados"
+          name="allowed_clients"
+          help="Seleccionar todo asigna los clientes existentes hoy. Los clientes que se creen después no se asignan automáticamente."
+        >
+          <UsersAllowedClientsPicker
+            v-model="state.allowed_clients"
+            :known-clients="knownAllowedClients"
+            :disabled="isSavingUser"
           />
         </UFormField>
         <UFormField

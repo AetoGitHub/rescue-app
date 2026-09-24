@@ -21,6 +21,8 @@ export interface UserCreateBody {
   phone: string;
   commission: string;
   password: string;
+  /** Solo para `role: 'client'`; lista completa de ids asignados. */
+  allowed_clients: number[];
 }
 
 export interface UserUpdateBody {
@@ -33,4 +35,6 @@ export interface UserUpdateBody {
   commission: string;
   is_active: boolean;
   password?: string;
+  /** Solo para `role: 'client'`; lista completa de ids asignados. */
+  allowed_clients: number[];
 }

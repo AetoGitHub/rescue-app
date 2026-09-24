@@ -37,6 +37,14 @@ const phoneField = z
   .transform((s) => normalizeMexicoPhone(s))
   .pipe(z.string());
 
+/** El API rechaza clientes asignados si el rol no es `client`. */
+function allowedClientsForRole(
+  role: UserFormOutputCreate['role'],
+  ids: number[],
+): number[] {
+  return role === 'client' ? ids : [];
+}
+
 const passwordCreateField = z
   .string()
   .transform((s) => s.trim())
@@ -55,6 +63,7 @@ export const userCreateSchema = z.object({
   commission: commissionField,
   password: passwordCreateField,
   is_active: z.boolean(),
+  allowed_clients: z.array(z.number()),
 });
 
 export const userUpdateSchema = z.object({
@@ -69,6 +78,7 @@ export const userUpdateSchema = z.object({
   phone: phoneField,
   commission: commissionField,
   is_active: z.boolean(),
+  allowed_clients: z.array(z.number()),
 });
 
 export type UserFormOutputCreate = z.output<typeof userCreateSchema>;
@@ -86,6 +96,7 @@ export function userCreateToCreateBody(
     phone: input.phone,
     commission: percentStringToApiFraction(input.commission),
     password: input.password,
+    allowed_clients: allowedClientsForRole(input.role, input.allowed_clients),
   };
 }
 
@@ -101,6 +112,7 @@ export function userUpdateToUpdateBody(
     phone: input.phone,
     commission: percentStringToApiFraction(input.commission),
     is_active: input.is_active,
+    allowed_clients: allowedClientsForRole(input.role, input.allowed_clients),
   };
   return body;
 }

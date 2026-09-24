@@ -4,6 +4,7 @@ import {
   apiFractionToPercentString,
   formatMexicoPhoneInput,
 } from '~/utils/catalog-form';
+import { parseAllowedClients } from '~/utils/allowed-clients';
 
 const USER_ROLE_VALUES = new Set<UserRole>(
   USER_ROLE_OPTIONS.map((o) => o.value),
@@ -26,6 +27,7 @@ export interface UserFormState {
   commission: string;
   password: string;
   is_active: boolean;
+  allowed_clients: number[];
 }
 
 export function mapUserDetail(raw: Record<string, unknown>): UserFormState {
@@ -44,6 +46,7 @@ export function mapUserDetail(raw: Record<string, unknown>): UserFormState {
     commission: apiFractionToPercentString(String(raw.commission ?? '0.00')),
     password: '',
     is_active: Boolean(raw.is_active ?? true),
+    allowed_clients: parseAllowedClients(raw.allowed_clients).map((row) => row.id),
   };
 }
 
