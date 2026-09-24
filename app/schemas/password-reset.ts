@@ -29,7 +29,8 @@ export const passwordResetConfirmSchema = z
 export const adminUserPasswordResetSchema = z
   .object({
     new_password: passwordField,
-    new_password2: passwordField,
+    // Solo se valida que coincida; el mínimo ya lo reporta new_password.
+    new_password2: z.string().transform((s) => s.trim()),
   })
   .refine((data) => data.new_password === data.new_password2, {
     message: 'Las contraseñas no coinciden',

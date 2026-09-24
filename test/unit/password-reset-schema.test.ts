@@ -60,6 +60,19 @@ describe('adminUserPasswordResetSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('reports the minimum length only on new_password', () => {
+    const result = adminUserPasswordResetSchema.safeParse({
+      new_password: '',
+      new_password2: '',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((i) => i.path.join('.'))).toEqual([
+        'new_password',
+      ]);
+    }
+  });
+
   it('rejects mismatched passwords', () => {
     const result = adminUserPasswordResetSchema.safeParse({
       new_password: 'password1',

@@ -6,11 +6,6 @@ import {
   USER_ROLE_OPTIONS,
 } from '~/constants/user-select-options';
 import {
-  adminUserPasswordResetSchema,
-  type AdminUserPasswordResetOutput,
-} from '~/schemas/password-reset';
-import { USER_PASSWORD_RESET_PATH } from '~/constants/user-api';
-import {
   userCreateSchema,
   userCreateToCreateBody,
   userUpdateSchema,
@@ -30,6 +25,8 @@ const toast = useToast();
 const open = ref(false);
 const editingId = ref<number | null>(null);
 const detailPending = ref(false);
+/** Usuario tal como está guardado; el modal de contraseña no usa el valor en edición. */
+const loadedUsername = ref('');
 
 const isEdit = computed(() => editingId.value != null);
 
@@ -70,6 +67,7 @@ const commissionModel = usePercentStringNumberModel(toRef(state, 'commission'));
 function resetForm() {
   Object.assign(state, emptyState());
   knownAllowedClients.value = [];
+  loadedUsername.value = '';
 }
 
 function prepareCreate() {
@@ -86,6 +84,7 @@ async function loadDetail(id: number) {
     );
     Object.assign(state, emptyState(), mapUserDetail(raw));
     knownAllowedClients.value = parseAllowedClients(raw.allowed_clients);
+    loadedUsername.value = state.username;
   } catch (e) {
     console.error(e);
     toast.add({
@@ -108,18 +107,8 @@ async function openEdit(id: number) {
 
 defineExpose({ openEdit });
 
-function emptyPasswordResetState() {
-  return {
-    new_password: '',
-    new_password2: '',
-  };
-}
-
-const passwordResetState = reactive(emptyPasswordResetState());
-const passwordResetFormRef = ref<{ submit: () => Promise<void> } | null>(null);
+const passwordModalOpen = ref(false);
 const showCreatePassword = ref(false);
-const showNewPassword = ref(false);
-const showConfirmPassword = ref(false);
 const {
   guardedOpen,
   discardConfirmOpen,
@@ -130,25 +119,15 @@ const {
   resetDirtySnapshot,
 } = useDiscardChangesGuard({
   open,
-  snapshot: () => ({ state, passwordResetState }),
+  snapshot: () => state,
 });
-
-function resetPasswordVisibility() {
-  showCreatePassword.value = false;
-  showNewPassword.value = false;
-  showConfirmPassword.value = false;
-}
-
-function resetPasswordResetForm() {
-  Object.assign(passwordResetState, emptyPasswordResetState());
-}
 
 watch(open, (v) => {
   if (!v) {
     editingId.value = null;
+    passwordModalOpen.value = false;
+    showCreatePassword.value = false;
     resetForm();
-    resetPasswordResetForm();
-    resetPasswordVisibility();
   }
 });
 
@@ -200,7 +179,7 @@ const formRef = ref<{ submit: () => Promise<void> } | null>(null);
 async function onSubmit(payload: {
   data: UserFormOutputCreate | UserFormOutputUpdate;
 }) {
-  if (isSavingUser.value || isResettingPassword.value) return;
+  if (isSavingUser.value) return;
   savingUser.value = true;
   const d = payload.data;
   const id = editingId.value;
@@ -228,12 +207,12 @@ async function onSubmit(payload: {
 const { onFormError } = useFormValidationFeedback();
 
 function cancel() {
-  if (isSavingUser.value || isResettingPassword.value) return;
+  if (isSavingUser.value) return;
   requestClose();
 }
 
 async function requestSubmit() {
-  if (isSavingUser.value || isResettingPassword.value) return;
+  if (isSavingUser.value) return;
   await formRef.value?.submit();
 }
 
@@ -249,65 +228,6 @@ async function generateAndCopyPassword() {
       : 'No se pudo copiar al portapapeles.',
     color: copied ? 'success' : 'warning',
   });
-}
-
-const { mutateAsync: resetPasswordAsync, asyncStatus: passwordResetStatus } =
-  useMutation({
-    mutation: ({
-      userId,
-      new_password,
-    }: {
-      userId: number;
-      new_password: string;
-    }) =>
-      $fetch(USER_PASSWORD_RESET_PATH(userId), {
-        method: 'POST',
-        body: { new_password },
-      }),
-    onError: (e) => {
-      toast.add({
-        title: 'No se pudo restablecer la contraseña',
-        description: getFetchErrorMessage(e),
-        color: 'error',
-      });
-    },
-  });
-
-const resettingPassword = ref(false);
-const isResettingPassword = computed(
-  () =>
-    resettingPassword.value || passwordResetStatus.value === 'loading',
-);
-
-async function onPasswordResetSubmit(payload: {
-  data: AdminUserPasswordResetOutput;
-}) {
-  if (isSavingUser.value || isResettingPassword.value) return;
-  const userId = editingId.value;
-  if (userId == null) return;
-
-  resettingPassword.value = true;
-  try {
-    await resetPasswordAsync({
-      userId,
-      new_password: payload.data.new_password,
-    });
-    toast.add({
-      title: 'Contraseña restablecida',
-      color: 'success',
-    });
-    resetPasswordResetForm();
-    resetDirtySnapshot();
-  } catch {
-    // Error toast handled in mutation
-  } finally {
-    resettingPassword.value = false;
-  }
-}
-
-async function requestPasswordResetSubmit() {
-  if (isSavingUser.value || isResettingPassword.value) return;
-  await passwordResetFormRef.value?.submit();
 }
 </script>
 
@@ -336,195 +256,167 @@ async function requestPasswordResetSubmit() {
         ref="formRef"
         :schema="formSchema"
         :state="state"
-        :class="['space-y-4', adminListSlideoverScrollClass]"
+        :class="['space-y-6', adminListSlideoverScrollClass]"
         @submit="onSubmit"
         @error="onFormError"
       >
-        <UFormField label="Usuario" name="username" required>
-          <UInput
-            :model-value="state.username"
-            class="w-full uppercase"
-            autocomplete="username"
-            @update:model-value="(v) => (state.username = formatUsernameInput(v))"
-          />
+        <UFormField v-if="isEdit" name="is_active">
+          <div
+            class="flex items-center justify-between gap-3 rounded-lg border border-default p-3"
+          >
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-highlighted">
+                {{ state.is_active ? 'Usuario activo' : 'Usuario inactivo' }}
+              </p>
+              <p class="text-xs text-muted">
+                Desactívalo para bloquear su acceso al sistema.
+              </p>
+            </div>
+            <USwitch v-model="state.is_active" aria-label="Usuario activo" />
+          </div>
         </UFormField>
-        <UFormField label="Nombre" name="first_name">
-          <UInput v-model="state.first_name" class="w-full" autocomplete="given-name" />
-        </UFormField>
-        <UFormField label="Apellidos" name="last_name">
-          <UInput v-model="state.last_name" class="w-full" autocomplete="family-name" />
-        </UFormField>
-        <UFormField label="Correo" name="email" required>
-          <UInput v-model="state.email" type="email" class="w-full" autocomplete="email" />
-        </UFormField>
-        <UFormField label="Rol" name="role" required>
-          <USelectMenu
-            v-model="state.role"
-            :items="[...USER_ROLE_OPTIONS]"
-            value-key="value"
-            class="w-full"
-            variant="subtle"
-          />
-        </UFormField>
-        <UFormField
-          v-if="isClientRole"
-          label="Clientes asignados"
-          name="allowed_clients"
-          help="Seleccionar todo asigna los clientes existentes hoy. Los clientes que se creen después no se asignan automáticamente."
-        >
-          <UsersAllowedClientsPicker
-            v-model="state.allowed_clients"
-            :known-clients="knownAllowedClients"
-            :disabled="isSavingUser"
-          />
-        </UFormField>
-        <UFormField
-          label="Comisión"
-          name="commission"
-          required
-          :help="USER_COMMISSION_FIELD_HELP"
-        >
-          <UInputNumber
-            v-model="commissionModel"
-            v-bind="catalogPercentInputProps"
-            placeholder="0.00"
-          />
-        </UFormField>
-        <UFormField label="Teléfono" name="phone">
-          <UInput
-            :model-value="state.phone"
-            class="w-full"
-            type="tel"
-            inputmode="tel"
-            autocomplete="tel"
-            :placeholder="MEXICO_PHONE_MASK.replaceAll('#', '0')"
-            @update:model-value="(value) => (state.phone = formatMexicoPhoneInput(value))"
-          />
-        </UFormField>
-        <UFormField
-          v-if="!isEdit"
-          label="Contraseña"
-          name="password"
-          required
-        >
-          <div class="flex gap-2">
+
+        <section class="space-y-4">
+          <h3 class="text-sm font-semibold text-highlighted">Datos personales</h3>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField label="Nombre" name="first_name">
+              <UInput v-model="state.first_name" class="w-full" autocomplete="given-name" />
+            </UFormField>
+            <UFormField label="Apellidos" name="last_name">
+              <UInput v-model="state.last_name" class="w-full" autocomplete="family-name" />
+            </UFormField>
+          </div>
+          <UFormField label="Correo" name="email" required>
+            <UInput v-model="state.email" type="email" class="w-full" autocomplete="email" />
+          </UFormField>
+          <UFormField label="Teléfono" name="phone">
             <UInput
-              v-model="state.password"
-              class="min-w-0 flex-1"
-              :type="showCreatePassword ? 'text' : 'password'"
-              autocomplete="new-password"
-              :ui="{ trailing: 'pe-1' }"
-            >
-              <template #trailing>
-                <UButton
-                  type="button"
-                  color="neutral"
-                  variant="link"
-                  size="sm"
-                  :icon="showCreatePassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  :aria-label="showCreatePassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                  :aria-pressed="showCreatePassword"
-                  @click="showCreatePassword = !showCreatePassword"
-                />
-              </template>
-            </UInput>
+              :model-value="state.phone"
+              class="w-full"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              :placeholder="MEXICO_PHONE_MASK.replaceAll('#', '0')"
+              @update:model-value="(value) => (state.phone = formatMexicoPhoneInput(value))"
+            />
+          </UFormField>
+        </section>
+
+        <section class="space-y-4 border-t border-default pt-6">
+          <h3 class="text-sm font-semibold text-highlighted">Acceso</h3>
+          <UFormField label="Usuario" name="username" required>
+            <UInput
+              :model-value="state.username"
+              class="w-full uppercase"
+              autocomplete="username"
+              @update:model-value="(v) => (state.username = formatUsernameInput(v))"
+            />
+          </UFormField>
+          <UFormField label="Rol" name="role" required>
+            <USelectMenu
+              v-model="state.role"
+              :items="[...USER_ROLE_OPTIONS]"
+              value-key="value"
+              class="w-full"
+              variant="subtle"
+            />
+          </UFormField>
+          <UFormField
+            v-if="!isEdit"
+            label="Contraseña"
+            name="password"
+            required
+          >
+            <div class="flex gap-2">
+              <UInput
+                v-model="state.password"
+                class="min-w-0 flex-1"
+                :type="showCreatePassword ? 'text' : 'password'"
+                autocomplete="new-password"
+                :ui="{ trailing: 'pe-1' }"
+              >
+                <template #trailing>
+                  <UButton
+                    type="button"
+                    color="neutral"
+                    variant="link"
+                    size="sm"
+                    :icon="showCreatePassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                    :aria-label="showCreatePassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                    :aria-pressed="showCreatePassword"
+                    @click="showCreatePassword = !showCreatePassword"
+                  />
+                </template>
+              </UInput>
+              <UButton
+                type="button"
+                color="neutral"
+                variant="subtle"
+                icon="i-lucide-wand-sparkles"
+                label="Generar"
+                class="shrink-0"
+                @click="generateAndCopyPassword"
+              />
+            </div>
+          </UFormField>
+          <div
+            v-else
+            class="flex items-center justify-between gap-3 rounded-lg border border-default p-3"
+          >
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-highlighted">Contraseña</p>
+              <p class="text-xs text-muted">
+                Se cambia por separado, sin guardar el usuario.
+              </p>
+            </div>
             <UButton
               type="button"
               color="neutral"
-              variant="subtle"
-              icon="i-lucide-wand-sparkles"
-              label="Generar"
-              class="shrink-0"
-              @click="generateAndCopyPassword"
-            />
-          </div>
-        </UFormField>
-        <UFormField v-if="isEdit" label="Activo" name="is_active">
-          <UCheckbox v-model="state.is_active" label="Usuario activo" />
-        </UFormField>
-      </UForm>
-
-      <section
-        v-if="isEdit && editingId != null && !detailPending"
-        class="mt-6 space-y-4 border-t border-default pt-6"
-      >
-        <div>
-          <h3 class="text-sm font-semibold text-highlighted">
-            Restablecer contraseña
-          </h3>
-          <p class="mt-1 text-xs text-muted">
-            Define una nueva contraseña para este usuario.
-          </p>
-        </div>
-
-        <UForm
-          ref="passwordResetFormRef"
-          :schema="adminUserPasswordResetSchema"
-          :state="passwordResetState"
-          class="space-y-4"
-          @submit="onPasswordResetSubmit"
-        >
-          <UFormField label="Nueva contraseña" name="new_password" required>
-            <UInput
-              v-model="passwordResetState.new_password"
-              class="w-full"
-              :type="showNewPassword ? 'text' : 'password'"
-              autocomplete="new-password"
-              :ui="{ trailing: 'pe-1' }"
-            >
-              <template #trailing>
-                <UButton
-                  type="button"
-                  color="neutral"
-                  variant="link"
-                  size="sm"
-                  :icon="showNewPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  :aria-label="showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                  :aria-pressed="showNewPassword"
-                  @click="showNewPassword = !showNewPassword"
-                />
-              </template>
-            </UInput>
-          </UFormField>
-          <UFormField
-            label="Confirmar contraseña"
-            name="new_password2"
-            required
-          >
-            <UInput
-              v-model="passwordResetState.new_password2"
-              class="w-full"
-              :type="showConfirmPassword ? 'text' : 'password'"
-              autocomplete="new-password"
-              :ui="{ trailing: 'pe-1' }"
-            >
-              <template #trailing>
-                <UButton
-                  type="button"
-                  color="neutral"
-                  variant="link"
-                  size="sm"
-                  :icon="showConfirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  :aria-label="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                  :aria-pressed="showConfirmPassword"
-                  @click="showConfirmPassword = !showConfirmPassword"
-                />
-              </template>
-            </UInput>
-          </UFormField>
-          <div class="flex justify-end">
-            <UButton
-              type="button"
-              color="primary"
-              label="Restablecer contraseña"
+              variant="outline"
               icon="i-lucide-key-round"
-              :loading="isResettingPassword"
-              :disabled="isSavingUser || isResettingPassword"
-              @click="requestPasswordResetSubmit"
+              label="Cambiar"
+              class="shrink-0"
+              :disabled="isSavingUser"
+              @click="passwordModalOpen = true"
             />
           </div>
-        </UForm>
-      </section>
+        </section>
+
+        <section
+          v-if="isClientRole"
+          class="space-y-4 border-t border-default pt-6"
+        >
+          <div>
+            <h3 class="text-sm font-semibold text-highlighted">Clientes asignados</h3>
+            <p class="mt-1 text-xs text-muted">
+              Seleccionar todo asigna los clientes existentes hoy. Los clientes que se
+              creen después no se asignan automáticamente.
+            </p>
+          </div>
+          <UFormField name="allowed_clients">
+            <UsersAllowedClientsPicker
+              v-model="state.allowed_clients"
+              :known-clients="knownAllowedClients"
+              :disabled="isSavingUser"
+            />
+          </UFormField>
+        </section>
+
+        <section class="border-t border-default pt-6">
+          <UFormField
+            label="Comisión"
+            name="commission"
+            required
+            :help="USER_COMMISSION_FIELD_HELP"
+          >
+            <UInputNumber
+              v-model="commissionModel"
+              v-bind="catalogPercentInputProps"
+              placeholder="0.00"
+            />
+          </UFormField>
+        </section>
+      </UForm>
     </template>
 
     <template #footer>
@@ -534,21 +426,25 @@ async function requestPasswordResetSubmit() {
           color="neutral"
           variant="subtle"
           label="Cancelar"
-          :disabled="isSavingUser || isResettingPassword"
+          :disabled="isSavingUser"
           @click="cancel"
         />
         <UButton
           type="button"
           label="Guardar"
           :loading="isSavingUser || (detailPending && isEdit)"
-          :disabled="
-            isSavingUser || isResettingPassword || (detailPending && isEdit)
-          "
+          :disabled="isSavingUser || (detailPending && isEdit)"
           @click="requestSubmit"
         />
       </div>
     </template>
   </USlideover>
+
+  <UsersUserPasswordResetModal
+    v-model:open="passwordModalOpen"
+    :user-id="editingId"
+    :username="loadedUsername"
+  />
 
   <SharedDiscardChangesConfirmModal
     v-model:open="discardConfirmOpen"
