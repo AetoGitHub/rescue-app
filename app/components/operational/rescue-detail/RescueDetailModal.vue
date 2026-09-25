@@ -10,6 +10,13 @@ import type { RescueEvidenceType } from '~/interfaces/rescue/evidence';
 import type { RescueOperativeActionId } from '~/interfaces/rescue/operative';
 import { modalTabsUi } from '~/constants/tabs-layout';
 
+const props = withDefaults(defineProps<{
+  /** Muestra en el header un enlace para abrir el detalle en otra pestaña. */
+  showOpenInNewTab?: boolean;
+}>(), {
+  showOpenInNewTab: false,
+});
+
 const open = ref(false);
 const rescueId = ref<number | null>(null);
 const activeTab = ref<RescueDetailTabValue>('general');
@@ -238,6 +245,21 @@ const { modalProps } = useResponsiveModal({ desktopMaxWidth: 'max-w-7xl' });
     :title="modalTitle"
     v-bind="modalProps"
   >
+    <template
+      v-if="props.showOpenInNewTab && rescueId != null"
+      #actions
+    >
+      <UButton
+        :to="rescueDetailHref(rescueId)"
+        target="_blank"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        icon="i-lucide-external-link"
+        label="Abrir en nueva pestaña"
+        :ui="{ label: 'hidden sm:inline' }"
+      />
+    </template>
     <template #body>
       <div v-if="open && rescueId != null" class="space-y-4">
         <div

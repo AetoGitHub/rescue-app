@@ -32,6 +32,12 @@ useHead({
   ),
 });
 
+const {
+  rescueDetailModalMounted,
+  rescueDetailModalRef,
+  openRescueDetail,
+} = useRescueDetailModalLauncher();
+
 const isOperativeReceipt = computed(
   () => receipt.value?.payment_type === 'operative',
 );
@@ -97,7 +103,7 @@ const operativeColumns = computed(
       accessorKey: 'rescue_folio',
       header: 'Folio',
       cell: ({ row }) =>
-        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
+        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { onOpen: openRescueDetail }),
     },
     {
       id: 'date',
@@ -139,7 +145,7 @@ const sellerColumns = computed(
       accessorKey: 'rescue_folio',
       header: 'Folio',
       cell: ({ row }) =>
-        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
+        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { onOpen: openRescueDetail }),
     },
     {
       id: 'date',
@@ -175,7 +181,7 @@ const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
     accessorKey: 'rescue_folio',
     header: 'Folio',
     cell: ({ row }) =>
-      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { class: '' }),
+      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { class: '', onOpen: openRescueDetail }),
   },
   {
     id: 'date',
@@ -432,6 +438,11 @@ const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
           </UContainer>
         </div>
       </div>
+      <LazyOperationalRescueDetailModal
+        v-if="rescueDetailModalMounted"
+        ref="rescueDetailModalRef"
+        show-open-in-new-tab
+      />
     </template>
   </UDashboardPanel>
 </template>

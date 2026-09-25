@@ -25,6 +25,12 @@ useHead({
   title: 'Mi saldo',
 });
 
+const {
+  rescueDetailModalMounted,
+  rescueDetailModalRef,
+  openRescueDetail,
+} = useRescueDetailModalLauncher();
+
 const isDev = import.meta.dev;
 const testDaysInput = ref<number | null>(null);
 const appliedTestDays = ref<number | null>(null);
@@ -195,7 +201,7 @@ const sharedColumns = (
     accessorKey: 'rescue_folio',
     header: 'Folio',
     cell: ({ row }) =>
-      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
+      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { onOpen: openRescueDetail }),
   },
   {
     id: 'operative_status',
@@ -293,7 +299,7 @@ const debtColumns = computed((): TableColumn<PaymentDebtItem>[] => [
     accessorKey: 'rescue_folio',
     header: 'Folio',
     cell: ({ row }) =>
-      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { class: '' }),
+      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { class: '', onOpen: openRescueDetail }),
   },
   {
     id: 'source',
@@ -573,5 +579,10 @@ const debtColumns = computed((): TableColumn<PaymentDebtItem>[] => [
         </div>
       </section>
     </div>
+    <LazyOperationalRescueDetailModal
+      v-if="rescueDetailModalMounted"
+      ref="rescueDetailModalRef"
+      show-open-in-new-tab
+    />
   </AdminListPageShell>
 </template>

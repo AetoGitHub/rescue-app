@@ -15,6 +15,12 @@ useHead({
   title: 'Pagar',
 });
 
+const {
+  rescueDetailModalMounted,
+  rescueDetailModalRef,
+  openRescueDetail,
+} = useRescueDetailModalLauncher();
+
 const isDev = import.meta.dev;
 const maxSelectableDate = todayCalendarDateParts();
 
@@ -419,7 +425,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
       accessorKey: 'rescue_folio',
       header: 'Folio',
       cell: ({ row }) =>
-        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
+        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { onOpen: openRescueDetail }),
     },
     {
       id: 'service_type',
@@ -654,5 +660,10 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
         />
       </div>
     </div>
+    <LazyOperationalRescueDetailModal
+      v-if="rescueDetailModalMounted"
+      ref="rescueDetailModalRef"
+      show-open-in-new-tab
+    />
   </AdminListPageShell>
 </template>

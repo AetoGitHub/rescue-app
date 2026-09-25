@@ -17,6 +17,12 @@ useHead({
   title: 'Checkout de pago',
 });
 
+const {
+  rescueDetailModalMounted,
+  rescueDetailModalRef,
+  openRescueDetail,
+} = useRescueDetailModalLauncher();
+
 const isDev = import.meta.dev;
 const toast = useToast();
 
@@ -309,7 +315,7 @@ const rescueColumns = computed((): TableColumn<PaymentCartCheckoutRow>[] => {
       accessorKey: 'rescue_folio',
       header: 'Folio',
       cell: ({ row }) =>
-        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
+        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { onOpen: openRescueDetail }),
     },
     {
       id: 'date',
@@ -403,7 +409,7 @@ const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
     accessorKey: 'rescue_folio',
     header: 'Folio',
     cell: ({ row }) =>
-      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { class: '' }),
+      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { class: '', onOpen: openRescueDetail }),
   },
   {
     id: 'date',
@@ -701,6 +707,11 @@ const itemCountLabel = computed(() => {
         :user-id="checkoutUserId"
         :loading="isCreating"
         @submit="onCreateDebtSubmit"
+      />
+      <LazyOperationalRescueDetailModal
+        v-if="rescueDetailModalMounted"
+        ref="rescueDetailModalRef"
+        show-open-in-new-tab
       />
     </template>
   </UDashboardPanel>
