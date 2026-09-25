@@ -419,11 +419,7 @@ const columns = computed((): TableColumn<PaymentListItem>[] => {
       accessorKey: 'rescue_folio',
       header: 'Folio',
       cell: ({ row }) =>
-        h(
-          'span',
-          { class: 'font-medium text-primary' },
-          row.original.rescue_folio,
-        ),
+        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
     },
     {
       id: 'service_type',

@@ -23,6 +23,7 @@ export interface PaymentReceiptListItem {
 export interface PaymentReceiptOperativeItem {
   id: number;
   rescue_folio: string;
+  rescue_id?: number | null;
   operator_id: number;
   operator_name: string;
   operator_commission: string;
@@ -37,6 +38,7 @@ export interface PaymentReceiptOperativeItem {
 export interface PaymentReceiptSellerItem {
   id: number;
   rescue_folio: string;
+  rescue_id?: number | null;
   seller_id?: number;
   seller_name?: string;
   seller_commission?: string;

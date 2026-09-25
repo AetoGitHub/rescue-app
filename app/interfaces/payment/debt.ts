@@ -3,6 +3,7 @@ import type { PaymentDebtSource } from '~/constants/payment-api';
 export interface PaymentDebtItem {
   id: number;
   rescue_folio: string | null;
+  rescue_id?: number | null;
   rescue_operative_status?: string;
   rescue_admin_status?: string;
   user_id: number;

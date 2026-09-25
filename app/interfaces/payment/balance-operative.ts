@@ -1,6 +1,7 @@
 export interface OperativeBalanceVoucher {
   id: number;
   rescue_folio: string;
+  rescue_id?: number | null;
   rescue_operative_status: string;
   rescue_admin_status: string;
   operator_name: string;

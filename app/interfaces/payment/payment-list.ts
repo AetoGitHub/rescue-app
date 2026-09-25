@@ -1,6 +1,7 @@
 export interface PaymentListItem {
   id: number;
   rescue_folio: string;
+  rescue_id?: number | null;
   amount: string;
   payment: boolean;
   is_penalty: boolean;
@@ -18,7 +19,6 @@ export interface PaymentListItem {
   penalty_amount?: string;
   rescue_operative_status?: string;
   rescue_admin_status?: string;
-  rescue_id?: number;
   debt_created_at?: string;
   paid_at?: string | null;
 }

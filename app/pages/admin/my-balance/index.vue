@@ -161,11 +161,6 @@ function formatVoucherDate(iso: string | null | undefined): string {
   });
 }
 
-function formatOptionalCell(value: string | null | undefined): string {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : '—';
-}
-
 function paymentDebtSourceLabel(source: PaymentDebtSource): string {
   return (
     PAYMENT_DEBT_SOURCE_OPTIONS.find((option) => option.value === source)?.label
@@ -200,11 +195,7 @@ const sharedColumns = (
     accessorKey: 'rescue_folio',
     header: 'Folio',
     cell: ({ row }) =>
-      h(
-        'span',
-        { class: 'font-medium text-primary' },
-        row.original.rescue_folio,
-      ),
+      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
   },
   {
     id: 'operative_status',
@@ -302,7 +293,7 @@ const debtColumns = computed((): TableColumn<PaymentDebtItem>[] => [
     accessorKey: 'rescue_folio',
     header: 'Folio',
     cell: ({ row }) =>
-      h('span', formatOptionalCell(row.original.rescue_folio)),
+      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { class: '' }),
   },
   {
     id: 'source',

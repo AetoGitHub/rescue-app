@@ -97,7 +97,7 @@ const operativeColumns = computed(
       accessorKey: 'rescue_folio',
       header: 'Folio',
       cell: ({ row }) =>
-        h('span', { class: 'font-medium' }, row.original.rescue_folio),
+        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
     },
     {
       id: 'date',
@@ -139,7 +139,7 @@ const sellerColumns = computed(
       accessorKey: 'rescue_folio',
       header: 'Folio',
       cell: ({ row }) =>
-        h('span', { class: 'font-medium' }, row.original.rescue_folio),
+        renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id),
     },
     {
       id: 'date',
@@ -175,7 +175,7 @@ const debtColumns = computed((): TableColumn<PaymentCheckoutDebtRow>[] => [
     accessorKey: 'rescue_folio',
     header: 'Folio',
     cell: ({ row }) =>
-      h('span', formatOptionalCell(row.original.rescue_folio)),
+      renderRescueFolioLink(row.original.rescue_folio, row.original.rescue_id, { class: '' }),
   },
   {
     id: 'date',
