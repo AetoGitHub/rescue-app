@@ -31,6 +31,14 @@ const props = defineProps<{
    */
   showFilters?: boolean;
   /**
+   * Muestra el check "Incluir información interna" (marcado por defecto),
+   * que manda `internal_info=true` para que el backend agregue las columnas
+   * Gestor, Costo técnico, Ganancia gestor y Ganancia AETO. El backend lo
+   * ignora si el usuario no es admin. Solo se usa en /admin/reportes; en el
+   * resto el parámetro no se manda y el backend lo toma como false.
+   */
+  showInternalInfoOption?: boolean;
+  /**
    * Valores iniciales opcionales, para llegar con el modal ya precargado
    * (ej. desde `useReportLauncher` al lanzarlo desde otra pantalla). Solo se
    * aplican una vez, al crear el componente.
@@ -51,6 +59,7 @@ const maxSelectableDate = todayCalendarDateParts();
 const { downloadRescuesExcelReport, isDownloading } = useRescuesExcelReportDownload();
 
 const startDate = ref<CalendarDateParts | null>(null);
+const includeInternalInfo = ref(true);
 const endDate = ref<CalendarDateParts | null>(null);
 
 const startDateMax = computed(() =>
@@ -221,6 +230,9 @@ async function handleDownload() {
     ...(props.showFilters ? internalFiltersQuery.value : {}),
     start_date: calendarDateToApiDate(startDate.value),
     end_date: calendarDateToApiDate(endDate.value),
+    ...(props.showInternalInfoOption && includeInternalInfo.value
+      ? { internal_info: 'true' }
+      : {}),
   });
   if (ok) {
     open.value = false;
@@ -239,6 +251,7 @@ function handleCancel() {
 function resetModalState() {
   startDate.value = null;
   endDate.value = null;
+  includeInternalInfo.value = true;
   folioSearch.value = props.initialFolio ?? '';
   selectedServiceTypes.value = props.initialServiceTypes ?? [];
   company.value = props.initialCompany ?? emptyCatalogDropdownSelection();
@@ -419,6 +432,17 @@ watch(open, (isOpen) => {
             class="self-start"
             :disabled="isDownloading"
             @click="clearFilters"
+          />
+        </template>
+
+        <template v-if="showInternalInfoOption">
+          <USeparator />
+
+          <UCheckbox
+            v-model="includeInternalInfo"
+            label="Incluir información interna"
+            description="Agrega las columnas Gestor, Costo técnico, Ganancia gestor y Ganancia AETO."
+            :disabled="isDownloading"
           />
         </template>
       </div>

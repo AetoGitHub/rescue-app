@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { DASHBOARD_REPORT_SERVICES_EXCEL_PATH } from '~/constants/dashboard-report-api';
+import {
+  DASHBOARD_REPORT_AUTHORIZER_CREATORS_EXCEL_PATH,
+  DASHBOARD_REPORT_SERVICES_EXCEL_PATH,
+} from '~/constants/dashboard-report-api';
 
 useHead({
   title: 'Reportes',
@@ -18,6 +21,15 @@ onMounted(() => {
 
 const rescuesExcelModalOpen = ref(initialLaunch != null);
 const servicesExcelModalOpen = ref(false);
+
+// Reporte sin filtros: se descarga directo al hacer click en la tarjeta.
+const {
+  download: downloadAuthorizerCreatorsExcel,
+  isDownloading: isDownloadingAuthorizerCreators,
+} = useExcelReportDownload(
+  DASHBOARD_REPORT_AUTHORIZER_CREATORS_EXCEL_PATH,
+  'autorizadores.xlsx',
+);
 </script>
 
 <template>
@@ -44,11 +56,26 @@ const servicesExcelModalOpen = ref(false);
         class="cursor-pointer text-left transition-colors hover:ring-primary"
         @click="servicesExcelModalOpen = true"
       />
+
+      <UPageCard
+        :icon="isDownloadingAuthorizerCreators ? 'i-lucide-loader-circle' : 'i-lucide-file-spreadsheet'"
+        title="Autorizadores (Excel)"
+        description="Descarga un Excel con todos los autorizadores y quién creó el primer rescate en que se usó cada uno"
+        variant="subtle"
+        :class="[
+          'text-left transition-colors',
+          isDownloadingAuthorizerCreators
+            ? 'cursor-wait opacity-70 [&_.iconify]:animate-spin'
+            : 'cursor-pointer hover:ring-primary',
+        ]"
+        @click="downloadAuthorizerCreatorsExcel({})"
+      />
     </div>
 
     <ReportesRescuesExcelReportModal
       v-model:open="rescuesExcelModalOpen"
       show-filters
+      show-internal-info-option
       :initial-folio="initialLaunch?.folio"
       :initial-service-types="initialLaunch?.serviceTypes"
       :initial-company="initialLaunch?.company"

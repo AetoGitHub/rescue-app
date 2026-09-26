@@ -8,3 +8,10 @@ export const DASHBOARD_REPORT_RESCUES_EXCEL_PATH =
  */
 export const DASHBOARD_REPORT_SERVICES_EXCEL_PATH =
   '/api/dashboard/report/services/excel/';
+
+/**
+ * Excel export of all client authorizers with who created the first rescue
+ * where each one was used. No query params (brings everything).
+ */
+export const DASHBOARD_REPORT_AUTHORIZER_CREATORS_EXCEL_PATH =
+  '/api/dashboard/report/authorizers/creators/excel/';
