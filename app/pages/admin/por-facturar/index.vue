@@ -21,7 +21,17 @@ const { activeTab, selectedCompanies, startDate, endDate } =
 // directo (sin modal): esta pantalla ya trae su propio filtro de fecha y
 // compañía, no hace falta pedirlos otra vez. admin_status queda fijo en
 // "Sin atender" + "En remisión" -- el mismo alcance que ya muestra esta vista.
+// Antes de descargar solo se pregunta si incluir la información interna
+// (internal_info), igual que el check de /admin/reportes.
 const { downloadRescuesExcelReport, isDownloading } = useRescuesExcelReportDownload();
+
+const internalInfoModalOpen = ref(false);
+const includeInternalInfo = ref(true);
+
+function openInternalInfoModal() {
+  includeInternalInfo.value = true;
+  internalInfoModalOpen.value = true;
+}
 
 const missingDateMessages = computed(() => {
   const messages: string[] = [];
@@ -40,13 +50,20 @@ async function downloadExcel() {
     end_date: calendarDateToApiDate(endDate.value),
   };
 
+  if (includeInternalInfo.value) {
+    query.internal_info = 'true';
+  }
+
   // El reporte Excel solo soporta filtrar por una compañía a la vez; con 0 o
   // varias seleccionadas, se manda sin filtro de compañía (todas).
   if (selectedCompanies.value.length === 1) {
     query.company = String(selectedCompanies.value[0]!.id);
   }
 
-  await downloadRescuesExcelReport(query);
+  const ok = await downloadRescuesExcelReport(query);
+  if (ok) {
+    internalInfoModalOpen.value = false;
+  }
 }
 
 function formatHeaderFilterDate(parts: CalendarDateParts) {
@@ -111,9 +128,45 @@ const headerContext = computed(() => {
                 class="shrink-0"
                 :loading="isDownloading"
                 :disabled="isDownloading || !canDownloadExcel"
-                @click="() => void downloadExcel()"
+                @click="openInternalInfoModal"
               />
             </UTooltip>
+
+            <UModal
+              v-model:open="internalInfoModalOpen"
+              :dismissible="!isDownloading"
+              title="Descargar Excel"
+              :ui="{ content: 'max-w-md' }"
+            >
+              <template #body>
+                <UCheckbox
+                  v-model="includeInternalInfo"
+                  label="Incluir información interna"
+                  description="Agrega las columnas Gestor, Costo técnico, Ganancia gestor y Ganancia AETO."
+                  :disabled="isDownloading"
+                />
+              </template>
+
+              <template #footer>
+                <div class="flex w-full items-center justify-end gap-3">
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    label="Cancelar"
+                    :disabled="isDownloading"
+                    @click="internalInfoModalOpen = false"
+                  />
+                  <UButton
+                    color="primary"
+                    icon="i-lucide-download"
+                    label="Descargar Excel"
+                    :loading="isDownloading"
+                    :disabled="isDownloading"
+                    @click="() => void downloadExcel()"
+                  />
+                </div>
+              </template>
+            </UModal>
           </div>
         </div>
 
