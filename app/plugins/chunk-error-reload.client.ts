@@ -6,7 +6,8 @@
  * panels) mounted outside of router navigation, which this app uses heavily.
  *
  * Strategy: reload as soon as it's safe to do so without disrupting the user —
- * the next time the tab is hidden (they switched away or minimized), not mid-use.
+ * the next time the tab is hidden (they switched away or minimized) or the next
+ * route navigation (they're leaving the current screen anyway), not mid-use.
  * `app:manifest:update` fires proactively (Nuxt polls for new deploys in the
  * background, before anything has broken) so most users self-heal silently and
  * never see anything. `app:chunkError` is the reactive fallback for when a
@@ -36,6 +37,13 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
     document.addEventListener('visibilitychange', onHidden);
   }
+
+  useRouter().beforeEach((to, from) => {
+    // Solo al cambiar de pantalla; cambios de query (filtros, ?rescue=) no recargan.
+    if (!reloadPending || to.path === from.path) return;
+    reloadNuxtApp({ path: to.fullPath, force: true, persistState: true });
+    return false;
+  });
 
   nuxtApp.hook('app:manifest:update', () => {
     scheduleReload();

@@ -105,6 +105,11 @@ export default defineNuxtConfig({
     },
   },
 
+  experimental: {
+    // Revisa cada 5 min si hay deploy nuevo (default: 1 h); ver plugins/chunk-error-reload.client.ts.
+    checkOutdatedBuildInterval: 5 * 60 * 1000,
+  },
+
   vite: {
     optimizeDeps: {
       include: [
