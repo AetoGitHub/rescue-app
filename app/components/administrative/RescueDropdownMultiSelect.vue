@@ -107,8 +107,6 @@ const displayItems = computed((): RescueSelectItem[] => {
   return [...selectedFirst, ...rest];
 });
 
-const selectKey = computed(() => selected.value.join(',') || 'empty');
-
 function onOpenChange(open: boolean) {
   if (open && hasNextPage.value) {
     void loadNextPage();
@@ -119,7 +117,6 @@ function onOpenChange(open: boolean) {
 <template>
   <div class="w-full space-y-1">
     <USelectMenu
-      :key="selectKey"
       v-model="selected"
       v-model:search-term="search"
       ignore-filter
