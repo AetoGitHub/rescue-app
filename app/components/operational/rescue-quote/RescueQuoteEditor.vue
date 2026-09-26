@@ -57,7 +57,10 @@ const hasQuoteLines = computed(() => quoteLines.value.length > 0);
 
 const onlyServicesWithContract = ref(false);
 const serviceDropdownFilters = computed(() =>
-  onlyServicesWithContract.value ? { has_contract: true } : undefined,
+  buildServiceDropdownFilters({
+    clientId: props.clientId,
+    onlyWithContract: onlyServicesWithContract.value,
+  }),
 );
 
 const showCreditBadge = computed(

@@ -209,19 +209,7 @@ async function fetchClientDropdown(
   }
 }
 
-function fetchServiceDropdown(
-  name: string,
-  options?: { signal?: AbortSignal; filters?: Record<string, unknown> },
-) {
-  const hasContract = options?.filters?.has_contract;
-  return $fetch<PaginatedResponse<CatalogDropdownRow>>(
-    '/api/catalogue/service/dropdown/',
-    {
-      query: { name, ...(hasContract ? { has_contract: true } : {}) },
-      signal: options?.signal,
-    },
-  );
-}
+const fetchServiceDropdown = fetchQuoteServiceDropdown;
 
 function fetchManagerDropdown(
   name: string,

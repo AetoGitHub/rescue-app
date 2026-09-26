@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { PaginatedResponse } from '~/interfaces/shared/pagination.interface';
-import type { CatalogDropdownRow } from '~/interfaces/shared/catalog-dropdown.interface';
 import type { RescueCardDetail } from '~/interfaces/rescue/detail';
 import type { RescueQuoteLine, RescueServiceType } from '~/interfaces/rescue';
 import type { RescueCompanySettings } from '~/interfaces/rescue/company-settings';
@@ -178,19 +176,7 @@ watch(readOnlyCompanySettings, (settings) => {
   quoteLines.value = mapRescueQuoteDetailFromApi(detail, settings);
 });
 
-function fetchServiceDropdown(
-  name: string,
-  options?: { signal?: AbortSignal; filters?: Record<string, unknown> },
-) {
-  const hasContract = options?.filters?.has_contract;
-  return $fetch<PaginatedResponse<CatalogDropdownRow>>(
-    '/api/catalogue/service/dropdown/',
-    {
-      query: { name, ...(hasContract ? { has_contract: true } : {}) },
-      signal: options?.signal,
-    },
-  );
-}
+const fetchServiceDropdown = fetchQuoteServiceDropdown;
 
 async function onSaveQuote() {
   if (isSaving.value) return;
