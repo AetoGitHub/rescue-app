@@ -13,12 +13,15 @@ const props = withDefaults(
     modelValue: number[];
     excludeRescueId?: number | null;
     clientId?: number | null;
+    /** Filtra por estado administrativo (query `admin_status` del dropdown). */
+    adminStatus?: string | null;
     disabled?: boolean;
     placeholder?: string;
   }>(),
   {
     excludeRescueId: null,
     clientId: null,
+    adminStatus: null,
     disabled: false,
     placeholder: 'Buscar por folio',
   },
@@ -30,6 +33,7 @@ const emit = defineEmits<{
 
 const baseQuery = computed((): RescueDropdownQuery => ({
   client: props.clientId,
+  admin_status: props.adminStatus,
 }));
 
 const {

@@ -73,6 +73,11 @@ const state = reactive<RescueAdminDocFormState>({
   oc_pdf: '',
 });
 
+/** Al enviar remisión (OC), solo se pueden sumar rescates sin atender. */
+const extraRescuesAdminStatus = computed(() =>
+  state.remittance_folio.trim() ? 'unattended' : null,
+);
+
 const pendingFile = ref<File | null>(null);
 const uploadedForFile = ref<File | null>(null);
 const isUploading = ref(false);
@@ -405,6 +410,7 @@ function onApplySelected() {
               v-model="state.extra_rescues"
               :exclude-rescue-id="sourceRescueId"
               :client-id="clientId"
+              :admin-status="extraRescuesAdminStatus"
               :disabled="isBusy"
             />
           </UFormField>
